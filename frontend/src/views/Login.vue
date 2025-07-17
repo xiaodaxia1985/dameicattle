@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <img src="/logo.png" alt="Logo" class="logo" />
+        <div class="logo">🐄</div>
         <h1 class="title">肉牛全生命周期管理系统</h1>
         <p class="subtitle">Cattle Lifecycle Management System</p>
       </div>
@@ -132,8 +132,7 @@ const handleLogin = async () => {
 }
 
 .logo {
-  width: 64px;
-  height: 64px;
+  font-size: 64px;
   margin-bottom: 16px;
 }
 

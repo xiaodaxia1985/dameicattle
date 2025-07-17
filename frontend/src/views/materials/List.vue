@@ -1,0 +1,1 @@
+<template><div><h1>物资档案</h1><p>功能开发中...</p></div></template>

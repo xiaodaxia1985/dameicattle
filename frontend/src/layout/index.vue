@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-aside :width="sidebarWidth" class="sidebar">
       <div class="logo">
-        <img src="/logo.png" alt="Logo" class="logo-img" />
+        <div class="logo-img">🐄</div>
         <span v-if="!isCollapse" class="logo-text">肉牛管理系统</span>
       </div>
       
@@ -178,8 +178,7 @@ const handleCommand = async (command: string) => {
 }
 
 .logo-img {
-  width: 32px;
-  height: 32px;
+  font-size: 32px;
   margin-right: 12px;
 }
 

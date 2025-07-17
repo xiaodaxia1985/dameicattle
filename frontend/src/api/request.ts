@@ -29,15 +29,13 @@ const request: AxiosInstance = axios.create({
 
 // Request interceptor
 request.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
+  (config) => {
     const authStore = useAuthStore()
     
     // Add auth token
     if (authStore.token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: `Bearer ${authStore.token}`
-      }
+      config.headers = config.headers || {}
+      config.headers['Authorization'] = `Bearer ${authStore.token}`
     }
     
     return config

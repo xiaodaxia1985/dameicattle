@@ -1,0 +1,372 @@
+// 小程序全局样式
+
+// 颜色变量
+$primary-color: #1890ff;
+$success-color: #52c41a;
+$warning-color: #faad14;
+$danger-color: #ff4d4f;
+$info-color: #1890ff;
+
+$text-color-primary: #262626;
+$text-color-secondary: #595959;
+$text-color-disabled: #bfbfbf;
+
+$border-color: #d9d9d9;
+$border-color-light: #e8e8e8;
+$bg-color: #ffffff;
+$bg-color-light: #f5f5f5;
+
+// 基础样式
+.container {
+  padding: 20rpx;
+  background-color: $bg-color-light;
+  min-height: 100vh;
+}
+
+.card {
+  background-color: $bg-color;
+  border-radius: 12rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+// 布局类
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-wrap {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+// 文字颜色类
+.text-primary {
+  color: $primary-color;
+}
+
+.text-success {
+  color: $success-color;
+}
+
+.text-warning {
+  color: $warning-color;
+}
+
+.text-danger {
+  color: $danger-color;
+}
+
+.text-info {
+  color: $info-color;
+}
+
+.text-gray {
+  color: $text-color-secondary;
+}
+
+.text-light {
+  color: $text-color-disabled;
+}
+
+// 文字对齐
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+// 间距类
+.mb-10 {
+  margin-bottom: 10rpx;
+}
+
+.mb-20 {
+  margin-bottom: 20rpx;
+}
+
+.mb-30 {
+  margin-bottom: 30rpx;
+}
+
+.mt-10 {
+  margin-top: 10rpx;
+}
+
+.mt-20 {
+  margin-top: 20rpx;
+}
+
+.mt-30 {
+  margin-top: 30rpx;
+}
+
+.p-10 {
+  padding: 10rpx;
+}
+
+.p-20 {
+  padding: 20rpx;
+}
+
+.p-30 {
+  padding: 30rpx;
+}
+
+// 状态指示器
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 12rpx;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  
+  &::before {
+    content: '';
+    width: 8rpx;
+    height: 8rpx;
+    border-radius: 50%;
+    margin-right: 8rpx;
+  }
+  
+  &.status-healthy {
+    background-color: rgba(82, 196, 26, 0.1);
+    color: $success-color;
+    
+    &::before {
+      background-color: $success-color;
+    }
+  }
+  
+  &.status-sick {
+    background-color: rgba(255, 77, 79, 0.1);
+    color: $danger-color;
+    
+    &::before {
+      background-color: $danger-color;
+    }
+  }
+  
+  &.status-treatment {
+    background-color: rgba(250, 173, 20, 0.1);
+    color: $warning-color;
+    
+    &::before {
+      background-color: $warning-color;
+    }
+  }
+}
+
+// 按钮样式
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 32rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  border: none;
+  
+  &.btn-primary {
+    background-color: $primary-color;
+    color: #fff;
+  }
+  
+  &.btn-success {
+    background-color: $success-color;
+    color: #fff;
+  }
+  
+  &.btn-warning {
+    background-color: $warning-color;
+    color: #fff;
+  }
+  
+  &.btn-danger {
+    background-color: $danger-color;
+    color: #fff;
+  }
+  
+  &.btn-default {
+    background-color: #f5f5f5;
+    color: $text-color-primary;
+  }
+  
+  &.btn-small {
+    padding: 12rpx 24rpx;
+    font-size: 24rpx;
+  }
+  
+  &.btn-large {
+    padding: 20rpx 40rpx;
+    font-size: 32rpx;
+  }
+}
+
+// 表单样式
+.form-item {
+  margin-bottom: 32rpx;
+  
+  .form-label {
+    display: block;
+    font-size: 28rpx;
+    color: $text-color-primary;
+    margin-bottom: 12rpx;
+    font-weight: 600;
+  }
+  
+  .form-input {
+    width: 100%;
+    height: 80rpx;
+    border: 2rpx solid $border-color-light;
+    border-radius: 8rpx;
+    padding: 0 20rpx;
+    font-size: 28rpx;
+    background-color: $bg-color;
+    
+    &:focus {
+      border-color: $primary-color;
+    }
+    
+    &.form-textarea {
+      height: 160rpx;
+      padding: 20rpx;
+      resize: none;
+    }
+  }
+  
+  .form-picker {
+    height: 80rpx;
+    line-height: 80rpx;
+    border: 2rpx solid $border-color-light;
+    border-radius: 8rpx;
+    padding: 0 20rpx;
+    background-color: $bg-color;
+    font-size: 28rpx;
+    
+    &.placeholder {
+      color: $text-color-disabled;
+    }
+  }
+}
+
+// 列表样式
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid $border-color-light;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  .item-content {
+    flex: 1;
+    
+    .item-title {
+      font-size: 30rpx;
+      color: $text-color-primary;
+      margin-bottom: 8rpx;
+    }
+    
+    .item-desc {
+      font-size: 26rpx;
+      color: $text-color-secondary;
+    }
+  }
+  
+  .item-extra {
+    color: $text-color-disabled;
+    font-size: 24rpx;
+  }
+}
+
+// 空状态
+.empty-state {
+  text-align: center;
+  padding: 80rpx 40rpx;
+  
+  .empty-icon {
+    font-size: 120rpx;
+    color: $text-color-disabled;
+    margin-bottom: 24rpx;
+  }
+  
+  .empty-text {
+    font-size: 28rpx;
+    color: $text-color-secondary;
+  }
+}
+
+// 加载状态
+.loading-state {
+  text-align: center;
+  padding: 40rpx;
+  
+  .loading-text {
+    font-size: 28rpx;
+    color: $text-color-secondary;
+    margin-top: 20rpx;
+  }
+}
+
+// 网格布局
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20rpx;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20rpx;
+}
+
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20rpx;
+}
+
+// 响应式
+@media (max-width: 750rpx) {
+  .grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600rpx) {
+  .grid-3 {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .grid-4 {
+    grid-template-columns: 1fr 1fr;
+  }
+}

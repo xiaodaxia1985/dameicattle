@@ -1,0 +1,118 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "肉牛管理系统"
+      }
+    },
+    {
+      "path": "pages/cattle/list",
+      "style": {
+        "navigationBarTitleText": "牛只管理"
+      }
+    },
+    {
+      "path": "pages/cattle/detail",
+      "style": {
+        "navigationBarTitleText": "牛只详情"
+      }
+    },
+    {
+      "path": "pages/health/list",
+      "style": {
+        "navigationBarTitleText": "健康管理"
+      }
+    },
+    {
+      "path": "pages/health/record",
+      "style": {
+        "navigationBarTitleText": "健康记录"
+      }
+    },
+    {
+      "path": "pages/feeding/list",
+      "style": {
+        "navigationBarTitleText": "饲喂管理"
+      }
+    },
+    {
+      "path": "pages/feeding/record",
+      "style": {
+        "navigationBarTitleText": "饲喂记录"
+      }
+    },
+    {
+      "path": "pages/scan/index",
+      "style": {
+        "navigationBarTitleText": "扫码识别"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "个人中心"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "肉牛管理系统",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#1890ff",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/cattle/list",
+        "iconPath": "static/tabbar/cattle.png",
+        "selectedIconPath": "static/tabbar/cattle-active.png",
+        "text": "牛只"
+      },
+      {
+        "pagePath": "pages/health/list",
+        "iconPath": "static/tabbar/health.png",
+        "selectedIconPath": "static/tabbar/health-active.png",
+        "text": "健康"
+      },
+      {
+        "pagePath": "pages/scan/index",
+        "iconPath": "static/tabbar/scan.png",
+        "selectedIconPath": "static/tabbar/scan-active.png",
+        "text": "扫码"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "iconPath": "static/tabbar/profile.png",
+        "selectedIconPath": "static/tabbar/profile-active.png",
+        "text": "我的"
+      }
+    ]
+  },
+  "condition": {
+    "current": 0,
+    "list": [
+      {
+        "name": "",
+        "path": "",
+        "query": ""
+      }
+    ]
+  }
+}
