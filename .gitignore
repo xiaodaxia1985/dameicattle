@@ -1,0 +1,12 @@
+# 忽略所有.log文件
+*.log
+ 
+# 忽略build目录
+build/
+node-modules/
+unpackage/
+dist/
+
+ 
+# 忽略特定文件
+/tempfile.txt
