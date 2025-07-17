@@ -1,12 +1,76 @@
-# 忽略所有.log文件
-*.log
- 
-# 忽略build目录
-build/
-node-modules/
-unpackage/
-dist/
+# 依赖目录
+node_modules/
+*/node_modules/
 
- 
-# 忽略特定文件
+# 构建输出
+dist/
+build/
+*/dist/
+*/build/
+unpackage/
+
+# 日志文件
+*.log
+logs/
+*/logs/
+
+# 环境配置文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 上传文件
+uploads/
+*/uploads/
+
+# 缓存目录
+.cache/
+.temp/
+.tmp/
+
+# IDE配置
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker数据
+data/
+
+# 测试覆盖率报告
+coverage/
+*/coverage/
+
+# 临时文件
 /tempfile.txt
+*.tmp
+
+# 小程序相关
+miniprogram/unpackage/
+
+# SSL证书
+*.pem
+*.key
+*.crt
+nginx/ssl/*
+
+# 备份文件
+*.bak
+*.backup

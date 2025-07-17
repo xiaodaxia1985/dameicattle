@@ -33,14 +33,25 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8080,
-    host: true,
+    port: 5173,
+    host: '0.0.0.0',
+    open: true,
+    cors: true,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '/api/v1'),
       },
+      '/uploads': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+    hmr: {
+      overlay: true,
     },
   },
   build: {
@@ -58,5 +69,26 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/tests/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'src/tests/',
+        '**/*.d.ts',
+        '**/*.config.*',
+        'dist/',
+      ],
+      thresholds: {
+        global: {
+          branches: 70,
+          functions: 70,
+          lines: 70,
+          statements: 70,
+        },
+      },
+    },
   },
 })

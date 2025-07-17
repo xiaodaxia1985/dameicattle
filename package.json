@@ -1,0 +1,57 @@
+{
+  "name": "cattle-management-system",
+  "version": "1.0.0",
+  "description": "肉牛全生命周期管理系统",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/dev-setup.js",
+    "setup:win": "scripts\\dev-setup.bat",
+    "setup:unix": "bash scripts/dev-setup.sh",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:miniprogram": "cd miniprogram && npm run dev:mp-weixin",
+    "dev:docker": "docker-compose up --build",
+    "dev:docker:detach": "docker-compose up -d --build",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "build:miniprogram": "cd miniprogram && npm run build:mp-weixin",
+    "test:all": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm run test",
+    "test:frontend": "cd frontend && npm run test",
+    "test:watch": "concurrently \"npm run test:backend:watch\" \"npm run test:frontend:watch\"",
+    "test:backend:watch": "cd backend && npm run test:watch",
+    "test:frontend:watch": "cd frontend && npm run test:watch",
+    "lint:all": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:fix:all": "npm run lint:fix:backend && npm run lint:fix:frontend",
+    "lint:fix:backend": "cd backend && npm run lint:fix",
+    "lint:fix:frontend": "cd frontend && npm run lint",
+    "format:all": "npm run format:backend && npm run format:frontend",
+    "format:backend": "cd backend && npm run format",
+    "format:frontend": "cd frontend && npm run format",
+    "db:setup": "cd backend && npm run db:setup",
+    "db:reset": "cd backend && npm run db:reset",
+    "db:backup": "cd backend && npm run db:backup",
+    "db:restore": "cd backend && npm run db:restore",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:clean": "docker-compose down -v --remove-orphans",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "clean:backend": "cd backend && rm -rf dist node_modules",
+    "clean:frontend": "cd frontend && rm -rf dist node_modules",
+    "clean:all": "npm run clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+
+}
