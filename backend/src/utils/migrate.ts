@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { sequelize } from '@/config/database';
-import { logger } from '@/utils/logger';
+import { sequelize } from '../config/database';
+import { logger } from './logger';
 
 export class DatabaseMigrator {
   private migrationsPath: string;

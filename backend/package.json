@@ -14,7 +14,13 @@
     "format": "prettier --write src/**/*.ts",
     "migrate": "ts-node src/utils/migrate.ts migrate",
     "db:backup": "ts-node src/utils/migrate.ts backup",
-    "db:restore": "ts-node src/utils/migrate.ts restore"
+    "db:restore": "ts-node src/utils/migrate.ts restore",
+    "db:init": "bash scripts/init-database.sh",
+    "db:setup": "node scripts/setup-database.js",
+    "db:reset": "node scripts/reset-database.js",
+    "db:verify": "node scripts/verify-database.js",
+    "db:backup-shell": "bash scripts/db-backup.sh",
+    "db:restore-shell": "bash scripts/db-restore.sh"
   },
   "keywords": ["cattle", "management", "api", "nodejs", "express"],
   "author": "Cattle Management Team",

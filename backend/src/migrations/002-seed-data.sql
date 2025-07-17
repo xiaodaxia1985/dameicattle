@@ -2,49 +2,11 @@
 
 -- 插入默认角色
 INSERT INTO roles (name, description, permissions) VALUES
-('超级管理员', '系统超级管理员，拥有所有权限', '[
-  "users:read", "users:create", "users:update", "users:delete",
-  "roles:read", "roles:create", "roles:update", "roles:delete",
-  "bases:read", "bases:create", "bases:update", "bases:delete",
-  "cattle:read", "cattle:create", "cattle:update", "cattle:delete",
-  "health:read", "health:create", "health:update", "health:delete",
-  "feeding:read", "feeding:create", "feeding:update", "feeding:delete",
-  "materials:read", "materials:create", "materials:update", "materials:delete",
-  "inventory:read", "inventory:create", "inventory:update", "inventory:delete",
-  "purchase:read", "purchase:create", "purchase:update", "purchase:delete",
-  "sales:read", "sales:create", "sales:update", "sales:delete",
-  "news:read", "news:create", "news:update", "news:delete",
-  "reports:read", "system:manage"
-]'),
-('基地管理员', '基地管理员，管理所属基地的所有业务', '[
-  "cattle:read", "cattle:create", "cattle:update", "cattle:delete",
-  "health:read", "health:create", "health:update", "health:delete",
-  "feeding:read", "feeding:create", "feeding:update", "feeding:delete",
-  "materials:read", "materials:create", "materials:update",
-  "inventory:read", "inventory:create", "inventory:update",
-  "purchase:read", "purchase:create", "purchase:update",
-  "sales:read", "sales:create", "sales:update",
-  "reports:read"
-]'),
-('兽医', '兽医，负责牛只健康管理', '[
-  "cattle:read",
-  "health:read", "health:create", "health:update", "health:delete",
-  "reports:read"
-]'),
-('饲养员', '饲养员，负责日常饲养管理', '[
-  "cattle:read", "cattle:update",
-  "feeding:read", "feeding:create", "feeding:update",
-  "materials:read",
-  "inventory:read"
-]'),
-('普通员工', '普通员工，只读权限', '[
-  "cattle:read",
-  "health:read",
-  "feeding:read",
-  "materials:read",
-  "inventory:read",
-  "reports:read"
-]');
+('超级管理员', '系统超级管理员，拥有所有权限', '["users:read", "users:create", "users:update", "users:delete", "roles:read", "roles:create", "roles:update", "roles:delete", "bases:read", "bases:create", "bases:update", "bases:delete", "cattle:read", "cattle:create", "cattle:update", "cattle:delete", "health:read", "health:create", "health:update", "health:delete", "feeding:read", "feeding:create", "feeding:update", "feeding:delete", "materials:read", "materials:create", "materials:update", "materials:delete", "inventory:read", "inventory:create", "inventory:update", "inventory:delete", "purchase:read", "purchase:create", "purchase:update", "purchase:delete", "sales:read", "sales:create", "sales:update", "sales:delete", "news:read", "news:create", "news:update", "news:delete", "reports:read", "system:manage"]'),
+('基地管理员', '基地管理员，管理所属基地的所有业务', '["cattle:read", "cattle:create", "cattle:update", "cattle:delete", "health:read", "health:create", "health:update", "health:delete", "feeding:read", "feeding:create", "feeding:update", "feeding:delete", "materials:read", "materials:create", "materials:update", "inventory:read", "inventory:create", "inventory:update", "purchase:read", "purchase:create", "purchase:update", "sales:read", "sales:create", "sales:update", "reports:read"]'),
+('兽医', '兽医，负责牛只健康管理', '["cattle:read", "health:read", "health:create", "health:update", "health:delete", "reports:read"]'),
+('饲养员', '饲养员，负责日常饲养管理', '["cattle:read", "cattle:update", "feeding:read", "feeding:create", "feeding:update", "materials:read", "inventory:read"]'),
+('普通员工', '普通员工，只读权限', '["cattle:read", "health:read", "feeding:read", "materials:read", "inventory:read", "reports:read"]');
 
 -- 插入示例基地
 INSERT INTO bases (name, code, address, latitude, longitude, area) VALUES
@@ -66,16 +28,16 @@ INSERT INTO barns (name, code, base_id, capacity, barn_type) VALUES
 ('西区1号棚', 'W001', 3, 60, '育肥棚');
 
 -- 插入物资分类
-INSERT INTO material_categories (name, code, description) VALUES
-('饲料', 'FEED', '各类牛只饲料'),
+INSERT INTO material_categories (name, code, description, parent_id) VALUES
+('饲料', 'FEED', '各类牛只饲料', NULL),
 ('精饲料', 'FEED_CONCENTRATE', '精饲料类', 1),
 ('粗饲料', 'FEED_ROUGHAGE', '粗饲料类', 1),
 ('添加剂', 'FEED_ADDITIVE', '饲料添加剂', 1),
-('兽药', 'MEDICINE', '兽用药品'),
+('兽药', 'MEDICINE', '兽用药品', NULL),
 ('疫苗', 'VACCINE', '疫苗类药品', 5),
 ('治疗药物', 'TREATMENT', '治疗用药物', 5),
 ('保健药物', 'HEALTHCARE', '保健用药物', 5),
-('设备用品', 'EQUIPMENT', '设备和用品'),
+('设备用品', 'EQUIPMENT', '设备和用品', NULL),
 ('清洁用品', 'CLEANING', '清洁消毒用品', 9),
 ('工具用品', 'TOOLS', '工具和器械', 9);
 
@@ -101,24 +63,8 @@ INSERT INTO news_categories (name, code, description, sort_order) VALUES
 
 -- 插入示例饲料配方
 INSERT INTO feed_formulas (name, description, ingredients, cost_per_kg, created_by) VALUES
-('育肥牛标准配方', '适用于6-18月龄育肥牛的标准饲料配方', '{
-  "玉米": {"ratio": 45, "unit": "%", "cost": 2.8},
-  "豆粕": {"ratio": 20, "unit": "%", "cost": 4.2},
-  "麸皮": {"ratio": 15, "unit": "%", "cost": 2.1},
-  "棉籽粕": {"ratio": 10, "unit": "%", "cost": 3.5},
-  "预混料": {"ratio": 5, "unit": "%", "cost": 12.0},
-  "食盐": {"ratio": 3, "unit": "%", "cost": 1.5},
-  "石粉": {"ratio": 2, "unit": "%", "cost": 0.8}
-}', 3.45, 1),
-('繁殖母牛配方', '适用于繁殖母牛的营养配方', '{
-  "玉米": {"ratio": 40, "unit": "%", "cost": 2.8},
-  "豆粕": {"ratio": 25, "unit": "%", "cost": 4.2},
-  "麸皮": {"ratio": 12, "unit": "%", "cost": 2.1},
-  "苜蓿草粉": {"ratio": 15, "unit": "%", "cost": 3.8},
-  "预混料": {"ratio": 5, "unit": "%", "cost": 12.0},
-  "食盐": {"ratio": 2, "unit": "%", "cost": 1.5},
-  "石粉": {"ratio": 1, "unit": "%", "cost": 0.8}
-}', 3.78, 1);
+('育肥牛标准配方', '适用于6-18月龄育肥牛的标准饲料配方', '{"玉米": {"ratio": 45, "unit": "%", "cost": 2.8}, "豆粕": {"ratio": 20, "unit": "%", "cost": 4.2}, "麸皮": {"ratio": 15, "unit": "%", "cost": 2.1}, "棉籽粕": {"ratio": 10, "unit": "%", "cost": 3.5}, "预混料": {"ratio": 5, "unit": "%", "cost": 12.0}, "食盐": {"ratio": 3, "unit": "%", "cost": 1.5}, "石粉": {"ratio": 2, "unit": "%", "cost": 0.8}}', 3.45, 1),
+('繁殖母牛配方', '适用于繁殖母牛的营养配方', '{"玉米": {"ratio": 40, "unit": "%", "cost": 2.8}, "豆粕": {"ratio": 25, "unit": "%", "cost": 4.2}, "麸皮": {"ratio": 12, "unit": "%", "cost": 2.1}, "苜蓿草粉": {"ratio": 15, "unit": "%", "cost": 3.8}, "预混料": {"ratio": 5, "unit": "%", "cost": 12.0}, "食盐": {"ratio": 2, "unit": "%", "cost": 1.5}, "石粉": {"ratio": 1, "unit": "%", "cost": 0.8}}', 3.78, 1);
 
 -- 插入示例生产物资
 INSERT INTO production_materials (name, code, category_id, unit, specification, supplier_id, purchase_price, safety_stock) VALUES
