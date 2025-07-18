@@ -12,11 +12,18 @@ interface UserAttributes {
   role_id?: number;
   base_id?: number;
   status: 'active' | 'inactive' | 'locked';
+  failed_login_attempts: number;
+  locked_until?: Date;
+  last_login?: Date;
+  password_reset_token?: string;
+  password_reset_expires?: Date;
+  wechat_openid?: string;
+  wechat_unionid?: string;
   created_at: Date;
   updated_at: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'failed_login_attempts'> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
@@ -28,6 +35,13 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public role_id?: number;
   public base_id?: number;
   public status!: 'active' | 'inactive' | 'locked';
+  public failed_login_attempts!: number;
+  public locked_until?: Date;
+  public last_login?: Date;
+  public password_reset_token?: string;
+  public password_reset_expires?: Date;
+  public wechat_openid?: string;
+  public wechat_unionid?: string;
   public created_at!: Date;
   public updated_at!: Date;
 
@@ -39,13 +53,93 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public toJSON(): Partial<UserAttributes> {
     const values = { ...this.get() };
     delete values.password_hash;
+    delete values.password_reset_token;
     return values;
+  }
+
+  public isAccountLocked(): boolean {
+    return this.locked_until ? new Date() < this.locked_until : false;
+  }
+
+  public async incrementFailedAttempts(): Promise<void> {
+    const maxAttempts = 5;
+    const lockoutDuration = 30 * 60 * 1000; // 30 minutes
+
+    this.failed_login_attempts += 1;
+
+    if (this.failed_login_attempts >= maxAttempts) {
+      this.locked_until = new Date(Date.now() + lockoutDuration);
+      this.status = 'locked';
+    }
+
+    await this.save();
+  }
+
+  public async resetFailedAttempts(): Promise<void> {
+    this.failed_login_attempts = 0;
+    this.locked_until = null;
+    if (this.status === 'locked') {
+      this.status = 'active';
+    }
+    this.last_login = new Date();
+    await this.save();
+  }
+
+  public async generatePasswordResetToken(): Promise<string> {
+    const crypto = require('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    this.password_reset_token = hashedToken;
+    this.password_reset_expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await this.save();
+    
+    return token; // Return unhashed token for email
+  }
+
+  public async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const crypto = require('crypto');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    if (
+      this.password_reset_token !== hashedToken ||
+      !this.password_reset_expires ||
+      new Date() > this.password_reset_expires
+    ) {
+      return false;
+    }
+
+    this.password_hash = await User.hashPassword(newPassword);
+    this.password_reset_token = null;
+    this.password_reset_expires = null;
+    this.failed_login_attempts = 0;
+    this.locked_until = null;
+    if (this.status === 'locked') {
+      this.status = 'active';
+    }
+    
+    await this.save();
+    return true;
   }
 
   // Static methods
   public static async hashPassword(password: string): Promise<string> {
     const saltRounds = 12;
     return bcrypt.hash(password, saltRounds);
+  }
+
+  public static async findByResetToken(token: string): Promise<User | null> {
+    const crypto = require('crypto');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    
+    return User.findOne({
+      where: {
+        password_reset_token: hashedToken,
+        password_reset_expires: {
+          [require('sequelize').Op.gt]: new Date(),
+        },
+      },
+    });
   }
 }
 
@@ -111,6 +205,37 @@ User.init(
       type: DataTypes.ENUM('active', 'inactive', 'locked'),
       allowNull: false,
       defaultValue: 'active',
+    },
+    failed_login_attempts: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    locked_until: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    last_login: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    password_reset_token: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    password_reset_expires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    wechat_openid: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      unique: true,
+    },
+    wechat_unionid: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      unique: true,
     },
     created_at: {
       type: DataTypes.DATE,

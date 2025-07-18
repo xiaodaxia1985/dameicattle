@@ -4,6 +4,8 @@ class RequestService {
     this.baseURL = config.baseURL || '/api/v1'
     this.timeout = config.timeout || 10000
     this.defaultHeaders = config.headers || {}
+    this.isRefreshingToken = false
+    this.refreshTokenPromise = null
   }
 
   // 通用请求方法
@@ -13,16 +15,19 @@ class RequestService {
       method = 'GET',
       data,
       headers = {},
-      timeout = this.timeout
+      timeout = this.timeout,
+      skipAuth = false
     } = options
 
     const fullUrl = url.startsWith('http') ? url : `${this.baseURL}${url}`
     const requestHeaders = { ...this.defaultHeaders, ...headers }
 
     // 添加认证token
-    const token = uni.getStorageSync('token')
-    if (token) {
-      requestHeaders.Authorization = `Bearer ${token}`
+    if (!skipAuth) {
+      const token = uni.getStorageSync('token')
+      if (token) {
+        requestHeaders.Authorization = `Bearer ${token}`
+      }
     }
 
     return new Promise((resolve, reject) => {
@@ -33,31 +38,190 @@ class RequestService {
         header: requestHeaders,
         timeout,
         success: (res) => {
-          if (res.statusCode >= 200 && res.statusCode < 300) {
-            if (res.data.success) {
-              resolve(res.data)
-            } else {
-              const error = new Error(res.data.message || '请求失败')
-              error.code = res.data.error?.code
-              error.details = res.data.error?.details
-              reject(error)
-            }
-          } else {
-            reject(new Error(`HTTP ${res.statusCode}`))
-          }
+          this.handleResponse(res, resolve, reject, options)
         },
         fail: (err) => {
-          console.error('Request failed:', err)
-          if (err.errMsg && err.errMsg.includes('timeout')) {
-            reject(new Error('请求超时'))
-          } else if (err.errMsg && err.errMsg.includes('fail')) {
-            reject(new Error('网络请求失败'))
-          } else {
-            reject(err)
-          }
+          this.handleError(err, reject, options)
         }
       })
     })
+  }
+
+  // 处理响应
+  handleResponse(res, resolve, reject, originalOptions) {
+    if (res.statusCode >= 200 && res.statusCode < 300) {
+      if (res.data.success) {
+        resolve(res.data)
+      } else {
+        const error = new Error(res.data.message || '请求失败')
+        error.code = res.data.error?.code
+        error.details = res.data.error?.details
+        reject(error)
+      }
+    } else if (res.statusCode === 401) {
+      // Token过期，尝试刷新
+      this.handleTokenExpired(originalOptions)
+        .then(resolve)
+        .catch(reject)
+    } else {
+      const error = new Error(`HTTP ${res.statusCode}`)
+      error.statusCode = res.statusCode
+      error.response = res.data
+      reject(error)
+    }
+  }
+
+  // 处理请求错误
+  handleError(err, reject, options) {
+    console.error('Request failed:', err)
+    
+    // 网络错误，如果支持离线模式，添加到同步队列
+    if (this.shouldAddToOfflineQueue(options)) {
+      this.addToOfflineQueue(options)
+      
+      // 返回离线提示
+      const offlineError = new Error('网络连接失败，数据已保存到离线队列')
+      offlineError.isOffline = true
+      reject(offlineError)
+      return
+    }
+    
+    if (err.errMsg && err.errMsg.includes('timeout')) {
+      reject(new Error('请求超时'))
+    } else if (err.errMsg && err.errMsg.includes('fail')) {
+      reject(new Error('网络请求失败'))
+    } else {
+      reject(err)
+    }
+  }
+
+  // 处理Token过期
+  async handleTokenExpired(originalOptions) {
+    if (this.isRefreshingToken) {
+      // 如果正在刷新Token，等待刷新完成
+      await this.refreshTokenPromise
+      return this.request(originalOptions)
+    }
+
+    this.isRefreshingToken = true
+    this.refreshTokenPromise = this.refreshToken()
+
+    try {
+      await this.refreshTokenPromise
+      // Token刷新成功，重新发起原请求
+      return this.request(originalOptions)
+    } catch (error) {
+      // Token刷新失败，跳转到登录页
+      this.handleAuthFailure()
+      throw error
+    } finally {
+      this.isRefreshingToken = false
+      this.refreshTokenPromise = null
+    }
+  }
+
+  // 刷新Token
+  async refreshToken() {
+    try {
+      const response = await this.request({
+        url: '/auth/refresh',
+        method: 'POST',
+        skipAuth: false // 需要当前Token
+      })
+
+      if (response.success && response.data.token) {
+        uni.setStorageSync('token', response.data.token)
+        return response.data.token
+      } else {
+        throw new Error('Token刷新失败')
+      }
+    } catch (error) {
+      console.error('Token刷新失败:', error)
+      throw error
+    }
+  }
+
+  // 处理认证失败
+  handleAuthFailure() {
+    // 清除本地存储
+    uni.removeStorageSync('token')
+    uni.removeStorageSync('userInfo')
+    uni.removeStorageSync('permissions')
+
+    // 跳转到登录页
+    uni.reLaunch({
+      url: '/pages/login/index'
+    })
+
+    // 显示提示
+    uni.showToast({
+      title: '登录已过期，请重新登录',
+      icon: 'none'
+    })
+  }
+
+  // 判断是否应该添加到离线队列
+  shouldAddToOfflineQueue(options) {
+    // 只有POST、PUT、DELETE等修改操作才添加到离线队列
+    const modifyMethods = ['POST', 'PUT', 'DELETE']
+    return modifyMethods.includes(options.method?.toUpperCase()) && 
+           !options.skipOffline &&
+           options.offlineSupport !== false
+  }
+
+  // 添加到离线队列
+  addToOfflineQueue(options) {
+    try {
+      // 动态导入同步管理器（避免循环依赖）
+      import('./sync.js').then(({ dataSyncManager }) => {
+        const syncData = this.convertToSyncData(options)
+        if (syncData) {
+          dataSyncManager.addToSyncQueue(syncData)
+        }
+      })
+    } catch (error) {
+      console.error('添加到离线队列失败:', error)
+    }
+  }
+
+  // 转换为同步数据格式
+  convertToSyncData(options) {
+    const { url, method, data } = options
+    
+    // 根据URL和方法推断数据类型和操作
+    if (url.includes('/cattle')) {
+      return {
+        type: 'cattle',
+        action: method === 'POST' ? 'create' : method === 'PUT' ? 'update' : 'delete',
+        data
+      }
+    } else if (url.includes('/health')) {
+      return {
+        type: 'health',
+        action: 'create_diagnosis',
+        data
+      }
+    } else if (url.includes('/feeding')) {
+      return {
+        type: 'feeding',
+        action: 'create_record',
+        data
+      }
+    } else if (url.includes('/inventory')) {
+      return {
+        type: 'inventory',
+        action: url.includes('inbound') ? 'inbound' : 'outbound',
+        data
+      }
+    } else if (url.includes('/equipment')) {
+      return {
+        type: 'equipment',
+        action: url.includes('maintenance') ? 'create_maintenance' : 'report_failure',
+        data
+      }
+    }
+    
+    return null
   }
 
   // GET请求

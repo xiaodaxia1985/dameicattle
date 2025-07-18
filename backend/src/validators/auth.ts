@@ -75,3 +75,71 @@ export const registerSchema = Joi.object({
       'string.max': '手机号最多20个字符',
     }),
 });
+
+export const passwordResetRequestSchema = Joi.object({
+  email: Joi.string()
+    .email()
+    .required()
+    .messages({
+      'string.empty': '邮箱不能为空',
+      'string.email': '邮箱格式不正确',
+      'any.required': '邮箱是必填项',
+    }),
+});
+
+export const passwordResetSchema = Joi.object({
+  token: Joi.string()
+    .required()
+    .messages({
+      'string.empty': '重置令牌不能为空',
+      'any.required': '重置令牌是必填项',
+    }),
+  password: Joi.string()
+    .min(6)
+    .max(100)
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/)
+    .required()
+    .messages({
+      'string.empty': '密码不能为空',
+      'string.min': '密码至少6个字符',
+      'string.max': '密码最多100个字符',
+      'string.pattern.base': '密码必须包含大小写字母和数字',
+      'any.required': '密码是必填项',
+    }),
+});
+
+export const wechatLoginSchema = Joi.object({
+  code: Joi.string()
+    .required()
+    .messages({
+      'string.empty': '微信授权码不能为空',
+      'any.required': '微信授权码是必填项',
+    }),
+  userInfo: Joi.object({
+    nickName: Joi.string().optional(),
+    avatarUrl: Joi.string().optional(),
+  }).optional(),
+  encryptedData: Joi.string().optional(),
+  iv: Joi.string().optional(),
+});
+
+export const bindUserSchema = Joi.object({
+  baseId: Joi.number()
+    .integer()
+    .positive()
+    .required()
+    .messages({
+      'number.base': '基地ID必须是数字',
+      'number.integer': '基地ID必须是整数',
+      'number.positive': '基地ID必须是正数',
+      'any.required': '基地ID是必填项',
+    }),
+  inviteCode: Joi.string()
+    .min(6)
+    .max(50)
+    .optional()
+    .messages({
+      'string.min': '邀请码至少6个字符',
+      'string.max': '邀请码最多50个字符',
+    }),
+});

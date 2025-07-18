@@ -15,6 +15,8 @@ import { redisClient } from '@/config/redis';
 // Import routes
 import authRoutes from '@/routes/auth';
 import userRoutes from '@/routes/users';
+import roleRoutes from '@/routes/roles';
+import operationLogRoutes from '@/routes/operationLogs';
 
 // Load environment variables
 dotenv.config();
@@ -56,6 +58,8 @@ app.get('/health', (req, res) => {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', authMiddleware, userRoutes);
+app.use('/api/v1/roles', authMiddleware, roleRoutes);
+app.use('/api/v1/operation-logs', authMiddleware, operationLogRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

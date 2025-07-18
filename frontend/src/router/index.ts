@@ -170,6 +170,12 @@ const routes: RouteRecordRaw[] = [
             name: 'Bases',
             component: () => import('@/views/system/Bases.vue'),
             meta: { title: '基地管理' }
+          },
+          {
+            path: 'operation-logs',
+            name: 'OperationLogs',
+            component: () => import('@/views/system/OperationLogs.vue'),
+            meta: { title: '操作日志' }
           }
         ]
       }

@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: cattle_management
       POSTGRES_USER: cattle_user
-      POSTGRES_PASSWORD: cattle_password
+      POSTGRES_PASSWORD: dianxin99
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
     ports:
       - "5432:5432"
@@ -45,7 +45,7 @@ services:
       DB_PORT: 5432
       DB_NAME: cattle_management
       DB_USER: cattle_user
-      DB_PASSWORD: cattle_password
+      DB_PASSWORD: dianxin99
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: your-jwt-secret-key

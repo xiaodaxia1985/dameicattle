@@ -10,6 +10,9 @@ export interface User {
   created_at: string
   updated_at: string
   role?: Role
+  base?: Base
+  last_login_at?: string
+  login_count?: number
 }
 
 export interface Role {
@@ -18,6 +21,18 @@ export interface Role {
   description?: string
   permissions: string[]
   created_at: string
+  updated_at: string
+  user_count?: number
+}
+
+export interface Base {
+  id: number
+  name: string
+  code: string
+  address?: string
+  manager_id?: number
+  created_at: string
+  updated_at: string
 }
 
 export interface LoginRequest {
@@ -37,4 +52,15 @@ export interface RegisterRequest {
   real_name: string
   email?: string
   phone?: string
+}
+
+export interface Permission {
+  key: string
+  name: string
+  description?: string
+}
+
+export interface PermissionGroup {
+  name: string
+  permissions: Permission[]
 }

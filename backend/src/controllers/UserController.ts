@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { Op } from 'sequelize';
 import { User, Role } from '@/models';
 import { logger } from '@/utils/logger';
+import { applyBaseFilter } from '@/middleware/dataPermission';
 
 export class UserController {
   public async getUsers(req: Request, res: Response, next: NextFunction) {
@@ -23,8 +24,11 @@ export class UserController {
         whereClause.status = status;
       }
 
+      // Apply data permission filtering - users can only see users from their base (unless admin)
+      const filteredWhereClause = applyBaseFilter(whereClause, req);
+
       const { count, rows } = await User.findAndCountAll({
-        where: whereClause,
+        where: filteredWhereClause,
         include: [{ model: Role, as: 'role' }],
         limit: Number(limit),
         offset,
