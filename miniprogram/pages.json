@@ -7,6 +7,38 @@
       }
     },
     {
+      "path": "pages/sales/orders",
+      "style": {
+        "navigationBarTitleText": "销售订单",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/sales/order-detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/sales/customers",
+      "style": {
+        "navigationBarTitleText": "客户管理",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/sales/customer-detail",
+      "style": {
+        "navigationBarTitleText": "客户详情"
+      }
+    },
+    {
+      "path": "pages/sales/add-visit",
+      "style": {
+        "navigationBarTitleText": "添加回访记录"
+      }
+    },
+    {
       "path": "pages/cattle/list",
       "style": {
         "navigationBarTitleText": "牛只管理"

@@ -23,6 +23,10 @@ import EquipmentMaintenanceRecord from './EquipmentMaintenanceRecord';
 import EquipmentFailure from './EquipmentFailure';
 import { PurchaseOrder } from './PurchaseOrder';
 import { PurchaseOrderItem } from './PurchaseOrderItem';
+import { Customer } from './Customer';
+import { CustomerVisitRecord } from './CustomerVisitRecord';
+import { SalesOrder } from './SalesOrder';
+import { SalesOrderItem } from './SalesOrderItem';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -178,6 +182,33 @@ PurchaseOrder.belongsTo(User, { foreignKey: 'approved_by', as: 'approver' });
 PurchaseOrder.hasMany(PurchaseOrderItem, { foreignKey: 'order_id', as: 'items' });
 PurchaseOrderItem.belongsTo(PurchaseOrder, { foreignKey: 'order_id', as: 'order' });
 
+// Customer associations
+Customer.hasMany(CustomerVisitRecord, { foreignKey: 'customer_id', as: 'visit_records' });
+CustomerVisitRecord.belongsTo(Customer, { foreignKey: 'customer_id', as: 'customer' });
+
+User.hasMany(CustomerVisitRecord, { foreignKey: 'visitor_id', as: 'customer_visits' });
+CustomerVisitRecord.belongsTo(User, { foreignKey: 'visitor_id', as: 'visitor' });
+
+// Sales order associations
+Customer.hasMany(SalesOrder, { foreignKey: 'customer_id', as: 'sales_orders' });
+SalesOrder.belongsTo(Customer, { foreignKey: 'customer_id', as: 'customer' });
+
+Base.hasMany(SalesOrder, { foreignKey: 'base_id', as: 'sales_orders' });
+SalesOrder.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
+User.hasMany(SalesOrder, { foreignKey: 'created_by', as: 'created_sales_orders' });
+SalesOrder.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+User.hasMany(SalesOrder, { foreignKey: 'approved_by', as: 'approved_sales_orders' });
+SalesOrder.belongsTo(User, { foreignKey: 'approved_by', as: 'approver' });
+
+// Sales order item associations
+SalesOrder.hasMany(SalesOrderItem, { foreignKey: 'order_id', as: 'items' });
+SalesOrderItem.belongsTo(SalesOrder, { foreignKey: 'order_id', as: 'order' });
+
+Cattle.hasMany(SalesOrderItem, { foreignKey: 'cattle_id', as: 'sales_items' });
+SalesOrderItem.belongsTo(Cattle, { foreignKey: 'cattle_id', as: 'cattle' });
+
 // Export models
 export {
   sequelize,
@@ -205,6 +236,10 @@ export {
   EquipmentFailure,
   PurchaseOrder,
   PurchaseOrderItem,
+  Customer,
+  CustomerVisitRecord,
+  SalesOrder,
+  SalesOrderItem,
 };
 
 // Export database instance

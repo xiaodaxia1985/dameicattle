@@ -34,6 +34,13 @@ export class ConflictError extends Error {
   }
 }
 
+export class BusinessError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'BusinessError';
+  }
+}
+
 export class AppError extends Error {
   public statusCode: number;
   public isOperational: boolean;
