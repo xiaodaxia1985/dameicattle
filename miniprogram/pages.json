@@ -7,6 +7,13 @@
       }
     },
     {
+      "path": "pages/dashboard/dashboard",
+      "style": {
+        "navigationBarTitleText": "数据总览",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
       "path": "pages/sales/orders",
       "style": {
         "navigationBarTitleText": "销售订单",

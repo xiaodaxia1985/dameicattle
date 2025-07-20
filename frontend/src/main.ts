@@ -10,6 +10,7 @@ import App from './App.vue'
 import router from './router'
 import './styles/index.scss'
 import { useAuthStore, useAppStore } from './stores'
+import { registerCustomTheme } from './utils/chartTheme'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -24,6 +25,9 @@ app.use(router)
 app.use(ElementPlus, {
   locale: zhCn,
 })
+
+// Register chart theme
+registerCustomTheme()
 
 // Initialize stores
 const authStore = useAuthStore()

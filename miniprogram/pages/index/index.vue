@@ -73,17 +73,64 @@
       </view>
     </view>
 
+    <!-- 数据可视化 -->
+    <view class="charts-section" v-if="currentBase">
+      <MobileChart
+        type="pie"
+        title="牛只健康状态"
+        subtitle="当前基地健康状况分布"
+        :data="healthChartData"
+        :height="250"
+      />
+      
+      <MobileChart
+        type="bar"
+        title="各牛棚牛只数量"
+        subtitle="当前基地牛棚分布"
+        :data="barnChartData"
+        :height="200"
+      />
+    </view>
+
     <!-- 待处理事项 -->
-    <view class="todos card" v-if="todos.length > 0">
-      <view class="section-title">待处理事项</view>
+    <view class="todos card" v-if="pendingTasks.length > 0">
+      <view class="section-title">
+        <text>待处理事项</text>
+        <view class="priority-filter">
+          <text 
+            class="filter-btn" 
+            :class="{ active: taskFilter === 'all' }"
+            @tap="setTaskFilter('all')"
+          >全部</text>
+          <text 
+            class="filter-btn high" 
+            :class="{ active: taskFilter === 'high' }"
+            @tap="setTaskFilter('high')"
+          >高优先级</text>
+        </view>
+      </view>
       <view class="todo-list">
-        <view class="todo-item" v-for="todo in todos" :key="todo.id">
+        <view 
+          class="todo-item" 
+          v-for="todo in filteredTasks" 
+          :key="todo.id"
+          @tap="handleTaskClick(todo)"
+        >
+          <view class="todo-icon" :class="todo.priority">
+            <text class="iconfont" :class="getTaskIcon(todo.type)"></text>
+          </view>
           <view class="todo-content">
             <text class="todo-title">{{ todo.title }}</text>
             <text class="todo-desc">{{ todo.description }}</text>
+            <text class="todo-time">{{ formatTime(todo.createdAt) }}</text>
           </view>
-          <view class="todo-badge" :class="todo.level">{{ todo.count }}</view>
+          <view class="todo-badge" :class="todo.priority">
+            {{ getPriorityText(todo.priority) }}
+          </view>
         </view>
+      </view>
+      <view class="load-more" v-if="hasMoreTasks" @tap="loadMoreTasks">
+        <text class="load-more-text">加载更多</text>
       </view>
     </view>
 
@@ -111,23 +158,33 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useBaseStore } from '@/stores/base'
 import { useDashboardStore } from '@/stores/dashboard'
 import { useCacheStore } from '@/stores/cache'
-import { formatDistance } from '@/utils/location'
+import { formatDistance, formatTime } from '@/utils/location'
+import MobileChart from '@/components/MobileChart.vue'
+import notificationManager from '@/utils/notification'
 
 const baseStore = useBaseStore()
 const dashboardStore = useDashboardStore()
 const cacheStore = useCacheStore()
 
 const { currentBase } = baseStore
+const { 
+  keyIndicators, 
+  pendingTasks: storePendingTasks, 
+  healthDistribution,
+  loading 
+} = dashboardStore
+
 const bases = ref([])
 const stats = ref({})
-const todos = ref([])
 const baseStats = ref(null)
 const baseDistance = ref(null)
 const basePopup = ref(null)
+const taskFilter = ref('all')
+const hasMoreTasks = ref(false)
 
 onMounted(() => {
   loadData()
@@ -335,6 +392,124 @@ const showComingSoon = () => {
     title: '功能开发中',
     icon: 'none'
   })
+}
+
+// 计算属性
+const pendingTasks = computed(() => storePendingTasks.value || [])
+
+const filteredTasks = computed(() => {
+  if (taskFilter.value === 'all') {
+    return pendingTasks.value
+  }
+  return pendingTasks.value.filter(task => task.priority === taskFilter.value)
+})
+
+const healthChartData = computed(() => {
+  if (!healthDistribution.value || !Array.isArray(healthDistribution.value)) {
+    return []
+  }
+  
+  const colorMap = {
+    healthy: '#52c41a',
+    sick: '#ff4d4f',
+    treatment: '#faad14'
+  }
+  
+  const labelMap = {
+    healthy: '健康',
+    sick: '患病',
+    treatment: '治疗中'
+  }
+  
+  return healthDistribution.value.map(item => ({
+    name: labelMap[item.status] || item.status,
+    value: item.count,
+    color: colorMap[item.status]
+  }))
+})
+
+const barnChartData = computed(() => {
+  if (!baseStats.value || !baseStats.value.barnStats) {
+    return []
+  }
+  
+  return baseStats.value.barnStats.map((barn, index) => ({
+    name: barn.name,
+    value: barn.cattleCount,
+    color: ['#1890ff', '#52c41a', '#faad14', '#f5222d'][index % 4]
+  }))
+})
+
+// 任务相关方法
+const setTaskFilter = (filter) => {
+  taskFilter.value = filter
+}
+
+const handleTaskClick = (task) => {
+  // 处理任务点击事件
+  if (task.url) {
+    uni.navigateTo({
+      url: task.url
+    })
+  } else {
+    // 根据任务类型跳转到相应页面
+    switch (task.type) {
+      case 'health_alert':
+        navigateTo('/pages/health/list')
+        break
+      case 'equipment_failure':
+        navigateTo('/pages/equipment/list')
+        break
+      case 'inventory_alert':
+        navigateTo('/pages/materials/list')
+        break
+      default:
+        uni.showToast({
+          title: '查看任务详情',
+          icon: 'none'
+        })
+    }
+  }
+}
+
+const loadMoreTasks = async () => {
+  try {
+    uni.showLoading({ title: '加载中...' })
+    
+    // 这里可以实现加载更多任务的逻辑
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    uni.hideLoading()
+    uni.showToast({
+      title: '暂无更多数据',
+      icon: 'none'
+    })
+  } catch (error) {
+    uni.hideLoading()
+    uni.showToast({
+      title: '加载失败',
+      icon: 'error'
+    })
+  }
+}
+
+const getTaskIcon = (type) => {
+  const iconMap = {
+    health_alert: 'icon-health',
+    equipment_failure: 'icon-equipment',
+    inventory_alert: 'icon-inventory',
+    feeding_reminder: 'icon-feeding'
+  }
+  return iconMap[type] || 'icon-task'
+}
+
+const getPriorityText = (priority) => {
+  const textMap = {
+    high: '高',
+    medium: '中',
+    low: '低'
+  }
+  return textMap[priority] || priority
 }
 </script>
 
@@ -590,3 +765,136 @@ const showComingSoon = () => {
   }
 }
 </style>
+.chart
+s-section {
+  margin: 0 20rpx 20rpx;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 32rpx;
+  font-weight: 600;
+  margin-bottom: 24rpx;
+  
+  .priority-filter {
+    display: flex;
+    gap: 16rpx;
+    
+    .filter-btn {
+      font-size: 24rpx;
+      padding: 8rpx 16rpx;
+      border-radius: 16rpx;
+      background: #f5f5f5;
+      color: #666;
+      
+      &.active {
+        background: #1890ff;
+        color: #fff;
+      }
+      
+      &.high.active {
+        background: #ff4d4f;
+      }
+    }
+  }
+}
+
+.todo-list {
+  .todo-item {
+    display: flex;
+    align-items: center;
+    padding: 24rpx 0;
+    border-bottom: 1rpx solid #f0f0f0;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .todo-icon {
+      width: 60rpx;
+      height: 60rpx;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 20rpx;
+      
+      .iconfont {
+        font-size: 28rpx;
+      }
+      
+      &.high {
+        background: rgba(255, 77, 79, 0.1);
+        color: #ff4d4f;
+      }
+      
+      &.medium {
+        background: rgba(250, 173, 20, 0.1);
+        color: #faad14;
+      }
+      
+      &.low {
+        background: rgba(24, 144, 255, 0.1);
+        color: #1890ff;
+      }
+    }
+    
+    .todo-content {
+      flex: 1;
+      
+      .todo-title {
+        display: block;
+        font-size: 30rpx;
+        color: #333;
+        margin-bottom: 8rpx;
+      }
+      
+      .todo-desc {
+        font-size: 26rpx;
+        color: #999;
+        margin-bottom: 8rpx;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      
+      .todo-time {
+        font-size: 24rpx;
+        color: #ccc;
+      }
+    }
+    
+    .todo-badge {
+      padding: 8rpx 16rpx;
+      border-radius: 20rpx;
+      font-size: 24rpx;
+      color: #fff;
+      
+      &.high {
+        background: #ff4d4f;
+      }
+      
+      &.medium {
+        background: #faad14;
+      }
+      
+      &.low {
+        background: #1890ff;
+      }
+    }
+  }
+}
+
+.load-more {
+  text-align: center;
+  padding: 32rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+  
+  .load-more-text {
+    font-size: 28rpx;
+    color: #1890ff;
+  }
+}
