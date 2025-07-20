@@ -167,3 +167,6 @@ export const requireBaseAccess = (baseIdParam: string = 'baseId') => {
     next();
   };
 };
+
+// Alias for dataPermissionMiddleware
+export const dataPermission = dataPermissionMiddleware;

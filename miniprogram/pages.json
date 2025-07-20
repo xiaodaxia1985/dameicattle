@@ -21,13 +21,20 @@
     {
       "path": "pages/health/list",
       "style": {
-        "navigationBarTitleText": "健康管理"
+        "navigationBarTitleText": "健康管理",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/health/record",
       "style": {
         "navigationBarTitleText": "健康记录"
+      }
+    },
+    {
+      "path": "pages/health/vaccine",
+      "style": {
+        "navigationBarTitleText": "疫苗接种"
       }
     },
     {

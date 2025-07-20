@@ -6,6 +6,8 @@ import { Base } from './Base';
 import { Barn } from './Barn';
 import { Cattle } from './Cattle';
 import { CattleEvent } from './CattleEvent';
+import { HealthRecord } from './HealthRecord';
+import { VaccinationRecord } from './VaccinationRecord';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -44,6 +46,20 @@ CattleEvent.belongsTo(User, { foreignKey: 'operator_id', as: 'operator' });
 SecurityLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 User.hasMany(SecurityLog, { foreignKey: 'user_id', as: 'security_logs' });
 
+// Health record associations
+Cattle.hasMany(HealthRecord, { foreignKey: 'cattle_id', as: 'health_records' });
+HealthRecord.belongsTo(Cattle, { foreignKey: 'cattle_id', as: 'cattle' });
+
+User.hasMany(HealthRecord, { foreignKey: 'veterinarian_id', as: 'health_records' });
+HealthRecord.belongsTo(User, { foreignKey: 'veterinarian_id', as: 'veterinarian' });
+
+// Vaccination record associations
+Cattle.hasMany(VaccinationRecord, { foreignKey: 'cattle_id', as: 'vaccination_records' });
+VaccinationRecord.belongsTo(Cattle, { foreignKey: 'cattle_id', as: 'cattle' });
+
+User.hasMany(VaccinationRecord, { foreignKey: 'veterinarian_id', as: 'vaccination_records' });
+VaccinationRecord.belongsTo(User, { foreignKey: 'veterinarian_id', as: 'veterinarian' });
+
 // Export models
 export {
   sequelize,
@@ -54,6 +70,8 @@ export {
   Barn,
   Cattle,
   CattleEvent,
+  HealthRecord,
+  VaccinationRecord,
 };
 
 // Export database instance

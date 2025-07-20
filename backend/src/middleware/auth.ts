@@ -162,3 +162,6 @@ export const generateToken = (payload: any): string => {
 export const verifyToken = (token: string): any => {
   return jwt.verify(token, JWT_SECRET);
 };
+
+// Alias for authenticate
+export const authenticate = auth;

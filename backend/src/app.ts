@@ -20,6 +20,7 @@ import operationLogRoutes from '@/routes/operationLogs';
 import baseRoutes from '@/routes/bases';
 import barnRoutes from '@/routes/barns';
 import cattleRoutes from '@/routes/cattle';
+import healthRoutes from '@/routes/health';
 
 // Load environment variables
 dotenv.config();
@@ -66,6 +67,7 @@ app.use('/api/v1/operation-logs', authMiddleware, operationLogRoutes);
 app.use('/api/v1/bases', authMiddleware, baseRoutes);
 app.use('/api/v1/barns', authMiddleware, barnRoutes);
 app.use('/api/v1/cattle', authMiddleware, cattleRoutes);
+app.use('/api/v1/health', authMiddleware, healthRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
@@ -88,6 +90,13 @@ const startServer = async () => {
       logger.info('Database models synchronized');
     }
 
+    // Start scheduled tasks
+    if (process.env.NODE_ENV !== 'test') {
+      const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
+      await ScheduledTaskService.startAllTasks();
+      logger.info('Scheduled tasks started successfully');
+    }
+
     // Start server
     app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
@@ -102,6 +111,13 @@ const startServer = async () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  
+  // Stop scheduled tasks
+  if (process.env.NODE_ENV !== 'test') {
+    const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
+    ScheduledTaskService.stopAllTasks();
+  }
+  
   await sequelize.close();
   await redisClient.quit();
   process.exit(0);
@@ -109,6 +125,13 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  
+  // Stop scheduled tasks
+  if (process.env.NODE_ENV !== 'test') {
+    const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
+    ScheduledTaskService.stopAllTasks();
+  }
+  
   await sequelize.close();
   await redisClient.quit();
   process.exit(0);

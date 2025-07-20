@@ -55,6 +55,12 @@ const routes: RouteRecordRaw[] = [
         children: [
           {
             path: '',
+            name: 'HealthDashboard',
+            component: () => import('@/views/health/Dashboard.vue'),
+            meta: { title: '健康总览' }
+          },
+          {
+            path: 'records',
             name: 'HealthRecords',
             component: () => import('@/views/health/Records.vue'),
             meta: { title: '健康记录' }
@@ -64,6 +70,18 @@ const routes: RouteRecordRaw[] = [
             name: 'Vaccination',
             component: () => import('@/views/health/Vaccination.vue'),
             meta: { title: '疫苗管理' }
+          },
+          {
+            path: 'alerts',
+            name: 'HealthAlerts',
+            component: () => import('@/views/health/Alerts.vue'),
+            meta: { title: '健康预警' }
+          },
+          {
+            path: 'statistics',
+            name: 'HealthStatistics',
+            component: () => import('@/views/health/Statistics.vue'),
+            meta: { title: '健康统计' }
           }
         ]
       },
