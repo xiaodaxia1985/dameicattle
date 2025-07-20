@@ -9,6 +9,7 @@ import { logger } from '@/utils/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { notFoundHandler } from '@/middleware/notFoundHandler';
 import { authMiddleware } from '@/middleware/auth';
+import { performanceMonitoring } from '@/middleware/performanceMonitoring';
 import { sequelize } from '@/config/database';
 import { redisClient } from '@/config/redis';
 
@@ -30,6 +31,10 @@ import customerRoutes from '@/routes/customers';
 import salesOrderRoutes from '@/routes/salesOrders';
 import newsRoutes from '@/routes/news';
 import dashboardRoutes from '@/routes/dashboard';
+import dataIntegrationRoutes from '@/routes/dataIntegration';
+import performanceRoutes from '@/routes/performance';
+import monitoringRoutes from '@/routes/monitoring';
+import securityRoutes from '@/routes/security';
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +54,9 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Passport middleware
 app.use(passport.initialize());
+
+// Performance monitoring middleware
+app.use(performanceMonitoring);
 
 // Request logging
 app.use((req, res, next) => {
@@ -86,6 +94,10 @@ app.use('/api/v1/customers', authMiddleware, customerRoutes);
 app.use('/api/v1/sales-orders', authMiddleware, salesOrderRoutes);
 app.use('/api/v1/news', newsRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/data-integration', authMiddleware, dataIntegrationRoutes);
+app.use('/api/v1/performance', authMiddleware, performanceRoutes);
+app.use('/api/v1/monitoring', authMiddleware, monitoringRoutes);
+app.use('/api/v1/security', authMiddleware, securityRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
@@ -106,6 +118,18 @@ const startServer = async () => {
     if (process.env.NODE_ENV === 'development') {
       await sequelize.sync({ alter: true });
       logger.info('Database models synchronized');
+    }
+
+    // Initialize monitoring services
+    if (process.env.NODE_ENV !== 'test') {
+      const { SystemMonitoringService } = await import('@/services/SystemMonitoringService');
+      const { LogAnalysisService } = await import('@/services/LogAnalysisService');
+      const { SecurityService } = await import('@/services/SecurityService');
+      
+      SystemMonitoringService.initializeDefaultRules();
+      LogAnalysisService.initialize();
+      SecurityService.initialize();
+      logger.info('Monitoring and security services initialized successfully');
     }
 
     // Start scheduled tasks
