@@ -138,6 +138,32 @@
       "style": {
         "navigationBarTitleText": "库存盘点"
       }
+    },
+    {
+      "path": "pages/equipment/list",
+      "style": {
+        "navigationBarTitleText": "设备管理",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/equipment/detail",
+      "style": {
+        "navigationBarTitleText": "设备详情"
+      }
+    },
+    {
+      "path": "pages/equipment/report-failure",
+      "style": {
+        "navigationBarTitleText": "故障报告"
+      }
+    },
+    {
+      "path": "pages/equipment/maintenance",
+      "style": {
+        "navigationBarTitleText": "维护记录",
+        "enablePullDownRefresh": true
+      }
     }
   ],
   "globalStyle": {

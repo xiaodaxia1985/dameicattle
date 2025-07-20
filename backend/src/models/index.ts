@@ -16,6 +16,11 @@ import { ProductionMaterial } from './ProductionMaterial';
 import { Inventory } from './Inventory';
 import { InventoryTransaction } from './InventoryTransaction';
 import { InventoryAlert } from './InventoryAlert';
+import EquipmentCategory from './EquipmentCategory';
+import ProductionEquipment from './ProductionEquipment';
+import EquipmentMaintenancePlan from './EquipmentMaintenancePlan';
+import EquipmentMaintenanceRecord from './EquipmentMaintenanceRecord';
+import EquipmentFailure from './EquipmentFailure';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -120,6 +125,40 @@ InventoryAlert.belongsTo(ProductionMaterial, { foreignKey: 'material_id', as: 'm
 Base.hasMany(InventoryAlert, { foreignKey: 'base_id', as: 'inventory_alerts' });
 InventoryAlert.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
 
+// Equipment associations
+EquipmentCategory.hasMany(ProductionEquipment, { foreignKey: 'category_id', as: 'equipment' });
+ProductionEquipment.belongsTo(EquipmentCategory, { foreignKey: 'category_id', as: 'category' });
+
+Base.hasMany(ProductionEquipment, { foreignKey: 'base_id', as: 'equipment' });
+ProductionEquipment.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
+Barn.hasMany(ProductionEquipment, { foreignKey: 'barn_id', as: 'equipment' });
+ProductionEquipment.belongsTo(Barn, { foreignKey: 'barn_id', as: 'barn' });
+
+// Equipment maintenance plan associations
+ProductionEquipment.hasMany(EquipmentMaintenancePlan, { foreignKey: 'equipment_id', as: 'maintenance_plans' });
+EquipmentMaintenancePlan.belongsTo(ProductionEquipment, { foreignKey: 'equipment_id', as: 'equipment' });
+
+// Equipment maintenance record associations
+ProductionEquipment.hasMany(EquipmentMaintenanceRecord, { foreignKey: 'equipment_id', as: 'maintenance_records' });
+EquipmentMaintenanceRecord.belongsTo(ProductionEquipment, { foreignKey: 'equipment_id', as: 'equipment' });
+
+EquipmentMaintenancePlan.hasMany(EquipmentMaintenanceRecord, { foreignKey: 'plan_id', as: 'records' });
+EquipmentMaintenanceRecord.belongsTo(EquipmentMaintenancePlan, { foreignKey: 'plan_id', as: 'plan' });
+
+User.hasMany(EquipmentMaintenanceRecord, { foreignKey: 'operator_id', as: 'maintenance_records' });
+EquipmentMaintenanceRecord.belongsTo(User, { foreignKey: 'operator_id', as: 'operator' });
+
+// Equipment failure associations
+ProductionEquipment.hasMany(EquipmentFailure, { foreignKey: 'equipment_id', as: 'failures' });
+EquipmentFailure.belongsTo(ProductionEquipment, { foreignKey: 'equipment_id', as: 'equipment' });
+
+User.hasMany(EquipmentFailure, { foreignKey: 'reported_by', as: 'reported_failures' });
+EquipmentFailure.belongsTo(User, { foreignKey: 'reported_by', as: 'reporter' });
+
+User.hasMany(EquipmentFailure, { foreignKey: 'repaired_by', as: 'repaired_failures' });
+EquipmentFailure.belongsTo(User, { foreignKey: 'repaired_by', as: 'repairer' });
+
 // Export models
 export {
   sequelize,
@@ -140,6 +179,11 @@ export {
   Inventory,
   InventoryTransaction,
   InventoryAlert,
+  EquipmentCategory,
+  ProductionEquipment,
+  EquipmentMaintenancePlan,
+  EquipmentMaintenanceRecord,
+  EquipmentFailure,
 };
 
 // Export database instance
