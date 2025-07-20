@@ -10,6 +10,12 @@ import { HealthRecord } from './HealthRecord';
 import { VaccinationRecord } from './VaccinationRecord';
 import { FeedFormula } from './FeedFormula';
 import { FeedingRecord } from './FeedingRecord';
+import { MaterialCategory } from './MaterialCategory';
+import { Supplier } from './Supplier';
+import { ProductionMaterial } from './ProductionMaterial';
+import { Inventory } from './Inventory';
+import { InventoryTransaction } from './InventoryTransaction';
+import { InventoryAlert } from './InventoryAlert';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -79,6 +85,41 @@ FeedingRecord.belongsTo(Barn, { foreignKey: 'barn_id', as: 'barn' });
 User.hasMany(FeedingRecord, { foreignKey: 'operator_id', as: 'feeding_records' });
 FeedingRecord.belongsTo(User, { foreignKey: 'operator_id', as: 'operator' });
 
+// Material category associations (self-referencing)
+MaterialCategory.belongsTo(MaterialCategory, { foreignKey: 'parent_id', as: 'parent' });
+MaterialCategory.hasMany(MaterialCategory, { foreignKey: 'parent_id', as: 'children' });
+
+// Production material associations
+MaterialCategory.hasMany(ProductionMaterial, { foreignKey: 'category_id', as: 'materials' });
+ProductionMaterial.belongsTo(MaterialCategory, { foreignKey: 'category_id', as: 'category' });
+
+Supplier.hasMany(ProductionMaterial, { foreignKey: 'supplier_id', as: 'materials' });
+ProductionMaterial.belongsTo(Supplier, { foreignKey: 'supplier_id', as: 'supplier' });
+
+// Inventory associations
+ProductionMaterial.hasMany(Inventory, { foreignKey: 'material_id', as: 'inventory' });
+Inventory.belongsTo(ProductionMaterial, { foreignKey: 'material_id', as: 'material' });
+
+Base.hasMany(Inventory, { foreignKey: 'base_id', as: 'inventory' });
+Inventory.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
+// Inventory transaction associations
+ProductionMaterial.hasMany(InventoryTransaction, { foreignKey: 'material_id', as: 'transactions' });
+InventoryTransaction.belongsTo(ProductionMaterial, { foreignKey: 'material_id', as: 'material' });
+
+Base.hasMany(InventoryTransaction, { foreignKey: 'base_id', as: 'inventory_transactions' });
+InventoryTransaction.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
+User.hasMany(InventoryTransaction, { foreignKey: 'operator_id', as: 'inventory_transactions' });
+InventoryTransaction.belongsTo(User, { foreignKey: 'operator_id', as: 'operator' });
+
+// Inventory alert associations
+ProductionMaterial.hasMany(InventoryAlert, { foreignKey: 'material_id', as: 'alerts' });
+InventoryAlert.belongsTo(ProductionMaterial, { foreignKey: 'material_id', as: 'material' });
+
+Base.hasMany(InventoryAlert, { foreignKey: 'base_id', as: 'inventory_alerts' });
+InventoryAlert.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
 // Export models
 export {
   sequelize,
@@ -93,6 +134,12 @@ export {
   VaccinationRecord,
   FeedFormula,
   FeedingRecord,
+  MaterialCategory,
+  Supplier,
+  ProductionMaterial,
+  Inventory,
+  InventoryTransaction,
+  InventoryAlert,
 };
 
 // Export database instance

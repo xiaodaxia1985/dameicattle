@@ -18,6 +18,26 @@ export interface ApiResponse<T = any> {
   }
 }
 
+// Paginated response interface
+export interface PaginatedResponse<T = any> {
+  success: boolean
+  data: T
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    pages: number
+  }
+  message?: string
+  error?: {
+    code: string
+    message: string
+    details?: any
+    timestamp: string
+    path: string
+  }
+}
+
 // Create axios instance
 const request: AxiosInstance = axios.create({
   baseURL: '/api/v1',

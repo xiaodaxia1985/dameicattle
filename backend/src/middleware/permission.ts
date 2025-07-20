@@ -114,3 +114,8 @@ export const permissionMiddleware = (requiredPermissions: string[]) => {
     }
   };
 };
+
+// Single permission check function
+export const permission = (requiredPermission: string) => {
+  return permissionMiddleware([requiredPermission]);
+};

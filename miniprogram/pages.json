@@ -105,6 +105,39 @@
       "style": {
         "navigationBarTitleText": "牛棚详情"
       }
+    },
+    {
+      "path": "pages/materials/index",
+      "style": {
+        "navigationBarTitleText": "物资管理",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/materials/inventory",
+      "style": {
+        "navigationBarTitleText": "库存查询",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/materials/transaction",
+      "style": {
+        "navigationBarTitleText": "库存操作"
+      }
+    },
+    {
+      "path": "pages/materials/alerts",
+      "style": {
+        "navigationBarTitleText": "库存预警",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/materials/stocktaking",
+      "style": {
+        "navigationBarTitleText": "库存盘点"
+      }
     }
   ],
   "globalStyle": {

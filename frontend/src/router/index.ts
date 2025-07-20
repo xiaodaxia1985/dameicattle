@@ -165,6 +165,12 @@ const routes: RouteRecordRaw[] = [
         children: [
           {
             path: '',
+            name: 'MaterialsDashboard',
+            component: () => import('@/views/materials/Dashboard.vue'),
+            meta: { title: '物资总览' }
+          },
+          {
+            path: 'list',
             name: 'MaterialsList',
             component: () => import('@/views/materials/List.vue'),
             meta: { title: '物资档案' }
