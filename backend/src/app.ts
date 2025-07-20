@@ -24,6 +24,8 @@ import healthRoutes from '@/routes/health';
 import feedingRoutes from '@/routes/feeding';
 import materialRoutes from '@/routes/materials';
 import equipmentRoutes from '@/routes/equipment';
+import supplierRoutes from '@/routes/suppliers';
+import purchaseOrderRoutes from '@/routes/purchaseOrders';
 
 // Load environment variables
 dotenv.config();
@@ -74,6 +76,8 @@ app.use('/api/v1/health', authMiddleware, healthRoutes);
 app.use('/api/v1/feeding', authMiddleware, feedingRoutes);
 app.use('/api/v1/materials', authMiddleware, materialRoutes);
 app.use('/api/v1/equipment', authMiddleware, equipmentRoutes);
+app.use('/api/v1/suppliers', authMiddleware, supplierRoutes);
+app.use('/api/v1/purchase-orders', authMiddleware, purchaseOrderRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

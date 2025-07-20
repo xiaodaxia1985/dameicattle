@@ -21,6 +21,8 @@ import ProductionEquipment from './ProductionEquipment';
 import EquipmentMaintenancePlan from './EquipmentMaintenancePlan';
 import EquipmentMaintenanceRecord from './EquipmentMaintenanceRecord';
 import EquipmentFailure from './EquipmentFailure';
+import { PurchaseOrder } from './PurchaseOrder';
+import { PurchaseOrderItem } from './PurchaseOrderItem';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -159,6 +161,23 @@ EquipmentFailure.belongsTo(User, { foreignKey: 'reported_by', as: 'reporter' });
 User.hasMany(EquipmentFailure, { foreignKey: 'repaired_by', as: 'repaired_failures' });
 EquipmentFailure.belongsTo(User, { foreignKey: 'repaired_by', as: 'repairer' });
 
+// Purchase order associations
+Supplier.hasMany(PurchaseOrder, { foreignKey: 'supplier_id', as: 'purchase_orders' });
+PurchaseOrder.belongsTo(Supplier, { foreignKey: 'supplier_id', as: 'supplier' });
+
+Base.hasMany(PurchaseOrder, { foreignKey: 'base_id', as: 'purchase_orders' });
+PurchaseOrder.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
+User.hasMany(PurchaseOrder, { foreignKey: 'created_by', as: 'created_purchase_orders' });
+PurchaseOrder.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+User.hasMany(PurchaseOrder, { foreignKey: 'approved_by', as: 'approved_purchase_orders' });
+PurchaseOrder.belongsTo(User, { foreignKey: 'approved_by', as: 'approver' });
+
+// Purchase order item associations
+PurchaseOrder.hasMany(PurchaseOrderItem, { foreignKey: 'order_id', as: 'items' });
+PurchaseOrderItem.belongsTo(PurchaseOrder, { foreignKey: 'order_id', as: 'order' });
+
 // Export models
 export {
   sequelize,
@@ -184,6 +203,8 @@ export {
   EquipmentMaintenancePlan,
   EquipmentMaintenanceRecord,
   EquipmentFailure,
+  PurchaseOrder,
+  PurchaseOrderItem,
 };
 
 // Export database instance
