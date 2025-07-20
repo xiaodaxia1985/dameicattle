@@ -180,6 +180,28 @@ export const newsApi = {
     return request.delete(`/news/comments/${id}`)
   },
 
+  // ========== 门户网站公开接口 ==========
+  
+  // 获取公开新闻列表（门户网站使用）
+  getPublicNews(params?: {
+    page?: number
+    limit?: number
+    categoryId?: number
+    status?: string
+  }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
+    return request.get('/public/news', { params })
+  },
+
+  // 获取公开新闻详情（门户网站使用）
+  getPublicNewsById(id: number): Promise<ApiResponse<NewsArticle>> {
+    return request.get(`/public/news/${id}`)
+  },
+
+  // 增加新闻浏览量
+  incrementViewCount(id: number): Promise<ApiResponse<void>> {
+    return request.post(`/public/news/${id}/view`)
+  },
+
   // ========== 兼容旧接口 ==========
   
   // 获取新闻列表 (兼容旧版本)

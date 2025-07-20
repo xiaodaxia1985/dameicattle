@@ -8,8 +8,14 @@
             <h1>肉牛全生命周期管理系统</h1>
           </div>
           <nav class="nav-menu">
+            <router-link to="/portal" class="nav-item" exact>首页</router-link>
+            <router-link to="/portal/about" class="nav-item">关于我们</router-link>
+            <router-link to="/portal/products" class="nav-item">产品服务</router-link>
+            <router-link to="/portal/culture" class="nav-item">企业文化</router-link>
+            <router-link to="/portal/history" class="nav-item">发展历程</router-link>
             <router-link to="/portal/news" class="nav-item">新闻中心</router-link>
-            <router-link to="/" class="nav-item">管理后台</router-link>
+            <router-link to="/portal/contact" class="nav-item">联系我们</router-link>
+            <router-link to="/" class="nav-item login-btn">管理后台</router-link>
           </nav>
         </div>
       </div>
@@ -107,6 +113,15 @@
 
 .nav-item.router-link-active {
   background-color: rgba(255, 255, 255, 0.2);
+}
+
+.nav-item.login-btn {
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.nav-item.login-btn:hover {
+  background-color: rgba(255, 255, 255, 0.25);
 }
 
 .portal-main {
