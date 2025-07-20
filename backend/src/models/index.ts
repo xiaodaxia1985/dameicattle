@@ -27,6 +27,9 @@ import { Customer } from './Customer';
 import { CustomerVisitRecord } from './CustomerVisitRecord';
 import { SalesOrder } from './SalesOrder';
 import { SalesOrderItem } from './SalesOrderItem';
+import { NewsCategory } from './NewsCategory';
+import { NewsArticle } from './NewsArticle';
+import { NewsComment } from './NewsComment';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -209,6 +212,19 @@ SalesOrderItem.belongsTo(SalesOrder, { foreignKey: 'order_id', as: 'order' });
 Cattle.hasMany(SalesOrderItem, { foreignKey: 'cattle_id', as: 'sales_items' });
 SalesOrderItem.belongsTo(Cattle, { foreignKey: 'cattle_id', as: 'cattle' });
 
+// News associations
+NewsCategory.hasMany(NewsArticle, { foreignKey: 'category_id', as: 'articles' });
+NewsArticle.belongsTo(NewsCategory, { foreignKey: 'category_id', as: 'category' });
+
+User.hasMany(NewsArticle, { foreignKey: 'author_id', as: 'news_articles' });
+NewsArticle.belongsTo(User, { foreignKey: 'author_id', as: 'author' });
+
+NewsArticle.hasMany(NewsComment, { foreignKey: 'article_id', as: 'comments' });
+NewsComment.belongsTo(NewsArticle, { foreignKey: 'article_id', as: 'article' });
+
+NewsComment.belongsTo(NewsComment, { foreignKey: 'parent_id', as: 'parent' });
+NewsComment.hasMany(NewsComment, { foreignKey: 'parent_id', as: 'replies' });
+
 // Export models
 export {
   sequelize,
@@ -240,6 +256,9 @@ export {
   CustomerVisitRecord,
   SalesOrder,
   SalesOrderItem,
+  NewsCategory,
+  NewsArticle,
+  NewsComment,
 };
 
 // Export database instance

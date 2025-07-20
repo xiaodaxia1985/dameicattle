@@ -602,8 +602,9 @@ export class SalesOrderController {
         });
       }
     }
-  }  /
-/ 取消销售订单
+  }
+
+  // 取消销售订单
   static async cancelSalesOrder(req: Request, res: Response) {
     const transaction = await sequelize.transaction();
     

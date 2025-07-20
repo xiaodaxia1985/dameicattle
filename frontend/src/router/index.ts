@@ -190,6 +190,44 @@ const routes: RouteRecordRaw[] = [
         ]
       },
       {
+        path: 'news',
+        name: 'News',
+        component: () => import('@/views/news/index.vue'),
+        meta: { title: '新闻管理', icon: 'Document' },
+        children: [
+          {
+            path: '',
+            name: 'NewsList',
+            component: () => import('@/views/news/NewsList.vue'),
+            meta: { title: '新闻列表' }
+          },
+          {
+            path: 'create',
+            name: 'NewsCreate',
+            component: () => import('@/views/news/NewsEditor.vue'),
+            meta: { title: '新建文章', hidden: true }
+          },
+          {
+            path: 'edit/:id',
+            name: 'NewsEdit',
+            component: () => import('@/views/news/NewsEditor.vue'),
+            meta: { title: '编辑文章', hidden: true }
+          },
+          {
+            path: 'view/:id',
+            name: 'NewsView',
+            component: () => import('@/views/news/NewsView.vue'),
+            meta: { title: '查看文章', hidden: true }
+          },
+          {
+            path: 'categories',
+            name: 'NewsCategories',
+            component: () => import('@/views/news/CategoryManager.vue'),
+            meta: { title: '分类管理' }
+          }
+        ]
+      },
+      {
         path: 'system',
         name: 'System',
         component: () => import('@/views/system/index.vue'),
@@ -220,6 +258,26 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '操作日志' }
           }
         ]
+      }
+    ]
+  },
+  {
+    path: '/portal',
+    name: 'Portal',
+    component: () => import('@/views/portal/index.vue'),
+    meta: { requiresAuth: false },
+    children: [
+      {
+        path: 'news',
+        name: 'PortalNews',
+        component: () => import('@/views/portal/NewsPortal.vue'),
+        meta: { title: '新闻中心' }
+      },
+      {
+        path: 'news/:id',
+        name: 'PortalNewsDetail',
+        component: () => import('@/views/portal/NewsDetail.vue'),
+        meta: { title: '新闻详情' }
       }
     ]
   },

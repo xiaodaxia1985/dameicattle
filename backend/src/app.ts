@@ -28,6 +28,7 @@ import supplierRoutes from '@/routes/suppliers';
 import purchaseOrderRoutes from '@/routes/purchaseOrders';
 import customerRoutes from '@/routes/customers';
 import salesOrderRoutes from '@/routes/salesOrders';
+import newsRoutes from '@/routes/news';
 
 // Load environment variables
 dotenv.config();
@@ -82,6 +83,7 @@ app.use('/api/v1/suppliers', authMiddleware, supplierRoutes);
 app.use('/api/v1/purchase-orders', authMiddleware, purchaseOrderRoutes);
 app.use('/api/v1/customers', authMiddleware, customerRoutes);
 app.use('/api/v1/sales-orders', authMiddleware, salesOrderRoutes);
+app.use('/api/v1/news', newsRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);
