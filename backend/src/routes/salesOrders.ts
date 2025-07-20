@@ -3,7 +3,7 @@ import { SalesOrderController } from '@/controllers/SalesOrderController';
 import { salesOrderValidators } from '@/validators/salesOrder';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
-import { validation } from '@/middleware/validation';
+import { validate } from '@/middleware/validation';
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.use(auth);
 // 获取销售订单列表
 router.get('/', 
   salesOrderValidators.list,
-  validation,
+  validate(salesOrderValidators.list),
   permission('sales:read'),
   SalesOrderController.getSalesOrders
 );
@@ -21,7 +21,7 @@ router.get('/',
 // 获取销售统计数据
 router.get('/statistics',
   salesOrderValidators.statistics,
-  validation,
+  validate(salesOrderValidators.statistics),
   permission('sales:read'),
   SalesOrderController.getSalesStatistics
 );
@@ -29,7 +29,7 @@ router.get('/statistics',
 // 获取销售订单详情
 router.get('/:id',
   salesOrderValidators.detail,
-  validation,
+  validate(salesOrderValidators.detail),
   permission('sales:read'),
   SalesOrderController.getSalesOrder
 );
@@ -37,7 +37,7 @@ router.get('/:id',
 // 创建销售订单
 router.post('/',
   salesOrderValidators.create,
-  validation,
+  validate(salesOrderValidators.create),
   permission('sales:create'),
   SalesOrderController.createSalesOrder
 );
@@ -45,7 +45,7 @@ router.post('/',
 // 更新销售订单
 router.put('/:id',
   salesOrderValidators.update,
-  validation,
+  validate(salesOrderValidators.update),
   permission('sales:update'),
   SalesOrderController.updateSalesOrder
 );
@@ -53,7 +53,7 @@ router.put('/:id',
 // 审批销售订单
 router.post('/:id/approve',
   salesOrderValidators.approve,
-  validation,
+  validate(salesOrderValidators.approve),
   permission('sales:approve'),
   SalesOrderController.approveSalesOrder
 );
@@ -61,7 +61,7 @@ router.post('/:id/approve',
 // 取消销售订单
 router.post('/:id/cancel',
   salesOrderValidators.cancel,
-  validation,
+  validate(salesOrderValidators.cancel),
   permission('sales:update'),
   SalesOrderController.cancelSalesOrder
 );
@@ -69,7 +69,7 @@ router.post('/:id/cancel',
 // 更新订单交付状态
 router.post('/:id/delivery',
   salesOrderValidators.updateDelivery,
-  validation,
+  validate(salesOrderValidators.updateDelivery),
   permission('sales:update'),
   SalesOrderController.updateDeliveryStatus
 );
@@ -77,7 +77,7 @@ router.post('/:id/delivery',
 // 更新订单付款状态
 router.post('/:id/payment',
   salesOrderValidators.updatePayment,
-  validation,
+  validate(salesOrderValidators.updatePayment),
   permission('sales:update'),
   SalesOrderController.updatePaymentStatus
 );

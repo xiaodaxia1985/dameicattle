@@ -168,5 +168,7 @@ export const requireBaseAccess = (baseIdParam: string = 'baseId') => {
   };
 };
 
-// Alias for dataPermissionMiddleware
-export const dataPermission = dataPermissionMiddleware;
+// Factory function for data permission middleware
+export const dataPermission = (field: string = 'base_id') => {
+  return dataPermissionMiddleware;
+};

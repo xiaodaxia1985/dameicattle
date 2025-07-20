@@ -92,7 +92,7 @@ const cattleEventSchema = Joi.object({
 });
 
 // Cattle validation middleware
-export const validateCattle = (req: Request, res: Response, next: NextFunction) => {
+export const validateCattle = (req: Request, res: Response, next: NextFunction): void => {
   const { error, value } = cattleSchema.validate(req.body, {
     abortEarly: false,
     stripUnknown: true
@@ -106,7 +106,7 @@ export const validateCattle = (req: Request, res: Response, next: NextFunction) 
 
     logger.warn('Cattle validation failed:', { errors, body: req.body });
 
-    return res.status(422).json({
+    res.status(422).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
@@ -114,6 +114,7 @@ export const validateCattle = (req: Request, res: Response, next: NextFunction) 
         details: errors
       }
     });
+    return;
   }
 
   req.body = value;
@@ -121,7 +122,7 @@ export const validateCattle = (req: Request, res: Response, next: NextFunction) 
 };
 
 // Cattle event validation middleware
-export const validateCattleEvent = (req: Request, res: Response, next: NextFunction) => {
+export const validateCattleEvent = (req: Request, res: Response, next: NextFunction): void => {
   const { error, value } = cattleEventSchema.validate(req.body, {
     abortEarly: false,
     stripUnknown: true
@@ -135,7 +136,7 @@ export const validateCattleEvent = (req: Request, res: Response, next: NextFunct
 
     logger.warn('Cattle event validation failed:', { errors, body: req.body });
 
-    return res.status(422).json({
+    res.status(422).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
@@ -143,6 +144,7 @@ export const validateCattleEvent = (req: Request, res: Response, next: NextFunct
         details: errors
       }
     });
+    return;
   }
 
   req.body = value;
@@ -156,7 +158,7 @@ const batchCattleSchema = Joi.array().items(cattleSchema).min(1).max(100).messag
 });
 
 // Batch cattle validation middleware
-export const validateBatchCattle = (req: Request, res: Response, next: NextFunction) => {
+export const validateBatchCattle = (req: Request, res: Response, next: NextFunction): void => {
   const { error, value } = batchCattleSchema.validate(req.body, {
     abortEarly: false,
     stripUnknown: true
@@ -170,7 +172,7 @@ export const validateBatchCattle = (req: Request, res: Response, next: NextFunct
 
     logger.warn('Batch cattle validation failed:', { errors, body: req.body });
 
-    return res.status(422).json({
+    res.status(422).json({
       success: false,
       error: {
         code: 'VALIDATION_ERROR',
@@ -178,6 +180,7 @@ export const validateBatchCattle = (req: Request, res: Response, next: NextFunct
         details: errors
       }
     });
+    return;
   }
 
   req.body = value;

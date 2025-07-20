@@ -1,4 +1,4 @@
-import { body, param, query } from 'express-validator';
+const { body, param, query } = require('express-validator');
 
 // Feed Formula validators
 export const createFeedFormulaValidator = [

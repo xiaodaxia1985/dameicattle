@@ -335,7 +335,7 @@ export class PerformanceOptimizationService {
 
       // 缓存结果
       this.queryCache.set(key, { result, timestamp: Date.now(), ttl });
-      await redisClient.setex(`query:${key}`, Math.floor(ttl / 1000), JSON.stringify(result));
+      await redisClient.setEx(`query:${key}`, Math.floor(ttl / 1000), JSON.stringify(result));
 
       return result;
     } catch (error) {
@@ -358,14 +358,14 @@ export class PerformanceOptimizationService {
         // 清理Redis中的缓存
         const redisKeys = await redisClient.keys(`query:*${pattern}*`);
         if (redisKeys.length > 0) {
-          await redisClient.del(...redisKeys);
+          await redisClient.del(redisKeys);
         }
       } else {
         // 清理所有缓存
         this.queryCache.clear();
         const redisKeys = await redisClient.keys('query:*');
         if (redisKeys.length > 0) {
-          await redisClient.del(...redisKeys);
+          await redisClient.del(redisKeys);
         }
       }
 
@@ -623,7 +623,10 @@ export class PerformanceOptimizationService {
           end
         end
         return expired
-      `, 0);
+      `, {
+        keys: [],
+        arguments: []
+      });
 
       logger.info('过期缓存清理完成');
     } catch (error) {
@@ -634,8 +637,8 @@ export class PerformanceOptimizationService {
   private static async optimizeMemoryUsage(): Promise<void> {
     try {
       // 设置Redis内存优化配置
-      await redisClient.config('SET', 'maxmemory-policy', 'allkeys-lru');
-      await redisClient.config('SET', 'maxmemory-samples', '10');
+      await redisClient.configSet('maxmemory-policy', 'allkeys-lru');
+      await redisClient.configSet('maxmemory-samples', '10');
 
       logger.info('Redis内存优化配置完成');
     } catch (error) {

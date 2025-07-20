@@ -3,7 +3,7 @@ import { SupplierController } from '@/controllers/SupplierController';
 import { supplierValidators } from '@/validators/supplier';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
-import { validation } from '@/middleware/validation';
+import { validate } from '@/middleware/validation';
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.use(auth);
 // 获取供应商列表
 router.get('/', 
   supplierValidators.list,
-  validation,
+  validate(supplierValidators.list),
   permission('supplier:read'),
   SupplierController.getSuppliers
 );
@@ -27,7 +27,7 @@ router.get('/types',
 // 获取供应商详情
 router.get('/:id',
   supplierValidators.detail,
-  validation,
+  validate(supplierValidators.detail),
   permission('supplier:read'),
   SupplierController.getSupplier
 );
@@ -35,7 +35,7 @@ router.get('/:id',
 // 创建供应商
 router.post('/',
   supplierValidators.create,
-  validation,
+  validate(supplierValidators.create),
   permission('supplier:create'),
   SupplierController.createSupplier
 );
@@ -43,7 +43,7 @@ router.post('/',
 // 更新供应商
 router.put('/:id',
   supplierValidators.update,
-  validation,
+  validate(supplierValidators.update),
   permission('supplier:update'),
   SupplierController.updateSupplier
 );
@@ -51,7 +51,7 @@ router.put('/:id',
 // 删除供应商
 router.delete('/:id',
   supplierValidators.delete,
-  validation,
+  validate(supplierValidators.delete),
   permission('supplier:delete'),
   SupplierController.deleteSupplier
 );
@@ -59,7 +59,7 @@ router.delete('/:id',
 // 获取供应商统计信息
 router.get('/:id/statistics',
   supplierValidators.statistics,
-  validation,
+  validate(supplierValidators.statistics),
   permission('supplier:read'),
   SupplierController.getSupplierStatistics
 );
@@ -67,7 +67,7 @@ router.get('/:id/statistics',
 // 更新供应商评级
 router.put('/:id/rating',
   supplierValidators.updateRating,
-  validation,
+  validate(supplierValidators.updateRating),
   permission('supplier:update'),
   SupplierController.updateSupplierRating
 );
@@ -75,7 +75,7 @@ router.put('/:id/rating',
 // 供应商对比分析
 router.post('/compare',
   supplierValidators.compare,
-  validation,
+  validate(supplierValidators.compare),
   permission('supplier:read'),
   SupplierController.compareSuppliers
 );

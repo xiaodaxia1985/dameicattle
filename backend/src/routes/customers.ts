@@ -3,7 +3,7 @@ import { CustomerController } from '@/controllers/CustomerController';
 import { customerValidators } from '@/validators/customer';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
-import { validation } from '@/middleware/validation';
+import { validate } from '@/middleware/validation';
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.use(auth);
 // 获取客户列表
 router.get('/', 
   customerValidators.list,
-  validation,
+  validate,
   permission('customer:read'),
   CustomerController.getCustomers
 );
@@ -27,7 +27,7 @@ router.get('/types',
 // 客户价值分析
 router.get('/value-analysis',
   customerValidators.valueAnalysis,
-  validation,
+  validate,
   permission('customer:read'),
   CustomerController.analyzeCustomerValue
 );
@@ -35,7 +35,7 @@ router.get('/value-analysis',
 // 获取客户详情
 router.get('/:id',
   customerValidators.detail,
-  validation,
+  validate,
   permission('customer:read'),
   CustomerController.getCustomer
 );
@@ -43,7 +43,7 @@ router.get('/:id',
 // 创建客户
 router.post('/',
   customerValidators.create,
-  validation,
+  validate,
   permission('customer:create'),
   CustomerController.createCustomer
 );
@@ -51,7 +51,7 @@ router.post('/',
 // 更新客户
 router.put('/:id',
   customerValidators.update,
-  validation,
+  validate,
   permission('customer:update'),
   CustomerController.updateCustomer
 );
@@ -59,7 +59,7 @@ router.put('/:id',
 // 删除客户
 router.delete('/:id',
   customerValidators.delete,
-  validation,
+  validate,
   permission('customer:delete'),
   CustomerController.deleteCustomer
 );
@@ -67,7 +67,7 @@ router.delete('/:id',
 // 获取客户统计信息
 router.get('/:id/statistics',
   customerValidators.statistics,
-  validation,
+  validate,
   permission('customer:read'),
   CustomerController.getCustomerStatistics
 );
@@ -75,7 +75,7 @@ router.get('/:id/statistics',
 // 更新客户信用评级
 router.put('/:id/rating',
   customerValidators.updateRating,
-  validation,
+  validate,
   permission('customer:update'),
   CustomerController.updateCustomerRating
 );
@@ -83,7 +83,7 @@ router.put('/:id/rating',
 // 获取客户回访记录列表
 router.get('/:customer_id/visits',
   customerValidators.visitList,
-  validation,
+  validate,
   permission('customer:read'),
   CustomerController.getVisitRecords
 );
@@ -91,7 +91,7 @@ router.get('/:customer_id/visits',
 // 创建客户回访记录
 router.post('/:customer_id/visits',
   customerValidators.createVisit,
-  validation,
+  validate,
   permission('customer:create'),
   CustomerController.createVisitRecord
 );
@@ -99,7 +99,7 @@ router.post('/:customer_id/visits',
 // 更新客户回访记录
 router.put('/visits/:id',
   customerValidators.updateVisit,
-  validation,
+  validate,
   permission('customer:update'),
   CustomerController.updateVisitRecord
 );

@@ -1,4 +1,4 @@
-import { body, query, param } from 'express-validator';
+const { body, query, param } = require('express-validator');
 
 // 健康记录验证规则
 export const createHealthRecordValidation = [

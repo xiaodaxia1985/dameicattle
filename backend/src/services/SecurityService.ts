@@ -686,7 +686,7 @@ export class SecurityService {
       const key = `audit:${audit.audit_id}`;
       const ttl = this.securityPolicy.audit_policy.retention_days * 24 * 60 * 60;
       
-      await redisClient.setex(key, ttl, JSON.stringify(audit));
+      await redisClient.setEx(key, ttl, JSON.stringify(audit));
     } catch (error) {
       logger.error('保存审计日志到Redis失败:', error);
     }

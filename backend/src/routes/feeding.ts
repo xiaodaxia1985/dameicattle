@@ -3,7 +3,7 @@ import { FeedingController } from '@/controllers/FeedingController';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
 import { dataPermission } from '@/middleware/dataPermission';
-import { validation } from '@/middleware/validation';
+import { validate } from '@/middleware/validation';
 import { operationLog } from '@/middleware/operationLog';
 import {
   createFeedFormulaValidator,
@@ -27,21 +27,21 @@ router.use(auth);
 router.get(
   '/formulas',
   permission('feeding:read'),
-  validation(getFeedFormulasValidator),
+  validate(getFeedFormulasValidator),
   FeedingController.getFeedFormulas
 );
 
 router.get(
   '/formulas/:id',
   permission('feeding:read'),
-  validation(getFeedFormulaValidator),
+  validate(getFeedFormulaValidator),
   FeedingController.getFeedFormula
 );
 
 router.post(
   '/formulas',
   permission('feeding:create'),
-  validation(createFeedFormulaValidator),
+  validate(createFeedFormulaValidator),
   operationLog('创建饲料配方'),
   FeedingController.createFeedFormula
 );
@@ -49,7 +49,7 @@ router.post(
 router.put(
   '/formulas/:id',
   permission('feeding:update'),
-  validation(updateFeedFormulaValidator),
+  validate(updateFeedFormulaValidator),
   operationLog('更新饲料配方'),
   FeedingController.updateFeedFormula
 );
@@ -57,7 +57,7 @@ router.put(
 router.delete(
   '/formulas/:id',
   permission('feeding:delete'),
-  validation(getFeedFormulaValidator),
+  validate(getFeedFormulaValidator),
   operationLog('删除饲料配方'),
   FeedingController.deleteFeedFormula
 );
@@ -67,14 +67,14 @@ router.get(
   '/records',
   permission('feeding:read'),
   dataPermission('base_id'),
-  validation(getFeedingRecordsValidator),
+  validate(getFeedingRecordsValidator),
   FeedingController.getFeedingRecords
 );
 
 router.get(
   '/records/:id',
   permission('feeding:read'),
-  validation(getFeedingRecordValidator),
+  validate(getFeedingRecordValidator),
   FeedingController.getFeedingRecord
 );
 
@@ -82,7 +82,7 @@ router.post(
   '/records',
   permission('feeding:create'),
   dataPermission('base_id'),
-  validation(createFeedingRecordValidator),
+  validate(createFeedingRecordValidator),
   operationLog('创建饲喂记录'),
   FeedingController.createFeedingRecord
 );
@@ -90,7 +90,7 @@ router.post(
 router.put(
   '/records/:id',
   permission('feeding:update'),
-  validation(updateFeedingRecordValidator),
+  validate(updateFeedingRecordValidator),
   operationLog('更新饲喂记录'),
   FeedingController.updateFeedingRecord
 );
@@ -98,7 +98,7 @@ router.put(
 router.delete(
   '/records/:id',
   permission('feeding:delete'),
-  validation(getFeedingRecordValidator),
+  validate(getFeedingRecordValidator),
   operationLog('删除饲喂记录'),
   FeedingController.deleteFeedingRecord
 );
@@ -107,7 +107,7 @@ router.delete(
 router.post(
   '/records/batch',
   permission('feeding:create'),
-  validation(batchCreateFeedingRecordsValidator),
+  validate(batchCreateFeedingRecordsValidator),
   operationLog('批量创建饲喂记录'),
   FeedingController.batchCreateFeedingRecords
 );
@@ -117,7 +117,7 @@ router.get(
   '/statistics',
   permission('feeding:read'),
   dataPermission('base_id'),
-  validation(getFeedingStatisticsValidator),
+  validate(getFeedingStatisticsValidator),
   FeedingController.getFeedingStatistics
 );
 
@@ -133,7 +133,7 @@ router.get(
 router.get(
   '/formulas/:id/efficiency',
   permission('feeding:read'),
-  validation(getFeedFormulaValidator),
+  validate(getFeedFormulaValidator),
   FeedingController.getFormulaEfficiency
 );
 
@@ -142,12 +142,12 @@ router.get(
   '/plans',
   permission('feeding:read'),
   dataPermission('base_id'),
-  FeedingController.getFeedingPlans || ((req, res) => {
+  (req, res) => {
     res.status(501).json({
       success: false,
       message: '饲喂计划功能即将推出'
     });
-  })
+  }
 );
 
 router.post(

@@ -3,7 +3,7 @@ import { PurchaseOrderController } from '@/controllers/PurchaseOrderController';
 import { purchaseOrderValidators } from '@/validators/purchaseOrder';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
-import { validation } from '@/middleware/validation';
+import { validate } from '@/middleware/validation';
 
 const router = Router();
 
@@ -13,7 +13,7 @@ router.use(auth);
 // 获取采购订单列表
 router.get('/',
   purchaseOrderValidators.list,
-  validation,
+  validate(purchaseOrderValidators.list),
   permission('purchase_order:read'),
   PurchaseOrderController.getPurchaseOrders
 );
@@ -27,7 +27,7 @@ router.get('/pending',
 // 获取采购统计
 router.get('/statistics',
   purchaseOrderValidators.statistics,
-  validation,
+  validate(purchaseOrderValidators.statistics),
   permission('purchase_order:read'),
   PurchaseOrderController.getPurchaseStatistics
 );
@@ -35,7 +35,7 @@ router.get('/statistics',
 // 获取采购订单详情
 router.get('/:id',
   purchaseOrderValidators.detail,
-  validation,
+  validate(purchaseOrderValidators.detail),
   permission('purchase_order:read'),
   PurchaseOrderController.getPurchaseOrder
 );
@@ -43,7 +43,7 @@ router.get('/:id',
 // 创建采购订单
 router.post('/',
   purchaseOrderValidators.create,
-  validation,
+  validate(purchaseOrderValidators.create),
   permission('purchase_order:create'),
   PurchaseOrderController.createPurchaseOrder
 );
@@ -51,7 +51,7 @@ router.post('/',
 // 更新采购订单
 router.put('/:id',
   purchaseOrderValidators.update,
-  validation,
+  validate(purchaseOrderValidators.update),
   permission('purchase_order:update'),
   PurchaseOrderController.updatePurchaseOrder
 );
@@ -59,7 +59,7 @@ router.put('/:id',
 // 删除采购订单
 router.delete('/:id',
   purchaseOrderValidators.delete,
-  validation,
+  validate(purchaseOrderValidators.delete),
   permission('purchase_order:delete'),
   PurchaseOrderController.deletePurchaseOrder
 );
@@ -67,7 +67,7 @@ router.delete('/:id',
 // 审批采购订单
 router.post('/:id/approve',
   purchaseOrderValidators.approve,
-  validation,
+  validate(purchaseOrderValidators.approve),
   permission('purchase_order:approve'),
   PurchaseOrderController.approvePurchaseOrder
 );
@@ -75,7 +75,7 @@ router.post('/:id/approve',
 // 确认收货
 router.post('/:id/receipt',
   purchaseOrderValidators.confirmReceipt,
-  validation,
+  validate(purchaseOrderValidators.confirmReceipt),
   permission('purchase_order:receipt'),
   PurchaseOrderController.confirmReceipt
 );

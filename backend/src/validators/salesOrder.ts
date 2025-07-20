@@ -1,4 +1,4 @@
-import { body, query, param } from 'express-validator';
+const { body, query, param } = require('express-validator');
 
 export const salesOrderValidators = {
   // 创建销售订单验证

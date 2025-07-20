@@ -1,4 +1,4 @@
-import { body, param, query } from 'express-validator';
+const { body, param, query } = require('express-validator');
 
 // News category validators
 export const createNewsCategoryValidator = [

@@ -402,7 +402,7 @@ export class LogAnalysisService {
       const key = `log:${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const ttl = this.LOG_RETENTION_DAYS * 24 * 60 * 60; // 秒
       
-      await redisClient.setex(key, ttl, JSON.stringify(entry));
+      await redisClient.setEx(key, ttl, JSON.stringify(entry));
     } catch (error) {
       // 静默处理Redis保存错误，避免影响主要业务流程
       console.error('保存日志到Redis失败:', error);
@@ -542,7 +542,7 @@ export class LogAnalysisService {
       const batchSize = 100;
       for (let i = 0; i < keys.length; i += batchSize) {
         const batch = keys.slice(i, i + batchSize);
-        const values = await redisClient.mget(...batch);
+        const values = await redisClient.mGet(batch);
         
         for (const value of values) {
           if (value) {

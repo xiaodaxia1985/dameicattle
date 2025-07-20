@@ -60,7 +60,7 @@ export class CacheService {
       }
 
       if (ttl > 0) {
-        await redisClient.setex(fullKey, ttl, serializedValue);
+        await redisClient.setEx(fullKey, ttl, serializedValue);
       } else {
         await redisClient.set(fullKey, serializedValue);
       }
@@ -152,7 +152,7 @@ export class CacheService {
         return 0;
       }
 
-      const result = await redisClient.del(...keys);
+      const result = await redisClient.del(keys);
       this.stats.deletes += result;
       
       logger.info(`批量删除缓存: ${keys.length} 个键`);
@@ -308,7 +308,7 @@ export class CacheService {
       if (prefix) {
         await this.deletePattern('*', prefix);
       } else {
-        await redisClient.flushdb();
+        await redisClient.flushDb();
       }
       
       logger.info(`缓存清空完成: ${prefix || 'all'}`);
@@ -340,7 +340,7 @@ export class CacheService {
       const { prefix = this.DEFAULT_PREFIX, serialize = true } = options;
       const fullKeys = keys.map(key => `${prefix}:${key}`);
       
-      const values = await redisClient.mget(...fullKeys);
+      const values = await redisClient.mGet(fullKeys);
       
       return values.map(value => {
         if (value === null) {
@@ -382,7 +382,7 @@ export class CacheService {
         serialize = true 
       } = options;
 
-      const pipeline = redisClient.pipeline();
+      const pipeline = redisClient.multi();
 
       for (const { key, value } of keyValuePairs) {
         const fullKey = `${prefix}:${key}`;
@@ -417,7 +417,10 @@ export class CacheService {
       const lockKey = `${prefix}:lock:${key}`;
       const lockValue = `${Date.now()}-${Math.random()}`;
       
-      const result = await redisClient.set(lockKey, lockValue, 'EX', ttl, 'NX');
+      const result = await redisClient.set(lockKey, lockValue, {
+        EX: ttl,
+        NX: true
+      });
       
       if (result === 'OK') {
         logger.debug(`获取分布式锁成功: ${lockKey}`);
@@ -450,7 +453,10 @@ export class CacheService {
         end
       `;
       
-      const result = await redisClient.eval(script, 1, lockKey, lockValue);
+      const result = await redisClient.eval(script, {
+        keys: [lockKey],
+        arguments: [lockValue]
+      });
       
       if (result === 1) {
         logger.debug(`释放分布式锁成功: ${lockKey}`);

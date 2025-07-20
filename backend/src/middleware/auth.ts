@@ -1,18 +1,22 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import passport from 'passport';
+import * as jwt from 'jsonwebtoken';
+import * as passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { User } from '@/models/User';
 import { logger } from '@/utils/logger';
 
 // Define authenticated request interface
 export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    username: string;
-    role_id?: number;
-    base_id?: number;
-  };
+  user?: User;
+}
+
+// Extend Express Request interface globally
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
