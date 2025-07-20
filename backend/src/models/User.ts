@@ -51,7 +51,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   }
 
   public toJSON(): Partial<UserAttributes> {
-    const values = { ...this.get() };
+    const values = { ...this.get() } as any;
     delete values.password_hash;
     delete values.password_reset_token;
     return values;
@@ -77,7 +77,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
 
   public async resetFailedAttempts(): Promise<void> {
     this.failed_login_attempts = 0;
-    this.locked_until = null;
+    this.locked_until = undefined;
     if (this.status === 'locked') {
       this.status = 'active';
     }
@@ -110,10 +110,10 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     }
 
     this.password_hash = await User.hashPassword(newPassword);
-    this.password_reset_token = null;
-    this.password_reset_expires = null;
+    this.password_reset_token = undefined;
+    this.password_reset_expires = undefined;
     this.failed_login_attempts = 0;
-    this.locked_until = null;
+    this.locked_until = undefined;
     if (this.status === 'locked') {
       this.status = 'active';
     }

@@ -5,10 +5,14 @@
 <script setup>
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { useAuthStore } from '@/stores/auth'
+import { useBaseStore } from '@/stores/base'
+import { useCacheStore } from '@/stores/cache'
 import { dataSyncManager } from '@/utils/sync'
 import { permissionManager } from '@/utils/permission'
 
 const authStore = useAuthStore()
+const baseStore = useBaseStore()
+const cacheStore = useCacheStore()
 
 onLaunch(() => {
   console.log('App Launch')
@@ -34,19 +38,25 @@ const initApp = async () => {
     const systemInfo = await getSystemInfo()
     console.log('系统信息:', systemInfo)
     
-    // 2. 初始化数据同步管理器
+    // 2. 初始化缓存系统
+    cacheStore.initCache()
+    
+    // 3. 初始化数据同步管理器
     dataSyncManager.init()
     
-    // 3. 检查登录状态
+    // 4. 检查登录状态
     await authStore.checkLoginStatus()
     
-    // 4. 初始化权限管理器
+    // 5. 恢复当前基地
+    baseStore.restoreCurrentBase()
+    
+    // 6. 初始化权限管理器
     permissionManager.init()
     
-    // 5. 设置全局错误处理
+    // 7. 设置全局错误处理
     setupGlobalErrorHandler()
     
-    // 6. 监听同步事件
+    // 8. 监听同步事件
     setupSyncEventListeners()
     
     console.log('应用初始化完成')

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { AuthController } from '@/controllers/AuthController';
 import { validateRequest } from '@/middleware/validation';
-import { authenticateToken } from '@/middleware/auth';
+import { authMiddleware } from '@/middleware/auth';
 import { 
   loginSchema, 
   registerSchema, 
@@ -21,10 +21,10 @@ router.post('/login', validateRequest(loginSchema), authController.login);
 router.post('/register', validateRequest(registerSchema), authController.register);
 
 // POST /api/v1/auth/refresh
-router.post('/refresh', authenticateToken, authController.refreshToken);
+router.post('/refresh', authMiddleware, authController.refreshToken);
 
 // POST /api/v1/auth/logout
-router.post('/logout', authenticateToken, authController.logout);
+router.post('/logout', authMiddleware, authController.logout);
 
 // POST /api/v1/auth/request-password-reset
 router.post('/request-password-reset', validateRequest(passwordResetRequestSchema), authController.requestPasswordReset);
@@ -36,9 +36,9 @@ router.post('/reset-password', validateRequest(passwordResetSchema), authControl
 router.post('/wechat-login', validateRequest(wechatLoginSchema), authController.wechatLogin);
 
 // POST /api/v1/auth/bind-user
-router.post('/bind-user', authenticateToken, validateRequest(bindUserSchema), authController.bindUserToBase);
+router.post('/bind-user', authMiddleware, validateRequest(bindUserSchema), authController.bindUserToBase);
 
 // GET /api/v1/auth/profile
-router.get('/profile', authenticateToken, authController.getWechatUserProfile);
+router.get('/profile', authMiddleware, authController.getWechatUserProfile);
 
 export default router;

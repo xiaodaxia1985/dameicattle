@@ -25,6 +25,52 @@ const operationLogs: OperationLogEntry[] = [];
  * Operation logging middleware
  * Logs all user operations for audit purposes
  */
+export const operationLog = (operation: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const startTime = Date.now();
+    const user = req.user as any;
+    
+    // Create log entry
+    const logEntry: OperationLogEntry = {
+      user_id: user?.id,
+      username: user?.username,
+      operation,
+      resource: req.baseUrl || req.path,
+      resource_id: req.params.id,
+      method: req.method,
+      path: req.path,
+      ip_address: req.ip || req.connection.remoteAddress || 'unknown',
+      user_agent: req.get('User-Agent'),
+      request_body: req.method !== 'GET' ? req.body : undefined,
+      timestamp: new Date(),
+    };
+
+    // Override res.json to capture response status
+    const originalJson = res.json;
+    res.json = function(body: any) {
+      logEntry.response_status = res.statusCode;
+      logEntry.duration = Date.now() - startTime;
+      
+      // Store the log entry
+      operationLogs.push(logEntry);
+      
+      // Log to file/console
+      logger.info('Operation logged', {
+        operation: logEntry.operation,
+        resource: logEntry.resource,
+        user: logEntry.username,
+        status: logEntry.response_status,
+        duration: logEntry.duration,
+      });
+      
+      // Call original json method
+      return originalJson.call(this, body);
+    };
+
+    next();
+  };
+};
+
 export const operationLogMiddleware = (operation: string, resource: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();

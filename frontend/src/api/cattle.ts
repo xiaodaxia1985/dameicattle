@@ -3,18 +3,48 @@ import type { ApiResponse } from './request'
 
 // 牛只相关类型定义
 export interface Cattle {
-  id: string
-  earTag: string
+  id: number
+  ear_tag: string
   breed: string
   gender: 'male' | 'female'
-  birthDate: string
-  weight: number
-  healthStatus: 'healthy' | 'sick' | 'treatment'
-  baseId: number
-  barnId: number
-  photos: string[]
-  createdAt: string
-  updatedAt: string
+  birth_date?: string
+  weight?: number
+  health_status: 'healthy' | 'sick' | 'treatment'
+  base_id: number
+  barn_id?: number
+  photos?: string[]
+  parent_male_id?: number
+  parent_female_id?: number
+  source: 'born' | 'purchased' | 'transferred'
+  purchase_price?: number
+  purchase_date?: string
+  supplier_id?: number
+  status: 'active' | 'sold' | 'dead' | 'transferred'
+  notes?: string
+  created_at: string
+  updated_at: string
+  age_months?: number
+  age_days?: number
+  base?: {
+    id: number
+    name: string
+    code: string
+  }
+  barn?: {
+    id: number
+    name: string
+    code: string
+  }
+  father?: {
+    id: number
+    ear_tag: string
+    breed: string
+  }
+  mother?: {
+    id: number
+    ear_tag: string
+    breed: string
+  }
 }
 
 export interface CattleListParams {
@@ -25,137 +55,208 @@ export interface CattleListParams {
   breed?: string
   gender?: 'male' | 'female'
   healthStatus?: 'healthy' | 'sick' | 'treatment'
-  keyword?: string
+  status?: 'active' | 'sold' | 'dead' | 'transferred'
+  search?: string
+  sortBy?: string
+  sortOrder?: 'ASC' | 'DESC'
 }
 
 export interface CattleListResponse {
   data: Cattle[]
-  total: number
-  page: number
-  limit: number
+  pagination: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
 }
 
 export interface CreateCattleRequest {
-  earTag: string
+  ear_tag: string
   breed: string
   gender: 'male' | 'female'
-  birthDate: string
-  weight: number
-  baseId: number
-  barnId: number
+  birth_date?: string
+  weight?: number
+  base_id: number
+  barn_id?: number
   photos?: string[]
+  parent_male_id?: number
+  parent_female_id?: number
+  source?: 'born' | 'purchased' | 'transferred'
+  purchase_price?: number
+  purchase_date?: string
+  supplier_id?: number
+  notes?: string
 }
 
 export interface UpdateCattleRequest {
+  ear_tag?: string
   breed?: string
   weight?: number
-  healthStatus?: 'healthy' | 'sick' | 'treatment'
-  baseId?: number
-  barnId?: number
+  health_status?: 'healthy' | 'sick' | 'treatment'
+  barn_id?: number
   photos?: string[]
+  notes?: string
 }
 
 export interface CattleEvent {
-  id: string
-  cattleId: string
-  eventType: string
-  eventDate: string
-  description: string
-  operatorId: string
-  operatorName: string
-  createdAt: string
+  id: number
+  cattle_id: number
+  event_type: string
+  event_date: string
+  description?: string
+  data?: any
+  operator_id?: number
+  created_at: string
+  updated_at: string
+  cattle?: {
+    id: number
+    ear_tag: string
+    breed: string
+    gender: string
+  }
+  operator?: {
+    id: number
+    real_name: string
+  }
+}
+
+export interface CattleStatistics {
+  total: number
+  health_status: Array<{
+    health_status: string
+    count: number
+  }>
+  gender: Array<{
+    gender: string
+    count: number
+  }>
+  breeds: Array<{
+    breed: string
+    count: number
+  }>
 }
 
 export interface BatchImportResponse {
-  success: number
-  failed: number
-  errors: Array<{
-    row: number
-    message: string
-  }>
+  imported_count: number
+  cattle: Cattle[]
+}
+
+export interface BatchTransferRequest {
+  cattle_ids: number[]
+  from_barn_id?: number
+  to_barn_id?: number
+  reason?: string
+}
+
+export interface GenerateEarTagsRequest {
+  prefix: string
+  count: number
+  startNumber?: number
+}
+
+export interface GenerateEarTagsResponse {
+  ear_tags: string[]
+  prefix: string
+  count: number
 }
 
 export const cattleApi = {
   // 获取牛只列表
-  getList(params: CattleListParams = {}): Promise<{ data: CattleListResponse }> {
+  getList(params: CattleListParams = {}): Promise<CattleListResponse> {
     return request.get<ApiResponse<CattleListResponse>>('/cattle', { params })
-      .then(response => ({ data: response.data.data }))
+      .then(response => response.data.data)
+  },
+
+  // 获取牛只统计
+  getStatistics(baseId?: number): Promise<CattleStatistics> {
+    return request.get<ApiResponse<CattleStatistics>>('/cattle/statistics', { 
+      params: baseId ? { baseId } : {} 
+    }).then(response => response.data.data)
   },
 
   // 获取牛只详情
-  getById(id: string): Promise<{ data: Cattle }> {
+  getById(id: number): Promise<Cattle> {
     return request.get<ApiResponse<Cattle>>(`/cattle/${id}`)
-      .then(response => ({ data: response.data.data }))
+      .then(response => response.data.data)
   },
 
   // 通过耳标获取牛只信息
-  getByEarTag(earTag: string): Promise<{ data: Cattle }> {
+  getByEarTag(earTag: string): Promise<Cattle> {
     return request.get<ApiResponse<Cattle>>(`/cattle/scan/${earTag}`)
-      .then(response => ({ data: response.data.data }))
+      .then(response => response.data.data)
   },
 
   // 创建牛只记录
-  create(data: CreateCattleRequest): Promise<{ data: Cattle }> {
+  create(data: CreateCattleRequest): Promise<Cattle> {
     return request.post<ApiResponse<Cattle>>('/cattle', data)
-      .then(response => ({ data: response.data.data }))
+      .then(response => response.data.data)
   },
 
   // 更新牛只信息
-  update(id: string, data: UpdateCattleRequest): Promise<{ data: Cattle }> {
+  update(id: number, data: UpdateCattleRequest): Promise<Cattle> {
     return request.put<ApiResponse<Cattle>>(`/cattle/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+      .then(response => response.data.data)
   },
 
   // 删除牛只记录
-  delete(id: string): Promise<void> {
+  delete(id: number): Promise<void> {
     return request.delete(`/cattle/${id}`)
   },
 
-  // 批量删除牛只
-  batchDelete(ids: string[]): Promise<void> {
-    return request.delete('/cattle/batch', { data: { ids } })
+  // 获取牛只生命周期事件
+  getEvents(cattleId: number, params?: { page?: number; limit?: number }): Promise<{ data: CattleEvent[]; pagination: any }> {
+    return request.get<ApiResponse<{ data: CattleEvent[]; pagination: any }>>(`/cattle/${cattleId}/events`, { params })
+      .then(response => response.data.data)
   },
 
-  // 获取牛只生命周期事件
-  getEvents(cattleId: string): Promise<{ data: CattleEvent[] }> {
-    return request.get<ApiResponse<CattleEvent[]>>(`/cattle/${cattleId}/events`)
-      .then(response => ({ data: response.data.data }))
+  // 获取事件类型
+  getEventTypes(): Promise<Array<{ value: string; label: string; category: string }>> {
+    return request.get<ApiResponse<Array<{ value: string; label: string; category: string }>>>('/cattle/events/types')
+      .then(response => response.data.data)
   },
 
   // 添加牛只事件
-  addEvent(cattleId: string, event: Omit<CattleEvent, 'id' | 'cattleId' | 'operatorId' | 'operatorName' | 'createdAt'>): Promise<{ data: CattleEvent }> {
-    return request.post<ApiResponse<CattleEvent>>(`/cattle/${cattleId}/events`, event)
-      .then(response => ({ data: response.data.data }))
+  addEvent(cattleId: number, event: Omit<CattleEvent, 'id' | 'cattle_id' | 'operator_id' | 'created_at' | 'updated_at'>): Promise<CattleEvent> {
+    return request.post<ApiResponse<CattleEvent>>(`/cattle/${cattleId}/events`, { ...event, cattle_id: cattleId })
+      .then(response => response.data.data)
   },
 
   // 批量导入牛只
-  batchImport(file: File): Promise<{ data: BatchImportResponse }> {
+  batchImport(file: File): Promise<BatchImportResponse> {
     const formData = new FormData()
     formData.append('file', file)
-    return request.post<ApiResponse<BatchImportResponse>>('/cattle/batch-import', formData, {
+    return request.post<ApiResponse<BatchImportResponse>>('/cattle/batch/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    }).then(response => ({ data: response.data.data }))
+    }).then(response => response.data.data)
+  },
+
+  // 获取导入模板
+  getImportTemplate(): Promise<Blob> {
+    return request.get('/cattle/batch/template', { 
+      responseType: 'blob'
+    }).then(response => response.data)
   },
 
   // 导出牛只数据
   export(params: CattleListParams = {}): Promise<Blob> {
-    return request.get('/cattle/export', { 
+    return request.get('/cattle/batch/export', { 
       params,
       responseType: 'blob'
     }).then(response => response.data)
   },
 
   // 生成耳标
-  generateEarTags(count: number, prefix?: string): Promise<{ data: string[] }> {
-    return request.post<ApiResponse<string[]>>('/cattle/generate-ear-tags', { count, prefix })
-      .then(response => ({ data: response.data.data }))
+  generateEarTags(data: GenerateEarTagsRequest): Promise<GenerateEarTagsResponse> {
+    return request.post<ApiResponse<GenerateEarTagsResponse>>('/cattle/batch/generate-tags', data)
+      .then(response => response.data.data)
   },
 
-  // 打印耳标
-  printEarTags(earTags: string[]): Promise<{ data: { printUrl: string } }> {
-    return request.post<ApiResponse<{ printUrl: string }>>('/cattle/print-ear-tags', { earTags })
-      .then(response => ({ data: response.data.data }))
+  // 批量转移牛只
+  batchTransfer(data: BatchTransferRequest): Promise<{ transferred_count: number; cattle: Cattle[] }> {
+    return request.post<ApiResponse<{ transferred_count: number; cattle: Cattle[] }>>('/cattle/batch/transfer', data)
+      .then(response => response.data.data)
   }
 }

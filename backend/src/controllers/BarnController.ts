@@ -1,0 +1,526 @@
+import { Request, Response } from 'express';
+import { Op, WhereOptions } from 'sequelize';
+import { Barn, Base } from '@/models';
+
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: number;
+    username: string;
+    role_id?: number;
+    base_id?: number;
+  };
+}
+
+export class BarnController {
+  /**
+   * 获取牛棚列表
+   */
+  static async getBarns(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const {
+        page = 1,
+        limit = 20,
+        base_id,
+        barn_type,
+        search,
+      } = req.query;
+
+      const offset = (Number(page) - 1) * Number(limit);
+      const whereConditions: WhereOptions = {};
+
+      // 数据权限过滤
+      if (req.user?.base_id) {
+        whereConditions.base_id = req.user.base_id;
+      } else if (base_id) {
+        whereConditions.base_id = Number(base_id);
+      }
+
+      // 牛棚类型过滤
+      if (barn_type) {
+        whereConditions.barn_type = barn_type as string;
+      }
+
+      // 搜索过滤
+      if (search) {
+        (whereConditions as any)[Op.or] = [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { code: { [Op.iLike]: `%${search}%` } },
+        ];
+      }
+
+      const { rows: barns, count: total } = await Barn.findAndCountAll({
+        where: whereConditions,
+        include: [
+          {
+            model: Base,
+            as: 'base',
+            attributes: ['id', 'name', 'code'],
+          },
+        ],
+        order: [['created_at', 'DESC']],
+        limit: Number(limit),
+        offset,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          barns,
+          pagination: {
+            total,
+            page: Number(page),
+            limit: Number(limit),
+            pages: Math.ceil(total / Number(limit)),
+          },
+        },
+      });
+    } catch (error) {
+      console.error('获取牛棚列表失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_LIST_ERROR',
+          message: '获取牛棚列表失败',
+        },
+      });
+    }
+  }
+
+  /**
+   * 获取牛棚详情
+   */
+  static async getBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+
+      const whereConditions: WhereOptions = { id: Number(id) };
+
+      // 数据权限过滤
+      if (req.user?.base_id) {
+        whereConditions.base_id = req.user.base_id;
+      }
+
+      const barn = await Barn.findOne({
+        where: whereConditions,
+        include: [
+          {
+            model: Base,
+            as: 'base',
+            attributes: ['id', 'name', 'code', 'address'],
+          },
+        ],
+      });
+
+      if (!barn) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'BARN_NOT_FOUND',
+            message: '牛棚不存在',
+          },
+        });
+      }
+
+      res.json({
+        success: true,
+        data: barn,
+      });
+    } catch (error) {
+      console.error('获取牛棚详情失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_DETAIL_ERROR',
+          message: '获取牛棚详情失败',
+        },
+      });
+    }
+  }
+
+  /**
+   * 创建牛棚
+   */
+  static async createBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const { name, code, base_id, capacity, barn_type, description, facilities } = req.body;
+
+      // 数据权限检查
+      if (req.user?.base_id && req.user.base_id !== base_id) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'PERMISSION_DENIED',
+            message: '无权限在该基地创建牛棚',
+          },
+        });
+      }
+
+      // 检查基地是否存在
+      const base = await Base.findByPk(base_id);
+      if (!base) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'BASE_NOT_FOUND',
+            message: '基地不存在',
+          },
+        });
+      }
+
+      // 检查同一基地下牛棚编码是否重复
+      const existingBarn = await Barn.findOne({
+        where: {
+          code,
+          base_id,
+        },
+      });
+
+      if (existingBarn) {
+        return res.status(409).json({
+          success: false,
+          error: {
+            code: 'BARN_CODE_EXISTS',
+            message: '该基地下已存在相同编码的牛棚',
+          },
+        });
+      }
+
+      const barn = await Barn.create({
+        name,
+        code,
+        base_id,
+        capacity,
+        barn_type,
+        description,
+        facilities: facilities || {},
+      });
+
+      // 获取完整的牛棚信息（包含关联数据）
+      const createdBarn = await Barn.findByPk(barn.id, {
+        include: [
+          {
+            model: Base,
+            as: 'base',
+            attributes: ['id', 'name', 'code'],
+          },
+        ],
+      });
+
+      res.status(201).json({
+        success: true,
+        data: createdBarn,
+        message: '牛棚创建成功',
+      });
+    } catch (error) {
+      console.error('创建牛棚失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_CREATE_ERROR',
+          message: '创建牛棚失败',
+        },
+      });
+    }
+  }
+
+  /**
+   * 更新牛棚
+   */
+  static async updateBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const { name, code, capacity, barn_type, description, facilities } = req.body;
+
+      const whereConditions: WhereOptions = { id: Number(id) };
+
+      // 数据权限过滤
+      if (req.user?.base_id) {
+        whereConditions.base_id = req.user.base_id;
+      }
+
+      const barn = await Barn.findOne({ where: whereConditions });
+
+      if (!barn) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'BARN_NOT_FOUND',
+            message: '牛棚不存在',
+          },
+        });
+      }
+
+      // 如果更新编码，检查是否重复
+      if (code && code !== barn.code) {
+        const existingBarn = await Barn.findOne({
+          where: {
+            code,
+            base_id: barn.base_id,
+            id: { [Op.ne]: barn.id },
+          },
+        });
+
+        if (existingBarn) {
+          return res.status(409).json({
+            success: false,
+            error: {
+              code: 'BARN_CODE_EXISTS',
+              message: '该基地下已存在相同编码的牛棚',
+            },
+          });
+        }
+      }
+
+      // 如果减少容量，检查是否小于当前牛只数量
+      if (capacity && capacity < barn.current_count) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'CAPACITY_TOO_SMALL',
+            message: `牛棚容量不能小于当前牛只数量(${barn.current_count})`,
+          },
+        });
+      }
+
+      await barn.update({
+        ...(name && { name }),
+        ...(code && { code }),
+        ...(capacity && { capacity }),
+        ...(barn_type !== undefined && { barn_type }),
+        ...(description !== undefined && { description }),
+        ...(facilities !== undefined && { facilities }),
+      });
+
+      // 获取更新后的完整信息
+      const updatedBarn = await Barn.findByPk(barn.id, {
+        include: [
+          {
+            model: Base,
+            as: 'base',
+            attributes: ['id', 'name', 'code'],
+          },
+        ],
+      });
+
+      res.json({
+        success: true,
+        data: updatedBarn,
+        message: '牛棚更新成功',
+      });
+    } catch (error) {
+      console.error('更新牛棚失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_UPDATE_ERROR',
+          message: '更新牛棚失败',
+        },
+      });
+    }
+  }
+
+  /**
+   * 删除牛棚
+   */
+  static async deleteBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+
+      const whereConditions: WhereOptions = { id: Number(id) };
+
+      // 数据权限过滤
+      if (req.user?.base_id) {
+        whereConditions.base_id = req.user.base_id;
+      }
+
+      const barn = await Barn.findOne({ where: whereConditions });
+
+      if (!barn) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'BARN_NOT_FOUND',
+            message: '牛棚不存在',
+          },
+        });
+      }
+
+      // 检查牛棚是否还有牛只
+      if (barn.current_count > 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'BARN_NOT_EMPTY',
+            message: `牛棚内还有${barn.current_count}头牛只，无法删除`,
+          },
+        });
+      }
+
+      await barn.destroy();
+
+      res.json({
+        success: true,
+        message: '牛棚删除成功',
+      });
+    } catch (error) {
+      console.error('删除牛棚失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_DELETE_ERROR',
+          message: '删除牛棚失败',
+        },
+      });
+    }
+  }
+
+  /**
+   * 获取牛棚统计信息
+   */
+  static async getBarnStatistics(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const { base_id } = req.query;
+
+      const whereConditions: WhereOptions = {};
+
+      // 数据权限过滤
+      if (req.user?.base_id) {
+        whereConditions.base_id = req.user.base_id;
+      } else if (base_id) {
+        whereConditions.base_id = Number(base_id);
+      }
+
+      const barns = await Barn.findAll({
+        where: whereConditions,
+        include: [
+          {
+            model: Base,
+            as: 'base',
+            attributes: ['id', 'name', 'code'],
+          },
+        ],
+        order: [['created_at', 'DESC']],
+      });
+
+      // 计算统计数据
+      const totalBarns = barns.length;
+      const totalCapacity = barns.reduce((sum, barn) => sum + barn.capacity, 0);
+      const totalCurrentCount = barns.reduce((sum, barn) => sum + barn.current_count, 0);
+      const totalAvailableCapacity = totalCapacity - totalCurrentCount;
+      const averageUtilization = totalCapacity > 0 ? Math.round((totalCurrentCount / totalCapacity) * 100) : 0;
+
+      // 按类型统计
+      const typeStatistics = barns.reduce((acc, barn) => {
+        const type = barn.barn_type || '其他';
+        if (!acc[type]) {
+          acc[type] = {
+            count: 0,
+            capacity: 0,
+            current_count: 0,
+            utilization_rate: 0,
+          };
+        }
+        acc[type].count += 1;
+        acc[type].capacity += barn.capacity;
+        acc[type].current_count += barn.current_count;
+        acc[type].utilization_rate = acc[type].capacity > 0 
+          ? Math.round((acc[type].current_count / acc[type].capacity) * 100) 
+          : 0;
+        return acc;
+      }, {} as Record<string, any>);
+
+      // 利用率分布
+      const utilizationDistribution = {
+        low: barns.filter(barn => (barn.current_count / barn.capacity) < 0.5).length,
+        medium: barns.filter(barn => {
+          const rate = barn.current_count / barn.capacity;
+          return rate >= 0.5 && rate < 0.8;
+        }).length,
+        high: barns.filter(barn => (barn.current_count / barn.capacity) >= 0.8).length,
+      };
+
+      res.json({
+        success: true,
+        data: {
+          overview: {
+            total_barns: totalBarns,
+            total_capacity: totalCapacity,
+            total_current_count: totalCurrentCount,
+            total_available_capacity: totalAvailableCapacity,
+            average_utilization: averageUtilization,
+          },
+          type_statistics: typeStatistics,
+          utilization_distribution: utilizationDistribution,
+          barns: barns.map(barn => ({
+            id: barn.id,
+            name: barn.name,
+            code: barn.code,
+            barn_type: barn.barn_type,
+            capacity: barn.capacity,
+            current_count: barn.current_count,
+            utilization_rate: barn.capacity > 0 ? Math.round((barn.current_count / barn.capacity) * 100) : 0,
+            available_capacity: barn.capacity - barn.current_count,
+            base: (barn as any).base,
+          })),
+        },
+      });
+    } catch (error) {
+      console.error('获取牛棚统计失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_STATISTICS_ERROR',
+          message: '获取牛棚统计失败',
+        },
+      });
+    }
+  }
+
+  /**
+   * 获取基地下的牛棚选项（用于下拉选择）
+   */
+  static async getBarnOptions(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
+    try {
+      const { base_id } = req.query;
+
+      const whereConditions: WhereOptions = {};
+
+      // 数据权限过滤
+      if (req.user?.base_id) {
+        whereConditions.base_id = req.user.base_id;
+      } else if (base_id) {
+        whereConditions.base_id = Number(base_id);
+      }
+
+      const barns = await Barn.findAll({
+        where: whereConditions,
+        attributes: ['id', 'name', 'code', 'capacity', 'current_count', 'barn_type'],
+        order: [['name', 'ASC']],
+      });
+
+      const options = barns.map(barn => ({
+        value: barn.id,
+        label: `${barn.name} (${barn.code})`,
+        capacity: barn.capacity,
+        current_count: barn.current_count,
+        available_capacity: barn.capacity - barn.current_count,
+        barn_type: barn.barn_type,
+        disabled: barn.current_count >= barn.capacity, // 满员的牛棚禁用
+      }));
+
+      res.json({
+        success: true,
+        data: options,
+      });
+    } catch (error) {
+      console.error('获取牛棚选项失败:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'BARN_OPTIONS_ERROR',
+          message: '获取牛棚选项失败',
+        },
+      });
+    }
+  }
+}

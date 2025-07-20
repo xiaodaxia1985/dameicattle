@@ -59,6 +59,30 @@
       "style": {
         "navigationBarTitleText": "登录"
       }
+    },
+    {
+      "path": "pages/base/list",
+      "style": {
+        "navigationBarTitleText": "基地管理"
+      }
+    },
+    {
+      "path": "pages/base/detail",
+      "style": {
+        "navigationBarTitleText": "基地详情"
+      }
+    },
+    {
+      "path": "pages/barn/list",
+      "style": {
+        "navigationBarTitleText": "牛棚管理"
+      }
+    },
+    {
+      "path": "pages/barn/detail",
+      "style": {
+        "navigationBarTitleText": "牛棚详情"
+      }
     }
   ],
   "globalStyle": {
@@ -80,16 +104,16 @@
         "text": "首页"
       },
       {
-        "pagePath": "pages/cattle/list",
-        "iconPath": "static/tabbar/cattle.png",
-        "selectedIconPath": "static/tabbar/cattle-active.png",
-        "text": "牛只"
+        "pagePath": "pages/base/list",
+        "iconPath": "static/tabbar/base.png",
+        "selectedIconPath": "static/tabbar/base-active.png",
+        "text": "基地"
       },
       {
-        "pagePath": "pages/health/list",
-        "iconPath": "static/tabbar/health.png",
-        "selectedIconPath": "static/tabbar/health-active.png",
-        "text": "健康"
+        "pagePath": "pages/barn/list",
+        "iconPath": "static/tabbar/barn.png",
+        "selectedIconPath": "static/tabbar/barn-active.png",
+        "text": "牛棚"
       },
       {
         "pagePath": "pages/scan/index",

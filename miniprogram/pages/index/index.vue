@@ -4,11 +4,29 @@
     <view class="base-selector card">
       <view class="flex-between">
         <text class="title">当前基地</text>
-        <text class="change-btn" @tap="showBasePicker">切换</text>
+        <view class="base-actions">
+          <text class="location-btn" @tap="autoSelectNearestBase" v-if="!currentBase">
+            <text class="iconfont icon-location"></text>
+            <text>附近</text>
+          </text>
+          <text class="change-btn" @tap="showBasePicker">切换</text>
+        </view>
       </view>
-      <view class="base-info">
-        <text class="base-name">{{ currentBase?.name || '请选择基地' }}</text>
-        <text class="base-address">{{ currentBase?.address || '' }}</text>
+      <view class="base-info" @tap="viewBaseDetail" v-if="currentBase">
+        <view class="base-main">
+          <text class="base-name">{{ currentBase.name }}</text>
+          <text class="base-distance" v-if="baseDistance">{{ formatDistance(baseDistance) }}</text>
+        </view>
+        <text class="base-address">{{ currentBase.address }}</text>
+        <view class="base-stats" v-if="baseStats">
+          <text class="stat-item">牛棚: {{ baseStats.barnCount }}个</text>
+          <text class="stat-item">牛只: {{ baseStats.cattleCount }}头</text>
+          <text class="stat-item">利用率: {{ baseStats.utilizationRate }}%</text>
+        </view>
+      </view>
+      <view class="no-base-selected" v-else @tap="showBasePicker">
+        <text class="select-text">点击选择基地</text>
+        <text class="select-hint">或点击"附近"自动选择最近的基地</text>
       </view>
     </view>
 
@@ -93,48 +111,159 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useBaseStore } from '@/stores/base'
 import { useDashboardStore } from '@/stores/dashboard'
+import { useCacheStore } from '@/stores/cache'
+import { formatDistance } from '@/utils/location'
 
 const baseStore = useBaseStore()
 const dashboardStore = useDashboardStore()
+const cacheStore = useCacheStore()
 
-const currentBase = ref(null)
+const { currentBase } = baseStore
 const bases = ref([])
 const stats = ref({})
 const todos = ref([])
+const baseStats = ref(null)
+const baseDistance = ref(null)
 const basePopup = ref(null)
 
 onMounted(() => {
   loadData()
+  
+  // 监听基地变化事件
+  uni.$on('baseChanged', (base) => {
+    loadBaseData(base)
+  })
+})
+
+// 监听当前基地变化
+watch(currentBase, (newBase) => {
+  if (newBase) {
+    loadBaseData(newBase)
+  }
 })
 
 const loadData = async () => {
   try {
     // 加载基地列表
-    const baseResponse = await baseStore.fetchAllBases()
-    bases.value = baseResponse
+    await baseStore.fetchAllBases()
+    bases.value = baseStore.bases
     
-    // 设置默认基地
-    if (bases.value.length > 0 && !currentBase.value) {
-      currentBase.value = bases.value[0]
-    }
-    
-    // 加载统计数据
+    // 如果有当前基地，加载相关数据
     if (currentBase.value) {
-      const statsResponse = await dashboardStore.fetchStats({ baseId: currentBase.value.id })
-      stats.value = statsResponse
-      
-      const todosResponse = await dashboardStore.fetchTodos({ baseId: currentBase.value.id })
-      todos.value = todosResponse
+      await loadBaseData(currentBase.value)
     }
   } catch (error) {
     console.error('加载数据失败:', error)
-    uni.showToast({
-      title: '加载数据失败',
-      icon: 'none'
+    // 尝试从缓存加载
+    const cachedBases = cacheStore.getCacheData('bases')
+    if (cachedBases) {
+      bases.value = cachedBases
+      uni.showToast({
+        title: '已加载离线数据',
+        icon: 'none'
+      })
+    } else {
+      uni.showToast({
+        title: '加载数据失败',
+        icon: 'error'
+      })
+    }
+  }
+}
+
+const loadBaseData = async (base) => {
+  if (!base) return
+  
+  try {
+    // 并行加载统计数据、基地统计和距离
+    const promises = [
+      loadStats(base.id),
+      loadBaseStats(base.id),
+      loadBaseDistance(base.id)
+    ]
+    
+    await Promise.allSettled(promises)
+  } catch (error) {
+    console.error('加载基地数据失败:', error)
+  }
+}
+
+const loadStats = async (baseId) => {
+  try {
+    const response = await uni.request({
+      url: `/api/v1/dashboard/stats?baseId=${baseId}`,
+      method: 'GET'
     })
+    
+    if (response.data.success) {
+      stats.value = response.data.data
+      // 缓存统计数据
+      cacheStore.setCacheData(`stats_${baseId}`, stats.value)
+    }
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+    // 尝试从缓存加载
+    const cachedStats = cacheStore.getCacheData(`stats_${baseId}`)
+    if (cachedStats) {
+      stats.value = cachedStats
+    }
+  }
+}
+
+const loadBaseStats = async (baseId) => {
+  try {
+    const response = await uni.request({
+      url: `/api/v1/bases/${baseId}/stats`,
+      method: 'GET'
+    })
+    
+    if (response.data.success) {
+      baseStats.value = response.data.data
+      // 缓存基地统计
+      cacheStore.setCacheData(`base_stats_${baseId}`, baseStats.value)
+    }
+  } catch (error) {
+    console.error('加载基地统计失败:', error)
+    // 尝试从缓存加载
+    const cachedBaseStats = cacheStore.getCacheData(`base_stats_${baseId}`)
+    if (cachedBaseStats) {
+      baseStats.value = cachedBaseStats
+    }
+  }
+}
+
+const loadBaseDistance = async (baseId) => {
+  try {
+    const distance = await baseStore.getDistanceToBase(baseId)
+    baseDistance.value = distance
+  } catch (error) {
+    console.error('计算基地距离失败:', error)
+    baseDistance.value = null
+  }
+}
+
+const loadTodos = async (baseId) => {
+  try {
+    const response = await uni.request({
+      url: `/api/v1/dashboard/todos?baseId=${baseId}`,
+      method: 'GET'
+    })
+    
+    if (response.data.success) {
+      todos.value = response.data.data
+      // 缓存待办事项
+      cacheStore.setCacheData(`todos_${baseId}`, todos.value)
+    }
+  } catch (error) {
+    console.error('加载待办事项失败:', error)
+    // 尝试从缓存加载
+    const cachedTodos = cacheStore.getCacheData(`todos_${baseId}`)
+    if (cachedTodos) {
+      todos.value = cachedTodos
+    }
   }
 }
 
@@ -147,14 +276,58 @@ const hideBasePicker = () => {
 }
 
 const selectBase = (base) => {
-  currentBase.value = base
   baseStore.setCurrentBase(base)
   hideBasePicker()
-  loadData()
+  
+  uni.showToast({
+    title: `已切换到${base.name}`,
+    icon: 'success'
+  })
+}
+
+const autoSelectNearestBase = async () => {
+  uni.showLoading({
+    title: '定位中...'
+  })
+  
+  try {
+    const nearestBase = await baseStore.autoSelectNearestBase()
+    if (nearestBase) {
+      // 自动选择成功，数据会通过watch自动加载
+    }
+  } catch (error) {
+    console.error('自动选择最近基地失败:', error)
+    uni.showToast({
+      title: '定位失败',
+      icon: 'error'
+    })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+const viewBaseDetail = () => {
+  if (currentBase.value) {
+    uni.navigateTo({
+      url: `/pages/base/detail?id=${currentBase.value.id}`
+    })
+  }
 }
 
 const navigateTo = (url) => {
-  uni.navigateTo({ url })
+  if (!currentBase.value) {
+    uni.showToast({
+      title: '请先选择基地',
+      icon: 'none'
+    })
+    return
+  }
+  
+  // 在URL中添加基地ID参数
+  const separator = url.includes('?') ? '&' : '?'
+  const fullUrl = `${url}${separator}baseId=${currentBase.value.id}`
+  
+  uni.navigateTo({ url: fullUrl })
 }
 
 const showComingSoon = () => {
@@ -172,23 +345,88 @@ const showComingSoon = () => {
     font-weight: 600;
   }
   
-  .change-btn {
-    color: #1890ff;
-    font-size: 28rpx;
+  .base-actions {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    
+    .location-btn {
+      display: flex;
+      align-items: center;
+      gap: 8rpx;
+      color: #52c41a;
+      font-size: 26rpx;
+      padding: 8rpx 16rpx;
+      background: #f6ffed;
+      border-radius: 16rpx;
+    }
+    
+    .change-btn {
+      color: #1890ff;
+      font-size: 28rpx;
+    }
   }
   
   .base-info {
     margin-top: 20rpx;
     
-    .base-name {
-      display: block;
-      font-size: 36rpx;
-      font-weight: 600;
+    .base-main {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 8rpx;
+      
+      .base-name {
+        font-size: 36rpx;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .base-distance {
+        font-size: 24rpx;
+        color: #52c41a;
+        background: #f6ffed;
+        padding: 4rpx 12rpx;
+        border-radius: 12rpx;
+      }
     }
     
     .base-address {
       font-size: 28rpx;
+      color: #999;
+      margin-bottom: 12rpx;
+    }
+    
+    .base-stats {
+      display: flex;
+      gap: 20rpx;
+      
+      .stat-item {
+        font-size: 24rpx;
+        color: #666;
+        background: #f5f5f5;
+        padding: 6rpx 12rpx;
+        border-radius: 12rpx;
+      }
+    }
+  }
+  
+  .no-base-selected {
+    margin-top: 20rpx;
+    text-align: center;
+    padding: 40rpx 20rpx;
+    border: 2rpx dashed #d9d9d9;
+    border-radius: 12rpx;
+    
+    .select-text {
+      display: block;
+      font-size: 30rpx;
+      color: #666;
+      margin-bottom: 8rpx;
+    }
+    
+    .select-hint {
+      font-size: 24rpx;
       color: #999;
     }
   }

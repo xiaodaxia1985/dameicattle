@@ -178,5 +178,39 @@ export const baseApi = {
   getBarnStatistics(id: number): Promise<{ data: any }> {
     return request.get<ApiResponse<any>>(`/barns/${id}/statistics`)
       .then(response => ({ data: response.data.data }))
+  },
+
+  // 批量导入基地数据
+  importBases(file: FormData): Promise<{ data: any }> {
+    return request.post<ApiResponse<any>>('/bases/import', file, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(response => ({ data: response.data.data }))
+  },
+
+  // 导出基地数据
+  exportBases(params: BaseListParams = {}): Promise<Blob> {
+    return request.get('/bases/export', { 
+      params,
+      responseType: 'blob'
+    })
+  },
+
+  // 批量导入牛棚数据
+  importBarns(file: FormData): Promise<{ data: any }> {
+    return request.post<ApiResponse<any>>('/barns/import', file, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }).then(response => ({ data: response.data.data }))
+  },
+
+  // 导出牛棚数据
+  exportBarns(params: BarnListParams = {}): Promise<Blob> {
+    return request.get('/barns/export', { 
+      params,
+      responseType: 'blob'
+    })
   }
 }

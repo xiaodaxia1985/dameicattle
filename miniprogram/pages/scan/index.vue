@@ -121,11 +121,11 @@ const searchCattle = async (earTag) => {
     })
     
     if (response.data.success) {
-      const cattle = response.data.data.cattle
+      const cattle = response.data.data
       
       // 保存扫描记录
       saveRecentScan({
-        earTag: cattle.earTag,
+        earTag: cattle.ear_tag,
         scanTime: new Date().toISOString(),
         cattle: cattle
       })
@@ -136,7 +136,7 @@ const searchCattle = async (earTag) => {
       })
     } else {
       uni.showToast({
-        title: response.data.message || '未找到该牛只',
+        title: response.data.error?.message || '未找到该牛只',
         icon: 'none'
       })
     }
