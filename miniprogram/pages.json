@@ -38,15 +38,30 @@
       }
     },
     {
-      "path": "pages/feeding/list",
+      "path": "pages/feeding/index",
       "style": {
-        "navigationBarTitleText": "饲喂管理"
+        "navigationBarTitleText": "饲喂管理",
+        "enablePullDownRefresh": true
       }
     },
     {
       "path": "pages/feeding/record",
       "style": {
-        "navigationBarTitleText": "饲喂记录"
+        "navigationBarTitleText": "添加饲喂记录"
+      }
+    },
+    {
+      "path": "pages/feeding/formulas",
+      "style": {
+        "navigationBarTitleText": "饲料配方",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/feeding/history",
+      "style": {
+        "navigationBarTitleText": "饲喂历史",
+        "enablePullDownRefresh": true
       }
     },
     {

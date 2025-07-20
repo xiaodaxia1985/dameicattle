@@ -21,6 +21,7 @@ import baseRoutes from '@/routes/bases';
 import barnRoutes from '@/routes/barns';
 import cattleRoutes from '@/routes/cattle';
 import healthRoutes from '@/routes/health';
+import feedingRoutes from '@/routes/feeding';
 
 // Load environment variables
 dotenv.config();
@@ -68,6 +69,7 @@ app.use('/api/v1/bases', authMiddleware, baseRoutes);
 app.use('/api/v1/barns', authMiddleware, barnRoutes);
 app.use('/api/v1/cattle', authMiddleware, cattleRoutes);
 app.use('/api/v1/health', authMiddleware, healthRoutes);
+app.use('/api/v1/feeding', authMiddleware, feedingRoutes);
 
 // Error handling middleware
 app.use(notFoundHandler);

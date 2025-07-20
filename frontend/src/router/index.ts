@@ -93,6 +93,12 @@ const routes: RouteRecordRaw[] = [
         children: [
           {
             path: '',
+            name: 'FeedingDashboard',
+            component: () => import('@/views/feeding/Dashboard.vue'),
+            meta: { title: '饲喂总览' }
+          },
+          {
+            path: 'records',
             name: 'FeedingRecords',
             component: () => import('@/views/feeding/Records.vue'),
             meta: { title: '饲喂记录' }
@@ -102,6 +108,12 @@ const routes: RouteRecordRaw[] = [
             name: 'FeedFormulas',
             component: () => import('@/views/feeding/Formulas.vue'),
             meta: { title: '饲料配方' }
+          },
+          {
+            path: 'analysis',
+            name: 'FeedingAnalysis',
+            component: () => import('@/views/feeding/Analysis.vue'),
+            meta: { title: '效率分析' }
           }
         ]
       },

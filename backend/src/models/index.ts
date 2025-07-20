@@ -8,6 +8,8 @@ import { Cattle } from './Cattle';
 import { CattleEvent } from './CattleEvent';
 import { HealthRecord } from './HealthRecord';
 import { VaccinationRecord } from './VaccinationRecord';
+import { FeedFormula } from './FeedFormula';
+import { FeedingRecord } from './FeedingRecord';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -60,6 +62,23 @@ VaccinationRecord.belongsTo(Cattle, { foreignKey: 'cattle_id', as: 'cattle' });
 User.hasMany(VaccinationRecord, { foreignKey: 'veterinarian_id', as: 'vaccination_records' });
 VaccinationRecord.belongsTo(User, { foreignKey: 'veterinarian_id', as: 'veterinarian' });
 
+// Feed formula associations
+User.hasMany(FeedFormula, { foreignKey: 'created_by', as: 'feed_formulas' });
+FeedFormula.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
+
+// Feeding record associations
+FeedFormula.hasMany(FeedingRecord, { foreignKey: 'formula_id', as: 'feeding_records' });
+FeedingRecord.belongsTo(FeedFormula, { foreignKey: 'formula_id', as: 'formula' });
+
+Base.hasMany(FeedingRecord, { foreignKey: 'base_id', as: 'feeding_records' });
+FeedingRecord.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+
+Barn.hasMany(FeedingRecord, { foreignKey: 'barn_id', as: 'feeding_records' });
+FeedingRecord.belongsTo(Barn, { foreignKey: 'barn_id', as: 'barn' });
+
+User.hasMany(FeedingRecord, { foreignKey: 'operator_id', as: 'feeding_records' });
+FeedingRecord.belongsTo(User, { foreignKey: 'operator_id', as: 'operator' });
+
 // Export models
 export {
   sequelize,
@@ -72,6 +91,8 @@ export {
   CattleEvent,
   HealthRecord,
   VaccinationRecord,
+  FeedFormula,
+  FeedingRecord,
 };
 
 // Export database instance
