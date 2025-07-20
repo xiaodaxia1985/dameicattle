@@ -11,16 +11,9 @@ beforeAll(async () => {
   process.env.JWT_SECRET = 'test-jwt-secret';
   process.env.DB_NAME = 'cattle_management_test';
   
-  // 初始化测试数据库连接
-  const sequelize = new Sequelize({
-    dialect: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'cattle_management_test',
-    username: process.env.DB_USER || 'cattle_user',
-    password: process.env.DB_PASSWORD || 'dianxin99',
-    logging: false, // 测试时关闭SQL日志
-  });
+  // 初始化测试数据库连接 - 使用PostgreSQL进行测试
+  const { testSequelize, testConnection } = await import('../config/testDatabase');
+  const sequelize = testSequelize;
 
   try {
     await sequelize.authenticate();
