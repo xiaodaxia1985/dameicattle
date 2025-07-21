@@ -5,8 +5,7 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import passport from 'passport';
 
-// Import types to ensure they are loaded
-import '@/types/express';
+// Types are automatically loaded by TypeScript compiler
 
 import { logger } from '@/utils/logger';
 import { errorHandler } from '@/middleware/errorHandler';

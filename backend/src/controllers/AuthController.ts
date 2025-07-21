@@ -6,7 +6,7 @@ import { redisClient } from '@/config/redis';
 import crypto from 'crypto';
 
 export class AuthController {
-  public async login(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async login(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { username, password } = req.body;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -166,7 +166,7 @@ export class AuthController {
     }
   }
 
-  public async register(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async register(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { username, password, real_name, email, phone } = req.body;
 
@@ -211,7 +211,7 @@ export class AuthController {
     }
   }
 
-  public async refreshToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async refreshToken(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const authHeader = req.headers.authorization;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -289,7 +289,7 @@ export class AuthController {
     }
   }
 
-  public async logout(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async logout(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const userId = req.user?.id;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -322,7 +322,7 @@ export class AuthController {
     }
   }
 
-  public async requestPasswordReset(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async requestPasswordReset(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { email } = req.body;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -371,7 +371,7 @@ export class AuthController {
     }
   }
 
-  public async resetPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { token, password } = req.body;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -431,7 +431,7 @@ export class AuthController {
     }
   }
 
-  public async wechatLogin(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async wechatLogin(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { code, userInfo, encryptedData, iv } = req.body;
       const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
@@ -558,7 +558,7 @@ export class AuthController {
     }
   }
 
-  public async bindUserToBase(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async bindUserToBase(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { baseId, inviteCode } = req.body;
       const userId = req.user?.id;
@@ -637,7 +637,7 @@ export class AuthController {
     }
   }
 
-  public async getWechatUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getWechatUserProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const userId = req.user?.id;
       

@@ -49,7 +49,7 @@ export class RoleController {
     }
   }
 
-  public async getRoleById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getRoleById(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -86,7 +86,7 @@ export class RoleController {
     }
   }
 
-  public async createRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async createRole(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { name, description, permissions } = req.body;
 
@@ -127,7 +127,7 @@ export class RoleController {
     }
   }
 
-  public async updateRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async updateRole(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
       const { name, description, permissions } = req.body;
@@ -189,7 +189,7 @@ export class RoleController {
     }
   }
 
-  public async deleteRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async deleteRole(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -291,7 +291,7 @@ export class RoleController {
     }
   }
 
-  public async assignUsersToRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async assignUsersToRole(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
       const { userIds } = req.body;
@@ -330,7 +330,7 @@ export class RoleController {
     }
   }
 
-  public async removeUsersFromRole(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async removeUsersFromRole(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
       const { userIds } = req.body;

@@ -251,6 +251,7 @@
                 start-placeholder="开始日期"
                 end-placeholder="结束日期"
                 style="width: 240px"
+                value-format="YYYY-MM-DD"
                 @change="handleTransactionSearch"
               />
             </div>
@@ -532,6 +533,7 @@
                 type="date"
                 placeholder="选择过期日期"
                 style="width: 100%"
+                value-format="YYYY-MM-DD"
               />
             </el-form-item>
           </el-col>
@@ -599,7 +601,7 @@ const selectedInventory = ref<Inventory[]>([])
 const transactionMaterialId = ref<number | undefined>()
 const transactionBaseId = ref<number | undefined>()
 const transactionType = ref<string | undefined>()
-const dateRange = ref<[Date, Date] | null>(null)
+const dateRange = ref<string[]>([])
 
 // Alert filters
 const alertBaseId = ref<number | undefined>()
@@ -621,7 +623,7 @@ const transactionForm = reactive({
   quantity: 0,
   unit_price: undefined as number | undefined,
   batch_number: '',
-  expiry_date: null as Date | null,
+  expiry_date: null as string | null,
   remark: ''
 })
 
@@ -648,9 +650,10 @@ const formatCurrency = (amount: number) => {
   return amount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-const handleTabChange = (tabName: string) => {
-  activeTab.value = tabName
-  switch (tabName) {
+const handleTabChange = (tabName: string | number) => {
+  const tab = String(tabName)
+  activeTab.value = tab
+  switch (tab) {
     case 'inventory':
       loadInventory()
       break
@@ -732,9 +735,9 @@ const loadTransactions = async () => {
       transaction_type: transactionType.value
     }
 
-    if (dateRange.value) {
-      params.start_date = dateRange.value[0].toISOString().split('T')[0]
-      params.end_date = dateRange.value[1].toISOString().split('T')[0]
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.start_date = dateRange.value[0]
+      params.end_date = dateRange.value[1]
     }
 
     await materialStore.fetchTransactions(params)
@@ -818,7 +821,7 @@ const handleSaveTransaction = async () => {
     
     const data = {
       ...transactionForm,
-      expiry_date: transactionForm.expiry_date?.toISOString().split('T')[0]
+      expiry_date: transactionForm.expiry_date
     }
     
     await materialStore.createTransaction(data)

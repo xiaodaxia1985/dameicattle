@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
-import * as passport from 'passport';
+import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { User, UserAttributes } from '@/models/User';
 import { logger } from '@/utils/logger';

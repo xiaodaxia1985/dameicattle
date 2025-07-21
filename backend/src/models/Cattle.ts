@@ -52,6 +52,10 @@ export class Cattle extends Model<CattleAttributes, CattleCreationAttributes> im
   public age_months?: number;
   public age_days?: number;
 
+  // Associations
+  public base?: any;
+  public barn?: any;
+
   public toJSON(): any {
     const values = { ...this.get() };
     

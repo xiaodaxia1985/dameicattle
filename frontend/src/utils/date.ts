@@ -32,10 +32,13 @@ export function formatDate(date: string | Date | undefined, format = 'YYYY-MM-DD
  * @param date 日期字符串或Date对象
  * @returns 相对时间字符串，如 "2小时前"、"3天前"
  */
-export function formatRelativeTime(date: string | Date): string {
+export function formatRelativeTime(date: string | Date | undefined): string {
   if (!date) return ''
   
   const d = typeof date === 'string' ? new Date(date) : date
+  
+  if (isNaN(d.getTime())) return ''
+  
   const now = new Date()
   const diff = now.getTime() - d.getTime()
   

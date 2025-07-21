@@ -472,7 +472,7 @@ export class SupplierController {
 
       // 合并数据
       const comparison = suppliers.map(supplier => {
-        const stats = comparisonStats.find(s => s.supplier_id === supplier.id) || {
+        const stats = comparisonStats.find(s => (s as any).supplier_id === supplier.id) as any || {
           order_count: 0,
           total_amount: 0,
           avg_order_amount: 0,

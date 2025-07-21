@@ -60,7 +60,7 @@ export class BaseController {
     }
   }
 
-  public async getBaseById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getBaseById(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -98,7 +98,7 @@ export class BaseController {
     }
   }
 
-  public async createBase(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async createBase(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { name, code, address, latitude, longitude, area, manager_id } = req.body;
 
@@ -172,7 +172,7 @@ export class BaseController {
     }
   }
 
-  public async updateBase(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async updateBase(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
       const { name, code, address, latitude, longitude, area, manager_id } = req.body;
@@ -272,7 +272,7 @@ export class BaseController {
     }
   }
 
-  public async deleteBase(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async deleteBase(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -314,13 +314,13 @@ export class BaseController {
           }
         );
         
-        if (barnCount[0]?.count > 0) {
+        if ((barnCount[0] as any)?.count > 0) {
           return res.status(400).json({
             success: false,
             error: {
               code: 'BASE_HAS_BARNS',
               message: '基地下还有牛棚，无法删除',
-              details: { barnCount: barnCount[0].count },
+              details: { barnCount: (barnCount[0] as any).count },
               timestamp: new Date().toISOString(),
               path: req.path,
             },
@@ -346,7 +346,7 @@ export class BaseController {
     }
   }
 
-  public async getBaseStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getBaseStatistics(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -389,7 +389,7 @@ export class BaseController {
             type: QueryTypes.SELECT,
           }
         );
-        statistics.barn_count = barnResult[0]?.count || 0;
+        statistics.barn_count = (barnResult[0] as any)?.count || 0;
 
         // Cattle statistics
         const cattleResult = await sequelize.query(
@@ -483,7 +483,7 @@ export class BaseController {
     }
   }
 
-  public async bulkImportBases(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async bulkImportBases(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { bases } = req.body;
 
@@ -618,10 +618,10 @@ export class BaseController {
         latitude: base.latitude,
         longitude: base.longitude,
         area: base.area,
-        manager_name: base.manager?.real_name,
-        manager_username: base.manager?.username,
-        manager_phone: base.manager?.phone,
-        manager_email: base.manager?.email,
+        manager_name: (base as any).manager?.real_name,
+        manager_username: (base as any).manager?.username,
+        manager_phone: (base as any).manager?.phone,
+        manager_email: (base as any).manager?.email,
         created_at: base.created_at,
         updated_at: base.updated_at,
       }));
@@ -659,7 +659,7 @@ export class BaseController {
     }
   }
 
-  public async getBaseCapacityInfo(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getBaseCapacityInfo(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -776,7 +776,7 @@ export class BaseController {
     }
   }
 
-  public async validateBaseLocation(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async validateBaseLocation(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { latitude, longitude, address } = req.body;
 

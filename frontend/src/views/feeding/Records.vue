@@ -324,7 +324,7 @@ const importing = ref(false)
 const selectedRows = ref<FeedingRecord[]>([])
 
 // 筛选条件
-const dateRange = ref<[string, string]>([])
+const dateRange = ref<[string, string]>(['', ''])
 const selectedBase = ref<number>()
 const selectedFormula = ref<string>()
 
@@ -367,9 +367,9 @@ const formRules = {
   ],
   amount: [
     { required: true, message: '请输入饲喂量', trigger: 'blur' },
-    { type: 'number', min: 0.1, message: '饲喂量必须大于0.1kg', trigger: 'blur' }
+    { type: 'number' as const, min: 0.1, message: '饲喂量必须大于0.1kg', trigger: 'blur' }
   ]
-}
+} as const
 
 // 计算属性
 const totalRecords = computed(() => pagination.value.total)
@@ -422,8 +422,8 @@ const fetchBases = async () => {
 // 获取牛棚列表
 const fetchBarns = async () => {
   try {
-    const response = await barnApi.getBarns()
-    barns.value = response.data.data
+    const response = await barnApi.getList()
+    barns.value = response.data
   } catch (error) {
     console.error('获取牛棚列表失败:', error)
   }

@@ -52,7 +52,7 @@ export class UserController {
     }
   }
 
-  public async getUserById(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getUserById(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -83,7 +83,7 @@ export class UserController {
     }
   }
 
-  public async createUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async createUser(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { username, password, real_name, email, phone, role_id, base_id } = req.body;
 
@@ -129,7 +129,7 @@ export class UserController {
     }
   }
 
-  public async updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async updateUser(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
       const { real_name, email, phone, role_id, base_id, status } = req.body;
@@ -173,7 +173,7 @@ export class UserController {
     }
   }
 
-  public async deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async deleteUser(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const { id } = req.params;
 
@@ -206,7 +206,7 @@ export class UserController {
     }
   }
 
-  public async getProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async getProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const userId = req.user?.id;
       
@@ -238,7 +238,7 @@ export class UserController {
     }
   }
 
-  public async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+  public async updateProfile(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
     try {
       const userId = req.user?.id;
       const { real_name, email, phone } = req.body;

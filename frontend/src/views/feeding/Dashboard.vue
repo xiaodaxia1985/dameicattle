@@ -163,7 +163,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Dish, Money, TrendCharts, DataAnalysis, Plus, DocumentAdd, Calendar } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
@@ -172,7 +172,7 @@ import { baseApi } from '@/api/base'
 import type { FeedingStatistics, FeedingRecord } from '@/api/feeding'
 
 // 响应式数据
-const dateRange = ref<[string, string]>([])
+const dateRange = ref<[string, string]>(['', ''])
 const selectedBase = ref<number>()
 const bases = ref<any[]>([])
 const statistics = ref<FeedingStatistics>({
