@@ -1,4 +1,4 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model, Optional, Op } from 'sequelize';
 import { sequelize } from '@/config/database';
 
 // Define the attributes interface
@@ -45,7 +45,7 @@ export class FeedingRecord extends Model<FeedingRecordAttributes, FeedingRecordC
       where: {
         base_id: baseId,
         feeding_date: {
-          [sequelize.Sequelize.Op.between]: [startDate, endDate]
+          [Op.between]: [startDate, endDate]
         }
       },
       include: [

@@ -388,7 +388,7 @@ export class DataIntegrationController {
       const outputPath = `exports/${tableName}_${Date.now()}`;
       
       const options = {
-        format: (format as string) || 'csv',
+        format: (format as 'json' | 'csv' | 'xlsx') || 'csv',
         output_path: outputPath,
         where_clause: whereClause as string,
         columns: columns ? (columns as string).split(',') : undefined,

@@ -72,7 +72,7 @@ export class CattleEventController {
         offset: offset,
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: rows,
         pagination: {
@@ -84,7 +84,7 @@ export class CattleEventController {
       });
     } catch (error) {
       logger.error('Error fetching cattle events:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_EVENTS_ERROR',
@@ -133,13 +133,13 @@ export class CattleEventController {
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: event
       });
     } catch (error) {
       logger.error('Error fetching cattle event:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'EVENT_FETCH_ERROR',
@@ -199,14 +199,14 @@ export class CattleEventController {
         ]
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: createdEvent
       });
     } catch (error) {
       logger.error('Error creating cattle event:', error);
       if (error instanceof ValidationError) {
-        res.status(422).json({
+        return res.status(422).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
@@ -214,7 +214,7 @@ export class CattleEventController {
           }
         });
       } else {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: {
             code: 'EVENT_CREATE_ERROR',
@@ -278,13 +278,13 @@ export class CattleEventController {
         ]
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: updatedEvent
       });
     } catch (error) {
       logger.error('Error updating cattle event:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'EVENT_UPDATE_ERROR',
@@ -330,13 +330,13 @@ export class CattleEventController {
 
       await event.destroy();
 
-      res.json({
+      return res.json({
         success: true,
         message: '事件删除成功'
       });
     } catch (error) {
       logger.error('Error deleting cattle event:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'EVENT_DELETE_ERROR',
@@ -368,13 +368,13 @@ export class CattleEventController {
         { value: 'other', label: '其他', category: 'other' }
       ];
 
-      res.json({
+      return res.json({
         success: true,
         data: eventTypes
       });
     } catch (error) {
       logger.error('Error fetching event types:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'EVENT_TYPES_ERROR',

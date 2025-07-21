@@ -87,7 +87,7 @@
               @change="handleBaseChange"
             >
               <el-option
-                v-for="base in baseStore.baseList"
+                v-for="base in baseStore.bases"
                 :key="base.id"
                 :label="base.name"
                 :value="base.id"
@@ -336,7 +336,7 @@ watch(dialogVisible, (visible) => {
 const loadData = async () => {
   try {
     await Promise.all([
-      baseStore.fetchBaseList(),
+      baseStore.fetchBases(),
       barnStore.fetchBarnList(),
       cattleStore.fetchCattleList({ limit: 1000 }) // 加载所有牛只用于选择父母
     ])

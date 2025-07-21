@@ -105,9 +105,8 @@ export class SalesOrderController {
       });
     }
   }
-  // 
-获取销售订单详情
-  static async getSalesOrder(req: Request, res: Response) {
+  // 获取销售订单详情
+  static async getSalesOrder(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -260,7 +259,7 @@ export class SalesOrderController {
         payment_method,
         contract_number,
         remark,
-        created_by: req.user?.id
+        created_by: req.user?.id || 0
       }, { transaction });
 
       // 创建订单明细

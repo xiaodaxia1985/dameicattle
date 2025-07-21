@@ -89,7 +89,15 @@ export class HealthAlertService {
       });
 
       for (const cattle of sickCattleWithoutRecords) {
-        if (!cattle.health_records || cattle.health_records.length === 0) {
+        // 检查是否有健康记录 - 通过查询数据库而不是依赖关联属性
+        const healthRecordCount = await HealthRecord.count({
+          where: {
+            cattle_id: cattle.id,
+            status: 'ongoing'
+          }
+        });
+        
+        if (healthRecordCount === 0) {
           alerts.push({
             id: `missing_diagnosis_${cattle.id}`,
             type: 'health_anomaly',

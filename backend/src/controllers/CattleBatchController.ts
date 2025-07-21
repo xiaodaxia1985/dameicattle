@@ -8,7 +8,7 @@ import { Parser } from 'json2csv';
 
 export class CattleBatchController {
   // Batch import cattle from Excel/CSV
-  static async batchImportCattle(req: Request, res: Response) {
+  static async batchImportCattle(req: Request, res: Response): Promise<void> {
     const transaction: Transaction = await sequelize.transaction();
     
     try {
@@ -419,7 +419,7 @@ export class CattleBatchController {
   }
 
   // Batch transfer cattle between barns
-  static async batchTransferCattle(req: Request, res: Response) {
+  static async batchTransferCattle(req: Request, res: Response): Promise<void> {
     const transaction: Transaction = await sequelize.transaction();
     
     try {

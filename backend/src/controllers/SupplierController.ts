@@ -472,7 +472,13 @@ export class SupplierController {
 
       // 合并数据
       const comparison = suppliers.map(supplier => {
-        const stats = comparisonStats.find(s => s.supplier_id === supplier.id) || {};
+        const stats = comparisonStats.find(s => s.supplier_id === supplier.id) || {
+          order_count: 0,
+          total_amount: 0,
+          avg_order_amount: 0,
+          completed_orders: 0,
+          avg_delivery_delay: 0
+        };
         return {
           ...supplier.toJSON(),
           statistics: {
@@ -518,7 +524,7 @@ export class SupplierController {
           [fn('COUNT', col('id')), 'count']
         ],
         where: {
-          supplier_type: { [Op.ne]: null },
+          supplier_type: { [Op.ne]: null as any },
           status: 'active'
         },
         group: ['supplier_type'],

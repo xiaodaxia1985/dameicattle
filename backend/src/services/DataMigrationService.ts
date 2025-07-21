@@ -324,7 +324,7 @@ export class DataMigrationService {
           // 应用字段映射
           const mappedRow: any = {};
           for (const [sourceField, targetField] of Object.entries(transformRules.field_mappings)) {
-            mappedRow[targetField] = row[sourceField];
+            mappedRow[targetField] = (row as any)[sourceField];
           }
 
           // 应用数据转换

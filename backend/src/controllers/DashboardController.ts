@@ -58,7 +58,7 @@ export class DashboardController {
       });
 
       // Get health rate
-      const healthyCattle = cattleStats.find((stat: any) => stat.health_status === 'healthy')?.count || 0;
+      const healthyCattle = (cattleStats as any[]).find((stat: any) => stat.health_status === 'healthy')?.count || 0;
       const healthRate = totalCattle > 0 ? (healthyCattle / totalCattle * 100).toFixed(1) : '0';
 
       // Get monthly revenue from sales
@@ -409,7 +409,7 @@ export class DashboardController {
       const { limit = 20 } = req.query;
       const userBaseId = (req as any).user?.base_id;
 
-      const tasks = [];
+      const tasks: any[] = [];
 
       // High priority: Equipment failures
       const equipmentFailures = await EquipmentFailure.findAll({

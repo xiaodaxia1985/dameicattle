@@ -217,7 +217,7 @@ const selectedSuppliers = ref<Supplier[]>([])
 const searchForm = reactive({
   name: '',
   supplierType: '',
-  rating: null as number | null
+  rating: undefined as number | undefined
 })
 
 // 分页
@@ -334,7 +334,7 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitting.value = true
     
-    if (isEdit.value) {
+    if (isEdit.value && form.id) {
       await purchaseApi.updateSupplier(form.id, form)
       ElMessage.success('更新成功')
     } else {
@@ -397,13 +397,13 @@ const getSupplierTypeText = (type: string) => {
   return typeMap[type] || type
 }
 
-const getSupplierTypeColor = (type: string) => {
-  const colorMap: Record<string, string> = {
+const getSupplierTypeColor = (type: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     cattle: 'success',
     material: 'primary',
     equipment: 'warning'
   }
-  return colorMap[type] || ''
+  return colorMap[type] || 'info'
 }
 
 const formatDate = (dateString: string) => {

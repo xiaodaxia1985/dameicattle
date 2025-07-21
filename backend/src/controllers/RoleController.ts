@@ -49,7 +49,7 @@ export class RoleController {
     }
   }
 
-  public async getRoleById(req: Request, res: Response, next: NextFunction) {
+  public async getRoleById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -86,7 +86,7 @@ export class RoleController {
     }
   }
 
-  public async createRole(req: Request, res: Response, next: NextFunction) {
+  public async createRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { name, description, permissions } = req.body;
 
@@ -127,7 +127,7 @@ export class RoleController {
     }
   }
 
-  public async updateRole(req: Request, res: Response, next: NextFunction) {
+  public async updateRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const { name, description, permissions } = req.body;
@@ -189,7 +189,7 @@ export class RoleController {
     }
   }
 
-  public async deleteRole(req: Request, res: Response, next: NextFunction) {
+  public async deleteRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -291,7 +291,7 @@ export class RoleController {
     }
   }
 
-  public async assignUsersToRole(req: Request, res: Response, next: NextFunction) {
+  public async assignUsersToRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const { userIds } = req.body;
@@ -311,7 +311,7 @@ export class RoleController {
 
       // Update users with the new role
       await User.update(
-        { role_id: id },
+        { role_id: parseInt(id) as number },
         { where: { id: userIds } }
       );
 
@@ -330,7 +330,7 @@ export class RoleController {
     }
   }
 
-  public async removeUsersFromRole(req: Request, res: Response, next: NextFunction) {
+  public async removeUsersFromRole(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const { userIds } = req.body;
@@ -351,7 +351,7 @@ export class RoleController {
       // Remove role from users (set to null)
       await User.update(
         { role_id: null },
-        { where: { id: userIds, role_id: id } }
+        { where: { id: userIds, role_id: parseInt(id) } }
       );
 
       logger.info(`Users removed from role: ${role.name}`, {

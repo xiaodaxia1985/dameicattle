@@ -1,10 +1,10 @@
-import cron from 'node-cron';
+import * as cron from 'node-cron';
 import { HealthAlertService } from './HealthAlertService';
 import { logger } from '@/utils/logger';
 import { Base } from '@/models';
 
 export class ScheduledTaskService {
-  private static tasks: Map<string, cron.ScheduledTask> = new Map();
+  private static tasks: Map<string, any> = new Map();
 
   /**
    * 启动所有定时任务
@@ -71,7 +71,6 @@ export class ScheduledTaskService {
         logger.error('每日健康预警检查失败:', error);
       }
     }, {
-      scheduled: false,
       timezone: 'Asia/Shanghai'
     });
 
@@ -116,7 +115,6 @@ export class ScheduledTaskService {
         logger.error('疫苗到期提醒检查失败:', error);
       }
     }, {
-      scheduled: false,
       timezone: 'Asia/Shanghai'
     });
 
@@ -159,7 +157,6 @@ export class ScheduledTaskService {
         logger.error('每周健康趋势报告生成失败:', error);
       }
     }, {
-      scheduled: false,
       timezone: 'Asia/Shanghai'
     });
 
@@ -210,8 +207,8 @@ export class ScheduledTaskService {
     this.tasks.forEach((task, name) => {
       status.push({
         name,
-        running: task.running || false,
-        nextRun: task.nextDate()?.toISOString()
+        running: (task as any).running || false,
+        nextRun: (task as any).nextDate ? (task as any).nextDate().toISOString() : undefined
       });
     });
 

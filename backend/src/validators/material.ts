@@ -126,7 +126,7 @@ export const createInventoryTransactionValidator = [
   body('quantity')
     .isDecimal({ decimal_digits: '0,2' })
     .withMessage('数量格式无效')
-    .custom((value) => {
+    .custom((value: any) => {
       if (parseFloat(value) <= 0) {
         throw new Error('数量必须大于0');
       }

@@ -55,7 +55,7 @@
             <div class="card-header">
               <span>库存分布</span>
               <el-select v-model="selectedBase" placeholder="选择基地" style="width: 150px" @change="loadChartData">
-                <el-option label="全部基地" :value="undefined" />
+                <el-option label="全部基地" value="" />
                 <el-option
                   v-for="base in bases"
                   :key="base.id"
@@ -315,9 +315,9 @@ const getAlertLevelName = (level: string) => {
   return names[level as keyof typeof names] || level
 }
 
-const getAlertLevelColor = (level: string) => {
+const getAlertLevelColor = (level: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
   const colors = { low: 'info', medium: 'warning', high: 'danger' }
-  return colors[level as keyof typeof colors] || 'default'
+  return colors[level as keyof typeof colors] || 'info'
 }
 
 const getTransactionTypeName = (type: string) => {

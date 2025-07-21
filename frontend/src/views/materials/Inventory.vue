@@ -561,10 +561,22 @@
       </template>
     </el-dialog>
   </div>
-</template><scri
-pt setup lang="ts">
+</template>
+
+<script setup lang="ts">
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { 
+  Box, 
+  Money, 
+  Warning, 
+  Bell, 
+  Search, 
+  Plus, 
+  Minus, 
+  Switch, 
+  Edit 
+} from '@element-plus/icons-vue'
 import { useMaterialStore } from '@/stores/material'
 import { useBaseStore } from '@/stores/base'
 import { materialApi } from '@/api/material'
@@ -842,14 +854,14 @@ const getTransactionTypeName = (type: string) => {
   return names[type as keyof typeof names] || type
 }
 
-const getTransactionTypeColor = (type: string) => {
+const getTransactionTypeColor = (type: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
   const colors = {
     inbound: 'success',
     outbound: 'warning',
     transfer: 'info',
     adjustment: 'primary'
   }
-  return colors[type as keyof typeof colors] || 'default'
+  return colors[type as keyof typeof colors] || 'info'
 }
 
 // Alert operations
@@ -911,13 +923,13 @@ const getAlertTypeName = (type: string) => {
   return names[type as keyof typeof names] || type
 }
 
-const getAlertTypeColor = (type: string) => {
+const getAlertTypeColor = (type: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
   const colors = {
     low_stock: 'warning',
     expired: 'danger',
     quality_issue: 'danger'
   }
-  return colors[type as keyof typeof colors] || 'default'
+  return colors[type as keyof typeof colors] || 'info'
 }
 
 const getAlertLevelName = (level: string) => {
@@ -929,13 +941,13 @@ const getAlertLevelName = (level: string) => {
   return names[level as keyof typeof names] || level
 }
 
-const getAlertLevelColor = (level: string) => {
+const getAlertLevelColor = (level: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
   const colors = {
     low: 'info',
     medium: 'warning',
     high: 'danger'
   }
-  return colors[level as keyof typeof colors] || 'default'
+  return colors[level as keyof typeof colors] || 'info'
 }
 
 // Lifecycle

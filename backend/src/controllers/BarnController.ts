@@ -1,14 +1,9 @@
 import { Request, Response } from 'express';
 import { Op, WhereOptions } from 'sequelize';
-import { Barn, Base } from '@/models';
+import { Barn, Base, User } from '@/models';
 
 interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    username: string;
-    role_id?: number;
-    base_id?: number;
-  };
+  user?: User;
 }
 
 export class BarnController {

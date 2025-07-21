@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
 import * as passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
-import { User } from '@/models/User';
+import { User, UserAttributes } from '@/models/User';
 import { logger } from '@/utils/logger';
 
 // Define authenticated request interface
@@ -13,6 +13,7 @@ export interface AuthenticatedRequest extends Request {
 // Extend Express Request interface globally
 declare global {
   namespace Express {
+    interface User extends UserAttributes {}
     interface Request {
       user?: User;
     }
@@ -49,7 +50,7 @@ passport.use(
 
 // Authentication middleware
 export const auth = (req: Request, res: Response, next: NextFunction): void => {
-  passport.authenticate('jwt', { session: false }, (err: any, user: any) => {
+  passport.authenticate('jwt', { session: false }, (err: any, user: User | false) => {
     if (err) {
       logger.error('Authentication error:', err);
       res.status(500).json({
@@ -77,7 +78,7 @@ export const auth = (req: Request, res: Response, next: NextFunction): void => {
       return;
     }
 
-    req.user = user;
+    req.user = user as User;
     next();
     return;
   })(req, res, next);
@@ -85,7 +86,7 @@ export const auth = (req: Request, res: Response, next: NextFunction): void => {
 
 // Legacy alias for backward compatibility
 export const authMiddleware = (req: Request, res: Response, next: NextFunction): void => {
-  passport.authenticate('jwt', { session: false }, (err: any, user: any) => {
+  passport.authenticate('jwt', { session: false }, (err: any, user: User | false) => {
     if (err) {
       logger.error('Authentication error:', err);
       res.status(500).json({
@@ -113,7 +114,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction):
       return;
     }
 
-    req.user = user;
+    req.user = user as User;
     next();
     return;
   })(req, res, next);

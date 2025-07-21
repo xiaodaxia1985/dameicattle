@@ -59,7 +59,7 @@
         <el-card class="overview-card treatment">
           <div class="card-content">
             <div class="card-icon">
-              <el-icon size="32" color="#E6A23C"><Medicine /></el-icon>
+              <el-icon size="32" color="#E6A23C"><Warning /></el-icon>
             </div>
             <div class="card-info">
               <div class="card-number">{{ statistics.healthStatus?.find(s => s.health_status === 'treatment')?.count || 0 }}</div>
@@ -110,7 +110,7 @@ etup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { Refresh, Download, Check, Warning, Medicine, DataAnalysis } from '@element-plus/icons-vue'
+import { Refresh, Download, Check, Warning, DataAnalysis } from '@element-plus/icons-vue'
 import { healthApi } from '@/api/health'
 
 // 响应式数据

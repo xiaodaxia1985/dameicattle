@@ -406,7 +406,7 @@ const customerTypes = ref<any[]>([])
 const searchForm = reactive({
   name: '',
   customerType: '',
-  creditRating: null as number | null
+  creditRating: undefined as number | undefined
 })
 
 // 分页

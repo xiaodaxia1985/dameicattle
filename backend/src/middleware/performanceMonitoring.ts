@@ -54,7 +54,7 @@ class PerformanceMonitor {
       const originalGet = redisClient.get;
       const originalSet = redisClient.set;
 
-      redisClient.get = async function (key: string) {
+      (redisClient as any).get = async function (key: string) {
         const result = await originalGet.call(this, key);
         if (result !== null) {
           cacheHits++;
@@ -362,15 +362,15 @@ class PerformanceMonitor {
   private static async saveMetricsToRedis(metrics: RequestMetrics): Promise<void> {
     try {
       const key = `performance:metrics:${Date.now()}`;
-      await redisClient.setex(key, 3600, JSON.stringify(metrics)); // 保存1小时
+      await redisClient.setEx(key, 3600, JSON.stringify(metrics)); // 保存1小时
       
       // 更新统计计数器
       const date = new Date().toISOString().split('T')[0];
-      await redisClient.hincrby(`performance:daily:${date}`, 'request_count', 1);
-      await redisClient.hincrby(`performance:daily:${date}`, 'total_response_time', metrics.response_time);
+      await redisClient.hIncrBy(`performance:daily:${date}`, 'request_count', 1);
+      await redisClient.hIncrBy(`performance:daily:${date}`, 'total_response_time', metrics.response_time);
       
       if (metrics.status_code >= 400) {
-        await redisClient.hincrby(`performance:daily:${date}`, 'error_count', 1);
+        await redisClient.hIncrBy(`performance:daily:${date}`, 'error_count', 1);
       }
     } catch (error) {
       logger.error('保存性能指标到Redis失败:', error);

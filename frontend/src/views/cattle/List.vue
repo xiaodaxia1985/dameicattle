@@ -315,7 +315,7 @@ const detailCattleId = ref<number | null>(null)
 
 onMounted(() => {
   loadCattleList()
-  baseStore.fetchBaseList()
+  baseStore.fetchBases()
 })
 
 const loadCattleList = async () => {

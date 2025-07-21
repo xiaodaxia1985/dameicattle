@@ -117,7 +117,7 @@ export class InventoryController {
           transaction_date: {
             [Op.gte]: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
           },
-          ...(base_id && { base_id }),
+          ...(base_id && { base_id: Number(base_id) }),
         },
       });
 
@@ -125,7 +125,7 @@ export class InventoryController {
       const activeAlertsCount = await InventoryAlert.count({
         where: {
           is_resolved: false,
-          ...(base_id && { base_id }),
+          ...(base_id && { base_id: Number(base_id) }),
         },
       });
 

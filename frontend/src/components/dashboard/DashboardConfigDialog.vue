@@ -250,7 +250,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { 
   DataAnalysis, 
@@ -273,7 +273,7 @@ const emit = defineEmits<{
 
 const visible = computed({
   get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+  set: (value: boolean) => emit('update:modelValue', value)
 })
 
 const activeTab = ref('layout')

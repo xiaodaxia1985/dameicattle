@@ -530,8 +530,7 @@
     </el-dialog>
   </div>
 </template>
-<scrip
-t setup lang="ts">
+<script setup lang="ts">
 import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
@@ -621,9 +620,10 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleString('zh-CN')
 }
 
-const handleTabChange = (tabName: string) => {
-  activeTab.value = tabName
-  switch (tabName) {
+const handleTabChange = (tabName: string | number) => {
+  const tabNameStr = String(tabName)
+  activeTab.value = tabNameStr
+  switch (tabNameStr) {
     case 'materials':
       loadMaterials()
       break

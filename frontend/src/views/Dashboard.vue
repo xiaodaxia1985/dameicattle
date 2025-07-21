@@ -199,7 +199,8 @@ import {
   Food,
   ShoppingCart
 } from '@element-plus/icons-vue'
-import { useDashboardStore, useAppStore } from '@/stores'
+import { useDashboardStore } from '@/stores/dashboard'
+import { useAppStore } from '@/stores/app'
 import { 
   StatCard, 
   TrendChart, 

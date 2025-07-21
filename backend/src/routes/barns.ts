@@ -61,7 +61,7 @@ router.use(authMiddleware);
  *       500:
  *         description: 服务器错误
  */
-router.get('/', BarnController.getBarns);
+router.get('/', (req, res) => BarnController.getBarns(req as any, res));
 
 /**
  * @swagger
@@ -85,7 +85,7 @@ router.get('/', BarnController.getBarns);
  *       500:
  *         description: 服务器错误
  */
-router.get('/statistics', BarnController.getBarnStatistics);
+router.get('/statistics', (req, res) => BarnController.getBarnStatistics(req as any, res));
 
 /**
  * @swagger
@@ -109,7 +109,7 @@ router.get('/statistics', BarnController.getBarnStatistics);
  *       500:
  *         description: 服务器错误
  */
-router.get('/options', BarnController.getBarnOptions);
+router.get('/options', (req, res) => BarnController.getBarnOptions(req as any, res));
 
 /**
  * @swagger
@@ -136,7 +136,7 @@ router.get('/options', BarnController.getBarnOptions);
  *       500:
  *         description: 服务器错误
  */
-router.get('/:id', BarnController.getBarn);
+router.get('/:id', (req, res) => BarnController.getBarn(req as any, res));
 
 /**
  * @swagger
@@ -194,7 +194,7 @@ router.get('/:id', BarnController.getBarn);
  *       500:
  *         description: 服务器错误
  */
-router.post('/', BarnController.createBarn);
+router.post('/', (req, res) => BarnController.createBarn(req as any, res));
 
 /**
  * @swagger
@@ -253,7 +253,7 @@ router.post('/', BarnController.createBarn);
  *       500:
  *         description: 服务器错误
  */
-router.put('/:id', BarnController.updateBarn);
+router.put('/:id', (req, res) => BarnController.updateBarn(req as any, res));
 
 /**
  * @swagger
@@ -284,6 +284,6 @@ router.put('/:id', BarnController.updateBarn);
  *       500:
  *         description: 服务器错误
  */
-router.delete('/:id', BarnController.deleteBarn);
+router.delete('/:id', (req, res) => BarnController.deleteBarn(req as any, res));
 
 export default router;

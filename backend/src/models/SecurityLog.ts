@@ -5,7 +5,7 @@ interface SecurityLogAttributes {
   id: number;
   user_id?: number;
   username?: string;
-  event_type: 'login_success' | 'login_failed' | 'logout' | 'password_reset' | 'account_locked' | 'token_refresh';
+  event_type: 'login_success' | 'login_failed' | 'logout' | 'password_reset' | 'account_locked' | 'token_refresh' | 'user_binding';
   ip_address: string;
   user_agent?: string;
   details?: object;
@@ -18,7 +18,7 @@ export class SecurityLog extends Model<SecurityLogAttributes, SecurityLogCreatio
   public id!: number;
   public user_id?: number;
   public username?: string;
-  public event_type!: 'login_success' | 'login_failed' | 'logout' | 'password_reset' | 'account_locked' | 'token_refresh';
+  public event_type!: 'login_success' | 'login_failed' | 'logout' | 'password_reset' | 'account_locked' | 'token_refresh' | 'user_binding';
   public ip_address!: string;
   public user_agent?: string;
   public details?: object;
@@ -50,7 +50,7 @@ SecurityLog.init(
       allowNull: true,
     },
     event_type: {
-      type: DataTypes.ENUM('login_success', 'login_failed', 'logout', 'password_reset', 'account_locked', 'token_refresh'),
+      type: DataTypes.ENUM('login_success', 'login_failed', 'logout', 'password_reset', 'account_locked', 'token_refresh', 'user_binding'),
       allowNull: false,
     },
     ip_address: {

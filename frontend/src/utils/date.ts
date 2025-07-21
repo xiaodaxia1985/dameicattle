@@ -4,7 +4,7 @@
  * @param format 格式化模板，默认为 'YYYY-MM-DD HH:mm:ss'
  * @returns 格式化后的日期字符串
  */
-export function formatDate(date: string | Date, format = 'YYYY-MM-DD HH:mm:ss'): string {
+export function formatDate(date: string | Date | undefined, format = 'YYYY-MM-DD HH:mm:ss'): string {
   if (!date) return ''
   
   const d = typeof date === 'string' ? new Date(date) : date

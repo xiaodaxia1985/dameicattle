@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { Op } from 'sequelize';
+﻿import { Request, Response, NextFunction } from 'express';
+import { Op, QueryTypes } from 'sequelize';
 import { Base, User } from '@/models';
 import { sequelize } from '@/config/database';
 import { logger } from '@/utils/logger';
@@ -60,7 +60,7 @@ export class BaseController {
     }
   }
 
-  public async getBaseById(req: Request, res: Response, next: NextFunction) {
+  public async getBaseById(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -80,7 +80,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'BASE_NOT_FOUND',
-            message: '基地不存在',
+            message: '基地不存在在?',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -98,7 +98,7 @@ export class BaseController {
     }
   }
 
-  public async createBase(req: Request, res: Response, next: NextFunction) {
+  public async createBase(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { name, code, address, latitude, longitude, area, manager_id } = req.body;
 
@@ -109,7 +109,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'BASE_CODE_EXISTS',
-            message: '基地编码已存在',
+            message: '基地编码已存在在?',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -124,7 +124,7 @@ export class BaseController {
             success: false,
             error: {
               code: 'MANAGER_NOT_FOUND',
-              message: '指定的管理员不存在',
+              message: '指定的管理员不存在在',
               timestamp: new Date().toISOString(),
               path: req.path,
             },
@@ -165,14 +165,14 @@ export class BaseController {
         data: {
           base: base.toJSON(),
         },
-        message: '基地创建成功',
+        message: '基地创建成功功',
       });
     } catch (error) {
       next(error);
     }
   }
 
-  public async updateBase(req: Request, res: Response, next: NextFunction) {
+  public async updateBase(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
       const { name, code, address, latitude, longitude, area, manager_id } = req.body;
@@ -219,7 +219,7 @@ export class BaseController {
             success: false,
             error: {
               code: 'MANAGER_NOT_FOUND',
-              message: '指定的管理员不存在',
+              message: '指定的管理员不存在在',
               timestamp: new Date().toISOString(),
               path: req.path,
             },
@@ -265,14 +265,14 @@ export class BaseController {
         data: {
           base: base.toJSON(),
         },
-        message: '基地更新成功',
+        message: '基地更新成功功',
       });
     } catch (error) {
       next(error);
     }
   }
 
-  public async deleteBase(req: Request, res: Response, next: NextFunction) {
+  public async deleteBase(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -282,7 +282,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'BASE_NOT_FOUND',
-            message: '基地不存在',
+            message: '基地不存在在',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -310,7 +310,7 @@ export class BaseController {
           'SELECT COUNT(*) as count FROM barns WHERE base_id = :baseId',
           {
             replacements: { baseId: id },
-            type: sequelize.QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         );
         
@@ -339,14 +339,14 @@ export class BaseController {
 
       res.json({
         success: true,
-        message: '基地删除成功',
+        message: '基地删除成功功',
       });
     } catch (error) {
       next(error);
     }
   }
 
-  public async getBaseStatistics(req: Request, res: Response, next: NextFunction) {
+  public async getBaseStatistics(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -356,7 +356,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'BASE_NOT_FOUND',
-            message: '基地不存在',
+            message: '基地不存在在',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -386,7 +386,7 @@ export class BaseController {
           'SELECT COUNT(*) as count FROM barns WHERE base_id = :baseId',
           {
             replacements: { baseId: id },
-            type: sequelize.QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         );
         statistics.barn_count = barnResult[0]?.count || 0;
@@ -401,7 +401,7 @@ export class BaseController {
            FROM cattle WHERE base_id = :baseId`,
           {
             replacements: { baseId: id },
-            type: (sequelize as any).QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         ) as any[];
         
@@ -418,7 +418,7 @@ export class BaseController {
            WHERE base_id = :baseId AND feeding_date >= CURRENT_DATE - INTERVAL '30 days'`,
           {
             replacements: { baseId: id },
-            type: (sequelize as any).QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         ) as any[];
         statistics.feeding_records_count = feedingResult[0]?.count || 0;
@@ -430,7 +430,7 @@ export class BaseController {
            WHERE c.base_id = :baseId AND hr.diagnosis_date >= CURRENT_DATE - INTERVAL '30 days'`,
           {
             replacements: { baseId: id },
-            type: (sequelize as any).QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         ) as any[];
         statistics.health_records_count = healthResult[0]?.count || 0;
@@ -483,7 +483,7 @@ export class BaseController {
     }
   }
 
-  public async bulkImportBases(req: Request, res: Response, next: NextFunction) {
+  public async bulkImportBases(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { bases } = req.body;
 
@@ -515,7 +515,7 @@ export class BaseController {
           if (!baseData.name || !baseData.code) {
             results.failed.push({
               data: baseData,
-              error: '基地名称和编码是必填项',
+              error: '基地名称和编码是必填项项',
             });
             continue;
           }
@@ -583,7 +583,7 @@ export class BaseController {
       res.json({
         success: true,
         data: results,
-        message: `批量导入完成：成功 ${results.success.length} 个，失败 ${results.failed.length} 个`,
+        message: `批量导入完成功：成功功${results.success.length} 个，失败 ${results.failed.length} 个`,
       });
     } catch (error) {
       next(error);
@@ -633,7 +633,7 @@ export class BaseController {
         res.setHeader('Content-Disposition', 'attachment; filename=bases.csv');
         
         // Simple CSV implementation
-        const csvHeaders = 'ID,名称,编码,地址,纬度,经度,面积,管理员姓名,管理员用户名,管理员电话,管理员邮箱,创建时间,更新时间\n';
+        const csvHeaders = 'ID,名称,编码,地址,纬度,经度,面积,管理员姓名名?管理员用户名,管理员电话话?管理员邮箱箱?创建时间,更新时间\n';
         const csvRows = exportData.map(base => 
           `${base.id},"${base.name}","${base.code}","${base.address || ''}",${base.latitude || ''},${base.longitude || ''},${base.area || ''},"${base.manager_name || ''}","${base.manager_username || ''}","${base.manager_phone || ''}","${base.manager_email || ''}","${base.created_at}","${base.updated_at}"`
         ).join('\n');
@@ -659,7 +659,7 @@ export class BaseController {
     }
   }
 
-  public async getBaseCapacityInfo(req: Request, res: Response, next: NextFunction) {
+  public async getBaseCapacityInfo(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { id } = req.params;
 
@@ -669,7 +669,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'BASE_NOT_FOUND',
-            message: '基地不存在',
+            message: '基地不存在在',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -706,7 +706,7 @@ export class BaseController {
            FROM barns WHERE base_id = :baseId`,
           {
             replacements: { baseId: id },
-            type: sequelize.QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         ) as any[];
 
@@ -740,7 +740,7 @@ export class BaseController {
            ORDER BY b.name`,
           {
             replacements: { baseId: id },
-            type: sequelize.QueryTypes.SELECT,
+            type: QueryTypes.SELECT,
           }
         ) as any[];
 
@@ -776,7 +776,7 @@ export class BaseController {
     }
   }
 
-  public async validateBaseLocation(req: Request, res: Response, next: NextFunction) {
+  public async validateBaseLocation(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { latitude, longitude, address } = req.body;
 
@@ -785,7 +785,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'INVALID_COORDINATES',
-            message: '纬度和经度是必填项',
+            message: '纬度和经度是必填项项',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -798,7 +798,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'INVALID_LATITUDE',
-            message: '纬度必须在-90到90之间',
+            message: '纬度必须-90到90之间',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
@@ -810,7 +810,7 @@ export class BaseController {
           success: false,
           error: {
             code: 'INVALID_LONGITUDE',
-            message: '经度必须在-180到180之间',
+            message: '经度必须-180到180之间',
             timestamp: new Date().toISOString(),
             path: req.path,
           },

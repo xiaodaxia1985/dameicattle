@@ -600,13 +600,13 @@ const getDeliveryRateColor = (rate: number) => {
   return 'danger'
 }
 
-const getCategoryColor = (category: string) => {
-  const colorMap: Record<string, string> = {
+const getCategoryColor = (category: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     cattle: 'success',
     material: 'primary',
     equipment: 'warning'
   }
-  return colorMap[category] || ''
+  return colorMap[category] || 'info'
 }
 
 const getCategoryText = (category: string) => {

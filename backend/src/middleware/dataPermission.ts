@@ -18,7 +18,7 @@ declare global {
  * Data permission middleware that enforces base-level data isolation
  * Users can only access data from their assigned base unless they have admin privileges
  */
-export const dataPermissionMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export const dataPermissionMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const user = req.user as any;
     
@@ -115,7 +115,7 @@ export const canAccessBase = (req: Request, baseId: number): boolean => {
 /**
  * Middleware to require admin privileges
  */
-export const requireAdmin = (req: Request, res: Response, next: NextFunction) => {
+export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {
   const dataPermission = req.dataPermission;
   
   if (!dataPermission || !dataPermission.isAdmin) {
@@ -137,7 +137,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction) =>
  * Middleware to require base access
  */
 export const requireBaseAccess = (baseIdParam: string = 'baseId') => {
-  return (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction): void => {
     const baseId = parseInt(req.params[baseIdParam] || req.body[baseIdParam] || req.query[baseIdParam] as string);
     
     if (!baseId) {

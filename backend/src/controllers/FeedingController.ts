@@ -525,7 +525,7 @@ export class FeedingController {
       });
 
       // Get barn usage statistics if not filtered by barn
-      let barnStats = [];
+      let barnStats: any[] = [];
       if (!barn_id) {
         barnStats = await FeedingRecord.findAll({
           where: whereClause,
@@ -590,7 +590,7 @@ export class FeedingController {
 
       if (formulaIds.length > 0) {
         const formulas = await FeedFormula.findAll({
-          where: { id: formulaIds },
+          where: { id: { [Op.in]: formulaIds as number[] } },
           attributes: ['id']
         });
         if (formulas.length !== formulaIds.length) {
@@ -599,7 +599,7 @@ export class FeedingController {
       }
 
       const bases = await Base.findAll({
-        where: { id: baseIds },
+        where: { id: { [Op.in]: baseIds as number[] } },
         attributes: ['id']
       });
       if (bases.length !== baseIds.length) {
@@ -608,7 +608,7 @@ export class FeedingController {
 
       if (barnIds.length > 0) {
         const barns = await Barn.findAll({
-          where: { id: barnIds },
+          where: { id: { [Op.in]: barnIds as number[] } },
           attributes: ['id', 'base_id']
         });
         if (barns.length !== barnIds.length) {
@@ -896,9 +896,9 @@ export class FeedingController {
       });
 
       // Calculate efficiency metrics
-      const totalAmount = parseFloat(usageStats[0]?.total_amount || '0');
+      const totalAmount = parseFloat((usageStats[0] as any)?.total_amount || '0');
       const totalCost = totalAmount * (formula.cost_per_kg || 0);
-      const usageCount = parseInt(usageStats[0]?.usage_count || '0');
+      const usageCount = parseInt((usageStats[0] as any)?.usage_count || '0');
 
       res.json({
         success: true,
@@ -1032,7 +1032,7 @@ export class FeedingController {
         sum + day.feedings.reduce((daySum: number, feeding: any) => daySum + feeding.recommended_amount, 0), 0
       );
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           plan,
@@ -1051,9 +1051,21 @@ export class FeedingController {
     } catch (error) {
       logger.error('Error generating feeding plan:', error);
       if (error instanceof AppError) {
-        throw error;
+        return res.status(error.statusCode || 500).json({
+          success: false,
+          error: {
+            code: 'FEEDING_PLAN_ERROR',
+            message: error.message
+          }
+        });
       }
-      throw new AppError('生成饲喂计划失败', 500);
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'FEEDING_PLAN_ERROR',
+          message: '生成饲喂计划失败'
+        }
+      });
     }
   }
 
@@ -1070,8 +1082,8 @@ export class FeedingController {
 
       // Get cattle count
       const { Cattle } = await import('@/models');
-      const whereClause: any = { base_id };
-      if (barn_id) whereClause.barn_id = barn_id;
+      const whereClause: any = { base_id: Number(base_id) };
+      if (barn_id) whereClause.barn_id = Number(barn_id);
 
       const cattleCount = await Cattle.count({
         where: whereClause
@@ -1093,8 +1105,8 @@ export class FeedingController {
 
       const topFormulas = await FeedingRecord.findAll({
         where: {
-          base_id,
-          ...(barn_id && { barn_id }),
+          base_id: Number(base_id),
+          ...(barn_id && { barn_id: Number(barn_id) }),
           feeding_date: {
             [Op.gte]: thirtyDaysAgo
           }
@@ -1132,7 +1144,7 @@ export class FeedingController {
         };
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           cattle_count: cattleCount,
@@ -1143,9 +1155,21 @@ export class FeedingController {
     } catch (error) {
       logger.error('Error generating feeding recommendations:', error);
       if (error instanceof AppError) {
-        throw error;
+        return res.status(error.statusCode || 500).json({
+          success: false,
+          error: {
+            code: 'FEEDING_RECOMMENDATIONS_ERROR',
+            message: error.message
+          }
+        });
       }
-      throw new AppError('获取饲喂建议失败', 500);
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'FEEDING_RECOMMENDATIONS_ERROR',
+          message: '获取饲喂建议失败'
+        }
+      });
     }
   }
 }

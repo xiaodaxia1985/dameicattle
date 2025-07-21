@@ -191,10 +191,10 @@ const cattleOptions = ref<any[]>([])
 // 搜索表单
 const searchForm = reactive({
   orderNumber: '',
-  customerId: null as number | null,
+  customerId: undefined as number | undefined,
   status: '',
   paymentStatus: '',
-  dateRange: null as [string, string] | null
+  dateRange: undefined as [string, string] | undefined
 })
 
 // 分页
@@ -350,15 +350,15 @@ const getStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-const getStatusColor = (status: string) => {
-  const colorMap: Record<string, string> = {
+const getStatusColor = (status: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     pending: 'warning',
     approved: 'primary',
     delivered: 'info',
     completed: 'success',
     cancelled: 'danger'
   }
-  return colorMap[status] || ''
+  return colorMap[status] || 'info'
 }
 
 const getPaymentStatusText = (status: string) => {
@@ -370,13 +370,13 @@ const getPaymentStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-const getPaymentStatusColor = (status: string) => {
-  const colorMap: Record<string, string> = {
+const getPaymentStatusColor = (status: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     unpaid: 'danger',
     partial: 'warning',
     paid: 'success'
   }
-  return colorMap[status] || ''
+  return colorMap[status] || 'info'
 }
 
 const formatDate = (dateString?: string) => {

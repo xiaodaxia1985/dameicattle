@@ -11,8 +11,8 @@ export const generateToken = (user: any): string => {
   };
 
   return jwt.sign(payload, JWT_SECRET, {
-    expiresIn: (process.env.JWT_EXPIRES_IN || '24h') as string,
-  });
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+  } as jwt.SignOptions);
 };
 
 export const verifyToken = (token: string): any => {

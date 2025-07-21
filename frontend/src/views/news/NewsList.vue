@@ -303,8 +303,8 @@ const handleDelete = async (row: NewsArticle) => {
 }
 
 // 工具函数
-const getStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
+const getStatusType = (status: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const statusMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     draft: 'info',
     published: 'success',
     archived: 'warning'

@@ -715,7 +715,7 @@ const getDaysLeftText = (days: number): string => {
 }
 
 // 获取剩余天数类型
-const getDaysLeftType = (days: number): string => {
+const getDaysLeftType = (days: number): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
   if (days < 0) return 'danger'
   if (days <= 7) return 'danger'
   if (days <= 15) return 'warning'

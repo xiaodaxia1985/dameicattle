@@ -8,10 +8,10 @@ export const validate = (validationRules: any[]) => {
     const errors = validationResult(req);
     
     if (!errors.isEmpty()) {
-      const details = errors.array().map(error => ({
-        field: error.type === 'field' ? (error as any).path : error.type,
+      const details = errors.array().map((error: any) => ({
+        field: error.type === 'field' ? error.path : error.type,
         message: error.msg,
-        value: (error as any).value,
+        value: error.value,
       }));
 
       res.status(400).json({

@@ -95,7 +95,7 @@ FeedFormula.init(
               throw new Error(`配方成分 ${ingredient} 缺少必要字段 (ratio, unit, cost)`);
             }
             
-            const ratio = parseFloat(details.ratio);
+            const ratio = parseFloat(details.ratio as string);
             if (isNaN(ratio) || ratio <= 0 || ratio > 100) {
               throw new Error(`配方成分 ${ingredient} 的比例必须在 0-100 之间`);
             }

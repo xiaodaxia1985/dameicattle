@@ -45,7 +45,7 @@ export class CattleController {
         whereClause.status = status;
       }
       if (search) {
-        whereClause[Op.or] = [
+        (whereClause as any)[Op.or] = [
           { ear_tag: { [Op.iLike]: `%${search}%` } },
           { breed: { [Op.iLike]: `%${search}%` } },
           { notes: { [Op.iLike]: `%${search}%` } }
@@ -87,7 +87,7 @@ export class CattleController {
         offset: offset,
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: rows,
         pagination: {
@@ -99,7 +99,7 @@ export class CattleController {
       });
     } catch (error) {
       logger.error('Error fetching cattle list:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_LIST_ERROR',
@@ -172,13 +172,13 @@ export class CattleController {
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: cattle
       });
     } catch (error) {
       logger.error('Error fetching cattle:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_FETCH_ERROR',
@@ -241,13 +241,13 @@ export class CattleController {
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: cattle
       });
     } catch (error) {
       logger.error('Error fetching cattle by ear tag:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_FETCH_ERROR',
@@ -361,14 +361,14 @@ export class CattleController {
         ]
       });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: createdCattle
       });
     } catch (error) {
       logger.error('Error creating cattle:', error);
       if (error instanceof ValidationError) {
-        res.status(422).json({
+        return res.status(422).json({
           success: false,
           error: {
             code: 'VALIDATION_ERROR',
@@ -376,7 +376,7 @@ export class CattleController {
           }
         });
       } else {
-        res.status(500).json({
+        return res.status(500).json({
           success: false,
           error: {
             code: 'CATTLE_CREATE_ERROR',
@@ -505,13 +505,13 @@ export class CattleController {
         ]
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: updatedCattle
       });
     } catch (error) {
       logger.error('Error updating cattle:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_UPDATE_ERROR',
@@ -566,13 +566,13 @@ export class CattleController {
         operator_id: user.id
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: '牛只删除成功'
       });
     } catch (error) {
       logger.error('Error deleting cattle:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_DELETE_ERROR',
@@ -636,7 +636,7 @@ export class CattleController {
         raw: true
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           total: totalCount,
@@ -647,7 +647,7 @@ export class CattleController {
       });
     } catch (error) {
       logger.error('Error fetching cattle statistics:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: {
           code: 'CATTLE_STATS_ERROR',

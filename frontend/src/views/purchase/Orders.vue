@@ -490,10 +490,10 @@ const baseOptions = ref<any[]>([])
 // 搜索表单
 const searchForm = reactive({
   orderNumber: '',
-  supplierId: null as number | null,
+  supplierId: undefined as number | undefined,
   orderType: '',
   status: '',
-  dateRange: null as [string, string] | null
+  dateRange: undefined as [string, string] | undefined
 })
 
 // 分页
@@ -512,8 +512,8 @@ const currentOrder = ref<PurchaseOrder | null>(null)
 
 // 表单数据
 const form = reactive({
-  supplierId: null as number | null,
-  baseId: null as number | null,
+  supplierId: undefined as number | undefined,
+  baseId: undefined as number | undefined,
   orderType: '',
   orderDate: '',
   expectedDeliveryDate: '',
@@ -548,7 +548,8 @@ const fetchOrders = async () => {
       startDate: searchForm.dateRange?.[0],
       endDate: searchForm.dateRange?.[1]
     }
-    delete params.dateRange
+    // Remove dateRange from params since we've extracted startDate and endDate
+    const { dateRange, ...finalParams } = params
     
     const response = await purchaseApi.getOrders(params)
     orders.value = response.data.items || []
@@ -764,13 +765,13 @@ const getOrderTypeText = (type: string) => {
   return typeMap[type] || type
 }
 
-const getOrderTypeColor = (type: string) => {
-  const colorMap: Record<string, string> = {
+const getOrderTypeColor = (type: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     cattle: 'success',
     material: 'primary',
     equipment: 'warning'
   }
-  return colorMap[type] || ''
+  return colorMap[type] || 'info'
 }
 
 const getStatusText = (status: string) => {
@@ -784,15 +785,15 @@ const getStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-const getStatusColor = (status: string) => {
-  const colorMap: Record<string, string> = {
+const getStatusColor = (status: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     pending: 'warning',
     approved: 'primary',
     delivered: 'info',
     completed: 'success',
     cancelled: 'danger'
   }
-  return colorMap[status] || ''
+  return colorMap[status] || 'info'
 }
 
 const getPaymentStatusText = (status: string) => {
@@ -804,13 +805,13 @@ const getPaymentStatusText = (status: string) => {
   return statusMap[status] || status
 }
 
-const getPaymentStatusColor = (status: string) => {
-  const colorMap: Record<string, string> = {
+const getPaymentStatusColor = (status: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
     unpaid: 'danger',
     partial: 'warning',
     paid: 'success'
   }
-  return colorMap[status] || ''
+  return colorMap[status] || 'info'
 }
 
 const formatDate = (dateString: string) => {

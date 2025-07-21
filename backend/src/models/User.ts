@@ -2,25 +2,27 @@ import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '@/config/database';
 import bcrypt from 'bcryptjs';
 
-interface UserAttributes {
+export interface UserAttributes {
   id: number;
   username: string;
   password_hash: string;
   real_name: string;
   email?: string;
   phone?: string;
-  role_id?: number;
+  role_id?: number | null;
   base_id?: number;
   status: 'active' | 'inactive' | 'locked';
   failed_login_attempts: number;
   locked_until?: Date;
   last_login?: Date;
+  password_changed_at?: Date;
   password_reset_token?: string;
   password_reset_expires?: Date;
   wechat_openid?: string;
   wechat_unionid?: string;
   created_at: Date;
   updated_at: Date;
+  role?: any; // Add role relationship for associations
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'failed_login_attempts'> {}
@@ -32,18 +34,20 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public real_name!: string;
   public email?: string;
   public phone?: string;
-  public role_id?: number;
+  public role_id?: number | null;
   public base_id?: number;
   public status!: 'active' | 'inactive' | 'locked';
   public failed_login_attempts!: number;
   public locked_until?: Date;
   public last_login?: Date;
+  public password_changed_at?: Date;
   public password_reset_token?: string;
   public password_reset_expires?: Date;
   public wechat_openid?: string;
   public wechat_unionid?: string;
   public created_at!: Date;
   public updated_at!: Date;
+  public role?: any; // Add role relationship for associations
 
   // Instance methods
   public async validatePassword(password: string): Promise<boolean> {
@@ -110,6 +114,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     }
 
     this.password_hash = await User.hashPassword(newPassword);
+    this.password_changed_at = new Date();
     this.password_reset_token = undefined;
     this.password_reset_expires = undefined;
     this.failed_login_attempts = 0;
@@ -219,6 +224,10 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    password_changed_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     password_reset_token: {
       type: DataTypes.STRING(255),
       allowNull: true,
@@ -257,11 +266,13 @@ User.init(
       beforeCreate: async (user: User) => {
         if (user.password_hash) {
           user.password_hash = await User.hashPassword(user.password_hash);
+          user.password_changed_at = new Date();
         }
       },
       beforeUpdate: async (user: User) => {
         if (user.changed('password_hash')) {
           user.password_hash = await User.hashPassword(user.password_hash);
+          user.password_changed_at = new Date();
         }
       },
     },

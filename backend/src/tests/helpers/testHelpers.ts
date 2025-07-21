@@ -116,9 +116,23 @@ const mockModels = {
 export interface TestUser {
   id: number;
   username: string;
-  email: string;
+  password_hash: string;
+  real_name: string;
+  email?: string;
+  phone?: string;
   role_id: number;
   base_id?: number;
+  status: 'active' | 'inactive' | 'locked';
+  failed_login_attempts: number;
+  locked_until?: Date;
+  last_login?: Date;
+  password_changed_at?: Date;
+  password_reset_token?: string;
+  password_reset_expires?: Date;
+  wechat_openid?: string;
+  wechat_unionid?: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface MockRequest extends Partial<Request> {

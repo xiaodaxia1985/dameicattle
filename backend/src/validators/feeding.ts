@@ -18,7 +18,7 @@ export const createFeedFormulaValidator = [
     .withMessage('配方成分不能为空')
     .isObject()
     .withMessage('配方成分必须是对象格式')
-    .custom((value) => {
+    .custom((value: any) => {
       if (!value || typeof value !== 'object') {
         throw new Error('配方成分必须是有效的对象');
       }
@@ -88,7 +88,7 @@ export const updateFeedFormulaValidator = [
     .optional()
     .isObject()
     .withMessage('配方成分必须是对象格式')
-    .custom((value) => {
+    .custom((value: any) => {
       if (value && typeof value === 'object') {
         let totalRatio = 0;
         for (const [ingredient, details] of Object.entries(value)) {
@@ -185,7 +185,7 @@ export const createFeedingRecordValidator = [
     .withMessage('饲喂日期不能为空')
     .isISO8601()
     .withMessage('饲喂日期格式不正确')
-    .custom((value) => {
+    .custom((value: any) => {
       const date = new Date(value);
       const today = new Date();
       const oneYearAgo = new Date();
@@ -237,7 +237,7 @@ export const updateFeedingRecordValidator = [
     .optional()
     .isISO8601()
     .withMessage('饲喂日期格式不正确')
-    .custom((value) => {
+    .custom((value: any) => {
       if (value) {
         const date = new Date(value);
         const today = new Date();
@@ -302,7 +302,7 @@ export const getFeedingRecordsValidator = [
     .optional()
     .isISO8601()
     .withMessage('结束日期格式不正确')
-    .custom((value, { req }) => {
+    .custom((value: any, { req }: any) => {
       if (value && req.query.start_date) {
         const startDate = new Date(req.query.start_date as string);
         const endDate = new Date(value);
@@ -346,7 +346,7 @@ export const getFeedingStatisticsValidator = [
     .withMessage('结束日期不能为空')
     .isISO8601()
     .withMessage('结束日期格式不正确')
-    .custom((value, { req }) => {
+    .custom((value: any, { req }: any) => {
       const startDate = new Date(req.query.start_date as string);
       const endDate = new Date(value);
       

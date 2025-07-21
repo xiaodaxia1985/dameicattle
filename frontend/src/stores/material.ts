@@ -50,7 +50,7 @@ export const useMaterialStore = defineStore('material', () => {
   const fetchCategories = async () => {
     try {
       const response = await materialApi.getCategories()
-      categories.value = response.data
+      categories.value = response.data || []
     } catch (error) {
       console.error('获取物资分类失败:', error)
       throw error
@@ -61,8 +61,8 @@ export const useMaterialStore = defineStore('material', () => {
     loading.value = true
     try {
       const response = await materialApi.getSuppliers(params)
-      suppliers.value = response.data
-      total.value = response.pagination.total
+      suppliers.value = response.data || []
+      total.value = response.pagination?.total || 0
     } catch (error) {
       console.error('获取供应商列表失败:', error)
       throw error
@@ -75,8 +75,8 @@ export const useMaterialStore = defineStore('material', () => {
     loading.value = true
     try {
       const response = await materialApi.getProductionMaterials(params)
-      materials.value = response.data
-      total.value = response.pagination.total
+      materials.value = response.data || []
+      total.value = response.pagination?.total || 0
     } catch (error) {
       console.error('获取物资列表失败:', error)
       throw error
@@ -89,8 +89,8 @@ export const useMaterialStore = defineStore('material', () => {
     loading.value = true
     try {
       const response = await materialApi.getInventory(params)
-      inventory.value = response.data
-      total.value = response.pagination.total
+      inventory.value = response.data || []
+      total.value = response.pagination?.total || 0
     } catch (error) {
       console.error('获取库存列表失败:', error)
       throw error
@@ -103,8 +103,8 @@ export const useMaterialStore = defineStore('material', () => {
     loading.value = true
     try {
       const response = await materialApi.getInventoryTransactions(params)
-      transactions.value = response.data
-      total.value = response.pagination.total
+      transactions.value = response.data || []
+      total.value = response.pagination?.total || 0
     } catch (error) {
       console.error('获取交易记录失败:', error)
       throw error
@@ -117,8 +117,8 @@ export const useMaterialStore = defineStore('material', () => {
     loading.value = true
     try {
       const response = await materialApi.getInventoryAlerts(params)
-      alerts.value = response.data
-      total.value = response.pagination.total
+      alerts.value = response.data || []
+      total.value = response.pagination?.total || 0
     } catch (error) {
       console.error('获取库存预警失败:', error)
       throw error
@@ -130,7 +130,7 @@ export const useMaterialStore = defineStore('material', () => {
   const fetchStatistics = async () => {
     try {
       const response = await materialApi.getInventoryStatistics()
-      statistics.value = response.data
+      statistics.value = response.data || null
     } catch (error) {
       console.error('获取库存统计失败:', error)
       throw error

@@ -495,7 +495,7 @@ export class CustomerController {
           [fn('COUNT', col('id')), 'count']
         ],
         where: {
-          customer_type: { [Op.ne]: null },
+          customer_type: { [Op.ne]: null as any },
           status: 'active'
         },
         group: ['customer_type'],
@@ -543,7 +543,7 @@ export class CustomerController {
         customer_id: Number(customer_id),
         visit_date,
         visit_type,
-        visitor_id: req.user?.id, // 从认证中间件获取当前用户ID
+        visitor_id: req.user?.id || 0, // 从认证中间件获取当前用户ID
         purpose,
         content,
         result,

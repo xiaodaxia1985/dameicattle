@@ -5,6 +5,9 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import passport from 'passport';
 
+// Import types to ensure they are loaded
+import '@/types/express';
+
 import { logger } from '@/utils/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { notFoundHandler } from '@/middleware/notFoundHandler';

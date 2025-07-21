@@ -97,7 +97,7 @@
               
               <div class="base-content">
                 <div class="base-detail">
-                  <p><el-icon><MapPin /></el-icon> {{ base.address }}</p>
+                  <p><el-icon><Location /></el-icon> {{ base.address }}</p>
                   <p><el-icon><User /></el-icon> {{ base.managerName || '未分配' }}</p>
                   <p><el-icon><Crop /></el-icon> {{ base.area }} 亩</p>
                 </div>
@@ -388,7 +388,6 @@ import {
   Edit,
   Delete,
   Location,
-  MapPin,
   User,
   Crop,
   Upload,
