@@ -766,9 +766,10 @@ const debounceSearch = () => {
 }
 
 // 切换页面
-const changePage = (page: number) => {
-  if (page < 1 || page > pagination.totalPages) return
-  pagination.page = page
+const changePage = (page: string | number) => {
+  const pageNum = typeof page === 'string' ? parseInt(page) : page
+  if (pageNum < 1 || pageNum > pagination.totalPages) return
+  pagination.page = pageNum
   fetchInquiries()
 }
 

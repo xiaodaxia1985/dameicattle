@@ -367,9 +367,9 @@ const formRules = {
   ],
   amount: [
     { required: true, message: '请输入饲喂量', trigger: 'blur' },
-    { type: 'number' as const, min: 0.1, message: '饲喂量必须大于0.1kg', trigger: 'blur' }
+    { type: 'number', min: 0.1, message: '饲喂量必须大于0.1kg', trigger: 'blur' }
   ]
-} as const
+}
 
 // 计算属性
 const totalRecords = computed(() => pagination.value.total)

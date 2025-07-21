@@ -113,10 +113,29 @@ import * as echarts from 'echarts'
 import { Refresh, Download, Check, Warning, DataAnalysis } from '@element-plus/icons-vue'
 import { healthApi } from '@/api/health'
 
+// 定义类型
+interface HealthStatusItem {
+  health_status: string
+  count: string
+}
+
+interface TrendItem {
+  month: string
+  count: string
+}
+
+interface HealthStatistics {
+  healthStatus: HealthStatusItem[]
+  diseaseTypes: any[]
+  vaccinations: any[]
+  dueSoonVaccinations: number
+  healthTrend: TrendItem[]
+}
+
 // 响应式数据
 const loading = ref(false)
-const dateRange = ref([])
-const statistics = ref({
+const dateRange = ref<string[]>([])
+const statistics = ref<HealthStatistics>({
   healthStatus: [],
   diseaseTypes: [],
   vaccinations: [],
@@ -251,7 +270,7 @@ const initTrendChart = () => {
 
 // 获取健康状态文本
 const getHealthStatusText = (status: string) => {
-  const texts = {
+  const texts: Record<string, string> = {
     healthy: '健康',
     sick: '患病',
     treatment: '治疗中'
@@ -261,7 +280,7 @@ const getHealthStatusText = (status: string) => {
 
 // 获取健康状态颜色
 const getHealthStatusColor = (status: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     healthy: '#67C23A',
     sick: '#F56C6C',
     treatment: '#E6A23C'

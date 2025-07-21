@@ -449,7 +449,7 @@
         <!-- 订单明细 -->
         <el-card class="detail-section">
           <template #header>订单明细</template>
-          <el-table :data="currentOrder.items || []" border>
+          <el-table :data="(currentOrder as any)?.items || []" border>
             <el-table-column label="序号" type="index" width="60" />
             <el-table-column prop="itemName" label="商品名称" min-width="150" />
             <el-table-column prop="specification" label="规格" width="120" />

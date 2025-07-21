@@ -170,8 +170,13 @@ const selectedBase = ref('')
 const bases = ref([])
 const statistics = reactive({
   total: 0,
-  statusDistribution: {},
-  categoryDistribution: [],
+  statusDistribution: {
+    normal: 0,
+    maintenance: 0,
+    broken: 0,
+    retired: 0
+  },
+  categoryDistribution: [] as Array<{ category: string; count: number }>,
 })
 const brokenEquipment = ref([])
 const maintenanceAlerts = ref([])
@@ -369,7 +374,7 @@ const loadData = async () => {
 
 // 获取严重程度类型
 const getSeverityType = (severity: string) => {
-  const severityMap = {
+  const severityMap: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     low: 'success',
     medium: 'warning',
     high: 'danger',
@@ -380,7 +385,7 @@ const getSeverityType = (severity: string) => {
 
 // 获取严重程度文本
 const getSeverityText = (severity: string) => {
-  const severityMap = {
+  const severityMap: Record<string, string> = {
     low: '轻微',
     medium: '中等',
     high: '严重',

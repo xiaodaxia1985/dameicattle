@@ -130,7 +130,7 @@ import EquipmentDetail from './components/EquipmentDetail.vue'
 // 响应式数据
 const loading = ref(false)
 const equipmentList = ref([])
-const categories = ref([])
+const categories = ref([] as Array<{ id: number; name: string }>)
 const showAddDialog = ref(false)
 const showDetailDialog = ref(false)
 const editingEquipment = ref(null)
@@ -268,7 +268,7 @@ const closeDialog = () => {
 
 // 获取状态类型
 const getStatusType = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     normal: 'success',
     maintenance: 'warning',
     broken: 'danger',
@@ -279,7 +279,7 @@ const getStatusType = (status: string) => {
 
 // 获取状态文本
 const getStatusText = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     normal: '正常',
     maintenance: '维护中',
     broken: '故障',

@@ -12,8 +12,16 @@ export const redisClient = createClient({
   socket: {
     host: REDIS_HOST,
     port: parseInt(REDIS_PORT, 10),
+    connectTimeout: 10000,
+    reconnectStrategy: (retries) => {
+      if (retries > 3) {
+        logger.error('Redis connection failed after 3 retries');
+        return false;
+      }
+      return Math.min(retries * 50, 500);
+    }
   },
-  password: REDIS_PASSWORD,
+  password: REDIS_PASSWORD || undefined,
   database: parseInt(REDIS_DB, 10),
 });
 

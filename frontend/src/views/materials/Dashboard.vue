@@ -315,9 +315,13 @@ const getAlertLevelName = (level: string) => {
   return names[level as keyof typeof names] || level
 }
 
-const getAlertLevelColor = (level: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
-  const colors = { low: 'info', medium: 'warning', high: 'danger' }
-  return colors[level as keyof typeof colors] || 'info'
+const getAlertLevelColor = (level: string) => {
+  const colors: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = { 
+    low: 'info', 
+    medium: 'warning', 
+    high: 'danger' 
+  }
+  return colors[level] || 'info'
 }
 
 const getTransactionTypeName = (type: string) => {

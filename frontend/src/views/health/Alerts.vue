@@ -320,12 +320,39 @@ import { healthApi } from '@/api/health'
 
 const router = useRouter()
 
+// 定义类型
+interface AlertData {
+  vaccine_name?: string
+  next_due_date?: string
+  days_until_due?: number
+  days_overdue?: number
+  diagnosis?: string
+  days_sick?: number
+  trend_direction?: string
+  change_percentage?: number
+  sick_count?: number
+  total_count?: number
+  percentage?: number
+}
+
+interface Alert {
+  id: number
+  title: string
+  message: string
+  type: string
+  severity: string
+  cattle_id?: number
+  base_id?: number
+  created_at: string
+  data?: AlertData
+}
+
 // 响应式数据
 const loading = ref(false)
 const sending = ref(false)
 const handling = ref(false)
-const alerts = ref([])
-const selectedAlert = ref(null)
+const alerts = ref<Alert[]>([])
+const selectedAlert = ref<Alert | null>(null)
 
 // 对话框显示状态
 const showDetailDialog = ref(false)
@@ -355,7 +382,7 @@ const handleForm = reactive({
 })
 
 // 基础数据
-const baseList = ref([])
+const baseList = ref<Array<{ id: number; name: string }>>([])
 
 // 筛选后的预警
 const filteredAlerts = computed(() => {
@@ -426,13 +453,13 @@ const resetFilter = () => {
 }
 
 // 查看预警详情
-const viewAlertDetail = (alert) => {
+const viewAlertDetail = (alert: Alert) => {
   selectedAlert.value = alert
   showDetailDialog.value = true
 }
 
 // 处理预警
-const handleAlert = (alert) => {
+const handleAlert = (alert: Alert) => {
   selectedAlert.value = alert
   Object.assign(handleForm, {
     action: 'handle',
@@ -469,7 +496,7 @@ const confirmHandle = async () => {
 }
 
 // 查看牛只档案
-const viewCattleProfile = (cattleId) => {
+const viewCattleProfile = (cattleId: number) => {
   router.push(`/cattle/${cattleId}`)
 }
 
@@ -505,8 +532,8 @@ const exportAlerts = () => {
 }
 
 // 获取严重程度类型
-const getSeverityType = (severity) => {
-  const types = {
+const getSeverityType = (severity: string) => {
+  const types: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     critical: 'danger',
     high: 'warning',
     medium: 'info',
@@ -516,8 +543,8 @@ const getSeverityType = (severity) => {
 }
 
 // 获取严重程度文本
-const getSeverityText = (severity) => {
-  const texts = {
+const getSeverityText = (severity: string) => {
+  const texts: Record<string, string> = {
     critical: '紧急',
     high: '高级',
     medium: '中级',
@@ -527,8 +554,8 @@ const getSeverityText = (severity) => {
 }
 
 // 获取类型文本
-const getTypeText = (type) => {
-  const texts = {
+const getTypeText = (type: string) => {
+  const texts: Record<string, string> = {
     health_anomaly: '健康异常',
     vaccine_due: '疫苗到期',
     health_trend: '健康趋势',
@@ -538,8 +565,8 @@ const getTypeText = (type) => {
 }
 
 // 获取趋势文本
-const getTrendText = (trend) => {
-  const texts = {
+const getTrendText = (trend: string) => {
+  const texts: Record<string, string> = {
     improving: '改善',
     stable: '稳定',
     declining: '恶化'
@@ -548,24 +575,24 @@ const getTrendText = (trend) => {
 }
 
 // 获取天数样式类
-const getDaysClass = (days) => {
+const getDaysClass = (days: number) => {
   if (days < 0) return 'overdue'
   if (days <= 7) return 'urgent'
   return 'normal'
 }
 
 // 格式化时间
-const formatTime = (time) => {
+const formatTime = (time: string) => {
   return new Date(time).toLocaleString()
 }
 
 // 格式化日期
-const formatDate = (date) => {
+const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString()
 }
 
 // 格式化日期时间
-const formatDateTime = (date) => {
+const formatDateTime = (date: string) => {
   return new Date(date).toLocaleString()
 }
 

@@ -112,7 +112,10 @@ const startServer = async () => {
     await sequelize.authenticate();
     logger.info('Database connection established successfully');
 
-    // Test Redis connection
+    // Connect to Redis
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+    }
     await redisClient.ping();
     logger.info('Redis connection established successfully');
 

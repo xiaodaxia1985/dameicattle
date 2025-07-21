@@ -221,6 +221,31 @@ import {
   Document, Download
 } from '@element-plus/icons-vue'
 
+// 定义类型
+interface AlertData {
+  vaccine_name?: string
+  next_due_date?: string
+  days_until_due?: number
+}
+
+interface Alert {
+  id: number
+  title: string
+  message: string
+  type: string
+  severity: string
+  cattle_id?: number
+  created_at: string
+  data?: AlertData
+}
+
+interface TrendItem {
+  period: string
+  healthy_count: number
+  sick_count: number
+  treatment_count: number
+}
+
 // 响应式数据
 const healthStats = ref({
   healthy: 0,
@@ -237,9 +262,9 @@ const alertStats = ref({
   low: 0
 })
 
-const alerts = ref([])
-const vaccineAlerts = ref([])
-const trendData = ref([])
+const alerts = ref<Alert[]>([])
+const vaccineAlerts = ref<Alert[]>([])
+const trendData = ref<TrendItem[]>([])
 const trendDays = ref(30)
 
 // 图表引用

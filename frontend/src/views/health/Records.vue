@@ -363,8 +363,8 @@ const formRules = {
 }
 
 // 基础数据
-const cattleList = ref([])
-const veterinarians = ref([])
+const cattleList = ref<Array<{ id: number; earTag: string; breed: string }>>([])
+const veterinarians = ref<Array<{ id: number; name: string }>>([])
 
 // 表单引用
 const formRef = ref()
@@ -495,7 +495,7 @@ const exportRecords = () => {
 
 // 获取状态类型
 const getStatusType = (status: string) => {
-  const types = {
+  const types: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     ongoing: 'warning',
     completed: 'success',
     cancelled: 'info'
@@ -505,7 +505,7 @@ const getStatusType = (status: string) => {
 
 // 获取状态文本
 const getStatusText = (status: string) => {
-  const texts = {
+  const texts: Record<string, string> = {
     ongoing: '进行中',
     completed: '已完成',
     cancelled: '已取消'

@@ -497,8 +497,8 @@ const formRules = {
 }
 
 // 基础数据
-const cattleList = ref([])
-const veterinarians = ref([])
+const cattleList = ref<Array<{ id: number; earTag: string; breed: string }>>([])
+const veterinarians = ref<Array<{ id: number; name: string }>>([])
 const vaccineTypes = ref([
   '口蹄疫疫苗',
   '牛瘟疫苗',

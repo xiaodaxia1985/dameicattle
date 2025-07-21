@@ -173,7 +173,7 @@ const fetchNews = async () => {
       limit: 3,
       status: 'published'
     })
-    newsList.value = response.data || []
+    newsList.value = response.data.data || []
   } catch (error) {
     console.error('获取新闻失败:', error)
   }

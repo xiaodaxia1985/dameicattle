@@ -623,7 +623,7 @@ const transactionForm = reactive({
   quantity: 0,
   unit_price: undefined as number | undefined,
   batch_number: '',
-  expiry_date: null as string | null,
+  expiry_date: '' as string,
   remark: ''
 })
 
@@ -857,14 +857,14 @@ const getTransactionTypeName = (type: string) => {
   return names[type as keyof typeof names] || type
 }
 
-const getTransactionTypeColor = (type: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
-  const colors = {
+const getTransactionTypeColor = (type: string) => {
+  const colors: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     inbound: 'success',
     outbound: 'warning',
     transfer: 'info',
     adjustment: 'primary'
   }
-  return colors[type as keyof typeof colors] || 'info'
+  return colors[type] || 'info'
 }
 
 // Alert operations
@@ -926,13 +926,13 @@ const getAlertTypeName = (type: string) => {
   return names[type as keyof typeof names] || type
 }
 
-const getAlertTypeColor = (type: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
-  const colors = {
+const getAlertTypeColor = (type: string) => {
+  const colors: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     low_stock: 'warning',
     expired: 'danger',
     quality_issue: 'danger'
   }
-  return colors[type as keyof typeof colors] || 'info'
+  return colors[type] || 'info'
 }
 
 const getAlertLevelName = (level: string) => {
@@ -944,13 +944,13 @@ const getAlertLevelName = (level: string) => {
   return names[level as keyof typeof names] || level
 }
 
-const getAlertLevelColor = (level: string): 'success' | 'primary' | 'warning' | 'info' | 'danger' => {
-  const colors = {
+const getAlertLevelColor = (level: string) => {
+  const colors: Record<string, 'success' | 'primary' | 'warning' | 'info' | 'danger'> = {
     low: 'info',
     medium: 'warning',
     high: 'danger'
   }
-  return colors[level as keyof typeof colors] || 'info'
+  return colors[level] || 'info'
 }
 
 // Lifecycle
