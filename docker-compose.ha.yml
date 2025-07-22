@@ -1,0 +1,234 @@
+# 高可用部署配置 - 多节点集群
+version: '3.8'
+
+services:
+  # HAProxy负载均衡器 - 主节点
+  haproxy-master:
+    image: haproxy:2.8-alpine
+    container_name: cattle-haproxy-master
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8404:8404"  # HAProxy统计页面
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./nginx/ssl:/etc/ssl/certs:ro
+      - ./logs/haproxy:/var/log/haproxy
+    networks:
+      - cattle-network
+    restart: unless-stopped
+    environment:
+      - HAPROXY_NODE_TYPE=master
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8404/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # HAProxy负载均衡器 - 备节点
+  haproxy-backup:
+    image: haproxy:2.8-alpine
+    container_name: cattle-haproxy-backup
+    ports:
+      - "8080:80"
+      - "8443:443"
+      - "8405:8404"
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./nginx/ssl:/etc/ssl/certs:ro
+      - ./logs/haproxy-backup:/var/log/haproxy
+    networks:
+      - cattle-network
+    restart: unless-stopped
+    environment:
+      - HAPROXY_NODE_TYPE=backup
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8404/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Keepalived - VIP管理
+  keepalived-master:
+    image: osixia/keepalived:2.0.20
+    container_name: cattle-keepalived-master
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    volumes:
+      - ./keepalived/keepalived-master.conf:/container/service/keepalived/assets/keepalived.conf
+    environment:
+      - KEEPALIVED_INTERFACE=eth0
+      - KEEPALIVED_VIRTUAL_IPS=192.168.1.100
+      - KEEPALIVED_UNICAST_PEERS=#PYTHON2BASH:['192.168.1.101']
+      - KEEPALIVED_PASSWORD=cattle_vip_password
+    restart: unless-stopped
+
+  keepalived-backup:
+    image: osixia/keepalived:2.0.20
+    container_name: cattle-keepalived-backup
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    volumes:
+      - ./keepalived/keepalived-backup.conf:/container/service/keepalived/assets/keepalived.conf
+    environment:
+      - KEEPALIVED_INTERFACE=eth0
+      - KEEPALIVED_VIRTUAL_IPS=192.168.1.100
+      - KEEPALIVED_UNICAST_PEERS=#PYTHON2BASH:['192.168.1.100']
+      - KEEPALIVED_PASSWORD=cattle_vip_password
+    restart: unless-stopped
+
+  # PostgreSQL集群 - 使用Patroni
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.0
+    container_name: cattle-etcd
+    command: >
+      etcd
+      --name etcd
+      --data-dir /etcd-data
+      --listen-client-urls http://0.0.0.0:2379
+      --advertise-client-urls http://etcd:2379
+      --listen-peer-urls http://0.0.0.0:2380
+      --initial-advertise-peer-urls http://etcd:2380
+      --initial-cluster etcd=http://etcd:2380
+      --initial-cluster-token etcd-cluster
+      --initial-cluster-state new
+    volumes:
+      - etcd_data:/etcd-data
+    networks:
+      - cattle-network
+    restart: unless-stopped
+
+  # Patroni PostgreSQL集群节点1
+  postgres-patroni-1:
+    image: patroni/patroni:3.0.2
+    container_name: cattle-postgres-patroni-1
+    environment:
+      PATRONI_NAME: postgres-1
+      PATRONI_POSTGRESQL_DATA_DIR: /data/postgres
+      PATRONI_POSTGRESQL_PGPASS: /tmp/pgpass
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_ETCD_HOSTS: etcd:2379
+      PATRONI_SCOPE: cattle-cluster
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: postgres-patroni-1:5432
+      PATRONI_RESTAPI_CONNECT_ADDRESS: postgres-patroni-1:8008
+      POSTGRES_USER: cattle_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: cattle_management
+    volumes:
+      - postgres_patroni_1_data:/data/postgres
+      - ./patroni/patroni.yml:/etc/patroni/patroni.yml
+    networks:
+      - cattle-network
+    restart: unless-stopped
+    depends_on:
+      - etcd
+
+  # Patroni PostgreSQL集群节点2
+  postgres-patroni-2:
+    image: patroni/patroni:3.0.2
+    container_name: cattle-postgres-patroni-2
+    environment:
+      PATRONI_NAME: postgres-2
+      PATRONI_POSTGRESQL_DATA_DIR: /data/postgres
+      PATRONI_POSTGRESQL_PGPASS: /tmp/pgpass
+      PATRONI_POSTGRESQL_LISTEN: 0.0.0.0:5432
+      PATRONI_RESTAPI_LISTEN: 0.0.0.0:8008
+      PATRONI_ETCD_HOSTS: etcd:2379
+      PATRONI_SCOPE: cattle-cluster
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: postgres-patroni-2:5432
+      PATRONI_RESTAPI_CONNECT_ADDRESS: postgres-patroni-2:8008
+      POSTGRES_USER: cattle_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: cattle_management
+    volumes:
+      - postgres_patroni_2_data:/data/postgres
+      - ./patroni/patroni.yml:/etc/patroni/patroni.yml
+    networks:
+      - cattle-network
+    restart: unless-stopped
+    depends_on:
+      - etcd
+
+  # Redis Sentinel集群
+  redis-sentinel-1:
+    image: redis:6-alpine
+    container_name: cattle-redis-sentinel-1
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - redis_sentinel_1_data:/data
+    networks:
+      - cattle-network
+    restart: unless-stopped
+
+  redis-sentinel-2:
+    image: redis:6-alpine
+    container_name: cattle-redis-sentinel-2
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - redis_sentinel_2_data:/data
+    networks:
+      - cattle-network
+    restart: unless-stopped
+
+  redis-sentinel-3:
+    image: redis:6-alpine
+    container_name: cattle-redis-sentinel-3
+    command: redis-sentinel /etc/redis/sentinel.conf
+    volumes:
+      - ./redis/sentinel.conf:/etc/redis/sentinel.conf
+      - redis_sentinel_3_data:/data
+    networks:
+      - cattle-network
+    restart: unless-stopped
+
+  # 后端服务集群 (可扩展)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres-patroni-1,postgres-patroni-2
+      DB_PORT: 5432
+      DB_NAME: cattle_management
+      DB_USER: cattle_user
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_SENTINELS: redis-sentinel-1:26379,redis-sentinel-2:26379,redis-sentinel-3:26379
+      REDIS_MASTER_NAME: mymaster
+      JWT_SECRET: ${JWT_SECRET}
+      PORT: 3000
+    volumes:
+      - ./backend/uploads:/app/uploads
+    networks:
+      - cattle-network
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+
+volumes:
+  etcd_data:
+  postgres_patroni_1_data:
+  postgres_patroni_2_data:
+  redis_sentinel_1_data:
+  redis_sentinel_2_data:
+  redis_sentinel_3_data:
+
+networks:
+  cattle-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

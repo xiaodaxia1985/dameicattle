@@ -4,6 +4,7 @@ import { sequelize } from '@/config/database';
 interface HealthRecordAttributes {
   id: number;
   cattle_id: number;
+  base_id?: number;
   symptoms?: string;
   diagnosis?: string;
   treatment?: string;
@@ -19,6 +20,7 @@ interface HealthRecordCreationAttributes extends Optional<HealthRecordAttributes
 class HealthRecord extends Model<HealthRecordAttributes, HealthRecordCreationAttributes> implements HealthRecordAttributes {
   public id!: number;
   public cattle_id!: number;
+  public base_id?: number;
   public symptoms?: string;
   public diagnosis?: string;
   public treatment?: string;
@@ -31,6 +33,7 @@ class HealthRecord extends Model<HealthRecordAttributes, HealthRecordCreationAtt
   // Associations
   public cattle?: any;
   public veterinarian?: any;
+  public base?: any;
 }
 
 HealthRecord.init(
@@ -45,6 +48,14 @@ HealthRecord.init(
       allowNull: false,
       references: {
         model: 'cattle',
+        key: 'id',
+      },
+    },
+    base_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'bases',
         key: 'id',
       },
     },
