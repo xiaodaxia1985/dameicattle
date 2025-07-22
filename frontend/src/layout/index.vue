@@ -25,7 +25,7 @@
             <el-menu-item
               v-for="child in route.children"
               :key="child.path"
-              :index="child.path === '' ? route.path : `${route.path}/${child.path}`"
+              :index="getChildRoutePath(route.path, child.path)"
             >
               {{ child.meta?.title }}
             </el-menu-item>
@@ -33,7 +33,7 @@
           
           <el-menu-item
             v-else
-            :index="route.children?.[0]?.path === '' ? route.path : route.path"
+            :index="route.redirect || `/${route.path}`"
           >
             <el-icon><component :is="route.meta?.icon" /></el-icon>
             <template #title>{{ route.meta?.title }}</template>
@@ -132,6 +132,13 @@ const breadcrumbs = computed(() => {
 
 const toggleSidebar = () => {
   isCollapse.value = !isCollapse.value
+}
+
+const getChildRoutePath = (parentPath: string, childPath: string) => {
+  if (childPath === '') {
+    return `/${parentPath}`
+  }
+  return `/${parentPath}/${childPath}`
 }
 
 const handleCommand = async (command: string) => {

@@ -15,7 +15,11 @@ export class AuthController {
       // Find user with role
       const user = await User.findOne({
         where: { username },
-        include: [{ model: Role, as: 'role' }],
+        include: [{ 
+          model: Role, 
+          as: 'role',
+          attributes: ['id', 'name', 'description', 'permissions']
+        }],
       });
 
       // Log failed login attempt if user not found

@@ -3,6 +3,7 @@ import * as jwt from 'jsonwebtoken';
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { User, UserAttributes } from '@/models/User';
+import { Role } from '@/models/Role';
 import { logger } from '@/utils/logger';
 
 // Define authenticated request interface
@@ -33,6 +34,11 @@ passport.use(
       try {
         const user = await User.findByPk(payload.id, {
           attributes: { exclude: ['password_hash'] },
+          include: [{ 
+            model: Role, 
+            as: 'role',
+            attributes: ['id', 'name', 'description', 'permissions']
+          }],
         });
         
         if (user) {

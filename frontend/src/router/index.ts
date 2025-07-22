@@ -30,11 +30,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'cattle',
         name: 'Cattle',
-        component: () => import('@/views/cattle/index.vue'),
+        redirect: '/cattle/list',
         meta: { title: '牛只管理', icon: 'Grid' },
         children: [
           {
-            path: '',
+            path: 'list',
             name: 'CattleList',
             component: () => import('@/views/cattle/List.vue'),
             meta: { title: '牛只列表' }
@@ -50,11 +50,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'health',
         name: 'Health',
-        component: () => import('@/views/health/index.vue'),
+        redirect: '/health/dashboard',
         meta: { title: '健康管理', icon: 'FirstAidKit' },
         children: [
           {
-            path: '',
+            path: 'dashboard',
             name: 'HealthDashboard',
             component: () => import('@/views/health/Dashboard.vue'),
             meta: { title: '健康总览' }
@@ -88,11 +88,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'feeding',
         name: 'Feeding',
-        component: () => import('@/views/feeding/index.vue'),
+        redirect: '/feeding/dashboard',
         meta: { title: '饲喂管理', icon: 'Bowl' },
         children: [
           {
-            path: '',
+            path: 'dashboard',
             name: 'FeedingDashboard',
             component: () => import('@/views/feeding/Dashboard.vue'),
             meta: { title: '饲喂总览' }
@@ -120,11 +120,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'purchase',
         name: 'Purchase',
-        component: () => import('@/views/purchase/index.vue'),
+        redirect: '/purchase/orders',
         meta: { title: '采购管理', icon: 'ShoppingCart' },
         children: [
           {
-            path: '',
+            path: 'orders',
             name: 'PurchaseOrders',
             component: () => import('@/views/purchase/Orders.vue'),
             meta: { title: '采购订单' }
@@ -146,11 +146,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'sales',
         name: 'Sales',
-        component: () => import('@/views/sales/index.vue'),
+        redirect: '/sales/orders',
         meta: { title: '销售管理', icon: 'Sell' },
         children: [
           {
-            path: '',
+            path: 'orders',
             name: 'SalesOrders',
             component: () => import('@/views/sales/Orders.vue'),
             meta: { title: '销售订单' }
@@ -166,11 +166,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'materials',
         name: 'Materials',
-        component: () => import('@/views/materials/index.vue'),
+        redirect: '/materials/dashboard',
         meta: { title: '物资管理', icon: 'Box' },
         children: [
           {
-            path: '',
+            path: 'dashboard',
             name: 'MaterialsDashboard',
             component: () => import('@/views/materials/Dashboard.vue'),
             meta: { title: '物资总览' }
@@ -192,11 +192,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'news',
         name: 'News',
-        component: () => import('@/views/news/index.vue'),
+        redirect: '/news/list',
         meta: { title: '新闻管理', icon: 'Document' },
         children: [
           {
-            path: '',
+            path: 'list',
             name: 'NewsList',
             component: () => import('@/views/news/NewsList.vue'),
             meta: { title: '新闻列表' }
@@ -230,7 +230,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'system',
         name: 'System',
-        component: () => import('@/views/system/index.vue'),
+        redirect: '/system/users',
         meta: { title: '系统管理', icon: 'Setting' },
         children: [
           {
