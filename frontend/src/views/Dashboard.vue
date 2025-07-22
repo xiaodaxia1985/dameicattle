@@ -352,8 +352,8 @@ const handleTimeRangeChange = async (range: string) => {
   }
 }
 
-const handleChartExport = (chartType: string) => {
-  ElMessage.info(`导出${chartType}图表数据`)
+const handleChartExport = (chartType?: string) => {
+  ElMessage.info(`导出${chartType || '图表'}数据`)
   // 这里可以实现具体的图表导出逻辑
 }
 

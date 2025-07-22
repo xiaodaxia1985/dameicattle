@@ -74,7 +74,7 @@ const legendData = computed(() => {
   }))
 })
 
-const chartOption = computed<EChartsOption>(() => {
+const chartOption = computed((): any => {
   const colors = [
     '#409EFF', '#67C23A', '#E6A23C', '#F56C6C', 
     '#909399', '#C45656', '#73767A', '#626AEF'

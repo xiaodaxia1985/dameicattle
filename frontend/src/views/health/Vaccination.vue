@@ -604,7 +604,7 @@ const editRecord = (record: VaccinationRecord) => {
     nextDueDate: record.nextDueDate,
     batchNumber: record.batchNumber,
     veterinarianId: record.veterinarianId,
-    remark: record.remark || ''
+    remark: (record as any).remark || ''
   })
   showCreateDialog.value = true
 }

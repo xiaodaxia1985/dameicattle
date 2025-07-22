@@ -127,8 +127,8 @@ const handleCardClick = () => {
   }
 }
 
-const handleSelect = (selected: boolean) => {
-  emit('select', props.cattle.id, selected)
+const handleSelect = (selected: boolean | string | number) => {
+  emit('select', props.cattle.id, Boolean(selected))
 }
 
 const handleAction = (command: string) => {

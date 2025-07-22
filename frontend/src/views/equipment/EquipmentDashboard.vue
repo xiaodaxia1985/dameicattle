@@ -167,7 +167,7 @@ import { baseApi } from '@/api/base'
 // 响应式数据
 const loading = ref(false)
 const selectedBase = ref('')
-const bases = ref([])
+const bases = ref<Array<{ id: number; name: string }>>([])
 const statistics = reactive({
   total: 0,
   statusDistribution: {
@@ -179,7 +179,7 @@ const statistics = reactive({
   categoryDistribution: [] as Array<{ category: string; count: number }>,
 })
 const brokenEquipment = ref([])
-const maintenanceAlerts = ref([])
+const maintenanceAlerts = ref<Array<{ equipment: { name: string }; maintenance_type: string; next_date: string; overdue_days: number }>>([])
 
 // 图表引用
 const statusChartRef = ref()
@@ -190,7 +190,7 @@ let categoryChart: echarts.ECharts | null = null
 // 加载基地列表
 const loadBases = async () => {
   try {
-    const response = await baseApi.getBases()
+    const response = await baseApi.getAllBases()
     bases.value = response.data || []
   } catch (error) {
     console.error('加载基地列表失败:', error)
@@ -336,7 +336,7 @@ const initCategoryChart = () => {
 const updateCharts = () => {
   nextTick(() => {
     if (statusChart) {
-      const option = statusChart.getOption()
+      const option = statusChart.getOption() as any
       option.series[0].data = [
         { value: statistics.statusDistribution.normal || 0, name: '正常', itemStyle: { color: '#67C23A' } },
         { value: statistics.statusDistribution.maintenance || 0, name: '维护中', itemStyle: { color: '#E6A23C' } },
@@ -347,7 +347,7 @@ const updateCharts = () => {
     }
     
     if (categoryChart) {
-      const option = categoryChart.getOption()
+      const option = categoryChart.getOption() as any
       option.xAxis[0].data = statistics.categoryDistribution.map(item => item.category)
       option.series[0].data = statistics.categoryDistribution.map(item => item.count)
       categoryChart.setOption(option)

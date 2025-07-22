@@ -110,7 +110,7 @@ import dayjs from 'dayjs'
 
 interface ExportForm {
   type: string
-  dateRange: [string, string] | null
+  dateRange: any
   format: string
   includeCharts: boolean
   baseIds: number[]

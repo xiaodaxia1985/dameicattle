@@ -187,8 +187,8 @@
               <div v-if="alert.data" class="alert-data">
                 <div v-if="alert.type === 'vaccine_due'" class="vaccine-info">
                   <span class="data-item">疫苗: {{ alert.data.vaccine_name }}</span>
-                  <span class="data-item">到期日期: {{ formatDate(alert.data.next_due_date) }}</span>
-                  <span class="data-item" :class="getDaysClass(alert.data.days_until_due || alert.data.days_overdue)">
+                  <span class="data-item">到期日期: {{ alert.data.next_due_date ? formatDate(alert.data.next_due_date) : '未知' }}</span>
+                  <span class="data-item" :class="getDaysClass((alert.data.days_until_due || alert.data.days_overdue) || 0)">
                     {{ alert.data.days_until_due ? `${alert.data.days_until_due}天后到期` : `已过期${alert.data.days_overdue}天` }}
                   </span>
                 </div>
@@ -197,7 +197,7 @@
                   <span v-if="alert.data.days_sick" class="data-item">患病天数: {{ alert.data.days_sick }}天</span>
                 </div>
                 <div v-else-if="alert.type === 'health_trend'" class="trend-info">
-                  <span class="data-item">趋势: {{ getTrendText(alert.data.trend_direction) }}</span>
+                  <span class="data-item">趋势: {{ alert.data.trend_direction ? getTrendText(alert.data.trend_direction) : '未知' }}</span>
                   <span class="data-item">变化: {{ alert.data.change_percentage?.toFixed(1) }}%</span>
                 </div>
                 <div v-else-if="alert.type === 'critical_health'" class="critical-info">
@@ -259,7 +259,11 @@
         >
           查看牛只档案
         </el-button>
-        <el-button type="success" @click="handleAlert(selectedAlert)">
+        <el-button 
+          v-if="selectedAlert"
+          type="success" 
+          @click="handleAlert(selectedAlert)"
+        >
           处理预警
         </el-button>
       </template>
@@ -397,12 +401,12 @@ const filteredAlerts = computed(() => {
   }
 
   if (filterForm.baseId) {
-    filtered = filtered.filter(alert => alert.base_id === filterForm.baseId)
+    filtered = filtered.filter(alert => alert.base_id === Number(filterForm.baseId))
   }
 
   return filtered.sort((a, b) => {
     // 按严重程度排序
-    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
+    const severityOrder: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 }
     const severityDiff = severityOrder[a.severity] - severityOrder[b.severity]
     if (severityDiff !== 0) return severityDiff
     
@@ -480,12 +484,17 @@ const confirmHandle = async () => {
     showHandleDialog.value = false
     
     // 从列表中移除已处理的预警
-    const index = alerts.value.findIndex(alert => alert.id === selectedAlert.value.id)
-    if (index > -1) {
-      alerts.value.splice(index, 1)
-      // 更新统计
-      alertStats.value[selectedAlert.value.severity]--
-      alertStats.value.total--
+    if (selectedAlert.value) {
+      const index = alerts.value.findIndex(alert => alert.id === selectedAlert.value!.id)
+      if (index > -1) {
+        alerts.value.splice(index, 1)
+        // 更新统计
+        const severity = selectedAlert.value.severity as keyof typeof alertStats.value
+        if (severity in alertStats.value && typeof alertStats.value[severity] === 'number') {
+          (alertStats.value[severity] as number)--
+        }
+        alertStats.value.total--
+      }
     }
   } catch (error) {
     console.error('处理预警失败:', error)

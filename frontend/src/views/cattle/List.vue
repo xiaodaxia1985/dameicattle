@@ -292,9 +292,9 @@ const baseStore = useBaseStore()
 // 搜索表单
 const searchForm = reactive({
   search: '',
-  healthStatus: '',
-  gender: '',
-  status: 'active'
+  healthStatus: undefined as 'healthy' | 'sick' | 'treatment' | undefined,
+  gender: undefined as 'male' | 'female' | undefined,
+  status: 'active' as 'active' | 'sold' | 'dead' | 'transferred'
 })
 
 // 视图模式
@@ -337,8 +337,8 @@ const handleSearch = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     search: '',
-    healthStatus: '',
-    gender: '',
+    healthStatus: undefined,
+    gender: undefined,
     status: 'active'
   })
   handleSearch()

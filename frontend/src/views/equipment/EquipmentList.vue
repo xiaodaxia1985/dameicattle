@@ -106,8 +106,8 @@
     >
       <EquipmentForm
         :equipment="editingEquipment"
-        :categories="categories"
-        @submit="handleSubmit"
+        :visible="showAddDialog"
+        @success="handleSubmit"
         @cancel="closeDialog"
       />
     </el-dialog>
@@ -133,7 +133,7 @@ const equipmentList = ref([])
 const categories = ref([] as Array<{ id: number; name: string }>)
 const showAddDialog = ref(false)
 const showDetailDialog = ref(false)
-const editingEquipment = ref(null)
+const editingEquipment = ref<any>(null)
 const selectedEquipment = ref(null)
 
 // 搜索表单

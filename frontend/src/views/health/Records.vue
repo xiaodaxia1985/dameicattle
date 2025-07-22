@@ -326,7 +326,7 @@ const showDetailDialog = ref(false)
 // 搜索表单
 const searchForm = reactive({
   cattleEarTag: '',
-  status: '',
+  status: undefined as 'ongoing' | 'completed' | 'cancelled' | undefined,
   dateRange: [],
   veterinarianId: ''
 })
@@ -346,7 +346,7 @@ const recordForm = reactive({
   treatment: '',
   veterinarianId: '',
   diagnosisDate: '',
-  status: 'ongoing'
+  status: 'ongoing' as 'ongoing' | 'completed' | 'cancelled'
 })
 
 // 表单验证规则

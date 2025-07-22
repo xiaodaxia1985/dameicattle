@@ -105,8 +105,9 @@
       </el-col>
     </el-row>
   </div>
-</template><script s
-etup lang="ts">
+</template>
+
+<script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -160,7 +161,7 @@ const loadStatistics = async () => {
     }
 
     const { data } = await healthApi.getHealthStatistics(params)
-    statistics.value = data
+    statistics.value = data as unknown as HealthStatistics
     
     await nextTick()
     initCharts()
@@ -293,8 +294,8 @@ const getHealthPercentage = (status: string) => {
   const total = getTotalCattle()
   if (total === 0) return 0
   
-  const count = statistics.value.healthStatus?.find(s => s.health_status === status)?.count || 0
-  return ((parseInt(count) / total) * 100).toFixed(1)
+  const count = statistics.value.healthStatus?.find(s => s.health_status === status)?.count || '0'
+  return ((parseInt(count.toString()) / total) * 100).toFixed(1)
 }
 
 // 获取总牛只数

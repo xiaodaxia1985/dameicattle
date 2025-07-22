@@ -20,7 +20,8 @@
       "@/*": ["./src/*"]
     },
     "types": [
-      "element-plus/global"
+      "element-plus/global",
+      "vitest/globals"
     ]
   },
   "include": [

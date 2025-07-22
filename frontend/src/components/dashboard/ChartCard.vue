@@ -80,7 +80,7 @@ interface LegendItem {
 interface Props {
   title: string
   subtitle?: string
-  option: EChartsOption
+  option: any
   height?: number
   loading?: boolean
   timeRanges?: TimeRange[]

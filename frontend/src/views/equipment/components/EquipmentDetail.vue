@@ -293,8 +293,8 @@ const loadFailureRecords = async () => {
 }
 
 // 获取状态类型
-const getStatusType = (status: string) => {
-  const statusMap = {
+const getStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
+  const statusMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
     normal: 'success',
     maintenance: 'warning',
     broken: 'danger',
@@ -305,7 +305,7 @@ const getStatusType = (status: string) => {
 
 // 获取状态文本
 const getStatusText = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     normal: '正常',
     maintenance: '维护中',
     broken: '故障',
@@ -315,8 +315,8 @@ const getStatusText = (status: string) => {
 }
 
 // 获取维护状态类型
-const getMaintenanceStatusType = (status: string) => {
-  const statusMap = {
+const getMaintenanceStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
+  const statusMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
     scheduled: 'info',
     in_progress: 'warning',
     completed: 'success',
@@ -327,7 +327,7 @@ const getMaintenanceStatusType = (status: string) => {
 
 // 获取维护状态文本
 const getMaintenanceStatusText = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     scheduled: '计划中',
     in_progress: '进行中',
     completed: '已完成',
@@ -337,8 +337,8 @@ const getMaintenanceStatusText = (status: string) => {
 }
 
 // 获取严重程度类型
-const getSeverityType = (severity: string) => {
-  const severityMap = {
+const getSeverityType = (severity: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
+  const severityMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
     low: 'success',
     medium: 'warning',
     high: 'danger',
@@ -349,7 +349,7 @@ const getSeverityType = (severity: string) => {
 
 // 获取严重程度文本
 const getSeverityText = (severity: string) => {
-  const severityMap = {
+  const severityMap: Record<string, string> = {
     low: '轻微',
     medium: '中等',
     high: '严重',
@@ -359,8 +359,8 @@ const getSeverityText = (severity: string) => {
 }
 
 // 获取故障状态类型
-const getFailureStatusType = (status: string) => {
-  const statusMap = {
+const getFailureStatusType = (status: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
+  const statusMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
     reported: 'warning',
     in_repair: 'primary',
     resolved: 'success',
@@ -371,7 +371,7 @@ const getFailureStatusType = (status: string) => {
 
 // 获取故障状态文本
 const getFailureStatusText = (status: string) => {
-  const statusMap = {
+  const statusMap: Record<string, string> = {
     reported: '已报告',
     in_repair: '维修中',
     resolved: '已解决',

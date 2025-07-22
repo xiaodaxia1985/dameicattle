@@ -7,6 +7,17 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    BarChart: typeof import('./src/components/dashboard/BarChart.vue')['default']
+    BarnVisualization: typeof import('./src/components/BarnVisualization.vue')['default']
+    BatchImportDialog: typeof import('./src/components/cattle/BatchImportDialog.vue')['default']
+    BatchTransferDialog: typeof import('./src/components/cattle/BatchTransferDialog.vue')['default']
+    CattleCard: typeof import('./src/components/cattle/CattleCard.vue')['default']
+    CattleDetailDialog: typeof import('./src/components/cattle/CattleDetailDialog.vue')['default']
+    CattleFormDialog: typeof import('./src/components/cattle/CattleFormDialog.vue')['default']
+    ChartCard: typeof import('./src/components/dashboard/ChartCard.vue')['default']
+    DashboardConfigDialog: typeof import('./src/components/dashboard/DashboardConfigDialog.vue')['default']
+    DashboardLayout: typeof import('./src/components/dashboard/DashboardLayout.vue')['default']
+    DataExportDialog: typeof import('./src/components/dashboard/DataExportDialog.vue')['default']
     ElAside: typeof import('element-plus/es')['ElAside']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElBadge: typeof import('element-plus/es')['ElBadge']
@@ -41,8 +52,13 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTag: typeof import('element-plus/es')['ElTag']
     ElTree: typeof import('element-plus/es')['ElTree']
+    GaugeChart: typeof import('./src/components/dashboard/GaugeChart.vue')['default']
+    PendingTasksCard: typeof import('./src/components/dashboard/PendingTasksCard.vue')['default']
+    PieChart: typeof import('./src/components/dashboard/PieChart.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    StatCard: typeof import('./src/components/dashboard/StatCard.vue')['default']
+    TrendChart: typeof import('./src/components/dashboard/TrendChart.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

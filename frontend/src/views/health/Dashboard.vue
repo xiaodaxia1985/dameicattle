@@ -41,7 +41,7 @@
         <el-card class="stat-card treatment">
           <div class="stat-content">
             <div class="stat-icon">
-              <el-icon size="32"><Medicine /></el-icon>
+              <el-icon size="32"><Warning /></el-icon>
             </div>
             <div class="stat-info">
               <div class="stat-number">{{ healthStats.treatment || 0 }}</div>
@@ -161,11 +161,11 @@
                   <div class="vaccine-name">{{ vaccine.data?.vaccine_name }}</div>
                   <div class="cattle-tag">牛只: {{ vaccine.cattle_id }}</div>
                   <div class="due-date">
-                    到期时间: {{ formatDate(vaccine.data?.next_due_date) }}
+                    到期时间: {{ vaccine.data?.next_due_date ? formatDate(vaccine.data.next_due_date) : '未知' }}
                   </div>
                 </div>
-                <div class="days-left" :class="getDaysLeftClass(vaccine.data?.days_until_due)">
-                  {{ vaccine.data?.days_until_due }}天
+                <div class="days-left" :class="getDaysLeftClass(vaccine.data?.days_until_due || 0)">
+                  {{ vaccine.data?.days_until_due || 0 }}天
                 </div>
               </div>
               <div v-if="vaccineAlerts.length > 5" class="more-alerts">
@@ -192,7 +192,7 @@
               健康记录
             </el-button>
             <el-button type="success" @click="$router.push('/health/vaccination')">
-              <el-icon><Medicine /></el-icon>
+              <el-icon><Check /></el-icon>
               疫苗管理
             </el-button>
             <el-button type="warning" @click="$router.push('/health/alerts')">
@@ -216,7 +216,7 @@ import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { healthApi } from '@/api/health'
 import { 
-  Refresh, Check, Warning, Medicine, Bell, 
+  Refresh, Check, Warning, Bell, 
   CircleCloseFilled, WarningFilled, InfoFilled,
   Document, Download
 } from '@element-plus/icons-vue'

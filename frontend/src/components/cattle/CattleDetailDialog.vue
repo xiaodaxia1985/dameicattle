@@ -154,7 +154,7 @@
                     <el-descriptions-item
                       v-for="(value, key) in event.data"
                       :key="key"
-                      :label="key"
+                      :label="String(key)"
                     >
                       {{ value }}
                     </el-descriptions-item>

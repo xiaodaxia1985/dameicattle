@@ -211,8 +211,8 @@ const getPriorityLabel = (priority: string): string => {
   return priorityMap[priority] || priority
 }
 
-const getPriorityTagType = (priority: string): string => {
-  const typeMap: Record<string, string> = {
+const getPriorityTagType = (priority: string): 'success' | 'warning' | 'danger' | 'info' | 'primary' => {
+  const typeMap: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'primary'> = {
     'high': 'danger',
     'medium': 'warning',
     'low': 'info'

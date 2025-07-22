@@ -87,7 +87,7 @@ describe('Cattle Store', () => {
     try {
       await mockFetch();
     } catch (error) {
-      expect(error.message).toBe('Network error');
+      expect((error as Error).message).toBe('Network error');
     }
   });
 

@@ -355,7 +355,7 @@ const formData = ref<CreateFeedingRecordRequest>({
   remark: ''
 })
 
-const formRules = {
+const formRules: Record<string, any> = {
   feedingDate: [
     { required: true, message: '请选择饲喂日期', trigger: 'change' }
   ],
