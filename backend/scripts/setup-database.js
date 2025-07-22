@@ -64,7 +64,10 @@ async function setupDatabase() {
       '002-seed-data.sql',
       '003-add-missing-tables.sql',
       '004-seed-additional-data.sql',
-      '005-optimize-database.sql'
+      '005-optimize-database.sql',
+      '006-enhance-auth-security.sql',
+      '007-create-material-management-tables.sql',
+      '008-seed-material-management-data.sql'
     ];
 
     console.log('');

@@ -1,29 +1,22 @@
--- 插入物资分类数据
+-- 插入额外的物资分类数据（如果不存在）
 INSERT INTO material_categories (name, code, description) VALUES
-('饲料', 'FEED', '各类牛只饲料'),
-('药品', 'MEDICINE', '兽药和疫苗'),
 ('设备配件', 'EQUIPMENT_PARTS', '设备维修配件'),
 ('日用品', 'DAILY_SUPPLIES', '日常用品和工具'),
-('建筑材料', 'CONSTRUCTION', '建筑和维修材料');
+('建筑材料', 'CONSTRUCTION', '建筑和维修材料')
+ON CONFLICT (code) DO NOTHING;
 
--- 插入饲料子分类
+-- 插入药品子分类（如果不存在）
 INSERT INTO material_categories (name, code, description, parent_id) VALUES
-('精饲料', 'FEED_CONCENTRATE', '高营养浓缩饲料', (SELECT id FROM material_categories WHERE code = 'FEED')),
-('粗饲料', 'FEED_ROUGHAGE', '干草、青贮等粗饲料', (SELECT id FROM material_categories WHERE code = 'FEED')),
-('添加剂', 'FEED_ADDITIVE', '维生素、矿物质等添加剂', (SELECT id FROM material_categories WHERE code = 'FEED'));
-
--- 插入药品子分类
-INSERT INTO material_categories (name, code, description, parent_id) VALUES
-('疫苗', 'VACCINE', '各类疫苗', (SELECT id FROM material_categories WHERE code = 'MEDICINE')),
 ('抗生素', 'ANTIBIOTIC', '抗生素类药物', (SELECT id FROM material_categories WHERE code = 'MEDICINE')),
-('消毒剂', 'DISINFECTANT', '消毒用品', (SELECT id FROM material_categories WHERE code = 'MEDICINE'));
+('消毒剂', 'DISINFECTANT', '消毒用品', (SELECT id FROM material_categories WHERE code = 'MEDICINE'))
+ON CONFLICT (code) DO NOTHING;
 
 -- 插入供应商数据
-INSERT INTO suppliers (name, contact_person, phone, email, address, rating, supplier_type, status) VALUES
-('正大饲料有限公司', '张经理', '13800138001', 'zhang@zhengda.com', '北京市朝阳区正大路123号', 5, '饲料供应商', 'active'),
-('康牧兽药集团', '李经理', '13800138002', 'li@kangmu.com', '上海市浦东新区康牧大道456号', 4, '药品供应商', 'active'),
-('农机设备公司', '王经理', '13800138003', 'wang@nongji.com', '山东省济南市农机路789号', 4, '设备供应商', 'active'),
-('绿源生物科技', '赵经理', '13800138004', 'zhao@luyuan.com', '江苏省南京市生物园区101号', 5, '添加剂供应商', 'active');
+INSERT INTO suppliers (name, contact_person, phone, email, address, rating, supplier_type) VALUES
+('正大饲料有限公司', '张经理', '13800138001', 'zhang@zhengda.com', '北京市朝阳区正大路123号', 5, '饲料供应商'),
+('康牧兽药集团', '李经理', '13800138002', 'li@kangmu.com', '上海市浦东新区康牧大道456号', 4, '药品供应商'),
+('农机设备公司', '王经理', '13800138003', 'wang@nongji.com', '山东省济南市农机路789号', 4, '设备供应商'),
+('绿源生物科技', '赵经理', '13800138004', 'zhao@luyuan.com', '江苏省南京市生物园区101号', 5, '添加剂供应商');
 
 -- 插入生产物资数据
 INSERT INTO production_materials (name, code, category_id, unit, specification, supplier_id, purchase_price, safety_stock) VALUES
@@ -61,4 +54,5 @@ SELECT pm.id, b.id,
         ELSE pm.safety_stock * 1.2
     END
 FROM production_materials pm
-CROSS JOIN (SELECT id FROM bases LIMIT 2) b;
+CROSS JOIN (SELECT id FROM bases LIMIT 2) b
+ON CONFLICT (material_id, base_id) DO NOTHING;

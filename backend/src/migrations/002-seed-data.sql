@@ -16,7 +16,7 @@ INSERT INTO bases (name, code, address, latitude, longitude, area) VALUES
 
 -- 插入默认管理员用户（密码：Admin123）
 INSERT INTO users (username, password_hash, real_name, email, phone, role_id, base_id, status) VALUES
-('admin', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.s5uO8G', '系统管理员', 'admin@cattle-management.com', '13800138000', 1, 1, 'active');
+('admin', '$2a$12$tGjpQcVbjVbipdkcrPba4evU0xSDLypGIomSoIc7yBGy0.9Utsa9W', '系统管理员', 'admin@cattle-management.com', '13800138000', 1, 1, 'active');
 
 -- 插入示例牛棚
 INSERT INTO barns (name, code, base_id, capacity, barn_type) VALUES

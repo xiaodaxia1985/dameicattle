@@ -1533,8 +1533,9 @@ onMounted(() => {
   fetchManagers()
   loadFavorites()
 })
-</script><
-style scoped lang="scss">
+</script>
+
+<style scoped lang="scss">
 .bases-container {
   padding: 20px;
   background: #f5f5f5;
