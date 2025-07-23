@@ -27,33 +27,45 @@
       <view class="menu-title">物资管理</view>
       <view class="menu-grid">
         <view class="menu-item" @click="navigateTo('/pages/materials/inventory')">
-          <view class="menu-icon">📦</view>
+          <view class="menu-icon">
+            <ModernIcon name="package" size="lg" />
+          </view>
           <view class="menu-text">库存查询</view>
           <view class="menu-desc">查看物资库存情况</view>
         </view>
         <view class="menu-item" @click="showTransactionModal('inbound')">
-          <view class="menu-icon">📥</view>
+          <view class="menu-icon">
+            <ModernIcon name="download" size="lg" />
+          </view>
           <view class="menu-text">快速入库</view>
           <view class="menu-desc">物资入库操作</view>
         </view>
         <view class="menu-item" @click="showTransactionModal('outbound')">
-          <view class="menu-icon">📤</view>
+          <view class="menu-icon">
+            <ModernIcon name="upload" size="lg" />
+          </view>
           <view class="menu-text">快速出库</view>
           <view class="menu-desc">物资出库操作</view>
         </view>
         <view class="menu-item" @click="navigateTo('/pages/materials/stocktaking')">
-          <view class="menu-icon">📋</view>
+          <view class="menu-icon">
+            <ModernIcon name="document" size="lg" />
+          </view>
           <view class="menu-text">库存盘点</view>
           <view class="menu-desc">盘点库存数量</view>
         </view>
         <view class="menu-item" @click="navigateTo('/pages/materials/alerts')">
-          <view class="menu-icon">⚠️</view>
+          <view class="menu-icon">
+            <ModernIcon name="warning" size="lg" />
+          </view>
           <view class="menu-text">库存预警</view>
           <view class="menu-desc">查看预警信息</view>
           <view v-if="activeAlertsCount > 0" class="badge">{{ activeAlertsCount }}</view>
         </view>
         <view class="menu-item" @click="syncOfflineData">
-          <view class="menu-icon">🔄</view>
+          <view class="menu-icon">
+            <ModernIcon name="refresh" size="lg" />
+          </view>
           <view class="menu-text">数据同步</view>
           <view class="menu-desc">同步离线数据</view>
         </view>
@@ -92,7 +104,9 @@
           </view>
         </view>
         <view v-if="recentTransactions.length === 0" class="empty-state">
-          <view class="empty-icon">📝</view>
+          <view class="empty-icon">
+            <ModernIcon name="document" size="xl" />
+          </view>
           <view class="empty-text">暂无交易记录</view>
         </view>
       </view>
@@ -214,6 +228,7 @@
 <script>
 import { materialApi } from '@/api/material'
 import { baseApi } from '@/api/base'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 export default {
   data() {

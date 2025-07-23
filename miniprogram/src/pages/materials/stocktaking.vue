@@ -15,7 +15,9 @@
           :class="{ active: mode === 'scan' }"
           @click="setMode('scan')"
         >
-          <view class="mode-icon">📱</view>
+          <view class="mode-icon">
+            <ModernIcon name="mobile" size="lg" />
+          </view>
           <view class="mode-text">扫码盘点</view>
           <view class="mode-desc">扫描物资二维码</view>
         </view>
@@ -24,7 +26,9 @@
           :class="{ active: mode === 'manual' }"
           @click="setMode('manual')"
         >
-          <view class="mode-icon">✏️</view>
+          <view class="mode-icon">
+            <ModernIcon name="edit" size="lg" />
+          </view>
           <view class="mode-text">手动盘点</view>
           <view class="mode-desc">手动选择物资</view>
         </view>
@@ -49,7 +53,9 @@
     <!-- 扫码盘点区域 -->
     <view class="scan-section" v-if="mode === 'scan'">
       <view class="scan-area">
-        <view class="scan-icon">📷</view>
+        <view class="scan-icon">
+          <ModernIcon name="camera" size="xl" />
+        </view>
         <view class="scan-text">点击扫描物资二维码</view>
         <button class="scan-btn" @click="startScan">开始扫码</button>
       </view>
@@ -151,7 +157,9 @@
         
         <!-- 空状态 -->
         <view v-if="stocktakingRecords.length === 0" class="empty-state">
-          <view class="empty-icon">📋</view>
+          <view class="empty-icon">
+            <ModernIcon name="document" size="xl" />
+          </view>
           <view class="empty-text">今日暂无盘点记录</view>
           <view class="empty-desc">开始盘点以记录库存差异</view>
         </view>
@@ -170,6 +178,7 @@
 <script>
 import { useMaterialStore } from '@/stores/material'
 import { useBaseStore } from '@/stores/base'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 export default {
   data() {

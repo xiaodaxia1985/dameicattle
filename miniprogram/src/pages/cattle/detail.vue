@@ -11,8 +11,8 @@
             </view>
           </view>
           <view class="actions">
-            <text class="action-btn" @tap="takeCattlePhoto">📷</text>
-            <text class="action-btn" @tap="showMoreActions">⋯</text>
+            <ModernIcon name="camera" @click="takeCattlePhoto" />
+            <ModernIcon name="more" @click="showMoreActions" />
           </view>
         </view>
 
@@ -35,7 +35,7 @@
             </swiper-item>
           </swiper>
           <view v-else class="no-photo" @tap="takeCattlePhoto">
-            <text class="photo-icon">📷</text>
+            <ModernIcon name="camera" size="xl" />
             <text class="photo-text">点击添加照片</text>
           </view>
         </view>
@@ -78,19 +78,27 @@
         <view class="section-title">快捷操作</view>
         <view class="action-grid">
           <view class="action-item" @tap="recordHealth">
-            <view class="action-icon">🏥</view>
+            <view class="action-icon">
+              <ModernIcon name="medical" />
+            </view>
             <text class="action-text">健康记录</text>
           </view>
           <view class="action-item" @tap="recordFeeding">
-            <view class="action-icon">🌾</view>
+            <view class="action-icon">
+              <ModernIcon name="feed" />
+            </view>
             <text class="action-text">饲喂记录</text>
           </view>
           <view class="action-item" @tap="recordWeight">
-            <view class="action-icon">⚖️</view>
+            <view class="action-icon">
+              <ModernIcon name="chart" />
+            </view>
             <text class="action-text">称重记录</text>
           </view>
           <view class="action-item" @tap="viewEvents">
-            <view class="action-icon">📋</view>
+            <view class="action-icon">
+              <ModernIcon name="document" />
+            </view>
             <text class="action-text">生命周期</text>
           </view>
         </view>
@@ -105,7 +113,7 @@
         <view class="event-list" v-if="recentEvents.length > 0">
           <view class="event-item" v-for="event in recentEvents" :key="event.id">
             <view class="event-icon" :class="event.event_type">
-              <text>{{ getEventIcon(event.event_type) }}</text>
+              <ModernIcon :name="getEventIcon(event.event_type)" />
             </view>
             <view class="event-content">
               <text class="event-title">{{ getEventTypeText(event.event_type) }}</text>
@@ -150,7 +158,9 @@
 
     <!-- 错误状态 -->
     <view v-else class="error">
-      <text class="error-icon">😞</text>
+      <view class="error-icon">
+        <ModernIcon name="error" size="xl" />
+      </view>
       <text class="error-text">加载失败</text>
       <button class="retry-btn" @tap="loadCattleDetail">重试</button>
     </view>
@@ -163,15 +173,21 @@
         </view>
         <view class="more-list">
           <view class="more-item" @tap="editCattle">
-            <text class="more-icon">✏️</text>
+            <view class="more-icon">
+              <ModernIcon name="edit" />
+            </view>
             <text class="more-text">编辑信息</text>
           </view>
           <view class="more-item" @tap="transferCattle">
-            <text class="more-icon">🔄</text>
+            <view class="more-icon">
+              <ModernIcon name="refresh" />
+            </view>
             <text class="more-text">转群</text>
           </view>
           <view class="more-item" @tap="shareCattle">
-            <text class="more-icon">📤</text>
+            <view class="more-icon">
+              <ModernIcon name="upload" />
+            </view>
             <text class="more-text">分享</text>
           </view>
         </view>
@@ -219,6 +235,7 @@
 import { ref, onMounted } from 'vue'
 import { useCattleStore } from '@/stores/cattle'
 import dayjs from 'dayjs'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 const cattleStore = useCattleStore()
 
@@ -457,23 +474,23 @@ const getEventTypeText = (type) => {
 
 const getEventIcon = (type) => {
   const iconMap = {
-    birth: '🐣',
-    purchase: '💰',
-    transfer_in: '📥',
-    transfer_out: '📤',
-    weight_record: '⚖️',
-    health_check: '🔍',
-    vaccination: '💉',
-    treatment: '🏥',
-    breeding: '💕',
-    pregnancy_check: '🤰',
-    calving: '👶',
-    weaning: '🍼',
-    sale: '💸',
-    death: '💀',
-    other: '📝'
+    birth: 'star',
+    purchase: 'money',
+    transfer_in: 'download',
+    transfer_out: 'upload',
+    weight_record: 'chart',
+    health_check: 'search',
+    vaccination: 'medical',
+    treatment: 'medical',
+    breeding: 'heart',
+    pregnancy_check: 'user',
+    calving: 'star',
+    weaning: 'feed',
+    sale: 'money',
+    death: 'error',
+    other: 'document'
   }
-  return iconMap[type] || '📝'
+  return iconMap[type] || 'document'
 }
 
 const formatDate = (date) => {

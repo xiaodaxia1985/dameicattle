@@ -41,11 +41,11 @@
         
         <div class="filter-actions">
           <button class="btn btn-primary" @click="fetchMessages">
-            <i class="icon">🔍</i>
+            <i class="modern-icon icon-search"></i>
             搜索
           </button>
           <button class="btn btn-outline" @click="resetFilters">
-            <i class="icon">🔄</i>
+            <i class="modern-icon icon-refresh"></i>
             重置
           </button>
         </div>
@@ -110,7 +110,9 @@
         </div>
         
         <div v-else-if="messages.length === 0" class="empty-state">
-          <div class="empty-icon">📭</div>
+          <div class="empty-icon">
+            <i class="modern-icon icon-chat modern-icon-xl"></i>
+          </div>
           <p>暂无留言数据</p>
         </div>
         
@@ -159,15 +161,15 @@
               
               <div class="message-contact">
                 <span class="contact-item">
-                  <i class="icon">📞</i>
+                  <i class="modern-icon icon-phone"></i>
                   {{ message.phone }}
                 </span>
                 <span v-if="message.email" class="contact-item">
-                  <i class="icon">✉️</i>
+                  <i class="modern-icon icon-email"></i>
                   {{ message.email }}
                 </span>
                 <span v-if="message.preferredContact" class="contact-item">
-                  <i class="icon">💬</i>
+                  <i class="modern-icon icon-chat"></i>
                   首选: {{ getContactLabel(message.preferredContact) }}
                 </span>
               </div>

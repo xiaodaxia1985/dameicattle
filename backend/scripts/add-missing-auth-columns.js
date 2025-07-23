@@ -139,7 +139,7 @@ async function addMissingAuthColumns() {
 
     await client.end();
     console.log('');
-    console.log('🎉 认证安全功能设置完成!');
+    console.log('[SUCCESS] 认证安全功能设置完成!');
 
   } catch (error) {
     console.error('❌ 操作失败:', error.message);

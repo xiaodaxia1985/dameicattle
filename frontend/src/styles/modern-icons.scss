@@ -2,21 +2,27 @@
 
 /* 基础图标样式 */
 .modern-icon {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   position: relative;
   display: inline-block;
   color: currentColor;
+  flex-shrink: 0;
+}
+
+.modern-icon-sm {
+  width: 16px;
+  height: 16px;
 }
 
 .modern-icon-lg {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
 }
 
 .modern-icon-xl {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
 }
 
 /* 火箭图标 */
@@ -1364,4 +1370,875 @@
   bottom: 6px;
   left: 7px;
   box-shadow: 0 3px 0 currentColor;
+}
+/* 更多现代图标 
+*/
+
+/* 相机图标 */
+.icon-camera {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-camera::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  bottom: 2px;
+  left: 2px;
+}
+
+.icon-camera::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  bottom: 5px;
+  left: 7px;
+}
+
+/* 刷新图标 */
+.icon-refresh {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-refresh::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-top-color: transparent;
+  top: 3px;
+  left: 3px;
+}
+
+.icon-refresh::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 6px solid currentColor;
+  top: 1px;
+  left: 8px;
+}
+
+/* 上传图标 */
+.icon-upload {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-upload::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: currentColor;
+  bottom: 2px;
+  left: 9px;
+}
+
+.icon-upload::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 6px solid currentColor;
+  top: 2px;
+  left: 6px;
+}
+
+/* 下载图标 */
+.icon-download {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-download::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: currentColor;
+  top: 2px;
+  left: 9px;
+}
+
+.icon-download::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid currentColor;
+  bottom: 2px;
+  left: 6px;
+}
+
+/* 文件夹图标 */
+.icon-folder {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-folder::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  bottom: 2px;
+  left: 2px;
+}
+
+.icon-folder::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 4px;
+  border: 2px solid currentColor;
+  border-bottom: none;
+  border-radius: 2px 2px 0 0;
+  top: 4px;
+  left: 2px;
+}
+
+/* 文档图标 */
+.icon-document {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-document::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 2px;
+  left: 4px;
+}
+
+.icon-document::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 1px;
+  background: currentColor;
+  top: 7px;
+  left: 7px;
+  box-shadow: 0 3px 0 currentColor, 0 6px 0 currentColor;
+}
+
+/* 用户图标 */
+.icon-user {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-user::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 6px;
+}
+
+.icon-user::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-radius: 7px 7px 0 0;
+  bottom: 2px;
+  left: 3px;
+}
+
+/* 团队图标 */
+.icon-team {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-team::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 4px;
+  box-shadow: 6px 0 0 currentColor;
+}
+
+.icon-team::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 4px;
+  border: 2px solid currentColor;
+  border-radius: 5px 5px 0 0;
+  bottom: 2px;
+  left: 2px;
+  box-shadow: 6px 0 0 currentColor;
+}
+
+/* 建筑图标 */
+.icon-building {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-building::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 2px 2px 0 0;
+  bottom: 2px;
+  left: 4px;
+}
+
+.icon-building::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: currentColor;
+  top: 6px;
+  left: 7px;
+  box-shadow: 4px 0 0 currentColor, 0 4px 0 currentColor, 4px 4px 0 currentColor;
+}
+
+/* 全球图标 */
+.icon-globe {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-globe::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-globe::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  left: 2px;
+  border-radius: 1px;
+  box-shadow: 0 -4px 0 currentColor, 0 4px 0 currentColor;
+}
+
+/* 主页图标 */
+.icon-home {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-home::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid currentColor;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-home::after {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-top: none;
+  bottom: 2px;
+  left: 5px;
+}
+
+/* 设置图标 */
+.icon-settings {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-settings::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 6px;
+  left: 6px;
+}
+
+.icon-settings::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 4px;
+  background: currentColor;
+  top: 2px;
+  left: 9px;
+  border-radius: 1px;
+  box-shadow: 
+    4px 4px 0 currentColor,
+    4px 10px 0 currentColor,
+    -4px 4px 0 currentColor,
+    -4px 10px 0 currentColor,
+    0 12px 0 currentColor,
+    8px 8px 0 currentColor,
+    -8px 8px 0 currentColor;
+}
+
+/* 垃圾桶图标 */
+.icon-trash {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-trash::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 0 0 2px 2px;
+  bottom: 2px;
+  left: 4px;
+}
+
+.icon-trash::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  top: 4px;
+  left: 3px;
+  border-radius: 1px;
+}
+
+/* 同步图标 */
+.icon-sync {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-sync::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  border-right-color: transparent;
+  top: 4px;
+  left: 4px;
+}
+
+.icon-sync::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-bottom: 4px solid currentColor;
+  top: 2px;
+  right: 4px;
+}
+
+/* 心形图标 */
+.icon-heart {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-heart::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 3px 3px 0 0;
+  top: 4px;
+  left: 4px;
+  transform: rotate(-45deg);
+}
+
+.icon-heart::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 3px 3px 0 0;
+  top: 4px;
+  right: 4px;
+  transform: rotate(45deg);
+}
+
+/* 星星图标 */
+.icon-star {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-star::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 8px solid currentColor;
+  top: 2px;
+  left: 4px;
+}
+
+.icon-star::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid currentColor;
+  bottom: 2px;
+  left: 4px;
+}
+
+/* 警告图标 */
+.icon-warning {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-warning::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 14px solid currentColor;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-warning::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: white;
+  top: 6px;
+  left: 9px;
+  border-radius: 1px;
+  box-shadow: 0 8px 0 white;
+}
+
+/* 信息图标 */
+.icon-info {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-info::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-info::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: currentColor;
+  bottom: 6px;
+  left: 9px;
+  border-radius: 1px;
+  box-shadow: 0 -6px 0 currentColor;
+}
+
+/* 错误图标 */
+.icon-error {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-error::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-error::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 10px;
+  background: currentColor;
+  top: 5px;
+  left: 9px;
+  border-radius: 1px;
+  transform: rotate(45deg);
+  box-shadow: 0 0 0 currentColor, 
+              -7px 7px 0 currentColor;
+  transform-origin: center;
+}
+
+/* 加号图标 */
+.icon-plus {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-plus::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 14px;
+  background: currentColor;
+  top: 3px;
+  left: 9px;
+  border-radius: 1px;
+}
+
+.icon-plus::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  left: 3px;
+  border-radius: 1px;
+}
+
+/* 减号图标 */
+.icon-minus {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-minus::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  left: 3px;
+  border-radius: 1px;
+}
+
+/* 关闭图标 */
+.icon-close {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-close::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 14px;
+  background: currentColor;
+  top: 3px;
+  left: 9px;
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
+.icon-close::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 14px;
+  background: currentColor;
+  top: 3px;
+  left: 9px;
+  border-radius: 1px;
+  transform: rotate(-45deg);
+}
+
+/* 箭头图标 */
+.icon-arrow-right {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-arrow-right::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 8px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  top: 4px;
+  right: 4px;
+}
+
+.icon-arrow-right::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  left: 4px;
+  border-radius: 1px;
+}
+
+.icon-arrow-left {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-arrow-left::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-right: 8px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  top: 4px;
+  left: 4px;
+}
+
+.icon-arrow-left::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  right: 4px;
+  border-radius: 1px;
+}
+
+.icon-arrow-down {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-arrow-down::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-top: 8px solid currentColor;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  bottom: 4px;
+  left: 4px;
+}
+
+.icon-arrow-down::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: currentColor;
+  top: 4px;
+  left: 9px;
+  border-radius: 1px;
+}
+
+/* 菜单图标 */
+.icon-menu {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-menu::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 2px;
+  background: currentColor;
+  top: 5px;
+  left: 2px;
+  border-radius: 1px;
+  box-shadow: 0 4px 0 currentColor, 0 8px 0 currentColor;
+}
+
+/* 更多图标 */
+.icon-more {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-more::before {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: currentColor;
+  border-radius: 50%;
+  top: 8px;
+  left: 4px;
+  box-shadow: 6px 0 0 currentColor, 12px 0 0 currentColor;
+}
+
+/* 播放图标 */
+.icon-play {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-play::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 12px solid currentColor;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  top: 2px;
+  left: 4px;
+}
+
+/* 暂停图标 */
+.icon-pause {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-pause::before {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 12px;
+  background: currentColor;
+  top: 4px;
+  left: 5px;
+  border-radius: 1px;
+  box-shadow: 6px 0 0 currentColor;
+}
+
+/* 停止图标 */
+.icon-stop {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-stop::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  top: 4px;
+  left: 4px;
+  border-radius: 2px;
 }

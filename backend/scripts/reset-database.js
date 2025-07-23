@@ -49,7 +49,7 @@ async function resetDatabase() {
 
     await client.end();
     console.log('');
-    console.log('🎉 数据库重置完成!');
+    console.log('[SUCCESS] 数据库重置完成!');
     console.log('现在可以运行 npm run db:setup 来初始化数据库');
 
   } catch (error) {

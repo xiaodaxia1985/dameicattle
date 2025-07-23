@@ -8,7 +8,9 @@
     <!-- 统计卡片 -->
     <div class="stats-grid">
       <div class="stat-card">
-        <div class="stat-icon">👥</div>
+        <div class="stat-icon">
+          <i class="modern-icon icon-team modern-icon-lg"></i>
+        </div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.totalVisitors.toLocaleString() }}</div>
           <div class="stat-label">总访问量</div>
@@ -20,7 +22,9 @@
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon">📄</div>
+        <div class="stat-icon">
+          <i class="modern-icon icon-document modern-icon-lg"></i>
+        </div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.pageViews.toLocaleString() }}</div>
           <div class="stat-label">页面浏览量</div>
@@ -32,7 +36,9 @@
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon">💬</div>
+        <div class="stat-icon">
+          <i class="modern-icon icon-chat modern-icon-lg"></i>
+        </div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.messages }}</div>
           <div class="stat-label">留言数量</div>
@@ -44,7 +50,9 @@
       </div>
 
       <div class="stat-card">
-        <div class="stat-icon">💰</div>
+        <div class="stat-icon">
+          <i class="modern-icon icon-money modern-icon-lg"></i>
+        </div>
         <div class="stat-content">
           <div class="stat-number">{{ stats.inquiries }}</div>
           <div class="stat-label">询价数量</div>
@@ -66,7 +74,7 @@
         <div class="activity-list">
           <div v-for="activity in recentActivities" :key="activity.id" class="activity-item">
             <div class="activity-icon" :class="activity.type">
-              {{ getActivityIcon(activity.type) }}
+              <i :class="`modern-icon icon-${getActivityIcon(activity.type)}`"></i>
             </div>
             <div class="activity-content">
               <div class="activity-text">{{ activity.text }}</div>
@@ -87,22 +95,30 @@
         </div>
         <div class="actions-grid">
           <router-link to="/portal/admin/content" class="action-card">
-            <div class="action-icon">📝</div>
+            <div class="action-icon">
+              <i class="modern-icon icon-document modern-icon-lg"></i>
+            </div>
             <div class="action-title">内容管理</div>
             <div class="action-desc">编辑网站内容</div>
           </router-link>
           <router-link to="/portal/admin/messages" class="action-card">
-            <div class="action-icon">💬</div>
+            <div class="action-icon">
+              <i class="modern-icon icon-chat modern-icon-lg"></i>
+            </div>
             <div class="action-title">留言管理</div>
             <div class="action-desc">处理客户留言</div>
           </router-link>
           <router-link to="/portal/admin/inquiries" class="action-card">
-            <div class="action-icon">💰</div>
+            <div class="action-icon">
+              <i class="modern-icon icon-money modern-icon-lg"></i>
+            </div>
             <div class="action-title">询价管理</div>
             <div class="action-desc">处理询价请求</div>
           </router-link>
           <router-link to="/portal" class="action-card" target="_blank">
-            <div class="action-icon">🌐</div>
+            <div class="action-icon">
+              <i class="modern-icon icon-globe modern-icon-lg"></i>
+            </div>
             <div class="action-title">预览网站</div>
             <div class="action-desc">查看网站效果</div>
           </router-link>
@@ -158,12 +174,12 @@ const recentActivities = ref([
 // 获取活动图标
 const getActivityIcon = (type: string) => {
   const icons = {
-    message: '💬',
-    inquiry: '💰',
-    visit: '👥',
-    content: '📝'
+    message: 'chat',
+    inquiry: 'money',
+    visit: 'team',
+    content: 'document'
   }
-  return icons[type as keyof typeof icons] || '📋'
+  return icons[type as keyof typeof icons] || 'document'
 }
 
 // 格式化时间

@@ -112,7 +112,7 @@ async function setupDatabase() {
     await dbClient.end();
     
     console.log('');
-    console.log('🎉 数据库设置完成!');
+    console.log('[SUCCESS] 数据库设置完成!');
     console.log('');
     console.log('默认管理员账户:');
     console.log('用户名: admin');

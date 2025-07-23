@@ -2,7 +2,9 @@
   <el-container class="layout-container">
     <el-aside :width="sidebarWidth" class="sidebar">
       <div class="logo">
-        <div class="logo-img">🐄</div>
+        <div class="logo-img">
+          <i class="modern-icon icon-cattle modern-icon-lg"></i>
+        </div>
         <span v-if="!isCollapse" class="logo-text">肉牛管理系统</span>
       </div>
       

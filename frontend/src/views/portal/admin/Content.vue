@@ -138,7 +138,7 @@
                     </div>
                   </div>
                   <div v-else class="upload-placeholder">
-                    <i class="upload-icon">📁</i>
+                    <i class="modern-icon icon-folder modern-icon-lg"></i>
                     <p>点击上传图片</p>
                   </div>
                 </div>

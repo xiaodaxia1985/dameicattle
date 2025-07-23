@@ -10,7 +10,7 @@
           placeholder="搜索物资名称或编码"
           @input="onSearchInput"
         />
-        <view class="search-btn" @click="handleSearch">🔍</view>
+        <ModernIcon name="search" @click="handleSearch" />
       </view>
       
       <!-- 筛选器 -->
@@ -104,7 +104,9 @@
       
       <!-- 空状态 -->
       <view v-if="inventoryList.length === 0 && !loading" class="empty-state">
-        <view class="empty-icon">📦</view>
+        <view class="empty-icon">
+          <ModernIcon name="package" size="xl" />
+        </view>
         <view class="empty-text">暂无库存数据</view>
         <view class="empty-desc">请检查筛选条件或联系管理员</view>
       </view>
@@ -253,6 +255,7 @@
 <script>
 import { useMaterialStore } from '@/stores/material'
 import { useBaseStore } from '@/stores/base'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 export default {
   data() {

@@ -46,37 +46,49 @@
         </div>
         <div class="milestones-grid">
           <div class="milestone-card">
-            <div class="milestone-icon">🏢</div>
+            <div class="milestone-icon">
+              <i class="modern-icon icon-building modern-icon-lg"></i>
+            </div>
             <h3>公司成立</h3>
             <div class="milestone-year">2020年</div>
             <p>公司正式成立，开始专注于畜牧业数字化解决方案的研发</p>
           </div>
           <div class="milestone-card">
-            <div class="milestone-icon">💻</div>
+            <div class="milestone-icon">
+              <i class="modern-icon icon-computer modern-icon-lg"></i>
+            </div>
             <h3>产品发布</h3>
             <div class="milestone-year">2021年</div>
             <p>首个肉牛管理系统正式发布，获得市场积极反响</p>
           </div>
           <div class="milestone-card">
-            <div class="milestone-icon">🏆</div>
+            <div class="milestone-icon">
+              <i class="modern-icon icon-trophy modern-icon-lg"></i>
+            </div>
             <h3>行业认可</h3>
             <div class="milestone-year">2022年</div>
             <p>获得行业优秀解决方案奖，技术实力得到权威认可</p>
           </div>
           <div class="milestone-card">
-            <div class="milestone-icon">📈</div>
+            <div class="milestone-icon">
+              <i class="modern-icon icon-chart modern-icon-lg"></i>
+            </div>
             <h3>快速发展</h3>
             <div class="milestone-year">2023年</div>
             <p>客户数量突破50家，管理牛只超过10万头</p>
           </div>
           <div class="milestone-card">
-            <div class="milestone-icon">🌟</div>
+            <div class="milestone-icon">
+              <i class="modern-icon icon-star modern-icon-lg"></i>
+            </div>
             <h3>技术创新</h3>
             <div class="milestone-year">2024年</div>
             <p>推出移动端解决方案，实现全平台覆盖</p>
           </div>
           <div class="milestone-card">
-            <div class="milestone-icon">🚀</div>
+            <div class="milestone-icon">
+              <i class="modern-icon icon-rocket modern-icon-lg"></i>
+            </div>
             <h3>未来展望</h3>
             <div class="milestone-year">2025年</div>
             <p>计划拓展更多业务领域，成为行业领导者</p>
@@ -154,7 +166,7 @@
           </div>
           <div class="growth-image">
             <div class="image-placeholder">
-              <i class="placeholder-icon">👥</i>
+              <i class="modern-icon icon-team modern-icon-xl"></i>
               <p>团队合作</p>
             </div>
           </div>
@@ -245,22 +257,30 @@
           </p>
           <div class="vision-goals">
             <div class="goal-item">
-              <div class="goal-icon">🎯</div>
+              <div class="goal-icon">
+                <i class="modern-icon icon-target modern-icon-lg"></i>
+              </div>
               <h3>市场拓展</h3>
               <p>扩大市场覆盖范围，服务更多类型的养殖企业</p>
             </div>
             <div class="goal-item">
-              <div class="goal-icon">🔬</div>
+              <div class="goal-icon">
+                <i class="modern-icon icon-innovation modern-icon-lg"></i>
+              </div>
               <h3>技术创新</h3>
               <p>持续投入研发，引入更多前沿技术</p>
             </div>
             <div class="goal-item">
-              <div class="goal-icon">🤝</div>
+              <div class="goal-icon">
+                <i class="modern-icon icon-handshake modern-icon-lg"></i>
+              </div>
               <h3>合作伙伴</h3>
               <p>建立更广泛的合作伙伴关系，共同发展</p>
             </div>
             <div class="goal-item">
-              <div class="goal-icon">🌍</div>
+              <div class="goal-icon">
+                <i class="modern-icon icon-globe modern-icon-lg"></i>
+              </div>
               <h3>国际化</h3>
               <p>探索国际市场机会，推广中国方案</p>
             </div>

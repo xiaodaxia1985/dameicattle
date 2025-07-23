@@ -35,7 +35,7 @@ async function initializeDemo() {
 
 async function createTestData() {
   try {
-    console.log('\n📝 Creating test data...');
+    console.log('\n[INFO] Creating test data...');
 
     // Create a test role if it doesn't exist
     const [role] = await Role.findOrCreate({
@@ -71,7 +71,7 @@ async function createTestData() {
 
 async function demonstrateBaseOperations(testUser: User) {
   try {
-    console.log('\n🏢 Demonstrating Base Management Operations...');
+    console.log('\n[INFO] Demonstrating Base Management Operations...');
 
     // 1. Create a new base
     console.log('\n1️⃣ Creating a new base...');
@@ -168,7 +168,7 @@ async function demonstrateBaseOperations(testUser: User) {
       },
     ];
 
-    console.log('📋 Bulk import data structure:');
+    console.log('[INFO] Bulk import data structure:');
     console.log(JSON.stringify(bulkImportData, null, 2));
 
     // Actually create the bulk import bases
@@ -226,7 +226,7 @@ async function demonstrateBaseOperations(testUser: User) {
       updated_at: base.updated_at,
     }));
 
-    console.log('📤 Export data structure (first 2 records):');
+    console.log('[INFO] Export data structure (first 2 records):');
     console.log(JSON.stringify(exportData, null, 2));
 
     return { newBase, secondBase };
@@ -238,7 +238,7 @@ async function demonstrateBaseOperations(testUser: User) {
 
 async function demonstrateStatistics(baseId: number) {
   try {
-    console.log('\n📊 Demonstrating Base Statistics...');
+    console.log('\n[INFO] Demonstrating Base Statistics...');
 
     const base = await Base.findByPk(baseId);
     if (!base) {
@@ -259,7 +259,7 @@ async function demonstrateStatistics(baseId: number) {
       health_records_count: 0,
     };
 
-    console.log('📈 Base Statistics:');
+    console.log('[INFO] Base Statistics:');
     console.log(`   - Base: ${statistics.base_info.name} (${statistics.base_info.code})`);
     console.log(`   - Users: ${statistics.user_count}`);
     console.log(`   - Barns: ${statistics.barn_count}`);
@@ -279,7 +279,7 @@ async function demonstrateStatistics(baseId: number) {
 
 async function demonstrateCapacityInfo(baseId: number) {
   try {
-    console.log('\n🏗️ Demonstrating Base Capacity Information...');
+    console.log('\n[INFO] Demonstrating Base Capacity Information...');
 
     const base = await Base.findByPk(baseId);
     if (!base) {
@@ -307,7 +307,7 @@ async function demonstrateCapacityInfo(baseId: number) {
       },
     };
 
-    console.log('🏗️ Base Capacity Information:');
+    console.log('[INFO] Base Capacity Information:');
     console.log(`   - Base: ${capacityInfo.base_info.name} (${capacityInfo.base_info.code})`);
     console.log(`   - Total Area: ${capacityInfo.base_info.area} 平方米`);
     console.log(`   - Total Barns: ${capacityInfo.barn_capacity.total_barns}`);
@@ -355,7 +355,7 @@ async function cleanup() {
 }
 
 async function main() {
-  console.log('🚀 Base Management API Demo Starting...\n');
+  console.log('[START] Base Management API Demo Starting...\n');
 
   try {
     // Initialize
@@ -380,18 +380,18 @@ async function main() {
     // Cleanup
     await cleanup();
 
-    console.log('\n✅ Base Management API Demo completed successfully!');
-    console.log('\n📋 Summary of demonstrated features:');
-    console.log('   ✅ Base CRUD operations (Create, Read, Update, Delete)');
-    console.log('   ✅ Base manager assignment and validation');
-    console.log('   ✅ Base listing with pagination support');
-    console.log('   ✅ Bulk import data structure and validation');
-    console.log('   ✅ Location coordinate validation');
-    console.log('   ✅ Export data structure');
-    console.log('   ✅ Base statistics calculation');
-    console.log('   ✅ Base capacity information');
-    console.log('   ✅ Data permission filtering support');
-    console.log('   ✅ Error handling and validation');
+    console.log('\n[SUCCESS] Base Management API Demo completed successfully!');
+    console.log('\n[SUMMARY] Summary of demonstrated features:');
+    console.log('   [OK] Base CRUD operations (Create, Read, Update, Delete)');
+    console.log('   [OK] Base manager assignment and validation');
+    console.log('   [OK] Base listing with pagination support');
+    console.log('   [OK] Bulk import data structure and validation');
+    console.log('   [OK] Location coordinate validation');
+    console.log('   [OK] Export data structure');
+    console.log('   [OK] Base statistics calculation');
+    console.log('   [OK] Base capacity information');
+    console.log('   [OK] Data permission filtering support');
+    console.log('   [OK] Error handling and validation');
 
   } catch (error) {
     console.error('\n❌ Demo failed:', error);
@@ -399,7 +399,7 @@ async function main() {
   } finally {
     // Close database connection
     await sequelize.close();
-    console.log('\n🔌 Database connection closed');
+    console.log('\n[INFO] Database connection closed');
   }
 }
 

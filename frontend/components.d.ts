@@ -86,6 +86,7 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     GaugeChart: typeof import('./src/components/dashboard/GaugeChart.vue')['default']
     HelpCenter: typeof import('./src/components/help/HelpCenter.vue')['default']
+    ModernIcon: typeof import('./src/components/ModernIcon.vue')['default']
     PendingTasksCard: typeof import('./src/components/dashboard/PendingTasksCard.vue')['default']
     PieChart: typeof import('./src/components/dashboard/PieChart.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

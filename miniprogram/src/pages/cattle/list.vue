@@ -9,7 +9,7 @@
           @input="onSearchInput"
           @confirm="handleSearch"
         />
-        <text class="search-icon" @tap="handleSearch">🔍</text>
+        <ModernIcon name="search" @click="handleSearch" />
       </view>
       <text class="filter-btn" @tap="showFilterPopup">筛选</text>
     </view>
@@ -52,7 +52,7 @@
             @error="onPhotoError"
           />
           <view v-else class="photo-placeholder">
-            <text class="photo-icon">📷</text>
+            <ModernIcon name="camera" />
           </view>
         </view>
 
@@ -85,7 +85,9 @@
           </view>
 
           <view class="cattle-location" v-if="cattle.barn">
-            <text class="location-text">📍 {{ cattle.barn.name }}</text>
+            <text class="location-text">
+              <ModernIcon name="location" size="sm" /> {{ cattle.barn.name }}
+            </text>
           </view>
         </view>
 
@@ -105,7 +107,9 @@
 
     <!-- 空状态 -->
     <view class="empty-state" v-if="!loading && cattleList.length === 0">
-      <text class="empty-icon">🐄</text>
+      <view class="empty-icon">
+        <ModernIcon name="cattle" size="xl" />
+      </view>
       <text class="empty-text">暂无牛只数据</text>
       <text class="empty-hint">请检查网络连接或联系管理员</text>
     </view>
@@ -177,15 +181,21 @@
           </view>
           <view class="record-options">
             <view class="record-option" @tap="recordHealth">
-              <text class="option-icon">🏥</text>
+              <view class="option-icon">
+                <ModernIcon name="medical" size="lg" />
+              </view>
               <text class="option-text">健康记录</text>
             </view>
             <view class="record-option" @tap="recordFeeding">
-              <text class="option-icon">🌾</text>
+              <view class="option-icon">
+                <ModernIcon name="feed" size="lg" />
+              </view>
               <text class="option-text">饲喂记录</text>
             </view>
             <view class="record-option" @tap="recordWeight">
-              <text class="option-icon">⚖️</text>
+              <view class="option-icon">
+                <ModernIcon name="chart" size="lg" />
+              </view>
               <text class="option-text">称重记录</text>
             </view>
           </view>
@@ -203,11 +213,15 @@
       </view>
       <view class="fab-options" v-if="showFabOptions">
         <view class="fab-option" @tap="startScan">
-          <text class="fab-option-icon">📱</text>
+          <view class="fab-option-icon">
+            <ModernIcon name="mobile" />
+          </view>
           <text class="fab-option-text">扫码</text>
         </view>
         <view class="fab-option" @tap="refreshData">
-          <text class="fab-option-icon">🔄</text>
+          <view class="fab-option-icon">
+            <ModernIcon name="refresh" />
+          </view>
           <text class="fab-option-text">刷新</text>
         </view>
       </view>
@@ -219,6 +233,7 @@
 import { ref, reactive, onMounted, onShow } from 'vue'
 import { useCattleStore } from '@/stores/cattle'
 import { useBaseStore } from '@/stores/base'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 const cattleStore = useCattleStore()
 const baseStore = useBaseStore()

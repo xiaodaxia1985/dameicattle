@@ -55,19 +55,27 @@
       <view class="section-title">快捷操作</view>
       <view class="action-grid">
         <view class="action-item" @tap="navigateTo('/pages/scan/index')">
-          <view class="action-icon">📱</view>
+          <view class="action-icon">
+            <ModernIcon name="mobile" size="lg" />
+          </view>
           <text class="action-text">扫码识别</text>
         </view>
         <view class="action-item" @tap="navigateTo('/pages/health/record')">
-          <view class="action-icon">🏥</view>
+          <view class="action-icon">
+            <ModernIcon name="medical" size="lg" />
+          </view>
           <text class="action-text">健康记录</text>
         </view>
         <view class="action-item" @tap="navigateTo('/pages/feeding/record')">
-          <view class="action-icon">🌾</view>
+          <view class="action-icon">
+            <ModernIcon name="feed" size="lg" />
+          </view>
           <text class="action-text">饲喂记录</text>
         </view>
         <view class="action-item" @tap="showComingSoon">
-          <view class="action-icon">📊</view>
+          <view class="action-icon">
+            <ModernIcon name="chart" size="lg" />
+          </view>
           <text class="action-text">数据统计</text>
         </view>
       </view>
@@ -165,6 +173,7 @@ import { useCacheStore } from '@/stores/cache'
 import { formatDistance, formatTime } from '@/utils/location'
 import MobileChart from '@/components/MobileChart.vue'
 import notificationManager from '@/utils/notification'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 const baseStore = useBaseStore()
 const dashboardStore = useDashboardStore()

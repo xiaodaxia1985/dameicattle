@@ -41,11 +41,11 @@
         
         <div class="filter-actions">
           <button class="btn btn-primary" @click="fetchInquiries">
-            <i class="icon">🔍</i>
+            <i class="modern-icon icon-search"></i>
             搜索
           </button>
           <button class="btn btn-outline" @click="resetFilters">
-            <i class="icon">🔄</i>
+            <i class="modern-icon icon-refresh"></i>
             重置
           </button>
         </div>
@@ -110,7 +110,9 @@
         </div>
         
         <div v-else-if="inquiries.length === 0" class="empty-state">
-          <div class="empty-icon">📋</div>
+          <div class="empty-icon">
+            <i class="modern-icon icon-document modern-icon-xl"></i>
+          </div>
           <p>暂无询价数据</p>
         </div>
         

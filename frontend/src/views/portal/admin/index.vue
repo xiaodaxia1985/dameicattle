@@ -6,11 +6,11 @@
           <h1>门户网站管理</h1>
           <div class="header-actions">
             <router-link to="/portal" class="btn btn-outline" target="_blank">
-              <i class="icon">🌐</i>
+              <i class="modern-icon icon-globe"></i>
               预览网站
             </router-link>
             <router-link to="/" class="btn btn-primary">
-              <i class="icon">🏠</i>
+              <i class="modern-icon icon-home"></i>
               返回后台
             </router-link>
           </div>
@@ -29,7 +29,7 @@
                 class="nav-item"
                 :class="{ active: $route.path.includes('dashboard') }"
               >
-                <i class="nav-icon">📊</i>
+                <i class="modern-icon icon-chart"></i>
                 <span>数据概览</span>
               </router-link>
               <router-link 
@@ -37,7 +37,7 @@
                 class="nav-item"
                 :class="{ active: $route.path.includes('content') }"
               >
-                <i class="nav-icon">📝</i>
+                <i class="modern-icon icon-document"></i>
                 <span>内容管理</span>
               </router-link>
               <router-link 
@@ -45,7 +45,7 @@
                 class="nav-item"
                 :class="{ active: $route.path.includes('messages') }"
               >
-                <i class="nav-icon">💬</i>
+                <i class="modern-icon icon-chat"></i>
                 <span>留言管理</span>
                 <span class="badge" v-if="unreadMessages > 0">{{ unreadMessages }}</span>
               </router-link>
@@ -54,7 +54,7 @@
                 class="nav-item"
                 :class="{ active: $route.path.includes('inquiries') }"
               >
-                <i class="nav-icon">💰</i>
+                <i class="modern-icon icon-money"></i>
                 <span>询价管理</span>
                 <span class="badge" v-if="pendingInquiries > 0">{{ pendingInquiries }}</span>
               </router-link>

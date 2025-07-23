@@ -2,7 +2,9 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <div class="logo">🐄</div>
+        <div class="logo">
+          <i class="modern-icon icon-cattle modern-icon-xl"></i>
+        </div>
         <h1 class="title">肉牛全生命周期管理系统</h1>
         <p class="subtitle">Cattle Lifecycle Management System</p>
       </div>

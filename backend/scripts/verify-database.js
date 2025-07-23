@@ -26,7 +26,7 @@ async function verifyDatabase() {
     console.log('✓ 数据库连接成功');
 
     // 验证表结构
-    console.log('\n📋 数据表验证:');
+    console.log('\n[INFO] 数据表验证:');
     const tablesQuery = `
       SELECT table_name, 
              (SELECT COUNT(*) FROM information_schema.columns WHERE table_name = t.table_name) as column_count
@@ -39,7 +39,7 @@ async function verifyDatabase() {
     console.table(tables.rows);
 
     // 验证种子数据
-    console.log('\n📊 种子数据验证:');
+    console.log('\n[INFO] 种子数据验证:');
     
     const dataChecks = [
       { table: 'roles', description: '角色数据' },
@@ -66,7 +66,7 @@ async function verifyDatabase() {
     }
 
     // 验证索引
-    console.log('\n🔍 索引验证:');
+    console.log('\n[INFO] 索引验证:');
     const indexQuery = `
       SELECT indexname, tablename 
       FROM pg_indexes 
@@ -90,7 +90,7 @@ async function verifyDatabase() {
     console.log(`总共创建了 ${triggers.rows.length} 个触发器`);
 
     // 验证视图
-    console.log('\n👁️ 视图验证:');
+    console.log('\n[INFO] 视图验证:');
     const viewQuery = `
       SELECT table_name as view_name
       FROM information_schema.views 
@@ -105,7 +105,7 @@ async function verifyDatabase() {
     });
 
     // 验证函数
-    console.log('\n🔧 函数验证:');
+    console.log('\n[INFO] 函数验证:');
     const functionQuery = `
       SELECT routine_name 
       FROM information_schema.routines 
@@ -120,7 +120,7 @@ async function verifyDatabase() {
     });
 
     // 测试管理员登录
-    console.log('\n👤 管理员账户验证:');
+    console.log('\n[INFO] 管理员账户验证:');
     const adminQuery = `
       SELECT u.username, u.real_name, r.name as role_name, b.name as base_name
       FROM users u
@@ -140,7 +140,7 @@ async function verifyDatabase() {
     }
 
     // 数据库大小统计
-    console.log('\n💾 数据库大小:');
+    console.log('\n[INFO] 数据库大小:');
     const sizeQuery = `
       SELECT pg_size_pretty(pg_database_size('${DB_NAME}')) as database_size;
     `;
@@ -150,7 +150,7 @@ async function verifyDatabase() {
 
     await client.end();
     
-    console.log('\n🎉 数据库验证完成!');
+    console.log('\n[SUCCESS] 数据库验证完成!');
     console.log('\n数据库已成功初始化，包含:');
     console.log('- 完整的表结构');
     console.log('- 示例种子数据');

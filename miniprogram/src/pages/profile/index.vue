@@ -35,17 +35,23 @@
       <view class="section-title">账户管理</view>
       <view class="menu-list">
         <view class="menu-item" @click="editProfile">
-          <view class="menu-icon">👤</view>
+          <view class="menu-icon">
+            <ModernIcon name="user" />
+          </view>
           <text class="menu-text">编辑资料</text>
           <text class="menu-arrow">></text>
         </view>
         <view class="menu-item" @click="changeBase" v-if="hasPermission('user:change_base')">
-          <view class="menu-icon">🏢</view>
+          <view class="menu-icon">
+            <ModernIcon name="building" />
+          </view>
           <text class="menu-text">更换基地</text>
           <text class="menu-arrow">></text>
         </view>
         <view class="menu-item" @click="viewPermissions">
-          <view class="menu-icon">🔐</view>
+          <view class="menu-icon">
+            <ModernIcon name="lock" />
+          </view>
           <text class="menu-text">权限信息</text>
           <text class="menu-arrow">></text>
         </view>
@@ -57,7 +63,9 @@
       <view class="section-title">数据管理</view>
       <view class="menu-list">
         <view class="menu-item" @click="viewSyncStatus">
-          <view class="menu-icon">🔄</view>
+          <view class="menu-icon">
+            <ModernIcon name="refresh" />
+          </view>
           <text class="menu-text">同步状态</text>
           <view class="sync-badge" v-if="syncStatus.queueLength > 0">
             {{ syncStatus.queueLength }}
@@ -65,12 +73,16 @@
           <text class="menu-arrow">></text>
         </view>
         <view class="menu-item" @click="manualSync">
-          <view class="menu-icon">📤</view>
+          <view class="menu-icon">
+            <ModernIcon name="upload" />
+          </view>
           <text class="menu-text">手动同步</text>
           <text class="menu-arrow">></text>
         </view>
         <view class="menu-item" @click="clearOfflineData">
-          <view class="menu-icon">🗑️</view>
+          <view class="menu-icon">
+            <ModernIcon name="trash" />
+          </view>
           <text class="menu-text">清除离线数据</text>
           <text class="menu-arrow">></text>
         </view>
@@ -82,12 +94,16 @@
       <view class="section-title">系统设置</view>
       <view class="menu-list">
         <view class="menu-item" @click="viewAbout">
-          <view class="menu-icon">ℹ️</view>
+          <view class="menu-icon">
+            <ModernIcon name="info" />
+          </view>
           <text class="menu-text">关于应用</text>
           <text class="menu-arrow">></text>
         </view>
         <view class="menu-item" @click="contactSupport">
-          <view class="menu-icon">📞</view>
+          <view class="menu-icon">
+            <ModernIcon name="phone" />
+          </view>
           <text class="menu-text">联系客服</text>
           <text class="menu-arrow">></text>
         </view>
@@ -225,6 +241,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { dataSyncManager } from '@/utils/sync'
 import { permissionManager } from '@/utils/permission'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 const authStore = useAuthStore()
 

@@ -7,12 +7,12 @@
       
       <view class="scan-actions">
         <button class="scan-btn" @tap="startScan">
-          <text class="scan-icon">📷</text>
+          <ModernIcon name="camera" size="lg" />
           <text>扫码识别</text>
         </button>
         
         <button class="manual-btn" @tap="showManualInput">
-          <text class="manual-icon">✏️</text>
+          <ModernIcon name="edit" size="lg" />
           <text>手动输入</text>
         </button>
       </view>
@@ -63,6 +63,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import dayjs from 'dayjs'
+import ModernIcon from '@/components/ModernIcon.vue'
 
 const recentScans = ref([])
 const manualEarTag = ref('')
