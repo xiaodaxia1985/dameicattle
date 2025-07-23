@@ -1829,3 +1829,10 @@
 {"level":"info","message":"疫苗到期提醒检查完成","service":"cattle-management-api","timestamp":"2025-07-23 16:00:00"}
 {"level":"info","message":"开始执行疫苗到期提醒检查","service":"cattle-management-api","timestamp":"2025-07-23 17:00:00"}
 {"level":"info","message":"疫苗到期提醒检查完成","service":"cattle-management-api","timestamp":"2025-07-23 17:00:00"}
+{"level":"info","message":"开始执行疫苗到期提醒检查","service":"cattle-management-api","timestamp":"2025-07-23 18:00:00"}
+{"level":"info","message":"疫苗到期提醒检查完成","service":"cattle-management-api","timestamp":"2025-07-23 18:00:00"}
+{"level":"error","message":"Redis Client Error: Connection timeout","service":"cattle-management-api","stack":"Error: Connection timeout\n    at Socket.<anonymous> (D:\\develop\\dameicattle\\backend\\node_modules\\@redis\\client\\dist\\lib\\client\\socket.js:177:124)\n    at Object.onceWrapper (node:events:632:28)\n    at Socket.emit (node:events:518:28)\n    at Socket.emit (node:domain:489:12)\n    at Socket._onTimeout (node:net:604:8)\n    at listOnTimeout (node:internal/timers:588:17)\n    at processTimers (node:internal/timers:523:7)","timestamp":"2025-07-23 18:17:04"}
+{"level":"info","message":"Redis Client Connected","service":"cattle-management-api","timestamp":"2025-07-23 18:17:04"}
+{"level":"info","message":"Redis Client Ready","service":"cattle-management-api","timestamp":"2025-07-23 18:17:04"}
+{"level":"info","message":"Database connection established successfully","service":"cattle-management-api","timestamp":"2025-07-23 18:17:04"}
+{"level":"info","message":"Redis connection established successfully","service":"cattle-management-api","timestamp":"2025-07-23 18:17:04"}

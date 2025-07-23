@@ -245,7 +245,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { newsApi } from '@/api/news'
 
 interface NewsArticle {
@@ -262,7 +262,7 @@ interface NewsArticle {
 const newsList = ref<NewsArticle[]>([])
 
 // 动画状态
-const isVisible = ref({
+const isVisible = ref<Record<string, boolean>>({
   features: false,
   advantages: false,
   news: false

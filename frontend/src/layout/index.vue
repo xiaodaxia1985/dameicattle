@@ -33,7 +33,7 @@
           
           <el-menu-item
             v-else
-            :index="route.redirect || `/${route.path}`"
+            :index="String(route.redirect || `/${route.path}`)"
           >
             <el-icon><component :is="route.meta?.icon" /></el-icon>
             <template #title>{{ route.meta?.title }}</template>

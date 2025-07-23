@@ -317,6 +317,13 @@ const milestones = ref([
   min-height: 100vh;
 }
 
+/* 通用容器样式 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
 /* 页面头部 */
 .page-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -451,8 +458,10 @@ const milestones = ref([
 
 .milestones-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .milestone-card {
@@ -502,8 +511,10 @@ const milestones = ref([
 
 .achievements-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .achievement-item {
@@ -696,8 +707,12 @@ const milestones = ref([
 
 .vision-goals {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 30px;
+  margin-bottom: 50px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
   margin-bottom: 50px;
 }
 
@@ -750,6 +765,13 @@ const milestones = ref([
 }
 
 /* 响应式设计 */
+@media (max-width: 1024px) {
+  .milestones-grid,
+  .achievements-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .page-header h1 {
     font-size: 36px;

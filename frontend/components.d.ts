@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    ArticleDialog: typeof import('./src/components/help/ArticleDialog.vue')['default']
     BarChart: typeof import('./src/components/dashboard/BarChart.vue')['default']
     BarnVisualization: typeof import('./src/components/BarnVisualization.vue')['default']
     BatchImportDialog: typeof import('./src/components/cattle/BatchImportDialog.vue')['default']
@@ -91,6 +92,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     StatCard: typeof import('./src/components/dashboard/StatCard.vue')['default']
     TrendChart: typeof import('./src/components/dashboard/TrendChart.vue')['default']
+    VideoDialog: typeof import('./src/components/help/VideoDialog.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

@@ -1,99 +1,157 @@
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/zh-cn'
+
+// Configure dayjs
+dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
+
 /**
- * 格式化日期
- * @param date 日期字符串或Date对象
- * @param format 格式化模板，默认为 'YYYY-MM-DD HH:mm:ss'
- * @returns 格式化后的日期字符串
+ * Format date to readable string
  */
-export function formatDate(date: string | Date | undefined, format = 'YYYY-MM-DD HH:mm:ss'): string {
+export const formatDate = (date: string | Date, format = 'YYYY-MM-DD HH:mm:ss'): string => {
   if (!date) return ''
-  
-  const d = typeof date === 'string' ? new Date(date) : date
-  
-  if (isNaN(d.getTime())) return ''
-  
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hours = String(d.getHours()).padStart(2, '0')
-  const minutes = String(d.getMinutes()).padStart(2, '0')
-  const seconds = String(d.getSeconds()).padStart(2, '0')
-  
-  return format
-    .replace('YYYY', String(year))
-    .replace('MM', month)
-    .replace('DD', day)
-    .replace('HH', hours)
-    .replace('mm', minutes)
-    .replace('ss', seconds)
+  return dayjs(date).format(format)
 }
 
 /**
- * 格式化相对时间
- * @param date 日期字符串或Date对象
- * @returns 相对时间字符串，如 "2小时前"、"3天前"
+ * Format time to readable string
  */
-export function formatRelativeTime(date: string | Date | undefined): string {
+export const formatTime = (date: string | Date, format = 'HH:mm:ss'): string => {
   if (!date) return ''
-  
-  const d = typeof date === 'string' ? new Date(date) : date
-  
-  if (isNaN(d.getTime())) return ''
-  
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  
-  if (diff < 0) return '未来'
-  
-  const seconds = Math.floor(diff / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
-  const months = Math.floor(days / 30)
-  const years = Math.floor(months / 12)
-  
-  if (years > 0) return `${years}年前`
-  if (months > 0) return `${months}个月前`
-  if (days > 0) return `${days}天前`
-  if (hours > 0) return `${hours}小时前`
-  if (minutes > 0) return `${minutes}分钟前`
-  return '刚刚'
+  return dayjs(date).format(format)
 }
 
 /**
- * 获取日期范围
- * @param type 范围类型：'today' | 'week' | 'month' | 'year'
- * @returns [开始日期, 结束日期]
+ * Get relative time (e.g., "2 hours ago")
  */
-export function getDateRange(type: 'today' | 'week' | 'month' | 'year'): [Date, Date] {
-  const now = new Date()
-  const start = new Date()
-  const end = new Date()
+export const getRelativeTime = (date: string | Date): string => {
+  if (!date) return ''
+  return dayjs(date).fromNow()
+}
+
+/**
+ * Check if date is today
+ */
+export const isToday = (date: string | Date): boolean => {
+  if (!date) return false
+  return dayjs(date).isSame(dayjs(), 'day')
+}
+
+/**
+ * Check if date is yesterday
+ */
+export const isYesterday = (date: string | Date): boolean => {
+  if (!date) return false
+  return dayjs(date).isSame(dayjs().subtract(1, 'day'), 'day')
+}
+
+/**
+ * Format date for display (smart format)
+ */
+export const formatDateSmart = (date: string | Date): string => {
+  if (!date) return ''
   
-  switch (type) {
-    case 'today':
-      start.setHours(0, 0, 0, 0)
-      end.setHours(23, 59, 59, 999)
-      break
-    case 'week':
-      const dayOfWeek = now.getDay()
-      start.setDate(now.getDate() - dayOfWeek)
-      start.setHours(0, 0, 0, 0)
-      end.setDate(start.getDate() + 6)
-      end.setHours(23, 59, 59, 999)
-      break
-    case 'month':
-      start.setDate(1)
-      start.setHours(0, 0, 0, 0)
-      end.setMonth(start.getMonth() + 1, 0)
-      end.setHours(23, 59, 59, 999)
-      break
-    case 'year':
-      start.setMonth(0, 1)
-      start.setHours(0, 0, 0, 0)
-      end.setMonth(11, 31)
-      end.setHours(23, 59, 59, 999)
-      break
+  const target = dayjs(date)
+  const now = dayjs()
+  
+  if (target.isSame(now, 'day')) {
+    return target.format('HH:mm')
+  } else if (target.isSame(now.subtract(1, 'day'), 'day')) {
+    return '昨天 ' + target.format('HH:mm')
+  } else if (target.isSame(now, 'year')) {
+    return target.format('MM-DD HH:mm')
+  } else {
+    return target.format('YYYY-MM-DD HH:mm')
   }
+}
+
+/**
+ * Get date range for common periods
+ */
+export const getDateRange = (period: 'today' | 'yesterday' | 'week' | 'month' | 'year'): [string, string] => {
+  const now = dayjs()
   
-  return [start, end]
+  switch (period) {
+    case 'today':
+      return [
+        now.startOf('day').format('YYYY-MM-DD HH:mm:ss'),
+        now.endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      ]
+    case 'yesterday':
+      const yesterday = now.subtract(1, 'day')
+      return [
+        yesterday.startOf('day').format('YYYY-MM-DD HH:mm:ss'),
+        yesterday.endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      ]
+    case 'week':
+      return [
+        now.startOf('week').format('YYYY-MM-DD HH:mm:ss'),
+        now.endOf('week').format('YYYY-MM-DD HH:mm:ss')
+      ]
+    case 'month':
+      return [
+        now.startOf('month').format('YYYY-MM-DD HH:mm:ss'),
+        now.endOf('month').format('YYYY-MM-DD HH:mm:ss')
+      ]
+    case 'year':
+      return [
+        now.startOf('year').format('YYYY-MM-DD HH:mm:ss'),
+        now.endOf('year').format('YYYY-MM-DD HH:mm:ss')
+      ]
+    default:
+      return [
+        now.startOf('day').format('YYYY-MM-DD HH:mm:ss'),
+        now.endOf('day').format('YYYY-MM-DD HH:mm:ss')
+      ]
+  }
+}
+
+/**
+ * Calculate age from birth date
+ */
+export const calculateAge = (birthDate: string | Date): number => {
+  if (!birthDate) return 0
+  return dayjs().diff(dayjs(birthDate), 'year')
+}
+
+/**
+ * Calculate days between two dates
+ */
+export const daysBetween = (date1: string | Date, date2: string | Date): number => {
+  if (!date1 || !date2) return 0
+  return Math.abs(dayjs(date1).diff(dayjs(date2), 'day'))
+}
+
+/**
+ * Check if date is in the future
+ */
+export const isFuture = (date: string | Date): boolean => {
+  if (!date) return false
+  return dayjs(date).isAfter(dayjs())
+}
+
+/**
+ * Check if date is in the past
+ */
+export const isPast = (date: string | Date): boolean => {
+  if (!date) return false
+  return dayjs(date).isBefore(dayjs())
+}
+
+/**
+ * Format duration in minutes to readable string
+ */
+export const formatDuration = (minutes: number): string => {
+  if (minutes < 60) {
+    return `${minutes}分钟`
+  } else {
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    if (remainingMinutes === 0) {
+      return `${hours}小时`
+    } else {
+      return `${hours}小时${remainingMinutes}分钟`
+    }
+  }
 }

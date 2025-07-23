@@ -2,6 +2,10 @@ import { vi } from 'vitest';
 import { config } from '@vue/test-utils';
 import ElementPlus from 'element-plus';
 
+// Mock CSS imports
+vi.mock('element-plus/dist/index.css', () => ({}));
+vi.mock('element-plus/theme-chalk/dark/css-vars.css', () => ({}));
+
 // 全局测试配置
 config.global.plugins = [ElementPlus];
 

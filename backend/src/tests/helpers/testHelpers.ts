@@ -204,7 +204,7 @@ export const createMockNext = (): jest.Mock => {
 /**
  * 生成测试用的JWT Token
  */
-export const generateTestToken = (user: Partial<TestUser>): string => {
+export const generateTestToken = (user: Partial<TestUser> | any): string => {
   const payload = {
     id: user.id || 1,
     username: user.username || 'testuser',

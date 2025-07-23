@@ -342,7 +342,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 // 动画状态
-const isVisible = ref({
+const isVisible = ref<Record<string, boolean>>({
   modules: false,
   tech: false,
   services: false,

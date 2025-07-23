@@ -206,7 +206,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 // 动画状态
-const isVisible = ref({
+const isVisible = ref<Record<string, boolean>>({
   stats: false,
   values: false,
   team: false,
@@ -214,7 +214,7 @@ const isVisible = ref({
 })
 
 // 数字动画状态
-const animatedStats = ref({
+const animatedStats = ref<Record<string, number>>({
   farms: 0,
   cattle: 0,
   satisfaction: 0
@@ -249,7 +249,7 @@ const handleScroll = () => {
 
 // 数字动画
 const animateNumbers = () => {
-  const targets = { farms: 50, cattle: 100000, satisfaction: 99 }
+  const targets: Record<string, number> = { farms: 50, cattle: 100000, satisfaction: 99 }
   const duration = 2000
   const steps = 60
   const stepTime = duration / steps

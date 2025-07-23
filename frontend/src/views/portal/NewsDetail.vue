@@ -31,7 +31,7 @@
                   </div>
                   <div class="meta-item">
                     <el-icon><Calendar /></el-icon>
-                    <span>{{ formatDate(article.publishTime) }}</span>
+                    <span>{{ formatDate(article.publishTime || article.createdAt) }}</span>
                   </div>
                   <div class="meta-item">
                     <el-icon><View /></el-icon>
@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="article-info">
-                  <p>发布时间：{{ formatDate(article.publishTime) }}</p>
+                  <p>发布时间：{{ formatDate(article.publishTime || article.createdAt) }}</p>
                   <p>最后更新：{{ formatDate(article.updatedAt) }}</p>
                 </div>
               </footer>
@@ -120,7 +120,7 @@
                 <div class="related-content">
                   <h4>{{ relatedArticle.title }}</h4>
                   <div class="related-meta">
-                    <span>{{ formatDate(relatedArticle.publishTime, 'MM-DD') }}</span>
+                    <span>{{ formatDate(relatedArticle.publishTime || relatedArticle.createdAt, 'MM-DD') }}</span>
                     <span>{{ relatedArticle.viewCount }} 浏览</span>
                   </div>
                 </div>
@@ -254,7 +254,7 @@
               >
                 <h4>{{ latestArticle.title }}</h4>
                 <div class="latest-meta">
-                  <span>{{ formatDate(latestArticle.publishTime, 'MM-DD') }}</span>
+                  <span>{{ formatDate(latestArticle.publishTime || latestArticle.createdAt, 'MM-DD') }}</span>
                 </div>
               </div>
             </div>

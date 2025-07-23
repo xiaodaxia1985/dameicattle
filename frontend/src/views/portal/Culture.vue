@@ -322,7 +322,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 
 // 动画状态
-const isVisible = ref({
+const isVisible = ref<Record<string, boolean>>({
   mission: false,
   spirit: false,
   philosophy: false,

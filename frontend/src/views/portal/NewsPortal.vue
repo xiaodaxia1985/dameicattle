@@ -45,7 +45,7 @@
               >
                 <h4>{{ article.title }}</h4>
                 <div class="article-meta">
-                  <span>{{ formatDate(article.publishTime, 'MM-DD') }}</span>
+                  <span>{{ formatDate(article.publishTime || article.createdAt, 'MM-DD') }}</span>
                   <span>{{ article.viewCount }} 浏览</span>
                 </div>
               </div>
@@ -98,7 +98,7 @@
                   </p>
                   <div class="article-meta">
                     <span class="category">{{ article.category?.name }}</span>
-                    <span class="date">{{ formatDate(article.publishTime) }}</span>
+                    <span class="date">{{ formatDate(article.publishTime || article.createdAt) }}</span>
                     <span class="views">{{ article.viewCount }} 浏览</span>
                   </div>
                 </div>
@@ -143,7 +143,7 @@
                   <div class="article-meta">
                     <span class="category">{{ article.category?.name }}</span>
                     <span class="author">{{ article.authorName }}</span>
-                    <span class="date">{{ formatDate(article.publishTime) }}</span>
+                    <span class="date">{{ formatDate(article.publishTime || article.createdAt) }}</span>
                     <span class="stats">
                       <el-icon><View /></el-icon>
                       {{ article.viewCount }}

@@ -1,3 +1,4 @@
+import { fail } from 'assert';
 import { 
   createTestUser, 
   createTestRole, 
@@ -13,6 +14,43 @@ import {
   measureExecutionTime,
   runConcurrentTests
 } from './helpers/testHelpers';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { it } from 'node:test';
+import { describe } from 'node:test';
+import { beforeEach } from 'node:test';
+import { describe } from 'node:test';
 
 describe('Basic System Tests', () => {
   beforeEach(async () => {
@@ -40,7 +78,18 @@ describe('Basic System Tests', () => {
     it('should create mock request objects', () => {
       const req = createMockRequest({
         body: { test: 'data' },
-        user: { id: 1, username: 'test', email: 'test@example.com', role_id: 1 }
+        user: { 
+          id: 1, 
+          username: 'test', 
+          password_hash: 'hashed',
+          real_name: 'Test User',
+          email: 'test@example.com', 
+          role_id: 1,
+          status: 'active' as const,
+          failed_login_attempts: 0,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
       });
 
       expect(req.body).toEqual({ test: 'data' });
@@ -359,7 +408,19 @@ describe('Basic System Tests', () => {
 
     it('should handle authorization errors', () => {
       const req = createMockRequest({
-        user: { id: 1, username: 'user', email: 'user@example.com', role_id: 2, base_id: 2 }
+        user: { 
+          id: 1, 
+          username: 'user', 
+          password_hash: 'hashed',
+          real_name: 'Test User',
+          email: 'user@example.com', 
+          role_id: 2, 
+          base_id: 2,
+          status: 'active' as const,
+          failed_login_attempts: 0,
+          created_at: new Date(),
+          updated_at: new Date()
+        }
       });
       const res = createMockResponse();
 
@@ -418,7 +479,18 @@ describe('Basic System Tests', () => {
       const requests = Array(5).fill(null).map((_, index) => {
         const req = createMockRequest({
           params: { id: index + 1 },
-          user: { id: 1, username: 'test', email: 'test@example.com', role_id: 1 }
+          user: { 
+            id: 1, 
+            username: 'test', 
+            password_hash: 'hashed',
+            real_name: 'Test User',
+            email: 'test@example.com', 
+            role_id: 1,
+            status: 'active' as const,
+            failed_login_attempts: 0,
+            created_at: new Date(),
+            updated_at: new Date()
+          }
         });
         const res = createMockResponse();
 
