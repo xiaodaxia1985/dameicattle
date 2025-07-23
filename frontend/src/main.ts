@@ -40,4 +40,21 @@ authStore.initializeAuth()
 // Initialize app state
 appStore.initializeApp()
 
+// Check backend connection
+import { checkBackendConnection } from './utils/healthCheck'
+checkBackendConnection()
+
+// Initialize debug tools in development
+if (import.meta.env.MODE === 'development') {
+  import('./utils/debug').then(({ debugInfo }) => {
+    console.log('🚀 前端应用已启动')
+    console.log('💡 在控制台输入 debugInfo.printDebugInfo() 查看调试信息')
+    
+    // Auto-run debug info after a short delay
+    setTimeout(() => {
+      debugInfo.printDebugInfo()
+    }, 2000)
+  })
+}
+
 app.mount('#app')

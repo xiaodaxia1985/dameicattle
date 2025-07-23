@@ -82,7 +82,7 @@
                   <div class="mockup-content">
                     <div class="mockup-sidebar">
                       <div class="sidebar-item active"><div class="icon-chart" style="display: inline-block; margin-right: 8px;"></div> 数据总览</div>
-                      <div class="sidebar-item"><div class="icon-cattle" style="display: inline-block; margin-right: 8px;"></div> 牛只管理</div>
+                      <div class="sidebar-item"><div class="icon-cattle" style="display: inline-block; margin-right: 8px;"></div> 牛场管理</div>
                       <div class="sidebar-item"><div class="icon-medical" style="display: inline-block; margin-right: 8px;"></div> 健康管理</div>
                       <div class="sidebar-item"><div class="icon-feed" style="display: inline-block; margin-right: 8px;"></div> 饲喂管理</div>
                     </div>

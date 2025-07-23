@@ -1,7 +1,7 @@
 <template>
   <div class="cattle-list">
     <div class="page-header">
-      <h1 class="page-title">牛只管理</h1>
+      <h1 class="page-title">牛场管理</h1>
       <p class="page-description">管理牛只档案信息，支持查询、筛选、批量操作</p>
     </div>
 
@@ -11,10 +11,10 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">{{ cattleStore.total }}</div>
+              <div class="stat-number">{{ cattleStore.total || 0 }}</div>
               <div class="stat-label">总数量</div>
             </div>
-            <el-icon class="stat-icon"><Cow /></el-icon>
+            <el-icon class="stat-icon"><DataAnalysis /></el-icon>
           </el-card>
         </el-col>
         <el-col :span="6">
@@ -41,7 +41,7 @@
               <div class="stat-number">{{ cattleStore.treatmentCount }}</div>
               <div class="stat-label">治疗中</div>
             </div>
-            <el-icon class="stat-icon"><Medicine /></el-icon>
+            <el-icon class="stat-icon"><FirstAidKit /></el-icon>
           </el-card>
         </el-col>
       </el-row>
@@ -138,7 +138,7 @@
         <!-- 表格视图 -->
         <div v-if="viewMode === 'table'">
           <el-table 
-            :data="cattleStore.cattleList" 
+            :data="cattleStore.cattleList || []" 
             v-loading="cattleStore.loading"
             @selection-change="handleSelectionChange"
             row-key="id"
@@ -216,16 +216,25 @@
         <!-- 卡片视图 -->
         <div v-else class="card-view">
           <el-row :gutter="16">
-            <el-col :span="6" v-for="cattle in cattleStore.cattleList" :key="cattle.id">
-              <CattleCard 
-                :cattle="cattle" 
-                :selectable="true"
-                :selected="selectedCattle.includes(cattle.id)"
-                @select="handleCardSelect"
-                @view="viewDetail"
-                @edit="editCattle"
-                @delete="confirmDelete"
-              />
+            <el-col :span="6" v-for="cattle in (cattleStore.cattleList || [])" :key="cattle.id">
+              <el-card class="cattle-card">
+                <div class="card-header">
+                  <span class="ear-tag">{{ cattle.ear_tag }}</span>
+                  <el-tag :type="getHealthStatusType(cattle.health_status)" size="small">
+                    {{ getHealthStatusText(cattle.health_status) }}
+                  </el-tag>
+                </div>
+                <div class="card-content">
+                  <p><strong>品种:</strong> {{ cattle.breed }}</p>
+                  <p><strong>性别:</strong> {{ cattle.gender === 'male' ? '公' : '母' }}</p>
+                  <p><strong>体重:</strong> {{ cattle.weight || '-' }}kg</p>
+                  <p><strong>月龄:</strong> {{ cattle.age_months || '-' }}</p>
+                </div>
+                <div class="card-actions">
+                  <el-button size="small" @click="viewDetail(cattle)">详情</el-button>
+                  <el-button size="small" type="primary" @click="editCattle(cattle)">编辑</el-button>
+                </div>
+              </el-card>
             </el-col>
           </el-row>
         </div>
@@ -236,7 +245,7 @@
             v-model:current-page="cattleStore.searchParams.page"
             v-model:page-size="cattleStore.searchParams.limit"
             :page-sizes="[10, 20, 50, 100]"
-            :total="cattleStore.total"
+            :total="cattleStore.total || 0"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -245,45 +254,59 @@
       </el-card>
     </div>
 
-    <!-- 添加/编辑牛只对话框 -->
+    <!-- 对话框组件暂时移除，需要创建 -->
+    <!-- 
     <CattleFormDialog
       v-model="showFormDialog"
       :cattle="currentCattle"
       @success="handleFormSuccess"
     />
 
-    <!-- 批量导入对话框 -->
     <BatchImportDialog
       v-model="showImportDialog"
       @success="handleImportSuccess"
     />
 
-    <!-- 批量转群对话框 -->
     <BatchTransferDialog
       v-model="showTransferDialog"
       :cattle-ids="selectedCattle"
       @success="handleTransferSuccess"
     />
 
-    <!-- 牛只详情对话框 -->
     <CattleDetailDialog
       v-model="showDetailDialog"
       :cattle-id="detailCattleId"
     />
+    -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { 
+  DataAnalysis, 
+  Check, 
+  Warning, 
+  FirstAidKit,
+  Search,
+  Plus,
+  Upload,
+  Download,
+  Switch,
+  List,
+  Grid,
+  ArrowDown
+} from '@element-plus/icons-vue'
 import { useCattleStore } from '@/stores/cattle'
 import { useBaseStore } from '@/stores/base'
 import type { Cattle } from '@/api/cattle'
-import CattleCard from '@/components/cattle/CattleCard.vue'
-import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'
-import BatchImportDialog from '@/components/cattle/BatchImportDialog.vue'
-import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
-import CattleDetailDialog from '@/components/cattle/CattleDetailDialog.vue'
+// 组件暂时注释，需要创建
+// import CattleCard from '@/components/cattle/CattleCard.vue'
+// import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'
+// import BatchImportDialog from '@/components/cattle/BatchImportDialog.vue'
+// import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
+// import CattleDetailDialog from '@/components/cattle/CattleDetailDialog.vue'
 import dayjs from 'dayjs'
 
 const cattleStore = useCattleStore()
@@ -320,12 +343,18 @@ onMounted(() => {
 
 const loadCattleList = async () => {
   try {
+    console.log('开始加载牛只列表...')
+    console.log('搜索参数:', searchForm)
+    
     await cattleStore.fetchCattleList({
       ...searchForm,
       page: 1
     })
+    
+    console.log('牛只列表加载成功:', cattleStore.cattleList)
   } catch (error) {
-    ElMessage.error('加载牛只列表失败')
+    console.error('加载牛只列表失败:', error)
+    ElMessage.error('加载牛只列表失败: ' + (error as Error).message)
   }
 }
 

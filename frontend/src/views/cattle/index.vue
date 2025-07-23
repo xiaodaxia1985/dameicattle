@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-// 牛只管理模块路由容器
+// 牛场管理模块路由容器
 </script>

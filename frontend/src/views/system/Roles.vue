@@ -304,7 +304,7 @@ const getModuleName = (module: string) => {
     'user': '用户管理',
     'role': '角色管理',
     'base': '基地管理',
-    'cattle': '牛只管理',
+    'cattle': '牛场管理',
     'health': '健康管理',
     'feeding': '饲喂管理',
     'purchase': '采购管理',

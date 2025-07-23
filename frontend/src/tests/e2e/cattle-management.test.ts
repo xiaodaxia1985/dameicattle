@@ -24,7 +24,7 @@ describe('Cattle Management E2E Tests', () => {
     await page.fill('[data-testid="password"]', 'testpassword');
     await page.click('[data-testid="login-button"]');
     
-    // 2. 导航到牛只管理页面
+    // 2. 导航到牛场管理页面
     await page.click('[data-testid="cattle-menu"]');
     await expect(page).toHaveURL('/cattle');
     

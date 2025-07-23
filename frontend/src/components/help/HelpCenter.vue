@@ -163,7 +163,7 @@
           <el-select v-model="tutorialCategory" placeholder="选择分类" @change="loadTutorials">
             <el-option label="全部" value=""></el-option>
             <el-option label="基础操作" value="basic"></el-option>
-            <el-option label="牛只管理" value="cattle"></el-option>
+            <el-option label="牛场管理" value="cattle"></el-option>
             <el-option label="健康管理" value="health"></el-option>
             <el-option label="饲喂管理" value="feeding"></el-option>
           </el-select>

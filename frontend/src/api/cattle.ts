@@ -164,8 +164,31 @@ export interface GenerateEarTagsResponse {
 export const cattleApi = {
   // 获取牛只列表
   getList(params: CattleListParams = {}): Promise<CattleListResponse> {
-    return request.get<ApiResponse<CattleListResponse>>('/cattle', { params })
-      .then(response => response.data.data)
+    console.log('cattleApi.getList 调用，参数:', params)
+    return request.get('/cattle', { params })
+      .then(response => {
+        console.log('cattleApi.getList 原始响应:', response)
+        const responseData = response.data
+        console.log('cattleApi.getList 响应数据:', responseData)
+        
+        // 后端返回的是 {success: true, data: [...], pagination: {...}} 格式
+        const result: CattleListResponse = {
+          data: responseData.data || [],
+          pagination: responseData.pagination || {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0
+          }
+        }
+        
+        console.log('cattleApi.getList 处理后数据:', result)
+        return result
+      })
+      .catch(error => {
+        console.error('cattleApi.getList 请求失败:', error)
+        throw error
+      })
   },
 
   // 获取牛只统计

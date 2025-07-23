@@ -35,7 +35,7 @@
           
           <el-menu-item
             v-else
-            :index="String(route.redirect || `/${route.path}`)"
+            :index="route.redirect || route.path"
           >
             <el-icon><component :is="route.meta?.icon" /></el-icon>
             <template #title>{{ route.meta?.title }}</template>
@@ -119,9 +119,15 @@ const activeMenu = computed(() => {
 })
 
 const menuRoutes = computed(() => {
-  return router.getRoutes()
-    .find(r => r.name === 'Layout')
-    ?.children?.filter(route => !route.meta?.hidden) || []
+  const layoutRoute = router.getRoutes().find(r => r.name === 'Layout')
+  if (!layoutRoute?.children) return []
+  
+  return layoutRoute.children
+    .filter(route => !route.meta?.hidden)
+    .map(route => ({
+      ...route,
+      path: route.path.startsWith('/') ? route.path : `/admin/${route.path}`
+    }))
 })
 
 const breadcrumbs = computed(() => {
@@ -137,10 +143,19 @@ const toggleSidebar = () => {
 }
 
 const getChildRoutePath = (parentPath: string, childPath: string) => {
-  if (childPath === '') {
-    return `/${parentPath}`
+  // Handle absolute paths
+  if (childPath.startsWith('/')) {
+    return childPath
   }
-  return `/${parentPath}/${childPath}`
+  
+  // Handle relative paths
+  if (childPath === '') {
+    return parentPath
+  }
+  
+  // Combine parent and child paths
+  const cleanParentPath = parentPath.startsWith('/') ? parentPath : `/${parentPath}`
+  return `${cleanParentPath}/${childPath}`
 }
 
 const handleCommand = async (command: string) => {

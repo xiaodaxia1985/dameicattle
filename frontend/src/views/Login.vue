@@ -7,6 +7,14 @@
         </div>
         <h1 class="title">肉牛全生命周期管理系统</h1>
         <p class="subtitle">Cattle Lifecycle Management System</p>
+        
+        <!-- 调试信息 -->
+        <div v-if="showDebugInfo" class="debug-info">
+          <p>后端连接状态: <span :class="backendStatus.connected ? 'success' : 'error'">
+            {{ backendStatus.connected ? '已连接' : '未连接' }}
+          </span></p>
+          <p>默认账户: admin / Admin123</p>
+        </div>
       </div>
       
       <el-form
@@ -59,17 +67,20 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { useAuthStore } from '@/stores/auth'
 import type { LoginRequest } from '@/types/auth'
+import { healthCheck } from '@/utils/healthCheck'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
+const showDebugInfo = ref(import.meta.env.MODE === 'development')
+const backendStatus = ref({ connected: false })
 
 const loginForm = reactive<LoginRequest>({
   username: 'admin',
@@ -86,6 +97,13 @@ const loginRules: FormRules = {
     { min: 6, max: 100, message: '密码长度在 6 到 100 个字符', trigger: 'blur' }
   ]
 }
+
+// 检查后端连接状态
+onMounted(async () => {
+  if (showDebugInfo.value) {
+    backendStatus.value.connected = await healthCheck()
+  }
+})
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
@@ -169,5 +187,29 @@ const handleLogin = async () => {
 
 .login-footer p {
   margin: 0;
+}
+
+.debug-info {
+  background: #f5f7fa;
+  border: 1px solid #e4e7ed;
+  border-radius: 4px;
+  padding: 12px;
+  margin-top: 16px;
+  font-size: 12px;
+  text-align: left;
+}
+
+.debug-info p {
+  margin: 4px 0;
+}
+
+.debug-info .success {
+  color: #67c23a;
+  font-weight: bold;
+}
+
+.debug-info .error {
+  color: #f56c6c;
+  font-weight: bold;
 }
 </style>

@@ -16,23 +16,23 @@ export const useCattleStore = defineStore('cattle', () => {
 
   // 计算属性
   const healthyCount = computed(() => 
-    cattleList.value.filter(cattle => cattle.health_status === 'healthy').length
+    cattleList.value?.filter(cattle => cattle.health_status === 'healthy').length || 0
   )
   
   const sickCount = computed(() => 
-    cattleList.value.filter(cattle => cattle.health_status === 'sick').length
+    cattleList.value?.filter(cattle => cattle.health_status === 'sick').length || 0
   )
   
   const treatmentCount = computed(() => 
-    cattleList.value.filter(cattle => cattle.health_status === 'treatment').length
+    cattleList.value?.filter(cattle => cattle.health_status === 'treatment').length || 0
   )
 
   const maleCount = computed(() => 
-    cattleList.value.filter(cattle => cattle.gender === 'male').length
+    cattleList.value?.filter(cattle => cattle.gender === 'male').length || 0
   )
 
   const femaleCount = computed(() => 
-    cattleList.value.filter(cattle => cattle.gender === 'female').length
+    cattleList.value?.filter(cattle => cattle.gender === 'female').length || 0
   )
 
   // 获取牛只列表
@@ -42,11 +42,34 @@ export const useCattleStore = defineStore('cattle', () => {
       if (params) {
         searchParams.value = { ...searchParams.value, ...params }
       }
+      console.log('发送API请求，参数:', searchParams.value)
       const response = await cattleApi.getList(searchParams.value)
-      cattleList.value = response.data
-      total.value = response.pagination.total
+      console.log('API响应数据:', response)
+      
+      // 检查响应数据结构
+      if (!response) {
+        throw new Error('API返回空响应')
+      }
+      
+      if (!response.data) {
+        console.warn('响应中缺少data字段，使用空数组')
+        cattleList.value = []
+      } else {
+        cattleList.value = response.data
+      }
+      
+      if (!response.pagination) {
+        console.warn('响应中缺少pagination字段，使用默认值')
+        total.value = 0
+      } else {
+        total.value = response.pagination.total || 0
+      }
+      
+      console.log('处理后的数据 - 列表长度:', cattleList.value.length, '总数:', total.value)
     } catch (error) {
       console.error('获取牛只列表失败:', error)
+      cattleList.value = []
+      total.value = 0
       throw error
     } finally {
       loading.value = false

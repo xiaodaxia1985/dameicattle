@@ -35,7 +35,7 @@ const routes: RouteRecordRaw[] = [
         path: 'cattle',
         name: 'Cattle',
         redirect: '/admin/cattle/list',
-        meta: { title: '牛只管理', icon: 'Grid' },
+        meta: { title: '牛场管理', icon: 'Grid' },
         children: [
           {
             path: 'list',
@@ -48,6 +48,12 @@ const routes: RouteRecordRaw[] = [
             name: 'CattleDetail',
             component: () => import('@/views/cattle/Detail.vue'),
             meta: { title: '牛只详情', hidden: true }
+          },
+          {
+            path: 'bases',
+            name: 'Bases',
+            component: () => import('@/views/system/Bases.vue'),
+            meta: { title: '基地管理' }
           }
         ]
       },
@@ -248,12 +254,6 @@ const routes: RouteRecordRaw[] = [
             name: 'Roles',
             component: () => import('@/views/system/Roles.vue'),
             meta: { title: '角色管理' }
-          },
-          {
-            path: 'bases',
-            name: 'Bases',
-            component: () => import('@/views/system/Bases.vue'),
-            meta: { title: '基地管理' }
           },
           {
             path: 'operation-logs',

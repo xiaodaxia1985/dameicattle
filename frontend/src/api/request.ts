@@ -50,17 +50,19 @@ const request: AxiosInstance = axios.create({
 // Request interceptor
 request.interceptors.request.use(
   (config) => {
-    const authStore = useAuthStore()
-    
     // Add auth token
-    if (authStore.token) {
+    const token = localStorage.getItem('token')
+    if (token) {
       config.headers = config.headers || {}
-      config.headers['Authorization'] = `Bearer ${authStore.token}`
+      config.headers['Authorization'] = `Bearer ${token}`
     }
+    
+    console.log('Making request to:', config.url, 'with headers:', config.headers)
     
     return config
   },
   (error) => {
+    console.error('Request interceptor error:', error)
     return Promise.reject(error)
   }
 )
@@ -68,6 +70,7 @@ request.interceptors.request.use(
 // Response interceptor
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
+    console.log('Response received:', response.status, response.data)
     const { data } = response
     
     // Handle successful response
@@ -76,24 +79,28 @@ request.interceptors.response.use(
     } else {
       // Handle business logic errors
       const errorMessage = data.error?.message || data.message || '请求失败'
+      console.error('Business logic error:', errorMessage)
       ElMessage.error(errorMessage)
       return Promise.reject(new Error(errorMessage))
     }
   },
   async (error) => {
+    console.error('Response error:', error)
     const { response, message } = error
     
     if (response) {
       const { status, data } = response
+      console.error('HTTP Error:', status, data)
       
       switch (status) {
         case 401:
           // Unauthorized - token expired or invalid
-          const authStore = useAuthStore()
+          console.log('401 Unauthorized, attempting to handle...')
           
-          if (data.error?.code === 'TOKEN_EXPIRED') {
+          if (data?.error?.code === 'TOKEN_EXPIRED') {
             // Try to refresh token
             try {
+              const authStore = useAuthStore()
               await authStore.refreshToken()
               // Retry the original request
               return request(error.config)
@@ -103,28 +110,31 @@ request.interceptors.response.use(
                 confirmButtonText: '确定',
                 type: 'warning'
               }).then(() => {
+                const authStore = useAuthStore()
                 authStore.logout()
                 router.push('/login')
               })
             }
           } else {
-            ElMessage.error(data.error?.message || '认证失败')
-            authStore.logout()
-            router.push('/login')
+            ElMessage.error(data?.error?.message || '认证失败，请重新登录')
+            // Don't auto-logout on first 401, let user try to login
+            if (router.currentRoute.value.path !== '/login') {
+              router.push('/login')
+            }
           }
           break
           
         case 403:
-          ElMessage.error(data.error?.message || '权限不足')
+          ElMessage.error(data?.error?.message || '权限不足')
           break
           
         case 404:
-          ElMessage.error(data.error?.message || '请求的资源不存在')
+          ElMessage.error(data?.error?.message || '请求的资源不存在')
           break
           
         case 422:
           // Validation errors
-          if (data.error?.details) {
+          if (data?.error?.details) {
             const validationErrors = data.error.details
             if (Array.isArray(validationErrors)) {
               const errorMessages = validationErrors.map((err: any) => err.message).join('; ')
@@ -133,21 +143,21 @@ request.interceptors.response.use(
               ElMessage.error(data.error.message || '数据验证失败')
             }
           } else {
-            ElMessage.error(data.error?.message || '数据验证失败')
+            ElMessage.error(data?.error?.message || '数据验证失败')
           }
           break
           
         case 500:
-          ElMessage.error(data.error?.message || '服务器内部错误')
+          ElMessage.error(data?.error?.message || '服务器内部错误')
           break
           
         default:
-          ElMessage.error(data.error?.message || `请求失败 (${status})`)
+          ElMessage.error(data?.error?.message || `请求失败 (${status})`)
       }
     } else if (message.includes('timeout')) {
       ElMessage.error('请求超时，请稍后重试')
     } else if (message.includes('Network Error')) {
-      ElMessage.error('网络连接失败，请检查网络设置')
+      ElMessage.error('网络连接失败，请检查后端服务是否启动')
     } else {
       ElMessage.error(message || '请求失败')
     }

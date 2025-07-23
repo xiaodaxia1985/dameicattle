@@ -12,18 +12,24 @@ export const useAuthStore = defineStore('auth', () => {
 
   const login = async (credentials: LoginRequest): Promise<void> => {
     try {
+      console.log('Attempting login with:', credentials)
       const response = await authApi.login(credentials)
+      console.log('Login response:', response)
+      
       const { token: authToken, user: userData, permissions: userPermissions } = response.data
       
       token.value = authToken
       user.value = userData
-      permissions.value = userPermissions
+      permissions.value = userPermissions || []
       
       // Store in localStorage
       localStorage.setItem('token', authToken)
       localStorage.setItem('user', JSON.stringify(userData))
-      localStorage.setItem('permissions', JSON.stringify(userPermissions))
+      localStorage.setItem('permissions', JSON.stringify(userPermissions || []))
+      
+      console.log('Login successful, token stored:', authToken.substring(0, 20) + '...')
     } catch (error) {
+      console.error('Login error:', error)
       throw error
     }
   }

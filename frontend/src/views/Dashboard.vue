@@ -8,12 +8,6 @@
       </div>
       <div class="header-actions">
         <el-button-group>
-          <el-button :icon="Setting" @click="showConfigDialog = true">
-            配置
-          </el-button>
-          <el-button :icon="Download" @click="showExportDialog = true">
-            导出
-          </el-button>
           <el-button :icon="Refresh" @click="handleRefreshAll">
             刷新
           </el-button>
@@ -22,105 +16,56 @@
     </div>
 
     <!-- 仪表盘内容 -->
-    <div class="dashboard-content">
+    <div class="dashboard-content" v-loading="loading">
       <!-- 统计卡片行 -->
       <div class="stats-row">
-        <StatCard
-          :value="keyIndicators?.totalCattle || 0"
-          label="牛只总数"
-          :icon="DataAnalysis"
-          type="primary"
-        />
-        <StatCard
-          :value="keyIndicators?.healthRate || 0"
-          label="健康率"
-          :icon="Monitor"
-          type="success"
-          unit="%"
-          :show-trend="true"
-          :trend="{
-            direction: 'up',
-            value: 2.5,
-            isPercentage: true
-          }"
-        />
-        <StatCard
-          :value="keyIndicators?.monthlyRevenue || 0"
-          label="月度收入"
-          :icon="TrendCharts"
-          type="info"
-          unit="元"
-        />
-        <StatCard
-          :value="keyIndicators?.pendingTasks?.total || 0"
-          label="待处理任务"
-          :icon="Warning"
-          type="warning"
-        />
-      </div>
-
-      <!-- 主要内容区域 -->
-      <div class="main-content">
-        <!-- 左侧图表区域 -->
-        <div class="charts-section">
-          <div class="chart-row">
-            <PieChart
-              title="牛只健康状态分布"
-              subtitle="当前基地牛只健康状况统计"
-              :data="healthPieData"
-              :height="350"
-              :show-custom-legend="true"
-              @export-data="handleChartExport"
-              @refresh-data="loadDashboardData"
-            />
-            <TrendChart
-              title="牛只数量趋势"
-              subtitle="近30天牛只数量变化趋势"
-              :series="cattleTrendSeries"
-              :height="350"
-              :show-area="true"
-              :y-axis-formatter="(value) => value.toString()"
-              @time-range-change="handleTimeRangeChange"
-              @export-data="handleChartExport"
-              @refresh-data="loadDashboardData"
-            />
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon primary">
+              <el-icon><DataAnalysis /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ keyIndicators?.totalCattle || 0 }}</div>
+              <div class="stat-label">牛只总数</div>
+            </div>
           </div>
-          
-          <div class="chart-row">
-            <GaugeChart
-              title="系统健康度"
-              subtitle="基于多项指标综合评估"
-              :value="85"
-              :height="300"
-              :thresholds="[
-                { value: 0, color: '#F56C6C', label: '差' },
-                { value: 60, color: '#E6A23C', label: '良' },
-                { value: 80, color: '#67C23A', label: '优' }
-              ]"
-              @refresh-data="loadDashboardData"
-            />
-            <BarChart
-              title="各基地牛只数量"
-              subtitle="当前各基地牛只分布情况"
-              :data="baseDistributionData"
-              :height="300"
-              @export-data="handleChartExport"
-              @refresh-data="loadDashboardData"
-            />
+        </el-card>
+        
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon success">
+              <el-icon><Monitor /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ keyIndicators?.healthRate || 0 }}%</div>
+              <div class="stat-label">健康率</div>
+            </div>
           </div>
-        </div>
-
-        <!-- 右侧任务区域 -->
-        <div class="tasks-section">
-          <PendingTasksCard
-            :tasks="pendingTasks"
-            :loading="loading"
-            :max-height="600"
-            @refresh="loadPendingTasks"
-            @task-click="handleTaskClick"
-            @load-more="handleLoadMoreTasks"
-          />
-        </div>
+        </el-card>
+        
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon info">
+              <el-icon><TrendCharts /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ keyIndicators?.monthlyRevenue || 0 }}</div>
+              <div class="stat-label">月度收入(元)</div>
+            </div>
+          </div>
+        </el-card>
+        
+        <el-card class="stat-card">
+          <div class="stat-content">
+            <div class="stat-icon warning">
+              <el-icon><Warning /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-value">{{ keyIndicators?.pendingTasks || 0 }}</div>
+              <div class="stat-label">待处理任务</div>
+            </div>
+          </div>
+        </el-card>
       </div>
 
       <!-- 快捷操作区域 -->
@@ -133,31 +78,31 @@
             <el-button 
               type="primary" 
               size="large"
-              @click="$router.push('/cattle')"
+              @click="$router.push('/admin/cattle/list')"
             >
               <el-icon><Plus /></el-icon>
-              添加牛只
+              牛场管理
             </el-button>
             <el-button 
               type="success" 
               size="large"
-              @click="$router.push('/health')"
+              @click="$router.push('/admin/health/dashboard')"
             >
               <el-icon><Document /></el-icon>
-              健康记录
+              健康管理
             </el-button>
             <el-button 
               type="warning" 
               size="large"
-              @click="$router.push('/feeding')"
+              @click="$router.push('/admin/feeding/dashboard')"
             >
               <el-icon><Food /></el-icon>
-              饲喂记录
+              饲喂管理
             </el-button>
             <el-button 
               type="info" 
               size="large"
-              @click="$router.push('/purchase')"
+              @click="$router.push('/admin/purchase/orders')"
             >
               <el-icon><ShoppingCart /></el-icon>
               采购管理
@@ -166,24 +111,11 @@
         </el-card>
       </div>
     </div>
-
-    <!-- 配置对话框 -->
-    <DashboardConfigDialog
-      v-model="showConfigDialog"
-      @save="handleConfigSave"
-    />
-
-    <!-- 导出对话框 -->
-    <DataExportDialog
-      v-model="showExportDialog"
-      :available-bases="availableBases"
-      @export="handleDataExport"
-    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { 
@@ -191,45 +123,22 @@ import {
   TrendCharts, 
   Monitor,
   Warning,
-  Setting,
-  Download,
   Refresh,
   Plus,
   Document,
   Food,
   ShoppingCart
 } from '@element-plus/icons-vue'
-import { useDashboardStore } from '@/stores/dashboard'
-import { useAppStore } from '@/stores/app'
-import { 
-  StatCard, 
-  TrendChart, 
-  PieChart, 
-  BarChart, 
-  GaugeChart,
-  PendingTasksCard,
-  DataExportDialog,
-  DashboardConfigDialog
-} from '@/components/dashboard'
-import type { PendingTask } from '@/api/dashboard'
 
 const router = useRouter()
-const dashboardStore = useDashboardStore()
-const appStore = useAppStore()
 
-const keyIndicators = ref<any>(null)
-const pendingTasks = ref<any>(null)
-const trendData = ref<any>(null)
+const keyIndicators = ref<any>({
+  totalCattle: 0,
+  healthRate: 0,
+  monthlyRevenue: 0,
+  pendingTasks: 0
+})
 const loading = ref(false)
-const showConfigDialog = ref(false)
-const showExportDialog = ref(false)
-
-// 可用基地列表
-const availableBases = ref([
-  { id: 1, name: '基地A' },
-  { id: 2, name: '基地B' },
-  { id: 3, name: '基地C' }
-])
 
 onMounted(() => {
   loadDashboardData()
@@ -239,25 +148,15 @@ const loadDashboardData = async () => {
   try {
     loading.value = true
     
-    // 获取关键指标
-    const indicators = await dashboardStore.fetchKeyIndicators({
-      baseId: appStore.currentBaseId
-    })
-    keyIndicators.value = indicators
+    // 模拟数据加载
+    await new Promise(resolve => setTimeout(resolve, 1000))
     
-    // 获取待处理任务
-    const tasks = await dashboardStore.fetchPendingTasks({
-      baseId: appStore.currentBaseId
-    })
-    pendingTasks.value = tasks
-    
-    // 获取趋势数据
-    const trends = await dashboardStore.fetchTrendAnalysis({
-      baseId: appStore.currentBaseId,
-      period: '30d',
-      metrics: 'cattle,health,feeding,sales'
-    })
-    trendData.value = trends
+    keyIndicators.value = {
+      totalCattle: 1250,
+      healthRate: 95.8,
+      monthlyRevenue: 125000,
+      pendingTasks: 8
+    }
     
   } catch (error) {
     console.error('加载仪表盘数据失败:', error)
@@ -267,118 +166,9 @@ const loadDashboardData = async () => {
   }
 }
 
-const loadPendingTasks = async () => {
-  try {
-    const tasks = await dashboardStore.fetchPendingTasks({
-      baseId: appStore.currentBaseId
-    })
-    pendingTasks.value = tasks
-  } catch (error) {
-    console.error('加载待处理任务失败:', error)
-    ElMessage.error('加载待处理任务失败')
-  }
-}
-
-// 健康状态饼图数据
-const healthPieData = computed(() => {
-  if (!keyIndicators.value?.cattleByHealth) return []
-  
-  const colorMap: Record<string, string> = {
-    healthy: '#67C23A',
-    sick: '#F56C6C',
-    treatment: '#E6A23C'
-  }
-  
-  const labelMap: Record<string, string> = {
-    healthy: '健康',
-    sick: '患病',
-    treatment: '治疗中'
-  }
-  
-  return keyIndicators.value.cattleByHealth.map((item: any) => ({
-    name: labelMap[item.health_status] || item.health_status,
-    value: item.count,
-    color: colorMap[item.health_status]
-  }))
-})
-
-// 牛只趋势图数据
-const cattleTrendSeries = computed(() => {
-  if (!trendData.value?.trends?.cattle) return []
-  
-  return [
-    {
-      name: '总数',
-      data: trendData.value.trends.cattle.map((item: any) => ({
-        date: item.date,
-        value: item.total
-      })),
-      color: '#409EFF'
-    },
-    {
-      name: '健康',
-      data: trendData.value.trends.cattle.map((item: any) => ({
-        date: item.date,
-        value: item.healthy
-      })),
-      color: '#67C23A'
-    }
-  ]
-})
-
-// 基地分布数据
-const baseDistributionData = computed(() => [
-  { name: '基地A', value: keyIndicators.value?.totalCattle ? Math.floor(keyIndicators.value.totalCattle * 0.4) : 120, color: '#409EFF' },
-  { name: '基地B', value: keyIndicators.value?.totalCattle ? Math.floor(keyIndicators.value.totalCattle * 0.35) : 98, color: '#67C23A' },
-  { name: '基地C', value: keyIndicators.value?.totalCattle ? Math.floor(keyIndicators.value.totalCattle * 0.25) : 86, color: '#E6A23C' }
-])
-
 const handleRefreshAll = async () => {
   await loadDashboardData()
   ElMessage.success('数据已刷新')
-}
-
-const handleTimeRangeChange = async (range: string) => {
-  try {
-    const trends = await dashboardStore.fetchTrendAnalysis({
-      baseId: appStore.currentBaseId,
-      period: range,
-      metrics: 'cattle,health,feeding,sales'
-    })
-    trendData.value = trends
-  } catch (error) {
-    console.error('切换时间范围失败:', error)
-    ElMessage.error('切换时间范围失败')
-  }
-}
-
-const handleChartExport = (chartType?: string) => {
-  ElMessage.info(`导出${chartType || '图表'}数据`)
-  // 这里可以实现具体的图表导出逻辑
-}
-
-const handleTaskClick = (task: PendingTask) => {
-  console.log('点击任务:', task)
-  if (task.url) {
-    router.push(task.url)
-  }
-}
-
-const handleLoadMoreTasks = () => {
-  ElMessage.info('加载更多任务')
-  // 这里可以实现加载更多任务的逻辑
-}
-
-const handleConfigSave = (config: any) => {
-  console.log('保存配置:', config)
-  ElMessage.success('仪表盘配置已保存')
-  // 这里可以实现保存配置到后端的逻辑
-}
-
-const handleDataExport = (exportForm: any) => {
-  console.log('导出数据:', exportForm)
-  ElMessage.success('数据导出任务已提交')
-  // 这里可以实现数据导出的逻辑
 }
 </script>
 
@@ -424,6 +214,60 @@ const handleDataExport = (exportForm: any) => {
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 24px;
       margin-bottom: 32px;
+      
+      .stat-card {
+        .stat-content {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          
+          .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            
+            &.primary {
+              background-color: var(--el-color-primary-light-9);
+              color: var(--el-color-primary);
+            }
+            
+            &.success {
+              background-color: var(--el-color-success-light-9);
+              color: var(--el-color-success);
+            }
+            
+            &.info {
+              background-color: var(--el-color-info-light-9);
+              color: var(--el-color-info);
+            }
+            
+            &.warning {
+              background-color: var(--el-color-warning-light-9);
+              color: var(--el-color-warning);
+            }
+          }
+          
+          .stat-info {
+            flex: 1;
+            
+            .stat-value {
+              font-size: 24px;
+              font-weight: 600;
+              color: var(--el-text-color-primary);
+              margin-bottom: 4px;
+            }
+            
+            .stat-label {
+              font-size: 14px;
+              color: var(--el-text-color-secondary);
+            }
+          }
+        }
+      }
     }
     
     .main-content {
