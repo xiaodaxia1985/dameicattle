@@ -21,26 +21,26 @@
             </p>
             <div class="product-highlights">
               <div class="highlight-item">
-                <i class="icon">✅</i>
+                <div class="icon modern-icon icon-check"></div>
                 <span>全流程覆盖</span>
               </div>
               <div class="highlight-item">
-                <i class="icon">📱</i>
+                <div class="icon modern-icon icon-mobile"></div>
                 <span>多平台支持</span>
               </div>
               <div class="highlight-item">
-                <i class="icon">🔒</i>
+                <div class="icon modern-icon icon-lock"></div>
                 <span>数据安全</span>
               </div>
               <div class="highlight-item">
-                <i class="icon">⚡</i>
+                <div class="icon modern-icon icon-lightning"></div>
                 <span>高效便捷</span>
               </div>
             </div>
           </div>
           <div class="overview-image">
             <div class="image-placeholder">
-              <i class="placeholder-icon">💻</i>
+              <div class="placeholder-icon modern-icon-xl icon-computer"></div>
               <p>系统界面展示</p>
             </div>
           </div>
@@ -57,7 +57,7 @@
         </div>
         <div class="modules-grid" :class="{ 'animate-in': isVisible.modules }">
           <div class="module-card" style="animation-delay: 0.1s">
-            <div class="module-icon">🐄</div>
+            <div class="module-icon modern-icon-xl icon-cattle icon-pulse"></div>
             <h3>牛只档案管理</h3>
             <ul class="module-features">
               <li>完整的牛只基本信息管理</li>
@@ -73,7 +73,7 @@
           </div>
 
           <div class="module-card" style="animation-delay: 0.2s">
-            <div class="module-icon">🏥</div>
+            <div class="module-icon modern-icon-xl icon-medical icon-pulse"></div>
             <h3>健康管理</h3>
             <ul class="module-features">
               <li>健康状态实时监测</li>
@@ -89,7 +89,7 @@
           </div>
 
           <div class="module-card" style="animation-delay: 0.3s">
-            <div class="module-icon">🌾</div>
+            <div class="module-icon modern-icon-xl icon-feed icon-pulse"></div>
             <h3>精准饲喂</h3>
             <ul class="module-features">
               <li>科学饲料配方管理</li>
@@ -105,7 +105,7 @@
           </div>
 
           <div class="module-card" style="animation-delay: 0.4s">
-            <div class="module-icon">📦</div>
+            <div class="module-icon modern-icon-xl icon-package icon-pulse"></div>
             <h3>物资管理</h3>
             <ul class="module-features">
               <li>生产物资档案管理</li>
@@ -121,7 +121,7 @@
           </div>
 
           <div class="module-card" style="animation-delay: 0.5s">
-            <div class="module-icon">🛠️</div>
+            <div class="module-icon modern-icon-xl icon-tools icon-pulse"></div>
             <h3>设备管理</h3>
             <ul class="module-features">
               <li>设备档案和状态管理</li>
@@ -137,7 +137,7 @@
           </div>
 
           <div class="module-card" style="animation-delay: 0.6s">
-            <div class="module-icon">📊</div>
+            <div class="module-icon modern-icon-xl icon-chart icon-pulse"></div>
             <h3>数据分析</h3>
             <ul class="module-features">
               <li>实时数据仪表盘</li>
@@ -164,32 +164,32 @@
         </div>
         <div class="tech-grid" :class="{ 'animate-in': isVisible.tech }">
           <div class="tech-item" style="animation-delay: 0.1s">
-            <div class="tech-icon">🏗️</div>
+            <div class="tech-icon modern-icon-lg icon-innovation icon-pulse"></div>
             <h3>现代化架构</h3>
             <p>采用前后端分离架构，微服务设计，支持高并发访问</p>
           </div>
           <div class="tech-item" style="animation-delay: 0.2s">
-            <div class="tech-icon">📱</div>
+            <div class="tech-icon modern-icon-lg icon-mobile icon-pulse"></div>
             <h3>多端适配</h3>
             <p>支持PC端、移动端、微信小程序多平台访问</p>
           </div>
           <div class="tech-item" style="animation-delay: 0.3s">
-            <div class="tech-icon">☁️</div>
+            <div class="tech-icon modern-icon-lg icon-cloud icon-pulse"></div>
             <h3>云端部署</h3>
             <p>支持云端部署和本地部署，灵活选择部署方式</p>
           </div>
           <div class="tech-item" style="animation-delay: 0.4s">
-            <div class="tech-icon">🔐</div>
+            <div class="tech-icon modern-icon-lg icon-lock icon-pulse"></div>
             <h3>安全可靠</h3>
             <p>数据加密传输，权限精细控制，确保数据安全</p>
           </div>
           <div class="tech-item" style="animation-delay: 0.5s">
-            <div class="tech-icon">⚡</div>
+            <div class="tech-icon modern-icon-lg icon-lightning icon-pulse"></div>
             <h3>高性能</h3>
             <p>优化的数据库设计，缓存机制，响应速度快</p>
           </div>
           <div class="tech-item" style="animation-delay: 0.6s">
-            <div class="tech-icon">🔧</div>
+            <div class="tech-icon modern-icon-lg icon-tools icon-pulse"></div>
             <h3>易扩展</h3>
             <p>模块化设计，支持功能定制和二次开发</p>
           </div>
@@ -207,42 +207,54 @@
         <div class="service-content">
           <div class="service-list" :class="{ 'animate-in': isVisible.services }">
             <div class="service-item" style="animation-delay: 0.1s">
-              <div class="service-icon">🚀</div>
+              <div class="service-icon">
+                <div class="modern-icon-lg icon-rocket icon-bounce"></div>
+              </div>
               <div class="service-info">
                 <h3>系统部署</h3>
                 <p>提供专业的系统部署服务，确保系统正常运行</p>
               </div>
             </div>
             <div class="service-item" style="animation-delay: 0.2s">
-              <div class="service-icon">📚</div>
+              <div class="service-icon">
+                <div class="modern-icon-lg icon-book icon-bounce"></div>
+              </div>
               <div class="service-info">
                 <h3>培训服务</h3>
                 <p>提供系统使用培训，帮助用户快速掌握系统操作</p>
               </div>
             </div>
             <div class="service-item" style="animation-delay: 0.3s">
-              <div class="service-icon">🛠️</div>
+              <div class="service-icon">
+                <div class="modern-icon-lg icon-tools icon-bounce"></div>
+              </div>
               <div class="service-info">
                 <h3>技术支持</h3>
                 <p>7×24小时技术支持，及时解决系统使用问题</p>
               </div>
             </div>
             <div class="service-item" style="animation-delay: 0.4s">
-              <div class="service-icon">🔄</div>
+              <div class="service-icon">
+                <div class="modern-icon-lg icon-refresh icon-bounce"></div>
+              </div>
               <div class="service-info">
                 <h3>系统维护</h3>
                 <p>定期系统维护和更新，保持系统最佳状态</p>
               </div>
             </div>
             <div class="service-item" style="animation-delay: 0.5s">
-              <div class="service-icon">📊</div>
+              <div class="service-icon">
+                <div class="modern-icon-lg icon-chart icon-bounce"></div>
+              </div>
               <div class="service-info">
                 <h3>数据迁移</h3>
                 <p>协助客户进行数据迁移，确保数据完整性</p>
               </div>
             </div>
             <div class="service-item" style="animation-delay: 0.6s">
-              <div class="service-icon">🎯</div>
+              <div class="service-icon">
+                <div class="modern-icon-lg icon-target icon-bounce"></div>
+              </div>
               <div class="service-info">
                 <h3>定制开发</h3>
                 <p>根据客户特殊需求，提供定制化开发服务</p>
@@ -263,7 +275,9 @@
         <div class="cases-grid" :class="{ 'animate-in': isVisible.cases }">
           <div class="case-card" style="animation-delay: 0.1s">
             <div class="case-image">
-              <div class="image-placeholder">🏭</div>
+              <div class="image-placeholder">
+                <div class="modern-icon-xl icon-building icon-spin"></div>
+              </div>
             </div>
             <div class="case-content">
               <h3>某大型牧场集团</h3>
@@ -276,7 +290,9 @@
           </div>
           <div class="case-card" style="animation-delay: 0.2s">
             <div class="case-image">
-              <div class="image-placeholder">🌾</div>
+              <div class="image-placeholder">
+                <div class="modern-icon-xl icon-feed icon-spin"></div>
+              </div>
             </div>
             <div class="case-content">
               <h3>现代化养殖合作社</h3>
@@ -289,7 +305,9 @@
           </div>
           <div class="case-card" style="animation-delay: 0.3s">
             <div class="case-image">
-              <div class="image-placeholder">🐄</div>
+              <div class="image-placeholder">
+                <div class="modern-icon-xl icon-cattle icon-spin"></div>
+              </div>
             </div>
             <div class="case-content">
               <h3>家庭农场联盟</h3>

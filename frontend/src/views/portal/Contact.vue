@@ -13,28 +13,36 @@
       <div class="container">
         <div class="contact-grid">
           <div class="contact-item">
-            <div class="contact-icon">📞</div>
+            <div class="contact-icon">
+              <div class="modern-icon-lg icon-phone icon-pulse"></div>
+            </div>
             <h3>联系电话</h3>
             <p>400-123-4567</p>
             <p>010-12345678</p>
             <small>工作时间：周一至周五 9:00-18:00</small>
           </div>
           <div class="contact-item">
-            <div class="contact-icon">✉️</div>
+            <div class="contact-icon">
+              <div class="modern-icon-lg icon-email icon-pulse"></div>
+            </div>
             <h3>邮箱地址</h3>
             <p>info@cattle-management.com</p>
             <p>support@cattle-management.com</p>
             <small>我们会在24小时内回复您的邮件</small>
           </div>
           <div class="contact-item">
-            <div class="contact-icon">📍</div>
+            <div class="contact-icon">
+              <div class="modern-icon-lg icon-location icon-pulse"></div>
+            </div>
             <h3>公司地址</h3>
             <p>北京市朝阳区科技园区</p>
             <p>创新大厦A座15层</p>
             <small>欢迎预约到访参观</small>
           </div>
           <div class="contact-item">
-            <div class="contact-icon">💬</div>
+            <div class="contact-icon">
+              <div class="modern-icon-lg icon-chat icon-pulse"></div>
+            </div>
             <h3>在线客服</h3>
             <p>QQ：123456789</p>
             <p>微信：cattle-support</p>
@@ -260,11 +268,11 @@
             <div class="inquiry-benefits">
               <h3>询价优势</h3>
               <ul>
-                <li>✓ 专业团队1对1服务</li>
-                <li>✓ 24小时内响应</li>
-                <li>✓ 免费产品演示</li>
-                <li>✓ 定制化解决方案</li>
-                <li>✓ 透明化报价</li>
+                <li><div class="modern-icon icon-check" style="display: inline-block; margin-right: 8px;"></div> 专业团队1对1服务</li>
+                <li><div class="modern-icon icon-check" style="display: inline-block; margin-right: 8px;"></div> 24小时内响应</li>
+                <li><div class="modern-icon icon-check" style="display: inline-block; margin-right: 8px;"></div> 免费产品演示</li>
+                <li><div class="modern-icon icon-check" style="display: inline-block; margin-right: 8px;"></div> 定制化解决方案</li>
+                <li><div class="modern-icon icon-check" style="display: inline-block; margin-right: 8px;"></div> 透明化报价</li>
               </ul>
             </div>
           </div>
@@ -281,7 +289,9 @@
         </div>
         <div class="map-container">
           <div class="map-placeholder" @click="openMap">
-            <div class="map-icon">🗺️</div>
+            <div class="map-icon">
+              <div class="modern-icon-xl icon-map"></div>
+            </div>
             <p>点击查看详细地图</p>
             <small>北京市朝阳区科技园区创新大厦A座15层</small>
             <div class="map-coordinates">
@@ -292,19 +302,19 @@
           <div class="map-info">
             <h3>交通指南</h3>
             <div class="transport-item">
-              <strong>🚇 地铁：</strong>
+              <strong><div class="modern-icon icon-subway" style="display: inline-block; margin-right: 8px;"></div> 地铁：</strong>
               <p>地铁10号线科技园站A出口，步行5分钟</p>
             </div>
             <div class="transport-item">
-              <strong>🚌 公交：</strong>
+              <strong><div class="modern-icon icon-bus" style="display: inline-block; margin-right: 8px;"></div> 公交：</strong>
               <p>科技园站：123路、456路、789路</p>
             </div>
             <div class="transport-item">
-              <strong>🚗 自驾：</strong>
+              <strong><div class="modern-icon icon-car" style="display: inline-block; margin-right: 8px;"></div> 自驾：</strong>
               <p>大厦地下停车场，访客可免费停车2小时</p>
             </div>
             <div class="transport-item">
-              <strong>✈️ 机场：</strong>
+              <strong><div class="modern-icon icon-plane" style="display: inline-block; margin-right: 8px;"></div> 机场：</strong>
               <p>距离首都机场约45分钟车程</p>
             </div>
             <div class="navigation-buttons">
@@ -351,19 +361,19 @@
         <div class="service-content">
           <div class="service-options">
             <a href="tel:400-123-4567" class="service-option">
-              <i class="icon">📞</i>
+              <div class="icon modern-icon icon-phone"></div>
               <span>电话咨询</span>
             </a>
             <a href="mailto:info@cattle-management.com" class="service-option">
-              <i class="icon">✉️</i>
+              <div class="icon modern-icon icon-email"></div>
               <span>邮件咨询</span>
             </a>
             <button class="service-option" @click="openWechat">
-              <i class="icon">💬</i>
+              <div class="icon modern-icon icon-chat"></div>
               <span>微信咨询</span>
             </button>
             <button class="service-option" @click="scrollToForm">
-              <i class="icon">📝</i>
+              <div class="icon modern-icon icon-edit"></div>
               <span>在线留言</span>
             </button>
           </div>
@@ -373,7 +383,7 @@
 
     <!-- 浮动客服按钮 -->
     <div class="floating-service" @click="showOnlineService = true">
-      <i class="service-icon">💬</i>
+      <div class="service-icon modern-icon icon-chat"></div>
       <span class="service-text">客服</span>
     </div>
   </div>

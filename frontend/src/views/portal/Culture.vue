@@ -130,7 +130,7 @@
           </div>
           <div class="philosophy-image">
             <div class="image-placeholder">
-              <i class="placeholder-icon">💼</i>
+              <div class="placeholder-icon modern-icon-xl icon-briefcase"></div>
               <p>专业团队协作</p>
             </div>
           </div>
@@ -226,7 +226,7 @@
         <div class="benefits-content">
           <div class="benefits-grid" :class="{ 'animate-in': isVisible.benefits }">
             <div class="benefit-category" style="animation-delay: 0.1s">
-              <h3>💰 薪酬福利</h3>
+              <h3><div class="modern-icon icon-money" style="display: inline-block; margin-right: 8px;"></div> 薪酬福利</h3>
               <ul>
                 <li>具有竞争力的薪酬体系</li>
                 <li>年终奖金和绩效奖励</li>
@@ -235,7 +235,7 @@
               </ul>
             </div>
             <div class="benefit-category" style="animation-delay: 0.2s">
-              <h3>🏥 健康保障</h3>
+              <h3><div class="modern-icon icon-medical" style="display: inline-block; margin-right: 8px;"></div> 健康保障</h3>
               <ul>
                 <li>完善的社会保险</li>
                 <li>补充商业医疗保险</li>
@@ -244,7 +244,7 @@
               </ul>
             </div>
             <div class="benefit-category" style="animation-delay: 0.3s">
-              <h3>📚 学习发展</h3>
+              <h3><div class="modern-icon icon-book" style="display: inline-block; margin-right: 8px;"></div> 学习发展</h3>
               <ul>
                 <li>专业技能培训</li>
                 <li>外部学习机会</li>
@@ -253,7 +253,7 @@
               </ul>
             </div>
             <div class="benefit-category" style="animation-delay: 0.4s">
-              <h3>🏖️ 休假制度</h3>
+              <h3><div class="modern-icon icon-vacation" style="display: inline-block; margin-right: 8px;"></div> 休假制度</h3>
               <ul>
                 <li>带薪年假</li>
                 <li>法定节假日</li>
@@ -262,7 +262,7 @@
               </ul>
             </div>
             <div class="benefit-category" style="animation-delay: 0.5s">
-              <h3>🎯 工作环境</h3>
+              <h3><div class="modern-icon icon-target" style="display: inline-block; margin-right: 8px;"></div> 工作环境</h3>
               <ul>
                 <li>现代化办公环境</li>
                 <li>弹性工作时间</li>
@@ -271,7 +271,7 @@
               </ul>
             </div>
             <div class="benefit-category" style="animation-delay: 0.6s">
-              <h3>🎉 生活关怀</h3>
+              <h3><div class="modern-icon icon-celebration" style="display: inline-block; margin-right: 8px;"></div> 生活关怀</h3>
               <ul>
                 <li>员工生日祝福</li>
                 <li>节日礼品</li>
@@ -292,19 +292,19 @@
           <p>我们正在寻找志同道合的伙伴，一起推动畜牧业数字化发展</p>
           <div class="join-features">
             <div class="join-feature">
-              <i class="feature-icon">🚀</i>
+              <div class="feature-icon modern-icon icon-rocket"></div>
               <span>广阔的发展空间</span>
             </div>
             <div class="join-feature">
-              <i class="feature-icon">👥</i>
+              <div class="feature-icon modern-icon icon-team"></div>
               <span>优秀的团队氛围</span>
             </div>
             <div class="join-feature">
-              <i class="feature-icon">💡</i>
+              <div class="feature-icon modern-icon icon-bulb"></div>
               <span>创新的工作环境</span>
             </div>
             <div class="join-feature">
-              <i class="feature-icon">🎯</i>
+              <div class="feature-icon modern-icon icon-target"></div>
               <span>有意义的工作内容</span>
             </div>
           </div>
