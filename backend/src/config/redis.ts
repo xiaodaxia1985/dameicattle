@@ -37,9 +37,20 @@ redisClient.on('ready', () => {
   logger.info('Redis Client Ready');
 });
 
-// Connect to Redis
-redisClient.connect().catch((err) => {
-  logger.error('Failed to connect to Redis:', err);
-});
+// Connect to Redis with error handling
+const connectRedis = async () => {
+  try {
+    if (!redisClient.isOpen) {
+      await redisClient.connect();
+    }
+  } catch (err) {
+    logger.error('Failed to connect to Redis:', err);
+  }
+};
+
+// Only connect if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  connectRedis();
+}
 
 export default redisClient;

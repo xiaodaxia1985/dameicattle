@@ -1,0 +1,1037 @@
+/* 现代简约图标系统 */
+
+/* 基础图标样式 */
+.modern-icon {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  display: inline-block;
+  color: currentColor;
+}
+
+.modern-icon-lg {
+  width: 48px;
+  height: 48px;
+}
+
+.modern-icon-xl {
+  width: 64px;
+  height: 64px;
+}
+
+/* 火箭图标 */
+.icon-rocket {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-rocket::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 12px;
+  background: currentColor;
+  border-radius: 3px 3px 0 0;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.icon-rocket::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid currentColor;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+/* 搜索图标 */
+.icon-search {
+  width: 18px;
+  height: 18px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-search::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 0;
+  left: 0;
+}
+
+.icon-search::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: currentColor;
+  transform: rotate(45deg);
+  bottom: 2px;
+  right: 2px;
+  border-radius: 1px;
+}
+
+/* 聊天图标 */
+.icon-chat {
+  width: 18px;
+  height: 18px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-chat::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 8px;
+  top: 0;
+  left: 2px;
+}
+
+.icon-chat::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid currentColor;
+  bottom: 2px;
+  left: 4px;
+}
+
+/* 图表图标 */
+.icon-chart {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-chart::before {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 12px;
+  background: currentColor;
+  bottom: 0;
+  left: 2px;
+  border-radius: 1px;
+}
+
+.icon-chart::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 8px;
+  background: currentColor;
+  bottom: 0;
+  left: 7px;
+  border-radius: 1px;
+  box-shadow: 5px 0 0 currentColor, 10px -4px 0 currentColor;
+}
+
+/* 牛只图标 */
+.icon-cattle {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-cattle::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 7px;
+  top: 6px;
+  left: 3px;
+}
+
+.icon-cattle::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 8px;
+  box-shadow: -4px 0 0 currentColor, 4px 0 0 currentColor;
+}
+
+/* 手机图标 */
+.icon-mobile {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-mobile::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.icon-mobile::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 1px;
+  background: currentColor;
+  bottom: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+/* 锁图标 */
+.icon-lock {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-lock::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.icon-lock::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 2px;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 医疗图标 */
+.icon-medical {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-medical::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 4px;
+  left: 2px;
+}
+
+.icon-medical::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  left: 6px;
+  box-shadow: 0 -3px 0 currentColor, 0 3px 0 currentColor, -3px 0 0 currentColor, 3px 0 0 currentColor;
+}
+
+/* 饲料图标 */
+.icon-feed {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-feed::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 6px 6px 0 0;
+  top: 6px;
+  left: 4px;
+}
+
+.icon-feed::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: currentColor;
+  top: 0;
+  left: 9px;
+  border-radius: 1px;
+  box-shadow: -2px 2px 0 currentColor, 2px 2px 0 currentColor;
+}
+
+/* 包裹图标 */
+.icon-package {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-package::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  bottom: 0;
+  left: 3px;
+}
+
+.icon-package::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  background: currentColor;
+  top: 6px;
+  left: 6px;
+  box-shadow: 0 -4px 0 currentColor;
+}
+
+/* 工具图标 */
+.icon-tools {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-tools::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: currentColor;
+  transform: rotate(45deg);
+  top: 4px;
+  left: 6px;
+  border-radius: 1px;
+}
+
+.icon-tools::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: currentColor;
+  transform: rotate(-45deg);
+  top: 4px;
+  right: 6px;
+  border-radius: 1px;
+}
+
+/* 目标图标 */
+.icon-target {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-target::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-target::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  top: 7px;
+  left: 7px;
+}
+
+/* 创新图标 */
+.icon-innovation {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-innovation::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  top: 2px;
+  left: 6px;
+}
+
+.icon-innovation::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 4px;
+  background: currentColor;
+  bottom: 0;
+  left: 9px;
+  border-radius: 1px;
+  box-shadow: -2px 0 0 currentColor, 2px 0 0 currentColor;
+}
+
+/* 握手图标 */
+.icon-handshake {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-handshake::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 3px 3px 0 0;
+  top: 6px;
+  left: 2px;
+}
+
+.icon-handshake::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 8px;
+  background: currentColor;
+  border-radius: 3px 3px 0 0;
+  top: 6px;
+  right: 2px;
+}
+
+/* 成长图标 */
+.icon-growth {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-growth::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: currentColor;
+  bottom: 2px;
+  left: 9px;
+  border-radius: 1px;
+}
+
+.icon-growth::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 7px;
+  box-shadow: -4px 4px 0 -2px currentColor, 4px 4px 0 -2px currentColor;
+}
+
+/* 奖杯图标 */
+.icon-trophy {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-trophy::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 4px 4px 0 0;
+  top: 2px;
+  left: 6px;
+}
+
+.icon-trophy::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: currentColor;
+  bottom: 2px;
+  left: 4px;
+  border-radius: 1px;
+  box-shadow: 0 -4px 0 currentColor;
+}
+
+/* 证书图标 */
+.icon-certificate {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-certificate::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 0;
+  left: 3px;
+}
+
+.icon-certificate::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 6px solid currentColor;
+  bottom: 0;
+  left: 7px;
+  box-shadow: 4px 0 0 currentColor;
+}
+
+/* 勋章图标 */
+.icon-medal {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-medal::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 6px;
+}
+
+.icon-medal::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: currentColor;
+  bottom: 2px;
+  left: 7px;
+  border-radius: 1px;
+  box-shadow: 4px 0 0 currentColor;
+}
+
+/* 检查图标 */
+.icon-check {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-check::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 4px;
+  left: 4px;
+}
+
+.icon-check::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+  top: 7px;
+  left: 8px;
+}
+
+/* 电话图标 */
+.icon-phone {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-phone::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  top: 2px;
+  left: 4px;
+  transform: rotate(-15deg);
+}
+
+.icon-phone::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 2px;
+  background: currentColor;
+  top: 8px;
+  left: 8px;
+  border-radius: 1px;
+}
+
+/* 邮件图标 */
+.icon-email {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-email::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 5px;
+  left: 2px;
+}
+
+.icon-email::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 4px solid currentColor;
+  top: 7px;
+  left: 4px;
+}
+
+/* 位置图标 */
+.icon-location {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-location::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 4px 4px 0 0;
+  top: 0;
+  left: 6px;
+}
+
+.icon-location::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: currentColor;
+  border-radius: 50%;
+  top: 3px;
+  left: 8px;
+}
+
+/* 新闻图标 */
+.icon-news {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-news::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 2px;
+  left: 3px;
+}
+
+.icon-news::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 1px;
+  background: currentColor;
+  top: 6px;
+  left: 6px;
+  box-shadow: 0 3px 0 currentColor, 0 6px 0 currentColor;
+}
+
+/* 动画效果 */
+.icon-pulse {
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.icon-bounce {
+  animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-4px); }
+  60% { transform: translateY(-2px); }
+}
+
+.icon-spin {
+  animation: iconSpin 3s ease-in-out infinite;
+}
+
+@keyframes iconSpin {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(5deg) scale(1.05); }
+  50% { transform: rotate(0deg) scale(1); }
+  75% { transform: rotate(-5deg) scale(1.05); }
+}
+/* 
+证书图标 */
+.icon-certificate {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-certificate::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 2px;
+  left: 3px;
+}
+
+.icon-certificate::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
+  border-top: 4px solid currentColor;
+  bottom: 0;
+  left: 7px;
+  box-shadow: 4px 0 0 currentColor;
+}
+
+/* 奖牌图标 */
+.icon-medal {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-medal::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 5px;
+}
+
+.icon-medal::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: currentColor;
+  bottom: 2px;
+  left: 7px;
+  box-shadow: 4px 0 0 currentColor;
+}
+
+/* 检查图标 */
+.icon-check {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-check::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-check::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 3px;
+  border-left: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  top: 7px;
+  left: 7px;
+}
+
+/* 聊天图标 */
+.icon-chat {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-chat::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  top: 2px;
+  left: 3px;
+}
+
+.icon-chat::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-top: 4px solid currentColor;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  bottom: 2px;
+  left: 6px;
+}
+
+/* 握手图标 */
+.icon-handshake {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-handshake::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-radius: 4px 4px 0 0;
+  top: 6px;
+  left: 2px;
+}
+
+.icon-handshake::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 6px;
+  border: 2px solid currentColor;
+  border-radius: 4px 4px 0 0;
+  top: 6px;
+  right: 2px;
+  transform: scaleX(-1);
+}/* 
+搜索图标 */
+.icon-search {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-search::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-search::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 6px;
+  background: currentColor;
+  transform: rotate(45deg);
+  bottom: 2px;
+  right: 2px;
+}
+
+/* 新闻图标 */
+.icon-news {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-news::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: 2px;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-news::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 1px;
+  background: currentColor;
+  top: 6px;
+  left: 6px;
+  box-shadow: 0 3px 0 currentColor, 0 6px 0 currentColor;
+}
+
+/* 医疗图标 */
+.icon-medical {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-medical::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: currentColor;
+  top: 4px;
+  left: 9px;
+}
+
+.icon-medical::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: currentColor;
+  top: 9px;
+  left: 4px;
+}/* 向
+上箭头图标 */
+.icon-arrow-up {
+  width: 20px;
+  height: 20px;
+  position: relative;
+  display: inline-block;
+}
+
+.icon-arrow-up::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 8px solid currentColor;
+  top: 4px;
+  left: 4px;
+}
+
+.icon-arrow-up::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 8px;
+  background: currentColor;
+  bottom: 4px;
+  left: 9px;
+}

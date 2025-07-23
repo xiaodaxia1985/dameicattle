@@ -639,6 +639,64 @@ onMounted(() => {
 <style scoped>
 .contact-page {
   min-height: 100vh;
+  width: 100%;
+}
+
+/* 通用容器样式 - 确保内容居中且有合适边距 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 针对不同屏幕尺寸的优化 */
+@media (min-width: 576px) {
+  .container {
+    padding: 0 30px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 40px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    padding: 0 50px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1200px;
+    padding: 0 60px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1300px;
+    padding: 0 80px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .container {
+    max-width: 1400px;
+    padding: 0 100px;
+  }
+}
+
+/* 确保页面内容在超大屏幕上不会过度拉伸 */
+@media (min-width: 1920px) {
+  .container {
+    max-width: 1500px;
+    padding: 0 120px;
+  }
 }
 
 /* 页面头部 */

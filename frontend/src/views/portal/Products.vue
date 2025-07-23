@@ -55,8 +55,8 @@
           <h2>核心功能模块</h2>
           <p>完整的业务功能覆盖，满足牧场管理的各种需求</p>
         </div>
-        <div class="modules-grid">
-          <div class="module-card">
+        <div class="modules-grid" :class="{ 'animate-in': isVisible.modules }">
+          <div class="module-card" style="animation-delay: 0.1s">
             <div class="module-icon">🐄</div>
             <h3>牛只档案管理</h3>
             <ul class="module-features">
@@ -72,7 +72,7 @@
             </div>
           </div>
 
-          <div class="module-card">
+          <div class="module-card" style="animation-delay: 0.2s">
             <div class="module-icon">🏥</div>
             <h3>健康管理</h3>
             <ul class="module-features">
@@ -88,7 +88,7 @@
             </div>
           </div>
 
-          <div class="module-card">
+          <div class="module-card" style="animation-delay: 0.3s">
             <div class="module-icon">🌾</div>
             <h3>精准饲喂</h3>
             <ul class="module-features">
@@ -104,7 +104,7 @@
             </div>
           </div>
 
-          <div class="module-card">
+          <div class="module-card" style="animation-delay: 0.4s">
             <div class="module-icon">📦</div>
             <h3>物资管理</h3>
             <ul class="module-features">
@@ -120,7 +120,7 @@
             </div>
           </div>
 
-          <div class="module-card">
+          <div class="module-card" style="animation-delay: 0.5s">
             <div class="module-icon">🛠️</div>
             <h3>设备管理</h3>
             <ul class="module-features">
@@ -136,7 +136,7 @@
             </div>
           </div>
 
-          <div class="module-card">
+          <div class="module-card" style="animation-delay: 0.6s">
             <div class="module-icon">📊</div>
             <h3>数据分析</h3>
             <ul class="module-features">
@@ -162,33 +162,33 @@
           <h2>技术特色</h2>
           <p>采用先进的技术架构，确保系统稳定可靠</p>
         </div>
-        <div class="tech-grid">
-          <div class="tech-item">
+        <div class="tech-grid" :class="{ 'animate-in': isVisible.tech }">
+          <div class="tech-item" style="animation-delay: 0.1s">
             <div class="tech-icon">🏗️</div>
             <h3>现代化架构</h3>
             <p>采用前后端分离架构，微服务设计，支持高并发访问</p>
           </div>
-          <div class="tech-item">
+          <div class="tech-item" style="animation-delay: 0.2s">
             <div class="tech-icon">📱</div>
             <h3>多端适配</h3>
             <p>支持PC端、移动端、微信小程序多平台访问</p>
           </div>
-          <div class="tech-item">
+          <div class="tech-item" style="animation-delay: 0.3s">
             <div class="tech-icon">☁️</div>
             <h3>云端部署</h3>
             <p>支持云端部署和本地部署，灵活选择部署方式</p>
           </div>
-          <div class="tech-item">
+          <div class="tech-item" style="animation-delay: 0.4s">
             <div class="tech-icon">🔐</div>
             <h3>安全可靠</h3>
             <p>数据加密传输，权限精细控制，确保数据安全</p>
           </div>
-          <div class="tech-item">
+          <div class="tech-item" style="animation-delay: 0.5s">
             <div class="tech-icon">⚡</div>
             <h3>高性能</h3>
             <p>优化的数据库设计，缓存机制，响应速度快</p>
           </div>
-          <div class="tech-item">
+          <div class="tech-item" style="animation-delay: 0.6s">
             <div class="tech-icon">🔧</div>
             <h3>易扩展</h3>
             <p>模块化设计，支持功能定制和二次开发</p>
@@ -205,43 +205,43 @@
           <p>全方位的服务支持，确保系统稳定运行</p>
         </div>
         <div class="service-content">
-          <div class="service-list">
-            <div class="service-item">
+          <div class="service-list" :class="{ 'animate-in': isVisible.services }">
+            <div class="service-item" style="animation-delay: 0.1s">
               <div class="service-icon">🚀</div>
               <div class="service-info">
                 <h3>系统部署</h3>
                 <p>提供专业的系统部署服务，确保系统正常运行</p>
               </div>
             </div>
-            <div class="service-item">
+            <div class="service-item" style="animation-delay: 0.2s">
               <div class="service-icon">📚</div>
               <div class="service-info">
                 <h3>培训服务</h3>
                 <p>提供系统使用培训，帮助用户快速掌握系统操作</p>
               </div>
             </div>
-            <div class="service-item">
+            <div class="service-item" style="animation-delay: 0.3s">
               <div class="service-icon">🛠️</div>
               <div class="service-info">
                 <h3>技术支持</h3>
                 <p>7×24小时技术支持，及时解决系统使用问题</p>
               </div>
             </div>
-            <div class="service-item">
+            <div class="service-item" style="animation-delay: 0.4s">
               <div class="service-icon">🔄</div>
               <div class="service-info">
                 <h3>系统维护</h3>
                 <p>定期系统维护和更新，保持系统最佳状态</p>
               </div>
             </div>
-            <div class="service-item">
+            <div class="service-item" style="animation-delay: 0.5s">
               <div class="service-icon">📊</div>
               <div class="service-info">
                 <h3>数据迁移</h3>
                 <p>协助客户进行数据迁移，确保数据完整性</p>
               </div>
             </div>
-            <div class="service-item">
+            <div class="service-item" style="animation-delay: 0.6s">
               <div class="service-icon">🎯</div>
               <div class="service-info">
                 <h3>定制开发</h3>
@@ -260,8 +260,8 @@
           <h2>成功案例</h2>
           <p>已为多家大型牧场提供专业服务</p>
         </div>
-        <div class="cases-grid">
-          <div class="case-card">
+        <div class="cases-grid" :class="{ 'animate-in': isVisible.cases }">
+          <div class="case-card" style="animation-delay: 0.1s">
             <div class="case-image">
               <div class="image-placeholder">🏭</div>
             </div>
@@ -274,7 +274,7 @@
               <p>通过系统实施，该牧场集团实现了统一管理，提高了管理效率30%，降低了运营成本15%。</p>
             </div>
           </div>
-          <div class="case-card">
+          <div class="case-card" style="animation-delay: 0.2s">
             <div class="case-image">
               <div class="image-placeholder">🌾</div>
             </div>
@@ -287,7 +287,7 @@
               <p>系统帮助合作社建立了标准化管理流程，提升了牛只健康率，增加了经济效益。</p>
             </div>
           </div>
-          <div class="case-card">
+          <div class="case-card" style="animation-delay: 0.3s">
             <div class="case-image">
               <div class="image-placeholder">🐄</div>
             </div>
@@ -321,32 +321,177 @@
 </template>
 
 <script setup lang="ts">
-// 产品服务页面
+import { ref, onMounted, onUnmounted } from 'vue'
+
+// 动画状态
+const isVisible = ref({
+  modules: false,
+  tech: false,
+  services: false,
+  cases: false
+})
+
+// 滚动监听
+const handleScroll = () => {
+  const elements = [
+    { key: 'modules', selector: '.modules-grid' },
+    { key: 'tech', selector: '.tech-grid' },
+    { key: 'services', selector: '.service-list' },
+    { key: 'cases', selector: '.cases-grid' }
+  ]
+
+  elements.forEach(({ key, selector }) => {
+    const element = document.querySelector(selector)
+    if (element && !isVisible.value[key]) {
+      const rect = element.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      
+      if (rect.top < windowHeight * 0.8) {
+        isVisible.value[key] = true
+      }
+    }
+  })
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  handleScroll() // 初始检查
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 </script>
 
 <style scoped>
 .products-page {
   min-height: 100vh;
+  width: 100%;
+}
+
+/* 通用容器样式 - 确保内容居中且有合适边距 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 针对不同屏幕尺寸的优化 */
+@media (min-width: 576px) {
+  .container {
+    padding: 0 30px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 40px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container {
+    padding: 0 50px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    max-width: 1200px;
+    padding: 0 60px;
+  }
+}
+
+@media (min-width: 1400px) {
+  .container {
+    max-width: 1300px;
+    padding: 0 80px;
+  }
+}
+
+@media (min-width: 1600px) {
+  .container {
+    max-width: 1400px;
+    padding: 0 100px;
+  }
+}
+
+/* 确保页面内容在超大屏幕上不会过度拉伸 */
+@media (min-width: 1920px) {
+  .container {
+    max-width: 1500px;
+    padding: 0 120px;
+  }
 }
 
 /* 页面头部 */
 .page-header {
+  position: relative;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 80px 0;
+  padding: 120px 0 80px;
   text-align: center;
+  overflow: hidden;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="tech" width="50" height="50" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="40" cy="10" r="1" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23tech)"/></svg>');
+  animation: techPattern 15s linear infinite;
+}
+
+@keyframes techPattern {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-50px, -50px); }
 }
 
 .page-header h1 {
-  font-size: 48px;
-  font-weight: 700;
-  margin: 0 0 16px 0;
+  font-size: 56px;
+  font-weight: 800;
+  margin: 0 0 20px 0;
+  position: relative;
+  z-index: 2;
+  animation: slideInDown 1s ease-out;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .page-header p {
-  font-size: 20px;
+  font-size: 22px;
   margin: 0;
-  opacity: 0.9;
+  opacity: 0.95;
+  position: relative;
+  z-index: 2;
+  animation: slideInUp 1s ease-out 0.3s both;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* 产品概述 */
@@ -426,50 +571,150 @@
 
 /* 功能模块 */
 .modules-section {
-  padding: 80px 0;
-  background-color: #f8f9fa;
+  padding: 100px 0;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  position: relative;
+}
+
+.modules-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="modules" width="30" height="30" patternUnits="userSpaceOnUse"><rect x="0" y="0" width="1" height="1" fill="rgba(102,126,234,0.03)"/><rect x="15" y="15" width="1" height="1" fill="rgba(102,126,234,0.03)"/></pattern></defs><rect width="100" height="100" fill="url(%23modules)"/></svg>');
+  opacity: 0.5;
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 60px;
+  margin-bottom: 80px;
+  position: relative;
+  z-index: 2;
 }
 
 .section-header h2 {
-  font-size: 36px;
-  font-weight: 700;
-  margin: 0 0 16px 0;
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0 0 20px 0;
   color: #2c3e50;
+  position: relative;
+  animation: fadeInDown 1s ease-out;
+}
+
+.section-header h2::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 2px;
 }
 
 .section-header p {
-  font-size: 18px;
+  font-size: 20px;
   color: #6c757d;
   margin: 0;
+  animation: fadeInUp 1s ease-out 0.2s both;
 }
 
 .modules-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 40px;
+  position: relative;
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(50px);
+  transition: all 0.8s ease-out;
+}
+
+.modules-grid.animate-in {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .module-card {
   background: white;
-  padding: 40px 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s, box-shadow 0.3s;
+  padding: 50px 40px;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  animation: cardSlideIn 0.8s ease-out forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.5s;
+}
+
+.module-card:hover::before {
+  left: 100%;
 }
 
 .module-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-15px) scale(1.05);
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.2);
 }
 
 .module-icon {
-  font-size: 48px;
-  margin-bottom: 20px;
+  font-size: 64px;
+  margin-bottom: 25px;
+  display: inline-block;
+  animation: iconBounce 2s ease-in-out infinite;
+}
+
+@keyframes iconBounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-10px); }
+  60% { transform: translateY(-5px); }
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .module-card h3 {

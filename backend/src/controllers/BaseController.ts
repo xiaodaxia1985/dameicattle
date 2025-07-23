@@ -26,7 +26,7 @@ export class BaseController {
       }
 
       // Apply data permission filtering - users can only see their own base (unless admin)
-      const filteredWhereClause = applyBaseFilter(whereClause, req);
+      const filteredWhereClause = applyBaseFilter(whereClause, req, 'id');
 
       const { count, rows } = await Base.findAndCountAll({
         where: filteredWhereClause,
@@ -64,7 +64,34 @@ export class BaseController {
     try {
       const { id } = req.params;
 
-      const base = await Base.findByPk(id, {
+      // Handle special case where 'all' is passed as ID
+      if (id === 'all') {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_BASE_ID',
+            message: '无效的基地ID，请使用数字ID',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Validate that ID is a number
+      const baseId = parseInt(id, 10);
+      if (isNaN(baseId)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_BASE_ID',
+            message: '基地ID必须是数字',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      const base = await Base.findByPk(baseId, {
         include: [
           { 
             model: User, 
@@ -595,7 +622,7 @@ export class BaseController {
       const { format = 'json' } = req.query;
 
       // Apply data permission filtering
-      const whereClause = applyBaseFilter({}, req);
+      const whereClause = applyBaseFilter({}, req, 'id');
 
       const bases = await Base.findAll({
         where: whereClause,

@@ -71,7 +71,7 @@ export const dataPermissionMiddleware = async (req: Request, res: Response, next
 /**
  * Apply base filter to query where clause
  */
-export const applyBaseFilter = (whereClause: any, req: Request): any => {
+export const applyBaseFilter = (whereClause: any, req: Request, filterField: string = 'base_id'): any => {
   const dataPermission = req.dataPermission;
   
   if (!dataPermission || dataPermission.canAccessAllBases) {
@@ -82,14 +82,14 @@ export const applyBaseFilter = (whereClause: any, req: Request): any => {
   if (dataPermission.baseId) {
     return {
       ...whereClause,
-      base_id: dataPermission.baseId,
+      [filterField]: dataPermission.baseId,
     };
   }
 
   // If user has no base assigned and is not admin, they can't access any data
   return {
     ...whereClause,
-    base_id: null, // This will return no results
+    [filterField]: -1, // This will return no results
   };
 };
 

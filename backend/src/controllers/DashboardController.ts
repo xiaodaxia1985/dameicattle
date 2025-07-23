@@ -74,9 +74,16 @@ export class DashboardController {
       const pendingTasks = {
         healthAlerts: await HealthRecord.count({
           where: {
-            ...baseFilter,
-            status: 'ongoing'
-          }
+            status: 'ongoing',
+            ...(userBaseId && { 
+              '$cattle.base_id$': userBaseId 
+            })
+          },
+          include: [{
+            model: Cattle,
+            as: 'cattle',
+            attributes: []
+          }]
         }),
         inventoryAlerts: await InventoryAlert.count({
           where: {
@@ -88,11 +95,12 @@ export class DashboardController {
           where: {
             status: { [Op.in]: ['reported', 'in_repair'] },
             ...(userBaseId && { 
-              '$ProductionEquipment.base_id$': userBaseId 
+              '$equipment.base_id$': userBaseId 
             })
           },
           include: [{
             model: ProductionEquipment,
+            as: 'equipment',
             attributes: []
           }]
         }),
@@ -102,11 +110,12 @@ export class DashboardController {
               [Op.lt]: new Date()
             },
             ...(userBaseId && { 
-              '$Cattle.base_id$': userBaseId 
+              '$cattle.base_id$': userBaseId 
             })
           },
           include: [{
             model: Cattle,
+            as: 'cattle',
             attributes: [],
             where: { status: 'active' }
           }]
@@ -184,12 +193,6 @@ export class DashboardController {
           startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
           groupBy = 'DATE(created_at)';
       }
-
-      const dateFilter = {
-        created_at: {
-          [Op.gte]: startDate
-        }
-      };
 
       const requestedMetrics = (metrics as string).split(',');
       const trendData: any = {};
@@ -348,11 +351,12 @@ export class DashboardController {
               [Op.gte]: new Date().toISOString().split('T')[0]
             },
             ...(userBaseId && { 
-              '$Cattle.base_id$': userBaseId 
+              '$cattle.base_id$': userBaseId 
             })
           },
           include: [{
             model: Cattle,
+            as: 'cattle',
             attributes: []
           }]
         }),
@@ -370,11 +374,12 @@ export class DashboardController {
           where: {
             status: { [Op.in]: ['reported', 'in_repair'] },
             ...(userBaseId && { 
-              '$ProductionEquipment.base_id$': userBaseId 
+              '$equipment.base_id$': userBaseId 
             })
           },
           include: [{
             model: ProductionEquipment,
+            as: 'equipment',
             attributes: []
           }]
         })
@@ -416,11 +421,12 @@ export class DashboardController {
         where: {
           status: { [Op.in]: ['reported', 'in_repair'] },
           ...(userBaseId && { 
-            '$ProductionEquipment.base_id$': userBaseId 
+            '$equipment.base_id$': userBaseId 
           })
         },
         include: [{
           model: ProductionEquipment,
+          as: 'equipment',
           attributes: ['name', 'code']
         }],
         order: [['failure_date', 'DESC']],
@@ -432,7 +438,7 @@ export class DashboardController {
           id: `equipment_${failure.id}`,
           type: 'equipment_failure',
           priority: (failure as any).severity === 'critical' ? 'high' : 'medium',
-          title: `设备故障: ${(failure as any).ProductionEquipment?.name}`,
+          title: `设备故障: ${(failure as any).equipment?.name}`,
           description: (failure as any).description,
           dueDate: null,
           createdAt: (failure as any).failure_date,
@@ -445,11 +451,12 @@ export class DashboardController {
         where: {
           status: 'ongoing',
           ...(userBaseId && { 
-            '$Cattle.base_id$': userBaseId 
+            '$cattle.base_id$': userBaseId 
           })
         },
         include: [{
           model: Cattle,
+          as: 'cattle',
           attributes: ['ear_tag', 'breed']
         }],
         order: [['diagnosis_date', 'DESC']],
@@ -461,7 +468,7 @@ export class DashboardController {
           id: `health_${record.id}`,
           type: 'health_alert',
           priority: 'medium',
-          title: `健康治疗: ${(record as any).Cattle?.ear_tag}`,
+          title: `健康治疗: ${(record as any).cattle?.ear_tag}`,
           description: (record as any).diagnosis,
           dueDate: null,
           createdAt: (record as any).diagnosis_date,
@@ -476,11 +483,12 @@ export class DashboardController {
             [Op.lt]: new Date()
           },
           ...(userBaseId && { 
-            '$Cattle.base_id$': userBaseId 
+            '$cattle.base_id$': userBaseId 
           })
         },
         include: [{
           model: Cattle,
+          as: 'cattle',
           attributes: ['ear_tag', 'breed'],
           where: { status: 'active' }
         }],
@@ -493,7 +501,7 @@ export class DashboardController {
           id: `vaccination_${vaccination.id}`,
           type: 'overdue_vaccination',
           priority: 'low',
-          title: `疫苗过期: ${(vaccination as any).Cattle?.ear_tag}`,
+          title: `疫苗过期: ${(vaccination as any).cattle?.ear_tag}`,
           description: `${(vaccination as any).vaccine_name} 需要重新接种`,
           dueDate: (vaccination as any).next_due_date,
           createdAt: (vaccination as any).vaccination_date,
@@ -509,6 +517,7 @@ export class DashboardController {
         },
         include: [{
           model: ProductionMaterial,
+          as: 'material',
           attributes: ['name', 'code']
         }],
         order: [['created_at', 'DESC']],
@@ -520,7 +529,7 @@ export class DashboardController {
           id: `inventory_${alert.id}`,
           type: 'inventory_alert',
           priority: (alert as any).alert_level === 'high' ? 'high' : 'medium',
-          title: `库存预警: ${(alert as any).ProductionMaterial?.name}`,
+          title: `库存预警: ${(alert as any).material?.name}`,
           description: (alert as any).message,
           dueDate: null,
           createdAt: (alert as any).created_at,
@@ -564,13 +573,14 @@ export class DashboardController {
   static async getComparativeAnalysis(req: Request, res: Response) {
     try {
       const { 
-        compareType = 'period', // period, base
+        compareType = 'period',
         currentPeriod = '30d',
         previousPeriod = '30d',
         baseIds 
       } = req.query;
       
       const userBaseId = (req as any).user?.base_id;
+      const baseFilter = userBaseId ? { base_id: userBaseId } : {};
 
       if (compareType === 'period') {
         // Period comparison
@@ -578,8 +588,6 @@ export class DashboardController {
         const currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         const previousStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
         const previousEnd = currentStart;
-
-        const baseFilter = userBaseId ? { base_id: userBaseId } : {};
 
         const [currentStats, previousStats] = await Promise.all([
           // Current period stats
@@ -598,7 +606,7 @@ export class DashboardController {
                 created_at: { [Op.gte]: currentStart }
               }
             }) || 0,
-            FeedingRecord.sum('amount', {
+            FeedingRecord.count({
               where: {
                 ...baseFilter,
                 created_at: { [Op.gte]: currentStart }
@@ -625,7 +633,7 @@ export class DashboardController {
                 }
               }
             }) || 0,
-            FeedingRecord.sum('amount', {
+            FeedingRecord.count({
               where: {
                 ...baseFilter,
                 created_at: { 
@@ -676,12 +684,12 @@ export class DashboardController {
           }
         });
       } else {
-        // Base comparison (if user has access to multiple bases)
+        // Base comparison
         res.json({
-          success: true,
-          data: {
-            compareType: 'base',
-            message: '基地对比功能需要管理员权限'
+          success: false,
+          error: {
+            code: 'FEATURE_NOT_IMPLEMENTED',
+            message: '基地对比功能暂未实现，需要管理员权限'
           }
         });
       }

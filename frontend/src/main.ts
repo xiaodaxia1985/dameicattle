@@ -9,6 +9,7 @@ import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 import './styles/index.scss'
+import './styles/modern-icons.scss'
 import { useAuthStore, useAppStore } from './stores'
 import { registerCustomTheme } from './utils/chartTheme'
 

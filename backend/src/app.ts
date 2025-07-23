@@ -112,12 +112,17 @@ const startServer = async () => {
     await sequelize.authenticate();
     logger.info('Database connection established successfully');
 
-    // Connect to Redis
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
+    // Connect to Redis with error handling
+    try {
+      if (!redisClient.isOpen) {
+        await redisClient.connect();
+      }
+      await redisClient.ping();
+      logger.info('Redis connection established successfully');
+    } catch (error) {
+      logger.warn('Redis connection failed, continuing without cache:', error);
+      // Continue without Redis - the app should still work
     }
-    await redisClient.ping();
-    logger.info('Redis connection established successfully');
 
     // Sync database models (in development)
     if (process.env.NODE_ENV === 'development') {

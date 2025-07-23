@@ -16,9 +16,13 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
+    redirect: '/portal'
+  },
+  {
+    path: '/admin',
     name: 'Layout',
     component: () => import('@/layout/index.vue'),
-    redirect: '/dashboard',
+    redirect: '/admin/dashboard',
     meta: { requiresAuth: true },
     children: [
       {
@@ -30,7 +34,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'cattle',
         name: 'Cattle',
-        redirect: '/cattle/list',
+        redirect: '/admin/cattle/list',
         meta: { title: '牛只管理', icon: 'Grid' },
         children: [
           {
@@ -50,7 +54,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'health',
         name: 'Health',
-        redirect: '/health/dashboard',
+        redirect: '/admin/health/dashboard',
         meta: { title: '健康管理', icon: 'FirstAidKit' },
         children: [
           {
@@ -88,7 +92,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'feeding',
         name: 'Feeding',
-        redirect: '/feeding/dashboard',
+        redirect: '/admin/feeding/dashboard',
         meta: { title: '饲喂管理', icon: 'Bowl' },
         children: [
           {
@@ -120,7 +124,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'purchase',
         name: 'Purchase',
-        redirect: '/purchase/orders',
+        redirect: '/admin/purchase/orders',
         meta: { title: '采购管理', icon: 'ShoppingCart' },
         children: [
           {
@@ -146,7 +150,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'sales',
         name: 'Sales',
-        redirect: '/sales/orders',
+        redirect: '/admin/sales/orders',
         meta: { title: '销售管理', icon: 'Sell' },
         children: [
           {
@@ -166,7 +170,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'materials',
         name: 'Materials',
-        redirect: '/materials/dashboard',
+        redirect: '/admin/materials/dashboard',
         meta: { title: '物资管理', icon: 'Box' },
         children: [
           {
@@ -192,7 +196,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'news',
         name: 'News',
-        redirect: '/news/list',
+        redirect: '/admin/news/list',
         meta: { title: '新闻管理', icon: 'Document' },
         children: [
           {
@@ -230,7 +234,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'system',
         name: 'System',
-        redirect: '/system/users',
+        redirect: '/admin/system/users',
         meta: { title: '系统管理', icon: 'Setting' },
         children: [
           {
@@ -377,7 +381,7 @@ router.beforeEach(async (to, from, next) => {
   if (requiresAuth && !authStore.isAuthenticated) {
     next('/login')
   } else if (to.path === '/login' && authStore.isAuthenticated) {
-    next('/')
+    next('/admin')
   } else {
     next()
   }
