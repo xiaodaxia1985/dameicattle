@@ -720,4 +720,144 @@ export class NewsController {
       }
     }
   }
+
+  // ========== 公开接口（门户网站使用） ==========
+  
+  // 获取公开新闻列表（门户网站使用）
+  static async getPublicNews(req: Request, res: Response) {
+    try {
+      const { 
+        page = 1, 
+        limit = 20, 
+        categoryId, 
+        status = 'published' 
+      } = req.query;
+
+      const offset = (Number(page) - 1) * Number(limit);
+      const whereClause: any = { status };
+
+      if (categoryId) {
+        whereClause.categoryId = categoryId;
+      }
+
+      const { count, rows: articles } = await NewsArticle.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: NewsCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'code'],
+          },
+        ],
+        order: [
+          ['isTop', 'DESC'],
+          ['isFeatured', 'DESC'],
+          ['publishTime', 'DESC'],
+        ],
+        limit: Number(limit),
+        offset,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          data: articles,
+          pagination: {
+            total: count,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(count / Number(limit)),
+          }
+        }
+      });
+    } catch (error) {
+      console.error('获取公开新闻失败:', error);
+      res.status(500).json({
+        success: false,
+        message: '获取公开新闻失败',
+      });
+    }
+  }
+
+  // 获取公开新闻详情（门户网站使用）
+  static async getPublicNewsById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const article = await NewsArticle.findOne({
+        where: { 
+          id, 
+          status: 'published' 
+        },
+        include: [
+          {
+            model: NewsCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'code'],
+          },
+        ],
+      });
+
+      if (!article) {
+        throw new AppError('新闻文章不存在或未发布', 404);
+      }
+
+      res.json({
+        success: true,
+        data: article,
+      });
+    } catch (error) {
+      console.error('获取公开新闻详情失败:', error);
+      if (error instanceof AppError) {
+        res.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: '获取公开新闻详情失败',
+        });
+      }
+    }
+  }
+
+  // 增加新闻浏览量
+  static async incrementViewCount(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const article = await NewsArticle.findOne({
+        where: { 
+          id, 
+          status: 'published' 
+        }
+      });
+
+      if (!article) {
+        throw new AppError('新闻文章不存在或未发布', 404);
+      }
+
+      // 增加浏览量
+      await article.increment('viewCount');
+
+      res.json({
+        success: true,
+        message: '浏览量已更新',
+      });
+    } catch (error) {
+      console.error('更新浏览量失败:', error);
+      if (error instanceof AppError) {
+        res.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: '更新浏览量失败',
+        });
+      }
+    }
+  }
 }

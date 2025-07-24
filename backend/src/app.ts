@@ -19,6 +19,7 @@ import { redisClient } from '@/config/redis';
 import authRoutes from '@/routes/auth';
 import userRoutes from '@/routes/users';
 import roleRoutes from '@/routes/roles';
+import permissionRoutes from '@/routes/permissions';
 import operationLogRoutes from '@/routes/operationLogs';
 import baseRoutes from '@/routes/bases';
 import barnRoutes from '@/routes/barns';
@@ -29,9 +30,14 @@ import materialRoutes from '@/routes/materials';
 import equipmentRoutes from '@/routes/equipment';
 import supplierRoutes from '@/routes/suppliers';
 import purchaseOrderRoutes from '@/routes/purchaseOrders';
+import purchaseRoutes from '@/routes/purchase';
 import customerRoutes from '@/routes/customers';
 import salesOrderRoutes from '@/routes/salesOrders';
 import newsRoutes from '@/routes/news';
+import portalRoutes from '@/routes/portal';
+import publicRoutes from '@/routes/public';
+import helpRoutes from '@/routes/help';
+import uploadRoutes from '@/routes/upload';
 import dashboardRoutes from '@/routes/dashboard';
 import dataIntegrationRoutes from '@/routes/dataIntegration';
 import performanceRoutes from '@/routes/performance';
@@ -102,10 +108,14 @@ app.get('/api/v1/health', (req, res) => {
   });
 });
 
-// API routes
+// Public routes (no authentication required)
+app.use('/api/v1/public', publicRoutes);
+
+// API routes (authentication required)
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', authMiddleware, userRoutes);
 app.use('/api/v1/roles', authMiddleware, roleRoutes);
+app.use('/api/v1/permissions', authMiddleware, permissionRoutes);
 app.use('/api/v1/operation-logs', authMiddleware, operationLogRoutes);
 app.use('/api/v1/bases', authMiddleware, baseRoutes);
 app.use('/api/v1/barns', authMiddleware, barnRoutes);
@@ -116,9 +126,13 @@ app.use('/api/v1/materials', authMiddleware, materialRoutes);
 app.use('/api/v1/equipment', authMiddleware, equipmentRoutes);
 app.use('/api/v1/suppliers', authMiddleware, supplierRoutes);
 app.use('/api/v1/purchase-orders', authMiddleware, purchaseOrderRoutes);
+app.use('/api/v1/purchase', authMiddleware, purchaseRoutes);
 app.use('/api/v1/customers', authMiddleware, customerRoutes);
 app.use('/api/v1/sales-orders', authMiddleware, salesOrderRoutes);
 app.use('/api/v1/news', newsRoutes);
+app.use('/api/v1/portal', authMiddleware, portalRoutes);
+app.use('/api/v1/help', helpRoutes);
+app.use('/api/v1/upload', authMiddleware, uploadRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/data-integration', authMiddleware, dataIntegrationRoutes);
 app.use('/api/v1/performance', authMiddleware, performanceRoutes);

@@ -30,4 +30,6 @@ router.get('/profile/me', userController.getProfile);
 // PUT /api/v1/users/profile/me
 router.put('/profile/me', validateRequest(updateProfileSchema), userController.updateProfile);
 
+
+
 export default router;

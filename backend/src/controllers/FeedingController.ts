@@ -1173,3 +1173,5 @@ export class FeedingController {
     }
   }
 }
+
+export default FeedingController;

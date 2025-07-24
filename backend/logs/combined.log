@@ -3104,3 +3104,104 @@
 {"duration":5,"level":"info","message":"Operation logged","operation":"read","resource":"bases","service":"cattle-management-api","status":200,"timestamp":"2025-07-24 16:43:30","user":"admin"}
 {"ip":"::1","level":"info","message":"GET /api/v1/feeding/statistics","service":"cattle-management-api","timestamp":"2025-07-24 16:43:30","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
 {"ip":"::1","level":"info","message":"GET /api/v1/feeding/records","service":"cattle-management-api","timestamp":"2025-07-24 16:43:30","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"level":"info","message":"Redis Client Connected","service":"cattle-management-api","timestamp":"2025-07-24 17:11:39"}
+{"level":"info","message":"Redis Client Ready","service":"cattle-management-api","timestamp":"2025-07-24 17:11:39"}
+{"level":"info","message":"Database connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"Redis connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"默认监控规则初始化完成","rulesCount":6,"service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"日志分析服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"安全服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"Monitoring and security services initialized successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"每日健康预警检查任务已启动 (每天8:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"疫苗到期提醒检查任务已启动 (每小时)","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"每周健康趋势报告任务已启动 (每周一9:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"所有定时任务已启动","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"Scheduled tasks started successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"Server is running on port 3000","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"level":"info","message":"Environment: development","service":"cattle-management-api","timestamp":"2025-07-24 17:11:40"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health","service":"cattle-management-api","timestamp":"2025-07-24 17:11:46","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/public/news","service":"cattle-management-api","timestamp":"2025-07-24 17:11:46","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health","service":"cattle-management-api","timestamp":"2025-07-24 17:11:48","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/users/profile/me","service":"cattle-management-api","timestamp":"2025-07-24 17:11:48","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health","service":"cattle-management-api","timestamp":"2025-07-24 17:12:00","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/public/news","service":"cattle-management-api","timestamp":"2025-07-24 17:12:00","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health","service":"cattle-management-api","timestamp":"2025-07-24 17:12:02","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/users/profile/me","service":"cattle-management-api","timestamp":"2025-07-24 17:12:02","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/cattle","service":"cattle-management-api","timestamp":"2025-07-24 17:12:14","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/bases","service":"cattle-management-api","timestamp":"2025-07-24 17:12:14","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"duration":6,"level":"info","message":"Operation logged","operation":"read","resource":"bases","service":"cattle-management-api","status":200,"timestamp":"2025-07-24 17:12:14","user":"admin"}
+{"ip":"::1","level":"info","message":"GET /api/v1/bases","service":"cattle-management-api","timestamp":"2025-07-24 17:12:19","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"duration":9,"level":"info","message":"Operation logged","operation":"read","resource":"bases","service":"cattle-management-api","status":200,"timestamp":"2025-07-24 17:12:19","user":"admin"}
+{"details":{"error_count":2,"error_rate":18.181818181818183,"time_window":"5分钟","total_requests":11},"level":"warn","message":"性能警报 高错误率检测: 18.2%","service":"cattle-management-api","severity":"high","timestamp":"2025-07-24 17:12:19","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/bases/1/statistics","service":"cattle-management-api","timestamp":"2025-07-24 17:12:19","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"duration":14,"level":"info","message":"Operation logged","operation":"read","resource":"base_statistics","service":"cattle-management-api","status":200,"timestamp":"2025-07-24 17:12:19","user":"admin"}
+{"details":{"error_count":2,"error_rate":16.666666666666664,"time_window":"5分钟","total_requests":12},"level":"warn","message":"性能警报 高错误率检测: 16.7%","service":"cattle-management-api","severity":"high","timestamp":"2025-07-24 17:12:19","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health/statistics","service":"cattle-management-api","timestamp":"2025-07-24 17:12:24","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"details":{"error_count":3,"error_rate":23.076923076923077,"time_window":"5分钟","total_requests":13},"level":"warn","message":"性能警报 高错误率检测: 23.1%","service":"cattle-management-api","severity":"critical","timestamp":"2025-07-24 17:12:24","type":"high_error_rate"}
+{"details":{"error_count":3,"error_rate":23.076923076923077,"time_window":"5分钟","total_requests":13},"level":"error","message":"关键性能警报 高错误率检测: 23.1%","service":"cattle-management-api","timestamp":"2025-07-24 17:12:24","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health/alerts","service":"cattle-management-api","timestamp":"2025-07-24 17:12:24","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"details":{"error_count":4,"error_rate":28.57142857142857,"time_window":"5分钟","total_requests":14},"level":"warn","message":"性能警报 高错误率检测: 28.6%","service":"cattle-management-api","severity":"critical","timestamp":"2025-07-24 17:12:24","type":"high_error_rate"}
+{"details":{"error_count":4,"error_rate":28.57142857142857,"time_window":"5分钟","total_requests":14},"level":"error","message":"关键性能警报 高错误率检测: 28.6%","service":"cattle-management-api","timestamp":"2025-07-24 17:12:24","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health/trend","service":"cattle-management-api","timestamp":"2025-07-24 17:12:24","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"details":{"error_count":5,"error_rate":33.33333333333333,"time_window":"5分钟","total_requests":15},"level":"warn","message":"性能警报 高错误率检测: 33.3%","service":"cattle-management-api","severity":"critical","timestamp":"2025-07-24 17:12:24","type":"high_error_rate"}
+{"details":{"error_count":5,"error_rate":33.33333333333333,"time_window":"5分钟","total_requests":15},"level":"error","message":"关键性能警报 高错误率检测: 33.3%","service":"cattle-management-api","timestamp":"2025-07-24 17:12:24","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health/records","service":"cattle-management-api","timestamp":"2025-07-24 17:12:29","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"details":{"error_count":6,"error_rate":37.5,"time_window":"5分钟","total_requests":16},"level":"warn","message":"性能警报 高错误率检测: 37.5%","service":"cattle-management-api","severity":"critical","timestamp":"2025-07-24 17:12:29","type":"high_error_rate"}
+{"details":{"error_count":6,"error_rate":37.5,"time_window":"5分钟","total_requests":16},"level":"error","message":"关键性能警报 高错误率检测: 37.5%","service":"cattle-management-api","timestamp":"2025-07-24 17:12:29","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/health/vaccinations","service":"cattle-management-api","timestamp":"2025-07-24 17:12:34","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"details":{"error_count":7,"error_rate":41.17647058823529,"time_window":"5分钟","total_requests":17},"level":"warn","message":"性能警报 高错误率检测: 41.2%","service":"cattle-management-api","severity":"critical","timestamp":"2025-07-24 17:12:34","type":"high_error_rate"}
+{"details":{"error_count":7,"error_rate":41.17647058823529,"time_window":"5分钟","total_requests":17},"level":"error","message":"关键性能警报 高错误率检测: 41.2%","service":"cattle-management-api","timestamp":"2025-07-24 17:12:34","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/bases","service":"cattle-management-api","timestamp":"2025-07-24 17:12:36","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"duration":8,"level":"info","message":"Operation logged","operation":"read","resource":"bases","service":"cattle-management-api","status":200,"timestamp":"2025-07-24 17:12:36","user":"admin"}
+{"details":{"error_count":7,"error_rate":38.88888888888889,"time_window":"5分钟","total_requests":18},"level":"warn","message":"性能警报 高错误率检测: 38.9%","service":"cattle-management-api","severity":"critical","timestamp":"2025-07-24 17:12:36","type":"high_error_rate"}
+{"details":{"error_count":7,"error_rate":38.88888888888889,"time_window":"5分钟","total_requests":18},"level":"error","message":"关键性能警报 高错误率检测: 38.9%","service":"cattle-management-api","timestamp":"2025-07-24 17:12:36","type":"high_error_rate"}
+{"ip":"::1","level":"info","message":"GET /api/v1/feeding/statistics","service":"cattle-management-api","timestamp":"2025-07-24 17:12:36","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"ip":"::1","level":"info","message":"GET /api/v1/feeding/records","service":"cattle-management-api","timestamp":"2025-07-24 17:12:36","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"}
+{"level":"error","message":"Redis Client Error: Connection timeout","service":"cattle-management-api","stack":"Error: Connection timeout\n    at Socket.<anonymous> (D:\\develop\\dameicattle\\backend\\node_modules\\@redis\\client\\dist\\lib\\client\\socket.js:177:124)\n    at Object.onceWrapper (node:events:632:28)\n    at Socket.emit (node:events:518:28)\n    at Socket.emit (node:domain:489:12)\n    at Socket._onTimeout (node:net:604:8)\n    at listOnTimeout (node:internal/timers:588:17)\n    at processTimers (node:internal/timers:523:7)","timestamp":"2025-07-24 17:16:04"}
+{"level":"info","message":"Redis Client Connected","service":"cattle-management-api","timestamp":"2025-07-24 17:16:04"}
+{"level":"info","message":"Redis Client Ready","service":"cattle-management-api","timestamp":"2025-07-24 17:16:04"}
+{"level":"info","message":"Database connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"Redis connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"默认监控规则初始化完成","rulesCount":6,"service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"日志分析服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"安全服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"Monitoring and security services initialized successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"每日健康预警检查任务已启动 (每天8:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"疫苗到期提醒检查任务已启动 (每小时)","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"每周健康趋势报告任务已启动 (每周一9:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"所有定时任务已启动","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"Scheduled tasks started successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"Server is running on port 3000","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"info","message":"Environment: development","service":"cattle-management-api","timestamp":"2025-07-24 17:16:05"}
+{"level":"error","message":"Redis Client Error: Connection timeout","service":"cattle-management-api","stack":"Error: Connection timeout\n    at Socket.<anonymous> (D:\\develop\\dameicattle\\backend\\node_modules\\@redis\\client\\dist\\lib\\client\\socket.js:177:124)\n    at Object.onceWrapper (node:events:632:28)\n    at Socket.emit (node:events:518:28)\n    at Socket.emit (node:domain:489:12)\n    at Socket._onTimeout (node:net:604:8)\n    at listOnTimeout (node:internal/timers:588:17)\n    at processTimers (node:internal/timers:523:7)","timestamp":"2025-07-24 17:18:05"}
+{"level":"info","message":"Redis Client Connected","service":"cattle-management-api","timestamp":"2025-07-24 17:18:05"}
+{"level":"info","message":"Redis Client Ready","service":"cattle-management-api","timestamp":"2025-07-24 17:18:05"}
+{"level":"info","message":"Database connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"Redis connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"默认监控规则初始化完成","rulesCount":6,"service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"日志分析服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"安全服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"Monitoring and security services initialized successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"每日健康预警检查任务已启动 (每天8:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"疫苗到期提醒检查任务已启动 (每小时)","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"每周健康趋势报告任务已启动 (每周一9:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"所有定时任务已启动","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"Scheduled tasks started successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"Server is running on port 3000","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"info","message":"Environment: development","service":"cattle-management-api","timestamp":"2025-07-24 17:18:06"}
+{"level":"error","message":"Redis Client Error: Connection timeout","service":"cattle-management-api","stack":"Error: Connection timeout\n    at Socket.<anonymous> (D:\\develop\\dameicattle\\backend\\node_modules\\@redis\\client\\dist\\lib\\client\\socket.js:177:124)\n    at Object.onceWrapper (node:events:632:28)\n    at Socket.emit (node:events:518:28)\n    at Socket.emit (node:domain:489:12)\n    at Socket._onTimeout (node:net:604:8)\n    at listOnTimeout (node:internal/timers:588:17)\n    at processTimers (node:internal/timers:523:7)","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Redis Client Connected","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Redis Client Ready","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Database connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Redis connection established successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"默认监控规则初始化完成","rulesCount":6,"service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"日志分析服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"安全服务初始化完成","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Monitoring and security services initialized successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"每日健康预警检查任务已启动 (每天8:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"疫苗到期提醒检查任务已启动 (每小时)","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"每周健康趋势报告任务已启动 (每周一9:00)","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"所有定时任务已启动","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Scheduled tasks started successfully","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Server is running on port 3000","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}
+{"level":"info","message":"Environment: development","service":"cattle-management-api","timestamp":"2025-07-24 17:18:56"}

@@ -1,8 +1,8 @@
 import { fail } from 'assert';
-import { 
-  createTestUser, 
-  createTestRole, 
-  createTestBase, 
+import {
+  createTestUser,
+  createTestRole,
+  createTestBase,
   createTestBarn,
   createTestCattle,
   cleanupTestData,
@@ -14,43 +14,6 @@ import {
   measureExecutionTime,
   runConcurrentTests
 } from './helpers/testHelpers';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { it } from 'node:test';
-import { describe } from 'node:test';
-import { beforeEach } from 'node:test';
-import { describe } from 'node:test';
 
 describe('Basic System Tests', () => {
   beforeEach(async () => {
@@ -69,7 +32,7 @@ describe('Basic System Tests', () => {
       };
 
       const token = generateTestToken(testUser);
-      
+
       expect(token).toBeTruthy();
       expect(typeof token).toBe('string');
       expect(token.split('.')).toHaveLength(3); // JWT has 3 parts
@@ -78,12 +41,12 @@ describe('Basic System Tests', () => {
     it('should create mock request objects', () => {
       const req = createMockRequest({
         body: { test: 'data' },
-        user: { 
-          id: 1, 
-          username: 'test', 
+        user: {
+          id: 1,
+          username: 'test',
           password_hash: 'hashed',
           real_name: 'Test User',
-          email: 'test@example.com', 
+          email: 'test@example.com',
           role_id: 1,
           status: 'active' as const,
           failed_login_attempts: 0,
@@ -109,9 +72,9 @@ describe('Basic System Tests', () => {
 
     it('should create mock next functions', () => {
       const next = createMockNext();
-      
+
       next();
-      
+
       expect(next).toHaveBeenCalled();
     });
   });
@@ -239,7 +202,7 @@ describe('Basic System Tests', () => {
     });
 
     it('should run concurrent tests', async () => {
-      const testFunctions = Array(5).fill(null).map((_, index) => 
+      const testFunctions = Array(5).fill(null).map((_, index) =>
         async () => {
           await new Promise(resolve => setTimeout(resolve, 50));
           return `result_${index}`;
@@ -408,13 +371,13 @@ describe('Basic System Tests', () => {
 
     it('should handle authorization errors', () => {
       const req = createMockRequest({
-        user: { 
-          id: 1, 
-          username: 'user', 
+        user: {
+          id: 1,
+          username: 'user',
           password_hash: 'hashed',
           real_name: 'Test User',
-          email: 'user@example.com', 
-          role_id: 2, 
+          email: 'user@example.com',
+          role_id: 2,
           base_id: 2,
           status: 'active' as const,
           failed_login_attempts: 0,
@@ -479,12 +442,12 @@ describe('Basic System Tests', () => {
       const requests = Array(5).fill(null).map((_, index) => {
         const req = createMockRequest({
           params: { id: index + 1 },
-          user: { 
-            id: 1, 
-            username: 'test', 
+          user: {
+            id: 1,
+            username: 'test',
             password_hash: 'hashed',
             real_name: 'Test User',
-            email: 'test@example.com', 
+            email: 'test@example.com',
             role_id: 1,
             status: 'active' as const,
             failed_login_attempts: 0,
@@ -515,9 +478,9 @@ describe('Basic System Tests', () => {
     it('should maintain referential integrity in mock data', async () => {
       const base = await createTestBase();
       const barn = await createTestBarn({ base_id: base.id });
-      const cattle = await createTestCattle({ 
-        base_id: base.id, 
-        barn_id: barn.id 
+      const cattle = await createTestCattle({
+        base_id: base.id,
+        barn_id: barn.id
       });
 
       // Verify relationships
@@ -528,7 +491,7 @@ describe('Basic System Tests', () => {
 
     it('should validate business rules', async () => {
       const barn = await createTestBarn({ capacity: 10, current_count: 0 });
-      
+
       // Simulate adding cattle to barn
       const cattleInBarn = [];
       for (let i = 0; i < 5; i++) {

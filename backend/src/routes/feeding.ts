@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { FeedingController } from '@/controllers/FeedingController';
-import { auth } from '@/middleware/auth';
-import { permission } from '@/middleware/permission';
-import { dataPermission } from '@/middleware/dataPermission';
+import { requirePermission } from '@/middleware/auth';
 import { validate } from '@/middleware/validation';
-import { operationLog } from '@/middleware/operationLog';
+import { dataPermissionMiddleware } from '@/middleware/dataPermission';
+import { operationLogMiddleware } from '@/middleware/operationLog';
 import {
   createFeedFormulaValidator,
   updateFeedFormulaValidator,
@@ -20,103 +19,112 @@ import {
 
 const router = Router();
 
-// Apply authentication to all routes
-router.use(auth);
-
 // Feed Formula routes
 router.get(
   '/formulas',
-  permission('feeding:read'),
+  requirePermission('feeding:read'),
+  ...getFeedFormulasValidator,
   validate(getFeedFormulasValidator),
   FeedingController.getFeedFormulas
 );
 
 router.get(
   '/formulas/:id',
-  permission('feeding:read'),
+  requirePermission('feeding:read'),
+  ...getFeedFormulaValidator,
   validate(getFeedFormulaValidator),
   FeedingController.getFeedFormula
 );
 
 router.post(
   '/formulas',
-  permission('feeding:create'),
+  requirePermission('feeding:create'),
+  ...createFeedFormulaValidator,
   validate(createFeedFormulaValidator),
-  operationLog('创建饲料配方'),
+  operationLogMiddleware('create', 'feed_formula'),
   FeedingController.createFeedFormula
 );
 
 router.put(
   '/formulas/:id',
-  permission('feeding:update'),
+  requirePermission('feeding:update'),
+  ...updateFeedFormulaValidator,
   validate(updateFeedFormulaValidator),
-  operationLog('更新饲料配方'),
+  operationLogMiddleware('update', 'feed_formula'),
   FeedingController.updateFeedFormula
 );
 
 router.delete(
   '/formulas/:id',
-  permission('feeding:delete'),
+  requirePermission('feeding:delete'),
+  ...getFeedFormulaValidator,
   validate(getFeedFormulaValidator),
-  operationLog('删除饲料配方'),
+  operationLogMiddleware('delete', 'feed_formula'),
   FeedingController.deleteFeedFormula
 );
 
 // Feeding Record routes
 router.get(
   '/records',
-  permission('feeding:read'),
-  dataPermission('base_id'),
+  requirePermission('feeding:read'),
+  dataPermissionMiddleware,
+  ...getFeedingRecordsValidator,
   validate(getFeedingRecordsValidator),
   FeedingController.getFeedingRecords
 );
 
 router.get(
   '/records/:id',
-  permission('feeding:read'),
+  requirePermission('feeding:read'),
+  ...getFeedingRecordValidator,
   validate(getFeedingRecordValidator),
   FeedingController.getFeedingRecord
 );
 
 router.post(
   '/records',
-  permission('feeding:create'),
-  dataPermission('base_id'),
+  requirePermission('feeding:create'),
+  dataPermissionMiddleware,
+  ...createFeedingRecordValidator,
   validate(createFeedingRecordValidator),
-  operationLog('创建饲喂记录'),
+  operationLogMiddleware('create', 'feeding_record'),
   FeedingController.createFeedingRecord
 );
 
 router.put(
   '/records/:id',
-  permission('feeding:update'),
+  requirePermission('feeding:update'),
+  ...updateFeedingRecordValidator,
   validate(updateFeedingRecordValidator),
-  operationLog('更新饲喂记录'),
+  operationLogMiddleware('update', 'feeding_record'),
   FeedingController.updateFeedingRecord
 );
 
 router.delete(
   '/records/:id',
-  permission('feeding:delete'),
+  requirePermission('feeding:delete'),
+  ...getFeedingRecordValidator,
   validate(getFeedingRecordValidator),
-  operationLog('删除饲喂记录'),
+  operationLogMiddleware('delete', 'feeding_record'),
   FeedingController.deleteFeedingRecord
 );
 
 // Batch operations
 router.post(
   '/records/batch',
-  permission('feeding:create'),
+  requirePermission('feeding:create'),
+  ...batchCreateFeedingRecordsValidator,
   validate(batchCreateFeedingRecordsValidator),
-  operationLog('批量创建饲喂记录'),
+  operationLogMiddleware('create', 'feeding_records_batch'),
   FeedingController.batchCreateFeedingRecords
 );
 
 // Statistics and analytics
 router.get(
   '/statistics',
-  permission('feeding:read'),
-  dataPermission('base_id'),
+  requirePermission('feeding:read'),
+  dataPermissionMiddleware,
+  ...getFeedingStatisticsValidator,
   validate(getFeedingStatisticsValidator),
   FeedingController.getFeedingStatistics
 );
@@ -124,15 +132,16 @@ router.get(
 // Feeding recommendations
 router.get(
   '/recommendations',
-  permission('feeding:read'),
-  dataPermission('base_id'),
+  requirePermission('feeding:read'),
+  dataPermissionMiddleware,
   FeedingController.getFeedingRecommendations
 );
 
 // Formula efficiency analysis
 router.get(
   '/formulas/:id/efficiency',
-  permission('feeding:read'),
+  requirePermission('feeding:read'),
+  ...getFeedFormulaValidator,
   validate(getFeedFormulaValidator),
   FeedingController.getFormulaEfficiency
 );
@@ -140,8 +149,8 @@ router.get(
 // Feeding plans (future feature)
 router.get(
   '/plans',
-  permission('feeding:read'),
-  dataPermission('base_id'),
+  requirePermission('feeding:read'),
+  dataPermissionMiddleware,
   (req, res) => {
     res.status(501).json({
       success: false,
@@ -152,9 +161,9 @@ router.get(
 
 router.post(
   '/plans/generate',
-  permission('feeding:create'),
-  dataPermission('base_id'),
-  operationLog('生成饲喂计划'),
+  requirePermission('feeding:create'),
+  dataPermissionMiddleware,
+  operationLogMiddleware('create', 'feeding_plan'),
   FeedingController.generateFeedingPlan
 );
 
