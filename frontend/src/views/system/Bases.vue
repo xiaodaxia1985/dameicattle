@@ -764,8 +764,9 @@ const fetchBasesWithAdvancedSearch = async (params: any = {}) => {
       ...params
     })
     
-    bases.value = response.data.data
-    pagination.total = response.data.total
+    // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
+    bases.value = response.data.bases || []
+    pagination.total = response.data.pagination?.total || 0
     
     // 获取统计信息
     for (const base of bases.value) {
@@ -892,8 +893,9 @@ const fetchBases = async () => {
       managerId: searchForm.managerId
     })
     
-    bases.value = response.data.data
-    pagination.total = response.data.total
+    // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
+    bases.value = response.data.bases || []
+    pagination.total = response.data.pagination?.total || 0
     
     // 获取每个基地的统计信息
     for (const base of bases.value) {
