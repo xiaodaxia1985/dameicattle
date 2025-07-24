@@ -75,7 +75,8 @@ const loadArticle = async () => {
   loading.value = true
   try {
     const response = await helpApi.getArticle(props.articleId)
-    article.value = response.data
+    // 根据API实现，response.data 应该是文章数据
+    article.value = response.data || {}
   } catch (error) {
     ElMessage.error('加载文章失败')
     article.value = null

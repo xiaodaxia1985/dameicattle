@@ -253,7 +253,8 @@ const loadMessages = async () => {
 
   try {
     const response = await helpApi.getChatMessages(sessionId.value)
-    messages.value = response.data.messages
+    // 根据API实现，response.data 应该包含消息列表
+    messages.value = response.data.messages || []
     await nextTick()
     scrollToBottom()
   } catch (error) {

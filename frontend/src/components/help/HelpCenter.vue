@@ -399,7 +399,8 @@ const handleSearch = async () => {
 
   try {
     const response = await helpApi.searchHelp(searchQuery.value)
-    Object.assign(searchResults, response.data)
+    // 根据API实现，response.data 应该是搜索结果数据
+    Object.assign(searchResults, response.data || {})
     showSearchResults.value = true
     currentView.value = 'search'
   } catch (error) {
@@ -452,7 +453,8 @@ const loadTutorials = async () => {
     if (tutorialLevel.value) params.level = tutorialLevel.value
     
     const response = await helpApi.getTutorials(params)
-    tutorialList.value = response.data
+    // 根据API实现，response.data 应该是教程列表数据
+    tutorialList.value = response.data || []
   } catch (error) {
     ElMessage.error('加载视频教程失败')
   }

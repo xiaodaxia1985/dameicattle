@@ -329,8 +329,9 @@ const loadOperationLogs = async () => {
     }
     
     const response = await userApi.getOperationLogs(params)
-    operationLogs.value = response.data
-    pagination.total = response.total
+    // 根据API实现，response 应该是 { data: [...], total: number, page: number, limit: number }
+    operationLogs.value = response.data || []
+    pagination.total = response.total || 0
   } catch (error) {
     console.error('Load operation logs error:', error)
     ElMessage.error('加载操作日志失败')
@@ -342,7 +343,8 @@ const loadOperationLogs = async () => {
 const loadUsers = async () => {
   try {
     const response = await userApi.getUsers({ limit: 1000 })
-    users.value = response.data
+    // 根据API实现，response 应该是 { data: [...], total: number, page: number, limit: number }
+    users.value = response.data || []
   } catch (error) {
     console.error('Load users error:', error)
   }

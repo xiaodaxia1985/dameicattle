@@ -160,8 +160,14 @@ const loadEquipment = async () => {
       ...searchForm,
     }
     const response = await equipmentApi.getEquipment(params)
-    equipmentList.value = response.data.data || []
-    pagination.total = response.data.pagination?.total || 0
+    // 根据API实现，response.data 可能直接是数据或包含data字段
+    if (response.data.data) {
+      equipmentList.value = response.data.data || []
+      pagination.total = response.data.pagination?.total || 0
+    } else {
+      equipmentList.value = response.data || []
+      pagination.total = response.data.length || 0
+    }
   } catch (error) {
     ElMessage.error('加载设备列表失败')
   } finally {

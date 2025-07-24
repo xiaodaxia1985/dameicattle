@@ -248,8 +248,9 @@ const fetchArticles = async () => {
       })
     }
     
-    articles.value = response.data.data
-    pagination.total = response.data.pagination.total
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    articles.value = response.data.data || []
+    pagination.total = response.data.pagination?.total || 0
   } catch (error) {
     console.error('获取文章列表失败:', error)
     ElMessage.error('获取文章列表失败')
@@ -267,7 +268,8 @@ const fetchFeaturedArticles = async () => {
       status: 'published',
       isFeatured: true
     })
-    featuredArticles.value = response.data.data
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    featuredArticles.value = response.data.data || []
   } catch (error) {
     console.error('获取推荐文章失败:', error)
   }
@@ -281,8 +283,9 @@ const fetchHotArticles = async () => {
       limit: 5,
       status: 'published'
     })
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
     // 按浏览量排序
-    hotArticles.value = response.data.data
+    hotArticles.value = (response.data.data || [])
       .sort((a, b) => b.viewCount - a.viewCount)
       .slice(0, 5)
   } catch (error) {

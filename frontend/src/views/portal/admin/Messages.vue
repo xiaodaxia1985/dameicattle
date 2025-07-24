@@ -425,8 +425,9 @@ const fetchMessages = async () => {
     }
     
     const response = await portalApi.getContactMessages(params)
-    messages.value = response.data.data
-    Object.assign(pagination, response.data.pagination)
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    messages.value = response.data.data || []
+    Object.assign(pagination, response.data.pagination || {})
     
     // 更新统计数据
     updateStats()

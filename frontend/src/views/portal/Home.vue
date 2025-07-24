@@ -275,6 +275,7 @@ const fetchNews = async () => {
       limit: 3,
       status: 'published'
     })
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
     newsList.value = response.data.data || []
   } catch (error) {
     console.error('获取新闻失败:', error)

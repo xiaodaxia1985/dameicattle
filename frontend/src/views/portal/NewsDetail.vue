@@ -320,7 +320,8 @@ const fetchArticle = async (id: number) => {
 const fetchComments = async (articleId: number) => {
   try {
     const response = await newsApi.getComments(articleId, { status: 'approved' })
-    comments.value = response.data.data
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    comments.value = response.data.data || []
   } catch (error) {
     console.error('获取评论失败:', error)
   }
@@ -335,7 +336,8 @@ const fetchRelatedArticles = async (categoryId: number, currentId: number) => {
       categoryId,
       status: 'published'
     })
-    relatedArticles.value = response.data.data.filter(a => a.id !== currentId)
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    relatedArticles.value = (response.data.data || []).filter(a => a.id !== currentId)
   } catch (error) {
     console.error('获取相关文章失败:', error)
   }
@@ -349,7 +351,8 @@ const fetchLatestArticles = async () => {
       limit: 5,
       status: 'published'
     })
-    latestArticles.value = response.data.data
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    latestArticles.value = response.data.data || []
   } catch (error) {
     console.error('获取最新文章失败:', error)
   }

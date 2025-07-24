@@ -217,7 +217,12 @@ const loadBrokenEquipment = async () => {
       ...(selectedBase.value ? { baseId: selectedBase.value } : {}),
     }
     const response = await equipmentApi.getEquipment(params)
-    brokenEquipment.value = response.data.data || []
+    // 根据API实现，response.data 可能直接是数据或包含data字段
+    if (response.data.data) {
+      brokenEquipment.value = response.data.data || []
+    } else {
+      brokenEquipment.value = response.data || []
+    }
   } catch (error) {
     console.error('加载故障设备失败:', error)
   }

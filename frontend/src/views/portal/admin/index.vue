@@ -86,14 +86,15 @@ const fetchUnreadCounts = async () => {
       status: 'pending',
       limit: 1
     })
-    unreadMessages.value = messagesResponse.data.pagination.total
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    unreadMessages.value = messagesResponse.data.pagination?.total || 0
 
     // 获取待处理询价数量
     const inquiriesResponse = await portalApi.getInquiries({
       status: 'pending',
       limit: 1
     })
-    pendingInquiries.value = inquiriesResponse.data.pagination.total
+    pendingInquiries.value = inquiriesResponse.data.pagination?.total || 0
   } catch (error) {
     console.error('获取未读数量失败:', error)
   }

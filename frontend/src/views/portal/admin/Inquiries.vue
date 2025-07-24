@@ -541,8 +541,9 @@ const fetchInquiries = async () => {
     }
     
     const response = await portalApi.getInquiries(params)
-    inquiries.value = response.data.data
-    Object.assign(pagination, response.data.pagination)
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    inquiries.value = response.data.data || []
+    Object.assign(pagination, response.data.pagination || {})
     
     updateStats()
   } catch (error) {

@@ -795,7 +795,8 @@ const handleMaterialChange = async () => {
         transactionForm.material_id,
         transactionForm.base_id
       )
-      currentStock.value = response.data.current_stock
+      // 根据API实现，response.data 应该包含库存信息
+      currentStock.value = response.data?.current_stock || 0
     } catch (error) {
       currentStock.value = 0
     }

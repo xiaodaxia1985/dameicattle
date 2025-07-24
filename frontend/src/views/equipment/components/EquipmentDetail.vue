@@ -266,6 +266,7 @@ const showReportFailureDialog = ref(false)
 const loadMaintenancePlans = async () => {
   try {
     const response = await equipmentApi.getMaintenancePlans({ equipmentId: props.equipment.id })
+    // 根据API实现，response.data 可能直接是数据或包含data字段
     maintenancePlans.value = response.data || []
   } catch (error) {
     console.error('加载维护计划失败:', error)
@@ -276,6 +277,7 @@ const loadMaintenancePlans = async () => {
 const loadMaintenanceRecords = async () => {
   try {
     const response = await equipmentApi.getMaintenanceRecords({ equipmentId: props.equipment.id })
+    // 根据API实现，response.data 可能直接是数据或包含data字段
     maintenanceRecords.value = response.data || []
   } catch (error) {
     console.error('加载维护记录失败:', error)
@@ -286,6 +288,7 @@ const loadMaintenanceRecords = async () => {
 const loadFailureRecords = async () => {
   try {
     const response = await equipmentApi.getFailures({ equipmentId: props.equipment.id })
+    // 根据API实现，response.data 可能直接是数据或包含data字段
     failureRecords.value = response.data || []
   } catch (error) {
     console.error('加载故障记录失败:', error)

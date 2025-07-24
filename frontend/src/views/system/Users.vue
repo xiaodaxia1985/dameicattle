@@ -525,8 +525,9 @@ const loadUsers = async () => {
     }
     
     const response = await userApi.getUsers(params)
-    users.value = response.data
-    pagination.total = response.total
+    // 根据API实现，response 应该是 { data: [...], total: number, page: number, limit: number }
+    users.value = response.data || []
+    pagination.total = response.total || 0
   } catch (error) {
     console.error('Load users error:', error)
     ElMessage.error('加载用户列表失败')
@@ -546,7 +547,8 @@ const loadRoles = async () => {
 const loadBases = async () => {
   try {
     const response = await baseApi.getAllBases()
-    bases.value = response.data
+    // 根据API实现，response.data 应该是基地数组
+    bases.value = response.data || []
   } catch (error) {
     console.error('Load bases error:', error)
   }
@@ -806,8 +808,9 @@ const loadOperationLogs = async () => {
     }
     
     const response = await userApi.getOperationLogs(params)
-    operationLogs.value = response.data
-    logPagination.total = response.total
+    // 根据API实现，response 应该是 { data: [...], total: number, page: number, limit: number }
+    operationLogs.value = response.data || []
+    logPagination.total = response.total || 0
   } catch (error) {
     console.error('Load operation logs error:', error)
     ElMessage.error('加载操作日志失败')

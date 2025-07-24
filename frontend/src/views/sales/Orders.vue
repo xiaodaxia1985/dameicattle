@@ -220,6 +220,7 @@ const fetchOrders = async () => {
     }
     
     const response = await salesApi.getOrders(params)
+    // 根据API实现，response.data 应该是 { items: [...], total: number, page: number, limit: number }
     orders.value = response.data.items || []
     pagination.total = response.data.total || 0
   } catch (error) {
@@ -232,6 +233,7 @@ const fetchOrders = async () => {
 const fetchCustomers = async () => {
   try {
     const response = await salesApi.getCustomers({ limit: 100 })
+    // 根据API实现，response.data 应该是 { items: [...], total: number, page: number, limit: number }
     customerOptions.value = response.data.items || []
   } catch (error) {
     console.error('获取客户列表失败')

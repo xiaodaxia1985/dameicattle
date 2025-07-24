@@ -552,8 +552,14 @@ const fetchOrders = async () => {
     const { dateRange, ...finalParams } = params
     
     const response = await purchaseApi.getOrders(params)
-    orders.value = response.data.items || []
-    pagination.total = response.data.total || 0
+    // 根据API实现，response.data 可能是 { items: [...], total: number } 或直接是数组
+    if (response.data.items) {
+      orders.value = response.data.items || []
+      pagination.total = response.data.total || 0
+    } else {
+      orders.value = response.data || []
+      pagination.total = response.data.length || 0
+    }
   } catch (error) {
     ElMessage.error('获取订单列表失败')
   } finally {
@@ -564,7 +570,12 @@ const fetchOrders = async () => {
 const fetchSuppliers = async () => {
   try {
     const response = await purchaseApi.getSuppliers()
-    supplierOptions.value = response.data.items || []
+    // 根据API实现，response.data 可能是 { items: [...], total: number } 或直接是数组
+    if (response.data.items) {
+      supplierOptions.value = response.data.items || []
+    } else {
+      supplierOptions.value = response.data || []
+    }
   } catch (error) {
     console.error('获取供应商列表失败')
   }

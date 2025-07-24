@@ -296,8 +296,9 @@ const fetchFormulas = async () => {
       limit: pagination.value.limit,
       keyword: searchKeyword.value
     })
-    formulas.value = response.data.data
-    pagination.value.total = response.data.total
+    // 根据API实现，response.data 应该是 { data: [...], total: number, page: number, limit: number }
+    formulas.value = response.data.data || []
+    pagination.value.total = response.data.total || 0
   } catch (error) {
     console.error('获取配方列表失败:', error)
     ElMessage.error('获取配方列表失败')

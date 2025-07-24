@@ -331,7 +331,8 @@ const initDateRange = () => {
 const fetchBases = async () => {
   try {
     const response = await baseApi.getBases()
-    bases.value = response.data.data
+    // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
+    bases.value = response.data.bases || []
     if (bases.value.length > 0) {
       selectedBase.value = bases.value[0].id
     }

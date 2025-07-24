@@ -484,6 +484,7 @@ const fetchCustomers = async () => {
       credit_rating: searchForm.creditRating
     }
     const response = await salesApi.getCustomers(params)
+    // 根据API实现，response.data 应该是 { items: [...], total: number, page: number, limit: number }
     customers.value = response.data.items || []
     pagination.total = response.data.total || 0
   } catch (error) {

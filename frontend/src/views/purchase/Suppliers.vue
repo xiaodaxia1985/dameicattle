@@ -270,8 +270,14 @@ const fetchSuppliers = async () => {
       ...searchForm
     }
     const response = await purchaseApi.getSuppliers(params)
-    suppliers.value = response.data.items || []
-    pagination.total = response.data.total || 0
+    // 根据API实现，response.data 可能是 { items: [...], total: number } 或直接是数组
+    if (response.data.items) {
+      suppliers.value = response.data.items || []
+      pagination.total = response.data.total || 0
+    } else {
+      suppliers.value = response.data || []
+      pagination.total = response.data.length || 0
+    }
   } catch (error) {
     ElMessage.error('获取供应商列表失败')
   } finally {

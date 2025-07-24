@@ -410,7 +410,8 @@ const initDateRange = () => {
 const fetchBases = async () => {
   try {
     const response = await baseApi.getBases()
-    bases.value = response.data.data
+    // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
+    bases.value = response.data.bases || []
     if (bases.value.length > 0) {
       selectedBase.value = bases.value[0].id
     }
@@ -433,7 +434,8 @@ const fetchBarns = async () => {
 const fetchFormulas = async () => {
   try {
     const response = await feedingApi.getFormulas()
-    formulas.value = response.data.data
+    // 根据API实现，response.data 应该是 { data: [...], total: number, page: number, limit: number }
+    formulas.value = response.data.data || []
   } catch (error) {
     console.error('获取配方列表失败:', error)
   }
@@ -456,8 +458,9 @@ const fetchRecords = async () => {
     }
     
     const response = await feedingApi.getFeedingRecords(params)
-    records.value = response.data.data
-    pagination.value.total = response.data.total
+    // 根据API实现，response.data 应该是 { data: [...], total: number, page: number, limit: number }
+    records.value = response.data.data || []
+    pagination.value.total = response.data.total || 0
   } catch (error) {
     console.error('获取记录列表失败:', error)
     ElMessage.error('获取记录列表失败')

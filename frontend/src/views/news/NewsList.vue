@@ -176,8 +176,9 @@ const fetchArticles = async () => {
     }
     
     const response = await newsApi.getArticles(params)
-    articles.value = response.data.data
-    pagination.total = response.data.pagination.total
+    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
+    articles.value = response.data.data || []
+    pagination.total = response.data.pagination?.total || 0
   } catch (error) {
     console.error('获取文章列表失败:', error)
     ElMessage.error('获取文章列表失败')
