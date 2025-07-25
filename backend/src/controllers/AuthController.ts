@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import * as jwt from 'jsonwebtoken';
 import { User, Role, SecurityLog } from '@/models';
 import { generateToken } from '@/middleware/auth';
 import { logger } from '@/utils/logger';
@@ -233,62 +234,173 @@ export class AuthController {
         });
       }
 
-      const token = authHeader.substring(7);
+      const currentToken = authHeader.substring(7);
       
-      // Verify token exists in Redis
-      const userId = req.user?.id;
+      // Verify current token and get user info
+      let tokenPayload: any;
+      try {
+        tokenPayload = jwt.verify(currentToken, process.env.JWT_SECRET || 'your-secret-key');
+      } catch (jwtError: any) {
+        let errorCode = 'INVALID_TOKEN';
+        let errorMessage = '无效的认证令牌';
+        
+        if (jwtError.name === 'TokenExpiredError') {
+          // Allow refresh of expired tokens within a grace period (e.g., 7 days)
+          const gracePeriod = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+          const expiredTime = new Date(jwtError.expiredAt).getTime();
+          const now = Date.now();
+          
+          if (now - expiredTime > gracePeriod) {
+            errorCode = 'TOKEN_EXPIRED_BEYOND_GRACE';
+            errorMessage = '令牌已过期超过允许的刷新时间，请重新登录';
+          } else {
+            // Decode expired token to get payload
+            tokenPayload = jwt.decode(currentToken);
+          }
+        }
+        
+        if (!tokenPayload) {
+          return res.status(401).json({
+            success: false,
+            error: {
+              code: errorCode,
+              message: errorMessage,
+              timestamp: new Date().toISOString(),
+              path: req.path,
+            },
+          });
+        }
+      }
+
+      const userId = tokenPayload.id;
       if (!userId) {
         return res.status(401).json({
           success: false,
           error: {
-            code: 'INVALID_TOKEN',
-            message: '无效的认证令牌',
+            code: 'INVALID_TOKEN_PAYLOAD',
+            message: '令牌载荷无效',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
         });
       }
 
+      // Verify token exists in Redis (for session management)
       const storedToken = await redisClient.get(`token:${userId}`);
-      if (storedToken !== token) {
+      if (!storedToken) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'TOKEN_NOT_IN_SESSION',
+            message: '令牌未在会话中找到，请重新登录',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      if (storedToken !== currentToken) {
         return res.status(401).json({
           success: false,
           error: {
             code: 'TOKEN_MISMATCH',
-            message: '令牌不匹配',
+            message: '令牌不匹配当前会话',
             timestamp: new Date().toISOString(),
             path: req.path,
           },
         });
       }
 
-      // Generate new token
-      const user = req.user as any;
+      // Get fresh user data
+      const user = await User.findByPk(userId, {
+        attributes: { exclude: ['password_hash'] },
+        include: [{ 
+          model: Role, 
+          as: 'role',
+          attributes: ['id', 'name', 'description', 'permissions']
+        }],
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: '用户不存在',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Check if user account is still active
+      if (user.status !== 'active') {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'ACCOUNT_INACTIVE',
+            message: '用户账户已被禁用',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Check if account is locked
+      if (user.isAccountLocked && user.isAccountLocked()) {
+        return res.status(423).json({
+          success: false,
+          error: {
+            code: 'ACCOUNT_LOCKED',
+            message: '用户账户已被锁定',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Generate new token with fresh user data
       const newToken = generateToken({
         id: user.id,
         username: user.username,
         role_id: user.role_id,
+        base_id: user.base_id,
       });
 
-      // Update token in Redis
-      await redisClient.setEx(`token:${user.id}`, 24 * 60 * 60, newToken);
+      // Update token in Redis with extended expiration
+      const tokenExpiry = 24 * 60 * 60; // 24 hours
+      await redisClient.setEx(`token:${user.id}`, tokenExpiry, newToken);
 
-      // Log token refresh
+      // Log successful token refresh
       await SecurityLog.logEvent({
         user_id: user.id,
         username: user.username,
         event_type: 'token_refresh',
         ip_address: ipAddress,
         user_agent: userAgent,
+        details: { 
+          old_token_expired: tokenPayload.exp ? new Date(tokenPayload.exp * 1000) : null,
+          new_token_expires: new Date(Date.now() + tokenExpiry * 1000)
+        },
+      });
+
+      logger.info(`Token refreshed for user ${user.username}`, {
+        userId: user.id,
+        ip: ipAddress,
       });
 
       res.json({
         success: true,
         data: {
           token: newToken,
+          user: user.toJSON(),
+          permissions: user.role?.permissions || [],
+          expiresIn: tokenExpiry,
         },
+        message: '令牌刷新成功',
       });
     } catch (error) {
+      logger.error('Token refresh error:', error);
       next(error);
     }
   }

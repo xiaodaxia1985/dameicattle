@@ -25,7 +25,7 @@
               <el-icon><DataAnalysis /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ keyIndicators?.totalCattle || 0 }}</div>
+              <div class="stat-value">{{ safeGet(keyIndicators, 'totalCattle', 0) }}</div>
               <div class="stat-label">牛只总数</div>
             </div>
           </div>
@@ -37,7 +37,7 @@
               <el-icon><Monitor /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ keyIndicators?.healthRate || 0 }}%</div>
+              <div class="stat-value">{{ safeGet(keyIndicators, 'healthRate', 0) }}%</div>
               <div class="stat-label">健康率</div>
             </div>
           </div>
@@ -49,7 +49,7 @@
               <el-icon><TrendCharts /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ keyIndicators?.monthlyRevenue || 0 }}</div>
+              <div class="stat-value">{{ safeGet(keyIndicators, 'monthlyRevenue', 0) }}</div>
               <div class="stat-label">月度收入(元)</div>
             </div>
           </div>
@@ -61,7 +61,7 @@
               <el-icon><Warning /></el-icon>
             </div>
             <div class="stat-info">
-              <div class="stat-value">{{ keyIndicators?.pendingTasks || 0 }}</div>
+              <div class="stat-value">{{ safeGet(keyIndicators, 'pendingTasks', 0) }}</div>
               <div class="stat-label">待处理任务</div>
             </div>
           </div>
@@ -129,6 +129,7 @@ import {
   Food,
   ShoppingCart
 } from '@element-plus/icons-vue'
+import { safeGet } from '@/utils/safeAccess'
 
 const router = useRouter()
 

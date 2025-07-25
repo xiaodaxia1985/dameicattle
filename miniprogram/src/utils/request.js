@@ -1,46 +1,33 @@
-// 基础请求配置
-const BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3000' 
-  : 'https://api.example.com'
+/**
+ * Legacy request module - maintained for backward compatibility
+ * New code should use the unified API client from ./apiClient
+ */
 
-// 请求拦截器
+import { api } from './apiClient'
+
+// Backward-compatible request function
 function request(options) {
-  return new Promise((resolve, reject) => {
-    // 设置默认配置
-    const config = {
-      url: BASE_URL + options.url,
-      method: options.method || 'GET',
-      data: options.data || {},
-      header: {
-        'Content-Type': 'application/json',
-        ...options.header
-      },
-      timeout: 10000,
-      ...options
-    }
+  const { url, method = 'GET', data, header, ...config } = options
+  
+  // Convert to new API client format
+  const requestConfig = {
+    headers: header,
+    ...config
+  }
 
-    // 添加认证token
-    const token = uni.getStorageSync('token')
-    if (token) {
-      config.header.Authorization = `Bearer ${token}`
-    }
-
-    // 发起请求
-    uni.request({
-      ...config,
-      success: (res) => {
-        if (res.statusCode === 200) {
-          resolve(res.data)
-        } else {
-          reject(new Error(`请求失败: ${res.statusCode}`))
-        }
-      },
-      fail: (err) => {
-        console.error('请求失败:', err)
-        reject(new Error('网络请求失败'))
-      }
-    })
-  })
+  // Use the appropriate method from the new API client
+  switch (method.toUpperCase()) {
+    case 'GET':
+      return api.get(url, data, requestConfig).then(response => response.data || response)
+    case 'POST':
+      return api.post(url, data, requestConfig).then(response => response.data || response)
+    case 'PUT':
+      return api.put(url, data, requestConfig).then(response => response.data || response)
+    case 'DELETE':
+      return api.delete(url, data, requestConfig).then(response => response.data || response)
+    default:
+      return api.get(url, data, requestConfig).then(response => response.data || response)
+  }
 }
 
 export default request

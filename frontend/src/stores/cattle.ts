@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { cattleApi } from '@/api/cattle'
 import type { Cattle, CattleListParams, CattleStatistics, CreateCattleRequest, UpdateCattleRequest } from '@/api/cattle'
+import type { PaginatedApiResponse } from '@/types/api'
+import { safeGet, ensureArray, ensureNumber } from '@/utils/safeAccess'
+import { createSafePagination, normalizePaginationParams } from '@/utils/paginationHelpers'
 
 export const useCattleStore = defineStore('cattle', () => {
   const cattleList = ref<Cattle[]>([])
@@ -14,56 +17,58 @@ export const useCattleStore = defineStore('cattle', () => {
     limit: 20
   })
 
-  // 计算属性
+  // 计算属性 - 使用安全访问
   const healthyCount = computed(() => 
-    cattleList.value?.filter(cattle => cattle.health_status === 'healthy').length || 0
+    ensureArray(cattleList.value).filter(cattle => 
+      safeGet(cattle, 'health_status') === 'healthy'
+    ).length
   )
   
   const sickCount = computed(() => 
-    cattleList.value?.filter(cattle => cattle.health_status === 'sick').length || 0
+    ensureArray(cattleList.value).filter(cattle => 
+      safeGet(cattle, 'health_status') === 'sick'
+    ).length
   )
   
   const treatmentCount = computed(() => 
-    cattleList.value?.filter(cattle => cattle.health_status === 'treatment').length || 0
+    ensureArray(cattleList.value).filter(cattle => 
+      safeGet(cattle, 'health_status') === 'treatment'
+    ).length
   )
 
   const maleCount = computed(() => 
-    cattleList.value?.filter(cattle => cattle.gender === 'male').length || 0
+    ensureArray(cattleList.value).filter(cattle => 
+      safeGet(cattle, 'gender') === 'male'
+    ).length
   )
 
   const femaleCount = computed(() => 
-    cattleList.value?.filter(cattle => cattle.gender === 'female').length || 0
+    ensureArray(cattleList.value).filter(cattle => 
+      safeGet(cattle, 'gender') === 'female'
+    ).length
   )
 
-  // 获取牛只列表
+  // 获取牛只列表 - 使用安全数据访问
   const fetchCattleList = async (params?: CattleListParams) => {
     loading.value = true
     try {
-      if (params) {
-        searchParams.value = { ...searchParams.value, ...params }
-      }
+      // 规范化分页参数
+      const normalizedParams = normalizePaginationParams(params || searchParams.value)
+      searchParams.value = { ...searchParams.value, ...params, ...normalizedParams }
+      
       console.log('发送API请求，参数:', searchParams.value)
       const response = await cattleApi.getList(searchParams.value)
       console.log('API响应数据:', response)
       
-      // 检查响应数据结构
-      if (!response) {
-        throw new Error('API返回空响应')
-      }
+      // 使用安全访问获取数据
+      const data = ensureArray(safeGet(response, 'data', []))
+      const paginationData = safeGet(response, 'pagination', {})
       
-      if (!response.data) {
-        console.warn('响应中缺少data字段，使用空数组')
-        cattleList.value = []
-      } else {
-        cattleList.value = response.data
-      }
+      // 创建安全的分页信息
+      const safePagination = createSafePagination(paginationData)
       
-      if (!response.pagination) {
-        console.warn('响应中缺少pagination字段，使用默认值')
-        total.value = 0
-      } else {
-        total.value = response.pagination.total || 0
-      }
+      cattleList.value = data
+      total.value = safePagination.total
       
       console.log('处理后的数据 - 列表长度:', cattleList.value.length, '总数:', total.value)
     } catch (error) {
@@ -76,37 +81,54 @@ export const useCattleStore = defineStore('cattle', () => {
     }
   }
 
-  // 获取牛只统计
+  // 获取牛只统计 - 使用安全数据访问
   const fetchCattleStatistics = async (baseId?: number) => {
     try {
       const response = await cattleApi.getStatistics(baseId)
-      statistics.value = response
-      return response
+      // 确保统计数据的安全访问
+      const safeStatistics = {
+        total: ensureNumber(safeGet(response, 'total', 0)),
+        health_status: ensureArray(safeGet(response, 'health_status', [])),
+        gender: ensureArray(safeGet(response, 'gender', [])),
+        breeds: ensureArray(safeGet(response, 'breeds', []))
+      }
+      statistics.value = safeStatistics as CattleStatistics
+      return safeStatistics
     } catch (error) {
       console.error('获取牛只统计失败:', error)
+      statistics.value = null
       throw error
     }
   }
 
-  // 获取牛只详情
+  // 获取牛只详情 - 使用安全数据访问
   const fetchCattleById = async (id: number) => {
     loading.value = true
     try {
       const response = await cattleApi.getById(id)
-      currentCattle.value = response
-      return response
+      // 确保牛只数据的完整性
+      if (response && typeof response === 'object') {
+        currentCattle.value = response
+        return response
+      } else {
+        throw new Error('Invalid cattle data received')
+      }
     } catch (error) {
       console.error('获取牛只详情失败:', error)
+      currentCattle.value = null
       throw error
     } finally {
       loading.value = false
     }
   }
 
-  // 通过耳标获取牛只
+  // 通过耳标获取牛只 - 使用安全数据访问
   const fetchCattleByEarTag = async (earTag: string) => {
     loading.value = true
     try {
+      if (!earTag || typeof earTag !== 'string') {
+        throw new Error('Invalid ear tag provided')
+      }
       const response = await cattleApi.getByEarTag(earTag)
       return response
     } catch (error) {
@@ -117,14 +139,18 @@ export const useCattleStore = defineStore('cattle', () => {
     }
   }
 
-  // 创建牛只
+  // 创建牛只 - 使用安全数据访问
   const createCattle = async (data: CreateCattleRequest) => {
     loading.value = true
     try {
       const response = await cattleApi.create(data)
-      cattleList.value.unshift(response)
-      total.value += 1
-      return response
+      if (response && typeof response === 'object') {
+        ensureArray(cattleList.value).unshift(response)
+        total.value = ensureNumber(total.value) + 1
+        return response
+      } else {
+        throw new Error('Invalid response data received')
+      }
     } catch (error) {
       console.error('创建牛只失败:', error)
       throw error
@@ -133,19 +159,24 @@ export const useCattleStore = defineStore('cattle', () => {
     }
   }
 
-  // 更新牛只
+  // 更新牛只 - 使用安全数据访问
   const updateCattle = async (id: number, data: UpdateCattleRequest) => {
     loading.value = true
     try {
       const response = await cattleApi.update(id, data)
-      const index = cattleList.value.findIndex(cattle => cattle.id === id)
-      if (index !== -1) {
-        cattleList.value[index] = response
+      if (response && typeof response === 'object') {
+        const safeList = ensureArray(cattleList.value)
+        const index = safeList.findIndex(cattle => safeGet(cattle, 'id') === id)
+        if (index !== -1) {
+          safeList[index] = response
+        }
+        if (safeGet(currentCattle.value, 'id') === id) {
+          currentCattle.value = response
+        }
+        return response
+      } else {
+        throw new Error('Invalid response data received')
       }
-      if (currentCattle.value?.id === id) {
-        currentCattle.value = response
-      }
-      return response
     } catch (error) {
       console.error('更新牛只失败:', error)
       throw error
@@ -154,17 +185,18 @@ export const useCattleStore = defineStore('cattle', () => {
     }
   }
 
-  // 删除牛只
+  // 删除牛只 - 使用安全数据访问
   const deleteCattle = async (id: number) => {
     loading.value = true
     try {
       await cattleApi.delete(id)
-      const index = cattleList.value.findIndex(cattle => cattle.id === id)
+      const safeList = ensureArray(cattleList.value)
+      const index = safeList.findIndex(cattle => safeGet(cattle, 'id') === id)
       if (index !== -1) {
-        cattleList.value.splice(index, 1)
-        total.value -= 1
+        safeList.splice(index, 1)
+        total.value = Math.max(0, ensureNumber(total.value) - 1)
       }
-      if (currentCattle.value?.id === id) {
+      if (safeGet(currentCattle.value, 'id') === id) {
         currentCattle.value = null
       }
     } catch (error) {

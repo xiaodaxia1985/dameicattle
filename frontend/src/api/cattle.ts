@@ -162,7 +162,7 @@ export interface GenerateEarTagsResponse {
 }
 
 export const cattleApi = {
-  // 获取牛只列表
+  // 获取牛只列表 - 使用安全数据访问
   getList(params: CattleListParams = {}): Promise<CattleListResponse> {
     console.log('cattleApi.getList 调用，参数:', params)
     return request.get('/cattle', { params })
@@ -171,14 +171,17 @@ export const cattleApi = {
         const responseData = response.data
         console.log('cattleApi.getList 响应数据:', responseData)
         
-        // 后端返回的是 {success: true, data: [...], pagination: {...}} 格式
+        // 使用安全访问处理响应数据
+        const data = Array.isArray(responseData.data) ? responseData.data : []
+        const pagination = responseData.pagination || {}
+        
         const result: CattleListResponse = {
-          data: responseData.data || [],
-          pagination: responseData.pagination || {
-            total: 0,
-            page: 1,
-            limit: 20,
-            totalPages: 0
+          data,
+          pagination: {
+            total: typeof pagination.total === 'number' ? pagination.total : 0,
+            page: typeof pagination.page === 'number' ? Math.max(1, pagination.page) : 1,
+            limit: typeof pagination.limit === 'number' ? Math.max(1, pagination.limit) : 20,
+            totalPages: typeof pagination.totalPages === 'number' ? Math.max(1, pagination.totalPages) : Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 20)))
           }
         }
         
@@ -187,99 +190,212 @@ export const cattleApi = {
       })
       .catch(error => {
         console.error('cattleApi.getList 请求失败:', error)
-        throw error
+        // 返回安全的默认值而不是抛出错误
+        return {
+          data: [],
+          pagination: {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0
+          }
+        }
       })
   },
 
-  // 获取牛只统计
+  // 获取牛只统计 - 使用安全数据访问
   getStatistics(baseId?: number): Promise<CattleStatistics> {
     return request.get<ApiResponse<CattleStatistics>>('/cattle/statistics', { 
       params: baseId ? { baseId } : {} 
-    }).then(response => response.data.data)
+    }).then(response => {
+      const data = response.data.data || {}
+      return {
+        total: typeof data.total === 'number' ? data.total : 0,
+        health_status: Array.isArray(data.health_status) ? data.health_status : [],
+        gender: Array.isArray(data.gender) ? data.gender : [],
+        breeds: Array.isArray(data.breeds) ? data.breeds : []
+      }
+    }).catch(error => {
+      console.error('获取牛只统计失败:', error)
+      return {
+        total: 0,
+        health_status: [],
+        gender: [],
+        breeds: []
+      }
+    })
   },
 
-  // 获取牛只详情
+  // 获取牛只详情 - 使用安全数据访问
   getById(id: number): Promise<Cattle> {
     return request.get<ApiResponse<Cattle>>(`/cattle/${id}`)
-      .then(response => response.data.data)
+      .then(response => {
+        const data = response.data.data
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid cattle data received')
+        }
+        return data
+      })
   },
 
-  // 通过耳标获取牛只信息
+  // 通过耳标获取牛只信息 - 使用安全数据访问
   getByEarTag(earTag: string): Promise<Cattle> {
+    if (!earTag || typeof earTag !== 'string') {
+      return Promise.reject(new Error('Invalid ear tag provided'))
+    }
     return request.get<ApiResponse<Cattle>>(`/cattle/scan/${earTag}`)
-      .then(response => response.data.data)
+      .then(response => {
+        const data = response.data.data
+        if (!data || typeof data !== 'object') {
+          throw new Error('Invalid cattle data received')
+        }
+        return data
+      })
   },
 
-  // 创建牛只记录
+  // 创建牛只记录 - 使用安全数据访问
   create(data: CreateCattleRequest): Promise<Cattle> {
     return request.post<ApiResponse<Cattle>>('/cattle', data)
-      .then(response => response.data.data)
+      .then(response => {
+        const cattle = response.data.data
+        if (!cattle || typeof cattle !== 'object') {
+          throw new Error('Invalid cattle data received')
+        }
+        return cattle
+      })
   },
 
-  // 更新牛只信息
+  // 更新牛只信息 - 使用安全数据访问
   update(id: number, data: UpdateCattleRequest): Promise<Cattle> {
     return request.put<ApiResponse<Cattle>>(`/cattle/${id}`, data)
-      .then(response => response.data.data)
+      .then(response => {
+        const cattle = response.data.data
+        if (!cattle || typeof cattle !== 'object') {
+          throw new Error('Invalid cattle data received')
+        }
+        return cattle
+      })
   },
 
-  // 删除牛只记录
+  // 删除牛只记录 - 使用安全数据访问
   delete(id: number): Promise<void> {
+    if (!id || typeof id !== 'number') {
+      return Promise.reject(new Error('Invalid cattle ID provided'))
+    }
     return request.delete(`/cattle/${id}`)
   },
 
-  // 获取牛只生命周期事件
+  // 获取牛只生命周期事件 - 使用安全数据访问
   getEvents(cattleId: number, params?: { page?: number; limit?: number }): Promise<{ data: CattleEvent[]; pagination: any }> {
     return request.get<ApiResponse<{ data: CattleEvent[]; pagination: any }>>(`/cattle/${cattleId}/events`, { params })
-      .then(response => response.data.data)
+      .then(response => {
+        const result = response.data.data || {}
+        return {
+          data: Array.isArray(result.data) ? result.data : [],
+          pagination: result.pagination || {
+            total: 0,
+            page: 1,
+            limit: 20,
+            totalPages: 0
+          }
+        }
+      })
   },
 
-  // 获取事件类型
+  // 获取事件类型 - 使用安全数据访问
   getEventTypes(): Promise<Array<{ value: string; label: string; category: string }>> {
     return request.get<ApiResponse<Array<{ value: string; label: string; category: string }>>>('/cattle/events/types')
-      .then(response => response.data.data)
+      .then(response => {
+        const data = response.data.data
+        return Array.isArray(data) ? data : []
+      })
   },
 
-  // 添加牛只事件
+  // 添加牛只事件 - 使用安全数据访问
   addEvent(cattleId: number, event: Omit<CattleEvent, 'id' | 'cattle_id' | 'operator_id' | 'created_at' | 'updated_at'>): Promise<CattleEvent> {
     return request.post<ApiResponse<CattleEvent>>(`/cattle/${cattleId}/events`, { ...event, cattle_id: cattleId })
-      .then(response => response.data.data)
+      .then(response => {
+        const eventData = response.data.data
+        if (!eventData || typeof eventData !== 'object') {
+          throw new Error('Invalid event data received')
+        }
+        return eventData
+      })
   },
 
-  // 批量导入牛只
+  // 批量导入牛只 - 使用安全数据访问
   batchImport(file: File): Promise<BatchImportResponse> {
+    if (!file || !(file instanceof File)) {
+      return Promise.reject(new Error('Invalid file provided'))
+    }
     const formData = new FormData()
     formData.append('file', file)
     return request.post<ApiResponse<BatchImportResponse>>('/cattle/batch/import', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    }).then(response => response.data.data)
+    }).then(response => {
+      const data = response.data.data || {}
+      return {
+        imported_count: typeof data.imported_count === 'number' ? data.imported_count : 0,
+        cattle: Array.isArray(data.cattle) ? data.cattle : []
+      }
+    })
   },
 
-  // 获取导入模板
+  // 获取导入模板 - 使用安全数据访问
   getImportTemplate(): Promise<Blob> {
     return request.get('/cattle/batch/template', { 
       responseType: 'blob'
-    }).then(response => response.data)
+    }).then(response => {
+      if (response.data instanceof Blob) {
+        return response.data
+      }
+      throw new Error('Invalid template data received')
+    })
   },
 
-  // 导出牛只数据
+  // 导出牛只数据 - 使用安全数据访问
   export(params: CattleListParams = {}): Promise<Blob> {
     return request.get('/cattle/batch/export', { 
       params,
       responseType: 'blob'
-    }).then(response => response.data)
+    }).then(response => {
+      if (response.data instanceof Blob) {
+        return response.data
+      }
+      throw new Error('Invalid export data received')
+    })
   },
 
-  // 生成耳标
+  // 生成耳标 - 使用安全数据访问
   generateEarTags(data: GenerateEarTagsRequest): Promise<GenerateEarTagsResponse> {
+    if (!data || !data.prefix || !data.count) {
+      return Promise.reject(new Error('Invalid ear tag generation parameters'))
+    }
     return request.post<ApiResponse<GenerateEarTagsResponse>>('/cattle/batch/generate-tags', data)
-      .then(response => response.data.data)
+      .then(response => {
+        const result = response.data.data || {}
+        return {
+          ear_tags: Array.isArray(result.ear_tags) ? result.ear_tags : [],
+          prefix: typeof result.prefix === 'string' ? result.prefix : data.prefix,
+          count: typeof result.count === 'number' ? result.count : 0
+        }
+      })
   },
 
-  // 批量转移牛只
+  // 批量转移牛只 - 使用安全数据访问
   batchTransfer(data: BatchTransferRequest): Promise<{ transferred_count: number; cattle: Cattle[] }> {
+    if (!data || !Array.isArray(data.cattle_ids) || data.cattle_ids.length === 0) {
+      return Promise.reject(new Error('Invalid transfer parameters'))
+    }
     return request.post<ApiResponse<{ transferred_count: number; cattle: Cattle[] }>>('/cattle/batch/transfer', data)
-      .then(response => response.data.data)
+      .then(response => {
+        const result = response.data.data || {}
+        return {
+          transferred_count: typeof result.transferred_count === 'number' ? result.transferred_count : 0,
+          cattle: Array.isArray(result.cattle) ? result.cattle : []
+        }
+      })
   }
 }

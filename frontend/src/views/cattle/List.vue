@@ -11,7 +11,7 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">{{ cattleStore.total || 0 }}</div>
+              <div class="stat-number">{{ ensureNumber(cattleStore.total, 0) }}</div>
               <div class="stat-label">总数量</div>
             </div>
             <el-icon class="stat-icon"><DataAnalysis /></el-icon>
@@ -147,48 +147,52 @@
             <el-table-column prop="ear_tag" label="耳标号" width="120" fixed="left">
               <template #default="{ row }">
                 <el-link type="primary" @click="viewDetail(row)">
-                  {{ row.ear_tag }}
+                  {{ safeGet(row, 'ear_tag', '-') }}
                 </el-link>
               </template>
             </el-table-column>
-            <el-table-column prop="breed" label="品种" width="120" />
+            <el-table-column prop="breed" label="品种" width="120">
+              <template #default="{ row }">
+                {{ safeGet(row, 'breed', '-') }}
+              </template>
+            </el-table-column>
             <el-table-column prop="gender" label="性别" width="80">
               <template #default="{ row }">
-                <el-tag :type="row.gender === 'male' ? 'primary' : 'success'" size="small">
-                  {{ row.gender === 'male' ? '公' : '母' }}
+                <el-tag :type="safeGet(row, 'gender') === 'male' ? 'primary' : 'success'" size="small">
+                  {{ safeGet(row, 'gender') === 'male' ? '公' : '母' }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="weight" label="体重(kg)" width="100">
               <template #default="{ row }">
-                {{ row.weight || '-' }}
+                {{ safeGet(row, 'weight', '-') }}
               </template>
             </el-table-column>
             <el-table-column prop="age_months" label="月龄" width="80">
               <template #default="{ row }">
-                {{ row.age_months || '-' }}
+                {{ safeGet(row, 'age_months', '-') }}
               </template>
             </el-table-column>
             <el-table-column prop="health_status" label="健康状态" width="100">
               <template #default="{ row }">
-                <el-tag :type="getHealthStatusType(row.health_status)" size="small">
-                  {{ getHealthStatusText(row.health_status) }}
+                <el-tag :type="getHealthStatusType(safeGet(row, 'health_status', 'unknown'))" size="small">
+                  {{ getHealthStatusText(safeGet(row, 'health_status', 'unknown')) }}
                 </el-tag>
               </template>
             </el-table-column>
             <el-table-column prop="base" label="基地" width="120">
               <template #default="{ row }">
-                {{ row.base?.name || '-' }}
+                {{ safeGet(row, 'base.name', '-') }}
               </template>
             </el-table-column>
             <el-table-column prop="barn" label="牛棚" width="120">
               <template #default="{ row }">
-                {{ row.barn?.name || '-' }}
+                {{ safeGet(row, 'barn.name', '-') }}
               </template>
             </el-table-column>
             <el-table-column prop="created_at" label="创建时间" width="180">
               <template #default="{ row }">
-                {{ formatTime(row.created_at) }}
+                {{ formatTime(safeGet(row, 'created_at', '')) }}
               </template>
             </el-table-column>
             <el-table-column label="操作" width="200" fixed="right">
@@ -216,19 +220,19 @@
         <!-- 卡片视图 -->
         <div v-else class="card-view">
           <el-row :gutter="16">
-            <el-col :span="6" v-for="cattle in (cattleStore.cattleList || [])" :key="cattle.id">
+            <el-col :span="6" v-for="cattle in ensureArray(cattleStore.cattleList)" :key="safeGet(cattle, 'id', 'unknown')">
               <el-card class="cattle-card">
                 <div class="card-header">
-                  <span class="ear-tag">{{ cattle.ear_tag }}</span>
-                  <el-tag :type="getHealthStatusType(cattle.health_status)" size="small">
-                    {{ getHealthStatusText(cattle.health_status) }}
+                  <span class="ear-tag">{{ safeGet(cattle, 'ear_tag', '-') }}</span>
+                  <el-tag :type="getHealthStatusType(safeGet(cattle, 'health_status', 'unknown'))" size="small">
+                    {{ getHealthStatusText(safeGet(cattle, 'health_status', 'unknown')) }}
                   </el-tag>
                 </div>
                 <div class="card-content">
-                  <p><strong>品种:</strong> {{ cattle.breed }}</p>
-                  <p><strong>性别:</strong> {{ cattle.gender === 'male' ? '公' : '母' }}</p>
-                  <p><strong>体重:</strong> {{ cattle.weight || '-' }}kg</p>
-                  <p><strong>月龄:</strong> {{ cattle.age_months || '-' }}</p>
+                  <p><strong>品种:</strong> {{ safeGet(cattle, 'breed', '-') }}</p>
+                  <p><strong>性别:</strong> {{ safeGet(cattle, 'gender') === 'male' ? '公' : '母' }}</p>
+                  <p><strong>体重:</strong> {{ safeGet(cattle, 'weight', '-') }}kg</p>
+                  <p><strong>月龄:</strong> {{ safeGet(cattle, 'age_months', '-') }}</p>
                 </div>
                 <div class="card-actions">
                   <el-button size="small" @click="viewDetail(cattle)">详情</el-button>
@@ -242,10 +246,10 @@
         <!-- 分页 -->
         <div class="pagination">
           <el-pagination
-            v-model:current-page="cattleStore.searchParams.page"
-            v-model:page-size="cattleStore.searchParams.limit"
+            v-model:current-page="ensureNumber(safeGet(cattleStore.searchParams, 'page', 1), 1)"
+            v-model:page-size="ensureNumber(safeGet(cattleStore.searchParams, 'limit', 20), 20)"
             :page-sizes="[10, 20, 50, 100]"
-            :total="cattleStore.total || 0"
+            :total="ensureNumber(cattleStore.total, 0)"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -301,6 +305,7 @@ import {
 import { useCattleStore } from '@/stores/cattle'
 import { useBaseStore } from '@/stores/base'
 import type { Cattle } from '@/api/cattle'
+import { safeGet, ensureArray, ensureNumber } from '@/utils/safeAccess'
 // 组件暂时注释，需要创建
 // import CattleCard from '@/components/cattle/CattleCard.vue'
 // import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'

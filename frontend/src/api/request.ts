@@ -1,24 +1,12 @@
-import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { useAuthStore } from '@/stores/auth'
-import router from '@/router'
+/**
+ * Legacy request module - maintained for backward compatibility
+ * New code should use the unified API client from @/api/client
+ */
 
-// API response interface
-export interface ApiResponse<T = any> {
-  success: boolean
-  data: T
-  message?: string
-  error?: {
-    code: string
-    message: string
-    details?: any
-    timestamp: string
-    path: string
-  }
-}
+import { api, apiClient } from './client'
+import type { ApiResponse } from '@/utils/apiClient'
 
-// Paginated response interface
+// Re-export types for backward compatibility
 export interface PaginatedResponse<T = any> {
   success: boolean
   data: T
@@ -38,132 +26,58 @@ export interface PaginatedResponse<T = any> {
   }
 }
 
-// Create axios instance
-const request: AxiosInstance = axios.create({
-  baseURL: '/api/v1',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
-})
+// Export the ApiResponse type
+export type { ApiResponse }
 
-// Request interceptor
-request.interceptors.request.use(
-  (config) => {
-    // Add auth token
-    const token = localStorage.getItem('token')
-    if (token) {
-      config.headers = config.headers || {}
-      config.headers['Authorization'] = `Bearer ${token}`
-    }
-    
-    console.log('Making request to:', config.url, 'with headers:', config.headers)
-    
-    return config
+// Create a backward-compatible request object that uses the new API client
+const request = {
+  // GET method
+  get: <T = any>(url: string, config?: any): Promise<{ data: ApiResponse<T> }> => {
+    const params = config?.params
+    return api.get<T>(url, params).then(response => ({ data: response }))
   },
-  (error) => {
-    console.error('Request interceptor error:', error)
-    return Promise.reject(error)
-  }
-)
 
-// Response interceptor
-request.interceptors.response.use(
-  (response: AxiosResponse<ApiResponse>) => {
-    console.log('Response received:', response.status, response.data)
-    const { data } = response
-    
-    // Handle successful response
-    if (data.success) {
-      return response
-    } else {
-      // Handle business logic errors
-      const errorMessage = data.error?.message || data.message || '请求失败'
-      console.error('Business logic error:', errorMessage)
-      ElMessage.error(errorMessage)
-      return Promise.reject(new Error(errorMessage))
-    }
+  // POST method
+  post: <T = any>(url: string, data?: any, config?: any): Promise<{ data: ApiResponse<T> }> => {
+    return api.post<T>(url, data, config).then(response => ({ data: response }))
   },
-  async (error) => {
-    console.error('Response error:', error)
-    const { response, message } = error
-    
-    if (response) {
-      const { status, data } = response
-      console.error('HTTP Error:', status, data)
-      
-      switch (status) {
-        case 401:
-          // Unauthorized - token expired or invalid
-          console.log('401 Unauthorized, attempting to handle...')
-          
-          if (data?.error?.code === 'TOKEN_EXPIRED') {
-            // Try to refresh token
-            try {
-              const authStore = useAuthStore()
-              await authStore.refreshToken()
-              // Retry the original request
-              return request(error.config)
-            } catch (refreshError) {
-              // Refresh failed, redirect to login
-              ElMessageBox.alert('登录已过期，请重新登录', '提示', {
-                confirmButtonText: '确定',
-                type: 'warning'
-              }).then(() => {
-                const authStore = useAuthStore()
-                authStore.logout()
-                router.push('/login')
-              })
-            }
-          } else {
-            ElMessage.error(data?.error?.message || '认证失败，请重新登录')
-            // Don't auto-logout on first 401, let user try to login
-            if (router.currentRoute.value.path !== '/login') {
-              router.push('/login')
-            }
-          }
-          break
-          
-        case 403:
-          ElMessage.error(data?.error?.message || '权限不足')
-          break
-          
-        case 404:
-          ElMessage.error(data?.error?.message || '请求的资源不存在')
-          break
-          
-        case 422:
-          // Validation errors
-          if (data?.error?.details) {
-            const validationErrors = data.error.details
-            if (Array.isArray(validationErrors)) {
-              const errorMessages = validationErrors.map((err: any) => err.message).join('; ')
-              ElMessage.error(errorMessages)
-            } else {
-              ElMessage.error(data.error.message || '数据验证失败')
-            }
-          } else {
-            ElMessage.error(data?.error?.message || '数据验证失败')
-          }
-          break
-          
-        case 500:
-          ElMessage.error(data?.error?.message || '服务器内部错误')
-          break
-          
-        default:
-          ElMessage.error(data?.error?.message || `请求失败 (${status})`)
+
+  // PUT method
+  put: <T = any>(url: string, data?: any, config?: any): Promise<{ data: ApiResponse<T> }> => {
+    return api.put<T>(url, data, config).then(response => ({ data: response }))
+  },
+
+  // DELETE method
+  delete: <T = any>(url: string, config?: any): Promise<{ data: ApiResponse<T> }> => {
+    return api.delete<T>(url, undefined, config).then(response => ({ data: response }))
+  },
+
+  // PATCH method
+  patch: <T = any>(url: string, data?: any, config?: any): Promise<{ data: ApiResponse<T> }> => {
+    return api.patch<T>(url, data, config).then(response => ({ data: response }))
+  },
+
+  // Interceptors for backward compatibility (these are now handled by the unified client)
+  interceptors: {
+    request: {
+      use: (onFulfilled?: any, onRejected?: any) => {
+        console.warn('request.interceptors.request.use is deprecated. Use the unified API client interceptors instead.')
+        // For backward compatibility, we can add interceptors to the unified client
+        if (onFulfilled) {
+          apiClient.addRequestInterceptor(onFulfilled)
+        }
       }
-    } else if (message.includes('timeout')) {
-      ElMessage.error('请求超时，请稍后重试')
-    } else if (message.includes('Network Error')) {
-      ElMessage.error('网络连接失败，请检查后端服务是否启动')
-    } else {
-      ElMessage.error(message || '请求失败')
+    },
+    response: {
+      use: (onFulfilled?: any, onRejected?: any) => {
+        console.warn('request.interceptors.response.use is deprecated. Use the unified API client interceptors instead.')
+        // For backward compatibility, we can add interceptors to the unified client
+        if (onFulfilled || onRejected) {
+          apiClient.addResponseInterceptor({ onFulfilled, onRejected })
+        }
+      }
     }
-    
-    return Promise.reject(error)
   }
-)
+}
 
 export default request

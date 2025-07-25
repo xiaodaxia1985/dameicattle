@@ -4,7 +4,9 @@ module.exports = {
   roots: ['<rootDir>/src'],
   testMatch: [
     '**/basic.test.ts',
-    '**/comprehensive.test.ts'
+    '**/comprehensive.test.ts',
+    '**/unit/**/*.test.ts',
+    '**/integration/**/*.test.ts'
   ],
   transform: {
     '^.+\\.ts$': 'ts-jest',

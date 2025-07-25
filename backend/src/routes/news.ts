@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { NewsController } from '../controllers/NewsController';
-import { authenticate } from '../middleware/auth';
-import { authorize } from '../middleware/permission';
-import { validate } from '../middleware/validation';
+import { NewsController } from '@/controllers/NewsController';
+import { auth as authenticate } from '@/middleware/auth';
+import { authorize } from '@/middleware/permission';
+import { validate } from '@/middleware/validation';
 import {
   createNewsCategoryValidator,
   updateNewsCategoryValidator,
@@ -15,7 +15,7 @@ import {
   publishNewsArticleValidator,
   likeNewsArticleValidator,
   updateCommentStatusValidator,
-} from '../validators/news';
+} from '@/validators/news';
 
 const router = Router();
 

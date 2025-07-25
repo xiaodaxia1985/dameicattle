@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { HealthController } from '@/controllers/HealthController';
-import { authenticate } from '@/middleware/auth';
+import { auth as authenticate } from '@/middleware/auth';
 import { authorize } from '@/middleware/permission';
 import { validate } from '@/middleware/validation';
-import { dataPermission } from '@/middleware/dataPermission';
+import { dataPermissionMiddleware as dataPermission } from '@/middleware/dataPermission';
 import {
   createHealthRecordValidation,
   updateHealthRecordValidation,

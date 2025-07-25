@@ -1,10 +1,10 @@
 import { Router } from 'express';
-import { EquipmentController } from '../controllers/EquipmentController';
-import { auth } from '../middleware/auth';
-import { permission } from '../middleware/permission';
-import { dataPermission } from '../middleware/dataPermission';
-import { validateRequest } from '../middleware/validation';
-import { equipmentValidation } from '../validators/equipment';
+import { EquipmentController } from '@/controllers/EquipmentController';
+import { auth } from '@/middleware/auth';
+import { permission } from '@/middleware/permission';
+import { dataPermissionMiddleware as dataPermission } from '@/middleware/dataPermission';
+import { validateRequest } from '@/middleware/validation';
+import { equipmentValidation } from '@/validators/equipment';
 
 const router = Router();
 

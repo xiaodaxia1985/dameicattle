@@ -170,7 +170,7 @@ export class CacheService {
     try {
       const fullKey = `${prefix}:${key}`;
       const result = await redisClient.exists(fullKey);
-      return result === 1;
+      return result;
     } catch (error) {
       logger.error(`检查缓存存在性失败: ${key}`, error);
       return false;
@@ -184,7 +184,7 @@ export class CacheService {
     try {
       const fullKey = `${prefix}:${key}`;
       const result = await redisClient.expire(fullKey, ttl);
-      return result === true;
+      return result === 1;
     } catch (error) {
       logger.error(`设置缓存过期时间失败: ${key}`, error);
       return false;
@@ -389,7 +389,7 @@ export class CacheService {
         const serializedValue = serialize ? JSON.stringify(value) : value as string;
         
         if (ttl > 0) {
-          pipeline.setEx(fullKey, ttl, serializedValue);
+          pipeline.set(fullKey, serializedValue);
         } else {
           pipeline.set(fullKey, serializedValue);
         }

@@ -5,15 +5,23 @@ import compression from 'compression';
 import dotenv from 'dotenv';
 import passport from 'passport';
 
-// Types are automatically loaded by TypeScript compiler
+// Load environment variables first
+dotenv.config();
 
+// Configuration validation and management
+import { configManager } from '@/config/ConfigManager';
+import { startupChecker } from '@/config/StartupChecker';
+
+// Types are automatically loaded by TypeScript compiler
 import { logger } from '@/utils/logger';
-import { errorHandler } from '@/middleware/errorHandler';
+import { errorHandler, setupGlobalErrorHandlers } from '@/middleware/errorHandler';
 import { notFoundHandler } from '@/middleware/notFoundHandler';
+import { responseWrapper } from '@/middleware/responseWrapper';
 import { authMiddleware } from '@/middleware/auth';
 import { performanceMonitoring } from '@/middleware/performanceMonitoring';
 import { sequelize } from '@/config/database';
-import { redisClient } from '@/config/redis';
+import { redisManager } from '@/config/redis';
+import { routeRegistry } from '@/config/RouteRegistry';
 
 // Import routes
 import authRoutes from '@/routes/auth';
@@ -25,6 +33,7 @@ import baseRoutes from '@/routes/bases';
 import barnRoutes from '@/routes/barns';
 import cattleRoutes from '@/routes/cattle';
 import healthRoutes from '@/routes/health';
+import redisHealthRoutes from '@/routes/redis-health';
 import feedingRoutes from '@/routes/feeding';
 import materialRoutes from '@/routes/materials';
 import equipmentRoutes from '@/routes/equipment';
@@ -43,133 +52,173 @@ import dataIntegrationRoutes from '@/routes/dataIntegration';
 import performanceRoutes from '@/routes/performance';
 import monitoringRoutes from '@/routes/monitoring';
 import securityRoutes from '@/routes/security';
-
-// Load environment variables
-dotenv.config();
+import routeHealthRoutes from '@/routes/route-health';
+import { serveUploads } from '@/middleware/staticFileServer';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(helmet());
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:8080', 
-    'http://localhost:3000',
-    process.env.FRONTEND_URL || 'http://localhost:5173'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-}));
-app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Initialize configuration validation
+let config: any;
 
-// Passport middleware
-app.use(passport.initialize());
+// Setup middleware function (called after configuration validation)
+const setupMiddleware = (app: express.Application, config: any) => {
+  // Security and CORS middleware (must be first)
+  app.use(helmet());
+  app.use(cors({
+    origin: config.cors.origins,
+    credentials: config.cors.credentials,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  }));
 
-// Performance monitoring middleware
-app.use(performanceMonitoring);
+  // Basic middleware
+  app.use(compression());
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request logging
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`, {
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
+  // Passport middleware
+  app.use(passport.initialize());
+
+  // Performance monitoring middleware
+  app.use(performanceMonitoring);
+
+  // Response wrapper middleware (must be before routes)
+  app.use(responseWrapper);
+
+  // Request logging
+  app.use((req, res, next) => {
+    logger.info(`${req.method} ${req.path}`, {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+    next();
   });
-  next();
-});
+};
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0'
+// Setup routes function
+const setupRoutes = (app: express.Application) => {
+  // Health check endpoints
+  app.get('/health', async (req, res) => {
+    try {
+      const healthCheck = await startupChecker.performHealthCheck();
+      res.success({
+        status: healthCheck.status,
+        timestamp: healthCheck.timestamp,
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || '1.0.0',
+        checks: healthCheck.checks
+      }, 'System health check completed');
+    } catch (error) {
+      res.error('Health check failed', 500, 'HEALTH_CHECK_FAILED');
     }
   });
-});
 
-// API health check
-app.get('/api/v1/health', (req, res) => {
-  res.json({
-    success: true,
-    data: {
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: process.env.npm_package_version || '1.0.0'
+  // API health check
+  app.get('/api/v1/health', async (req, res) => {
+    try {
+      const healthCheck = await startupChecker.performHealthCheck();
+      res.success({
+        status: healthCheck.status,
+        timestamp: healthCheck.timestamp,
+        uptime: process.uptime(),
+        version: process.env.npm_package_version || '1.0.0',
+        checks: healthCheck.checks
+      }, 'API health check completed');
+    } catch (error) {
+      res.error('Health check failed', 500, 'HEALTH_CHECK_FAILED');
     }
   });
-});
 
-// Public routes (no authentication required)
-app.use('/api/v1/public', publicRoutes);
+  // Static file serving for uploads (before API routes)
+  app.use('/uploads', serveUploads);
 
-// API routes (authentication required)
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/users', authMiddleware, userRoutes);
-app.use('/api/v1/roles', authMiddleware, roleRoutes);
-app.use('/api/v1/permissions', authMiddleware, permissionRoutes);
-app.use('/api/v1/operation-logs', authMiddleware, operationLogRoutes);
-app.use('/api/v1/bases', authMiddleware, baseRoutes);
-app.use('/api/v1/barns', authMiddleware, barnRoutes);
-app.use('/api/v1/cattle', authMiddleware, cattleRoutes);
-app.use('/api/v1/health-records', authMiddleware, healthRoutes);
-app.use('/api/v1/feeding', authMiddleware, feedingRoutes);
-app.use('/api/v1/materials', authMiddleware, materialRoutes);
-app.use('/api/v1/equipment', authMiddleware, equipmentRoutes);
-app.use('/api/v1/suppliers', authMiddleware, supplierRoutes);
-app.use('/api/v1/purchase-orders', authMiddleware, purchaseOrderRoutes);
-app.use('/api/v1/purchase', authMiddleware, purchaseRoutes);
-app.use('/api/v1/customers', authMiddleware, customerRoutes);
-app.use('/api/v1/sales-orders', authMiddleware, salesOrderRoutes);
-app.use('/api/v1/news', newsRoutes);
-app.use('/api/v1/portal', authMiddleware, portalRoutes);
-app.use('/api/v1/help', helpRoutes);
-app.use('/api/v1/upload', authMiddleware, uploadRoutes);
-app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/data-integration', authMiddleware, dataIntegrationRoutes);
-app.use('/api/v1/performance', authMiddleware, performanceRoutes);
-app.use('/api/v1/monitoring', authMiddleware, monitoringRoutes);
-app.use('/api/v1/security', authMiddleware, securityRoutes);
+  // Public routes (no authentication required)
+  app.use('/api/v1/public', publicRoutes);
 
-// Error handling middleware
-app.use(notFoundHandler);
-app.use(errorHandler);
+  // API routes (authentication required)
+  app.use('/api/v1/auth', authRoutes);
+  app.use('/api/v1/users', authMiddleware, userRoutes);
+  app.use('/api/v1/roles', authMiddleware, roleRoutes);
+  app.use('/api/v1/permissions', authMiddleware, permissionRoutes);
+  app.use('/api/v1/operation-logs', authMiddleware, operationLogRoutes);
+  app.use('/api/v1/bases', authMiddleware, baseRoutes);
+  app.use('/api/v1/barns', authMiddleware, barnRoutes);
+  app.use('/api/v1/cattle', authMiddleware, cattleRoutes);
+  app.use('/api/v1/health-records', authMiddleware, healthRoutes);
+  app.use('/api/v1/health', redisHealthRoutes);
+  app.use('/api/v1/feeding', authMiddleware, feedingRoutes);
+  app.use('/api/v1/materials', authMiddleware, materialRoutes);
+  app.use('/api/v1/equipment', authMiddleware, equipmentRoutes);
+  app.use('/api/v1/suppliers', authMiddleware, supplierRoutes);
+  app.use('/api/v1/purchase-orders', authMiddleware, purchaseOrderRoutes);
+  app.use('/api/v1/purchase', authMiddleware, purchaseRoutes);
+  app.use('/api/v1/customers', authMiddleware, customerRoutes);
+  app.use('/api/v1/sales-orders', authMiddleware, salesOrderRoutes);
+  app.use('/api/v1/news', newsRoutes);
+  app.use('/api/v1/portal', authMiddleware, portalRoutes);
+  app.use('/api/v1/help', helpRoutes);
+  app.use('/api/v1/upload', authMiddleware, uploadRoutes);
+  app.use('/api/v1/dashboard', dashboardRoutes);
+  app.use('/api/v1/data-integration', authMiddleware, dataIntegrationRoutes);
+  app.use('/api/v1/performance', authMiddleware, performanceRoutes);
+  app.use('/api/v1/monitoring', authMiddleware, monitoringRoutes);
+  app.use('/api/v1/security', authMiddleware, securityRoutes);
+  app.use('/api/v1/system', authMiddleware, routeHealthRoutes);
+
+  // Error handling middleware (must be last)
+  app.use(notFoundHandler);
+  app.use(errorHandler);
+};
 
 // Database connection and server startup
 const startServer = async () => {
   try {
-    // Test database connection
-    await sequelize.authenticate();
-    logger.info('Database connection established successfully');
+    logger.info('🚀 Starting application...');
 
-    // Connect to Redis with error handling
-    try {
-      if (!redisClient.isOpen) {
-        await redisClient.connect();
-      }
-      await redisClient.ping();
-      logger.info('Redis connection established successfully');
-    } catch (error) {
-      logger.warn('Redis connection failed, continuing without cache:', error);
-      // Continue without Redis - the app should still work
+    // 0. Setup global error handlers
+    setupGlobalErrorHandlers();
+
+    // 1. Perform comprehensive startup checks
+    const startupResult = await startupChecker.performStartupChecks();
+    
+    if (!startupResult.success) {
+      logger.error('💥 Startup checks failed. Exiting...');
+      process.exit(1);
     }
 
-    // Sync database models (in development)
-    if (process.env.NODE_ENV === 'development') {
+    // 2. Get validated configuration
+    config = configManager.getConfig();
+    const PORT = config.port;
+
+    // 3. Setup middleware with validated configuration
+    setupMiddleware(app, config);
+
+    // 4. Initialize route registry
+    logger.info('Initializing route registry...');
+    await routeRegistry.scanRouteFiles();
+    const routeValidation = routeRegistry.validateRoutes();
+    
+    if (!routeValidation.success) {
+      logger.warn('Route validation issues found:', {
+        conflicts: routeValidation.conflicts,
+        errors: routeValidation.errors,
+        warnings: routeValidation.warnings
+      });
+    } else {
+      logger.info(`Route registry initialized successfully with ${routeValidation.totalRoutes} routes`);
+    }
+
+    // 5. Setup routes
+    setupRoutes(app);
+
+    // 6. Sync database models (in development)
+    if (config.environment === 'development') {
       await sequelize.sync({ alter: true });
       logger.info('Database models synchronized');
     }
 
-    // Initialize monitoring services
-    if (process.env.NODE_ENV !== 'test') {
+    // 5. Initialize monitoring services
+    if (config.environment !== 'test') {
       const { SystemMonitoringService } = await import('@/services/SystemMonitoringService');
       const { LogAnalysisService } = await import('@/services/LogAnalysisService');
       const { SecurityService } = await import('@/services/SecurityService');
@@ -180,17 +229,23 @@ const startServer = async () => {
       logger.info('Monitoring and security services initialized successfully');
     }
 
-    // Start scheduled tasks
-    if (process.env.NODE_ENV !== 'test') {
+    // 6. Start scheduled tasks
+    if (config.environment !== 'test') {
       const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
       await ScheduledTaskService.startAllTasks();
       logger.info('Scheduled tasks started successfully');
     }
 
-    // Start server
+    // 7. Start server
     app.listen(PORT, () => {
-      logger.info(`Server is running on port ${PORT}`);
-      logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`🎉 Server is running on port ${PORT}`);
+      logger.info(`Environment: ${config.environment}`);
+      logger.info(`Frontend URL: ${config.frontendUrl}`);
+      
+      if (config.logLevel === 'debug') {
+        logger.debug('Configuration Report:');
+        logger.debug(configManager.generateReport());
+      }
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -209,7 +264,7 @@ process.on('SIGTERM', async () => {
   }
   
   await sequelize.close();
-  await redisClient.quit();
+  await redisManager.shutdown();
   process.exit(0);
 });
 
@@ -223,7 +278,7 @@ process.on('SIGINT', async () => {
   }
   
   await sequelize.close();
-  await redisClient.quit();
+  await redisManager.shutdown();
   process.exit(0);
 });
 
