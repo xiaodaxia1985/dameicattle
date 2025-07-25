@@ -1,72 +1,135 @@
-import request from '@/utils/request'
+import { api } from '@/utils/apiClient'
 
 export const materialApi = {
   // 获取统计数据
-  getStatistics() {
-    return request({
-      url: '/api/materials/statistics',
-      method: 'GET'
-    })
+  async getStatistics() {
+    try {
+      const response = await api.get('/materials/statistics')
+      return response.success ? response.data : {}
+    } catch (error) {
+      console.error('获取统计数据失败:', error)
+      throw error
+    }
   },
 
   // 获取物资列表
-  getMaterials(params = {}) {
-    return request({
-      url: '/api/materials',
-      method: 'GET',
-      data: params
-    })
+  async getMaterials(params = {}) {
+    try {
+      const response = await api.get('/materials', params)
+      return response.success ? {
+        data: response.data || [],
+        pagination: response.pagination
+      } : { data: [], pagination: null }
+    } catch (error) {
+      console.error('获取物资列表失败:', error)
+      throw error
+    }
   },
 
   // 获取库存信息
-  getInventory(params = {}) {
-    return request({
-      url: '/api/materials/inventory',
-      method: 'GET',
-      data: params
-    })
+  async getInventory(params = {}) {
+    try {
+      const response = await api.get('/materials/inventory', params)
+      return response.success ? {
+        data: response.data || [],
+        pagination: response.pagination
+      } : { data: [], pagination: null }
+    } catch (error) {
+      console.error('获取库存信息失败:', error)
+      throw error
+    }
   },
 
   // 获取交易记录
-  getTransactions(params = {}) {
-    return request({
-      url: '/api/materials/transactions',
-      method: 'GET',
-      data: params
-    })
+  async getTransactions(params = {}) {
+    try {
+      const response = await api.get('/materials/transactions', params)
+      return response.success ? {
+        data: response.data || [],
+        pagination: response.pagination
+      } : { data: [], pagination: null }
+    } catch (error) {
+      console.error('获取交易记录失败:', error)
+      throw error
+    }
   },
 
   // 创建交易记录
-  createTransaction(data) {
-    return request({
-      url: '/api/materials/transactions',
-      method: 'POST',
-      data
-    })
+  async createTransaction(data) {
+    try {
+      const response = await api.post('/materials/transactions', data)
+      if (response.success) {
+        uni.showToast({
+          title: '交易记录创建成功',
+          icon: 'success'
+        })
+        return response.data
+      } else {
+        throw new Error(response.message || '创建交易记录失败')
+      }
+    } catch (error) {
+      console.error('创建交易记录失败:', error)
+      throw error
+    }
   },
 
   // 获取预警信息
-  getAlerts(params = {}) {
-    return request({
-      url: '/api/materials/alerts',
-      method: 'GET',
-      data: params
-    })
+  async getAlerts(params = {}) {
+    try {
+      const response = await api.get('/materials/alerts', params)
+      return response.success ? {
+        data: response.data || [],
+        pagination: response.pagination
+      } : { data: [], pagination: null }
+    } catch (error) {
+      console.error('获取预警信息失败:', error)
+      throw error
+    }
   },
 
   // 解决预警
-  resolveAlert(alertId) {
-    return request({
-      url: `/api/materials/alerts/${alertId}/resolve`,
-      method: 'POST'
-    })
+  async resolveAlert(alertId) {
+    try {
+      const response = await api.post(`/materials/alerts/${alertId}/resolve`)
+      if (response.success) {
+        uni.showToast({
+          title: '预警已解决',
+          icon: 'success'
+        })
+        return response.data
+      } else {
+        throw new Error(response.message || '解决预警失败')
+      }
+    } catch (error) {
+      console.error('解决预警失败:', error)
+      throw error
+    }
   },
 
   // 同步离线数据
-  syncOfflineData() {
-    return request({
-      url: '/api/materials/sync',
-      method: 'POST'
-    })
+  async syncOfflineData() {
+    try {
+      uni.showLoading({
+        title: '同步中...'
+      })
+      
+      const response = await api.post('/materials/sync')
+      
+      uni.hideLoading()
+      
+      if (response.success) {
+        uni.showToast({
+          title: '数据同步成功',
+          icon: 'success'
+        })
+        return response.data
+      } else {
+        throw new Error(response.message || '数据同步失败')
+      }
+    } catch (error) {
+      uni.hideLoading()
+      console.error('同步离线数据失败:', error)
+      throw error
+    }
   }
 }

@@ -1,9 +1,11 @@
 // 微信小程序认证工具类
-import { apiService } from './request.js'
+import { api } from './apiClient.js'
 
 class WechatAuthService {
   constructor() {
     this.isLoggingIn = false
+    this.isRefreshing = false
+    this.refreshPromise = null
   }
 
   /**
@@ -34,7 +36,7 @@ class WechatAuthService {
       }
 
       // 3. 发送到后端验证
-      const response = await apiService.post('/auth/wechat-login', {
+      const response = await api.post('/auth/wechat-login', {
         code: loginRes.code,
         userInfo: userInfo
       })
@@ -111,7 +113,7 @@ class WechatAuthService {
    */
   async bindUserToBase(baseId, inviteCode) {
     try {
-      const response = await apiService.post('/auth/bind-user', {
+      const response = await api.post('/auth/bind-user', {
         baseId,
         inviteCode
       })
@@ -140,7 +142,7 @@ class WechatAuthService {
    */
   async getUserProfile() {
     try {
-      const response = await apiService.get('/auth/profile')
+      const response = await api.get('/auth/profile')
       
       if (response.success) {
         // 更新本地存储
@@ -230,11 +232,29 @@ class WechatAuthService {
    * @returns {Promise} 刷新结果
    */
   async refreshToken() {
+    if (this.isRefreshing) {
+      return this.refreshPromise
+    }
+
+    this.isRefreshing = true
+    this.refreshPromise = this._performTokenRefresh()
+
     try {
-      const response = await apiService.post('/auth/refresh')
+      const result = await this.refreshPromise
+      return result
+    } finally {
+      this.isRefreshing = false
+      this.refreshPromise = null
+    }
+  }
+
+  async _performTokenRefresh() {
+    try {
+      const response = await api.post('/auth/refresh')
       
       if (response.success && response.data.token) {
         uni.setStorageSync('token', response.data.token)
+        uni.setStorageSync('loginTime', Date.now())
         return response.data.token
       } else {
         throw new Error('Token刷新失败')
@@ -253,7 +273,7 @@ class WechatAuthService {
   async logout() {
     try {
       // 调用后端登出接口
-      await apiService.post('/auth/logout')
+      await api.post('/auth/logout')
     } catch (error) {
       console.warn('后端登出失败:', error)
     } finally {
@@ -305,7 +325,7 @@ class WechatAuthService {
    */
   async getAvailableBases() {
     try {
-      const response = await apiService.get('/bases?available=true')
+      const response = await api.get('/bases?available=true')
       
       if (response.success) {
         return response.data
@@ -326,7 +346,7 @@ class WechatAuthService {
    */
   async validateInviteCode(inviteCode, baseId) {
     try {
-      const response = await apiService.post('/auth/validate-invite', {
+      const response = await api.post('/auth/validate-invite', {
         inviteCode,
         baseId
       })

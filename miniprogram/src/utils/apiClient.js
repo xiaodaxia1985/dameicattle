@@ -21,6 +21,20 @@ const config = {
   }
 }
 
+// Standardized API response format
+const StandardApiResponse = {
+  success: false,
+  data: null,
+  message: '',
+  errors: [],
+  pagination: null,
+  meta: {
+    timestamp: '',
+    requestId: '',
+    version: '1.0'
+  }
+}
+
 // Get current environment config
 const currentEnv = process.env.NODE_ENV === 'production' ? 'production' : 'development'
 const apiConfig = config[currentEnv]
@@ -211,19 +225,43 @@ class UnifiedApiClient {
   normalizeResponse(data, status) {
     // If response already follows our standard format
     if (data && typeof data === 'object' && 'success' in data) {
+      // Ensure meta information is present
+      if (!data.meta) {
+        data.meta = {
+          timestamp: new Date().toISOString(),
+          requestId: this.generateRequestId(),
+          version: '1.0'
+        }
+      }
       return data
     }
 
-    // Normalize non-standard responses
-    return {
+    // Normalize non-standard responses to standard format
+    const standardResponse = {
       success: status >= 200 && status < 300,
       data: data,
+      message: '',
+      errors: [],
+      pagination: null,
       meta: {
         timestamp: new Date().toISOString(),
         requestId: this.generateRequestId(),
         version: '1.0'
       }
     }
+
+    // Handle array responses (likely paginated lists)
+    if (Array.isArray(data)) {
+      standardResponse.data = data
+      standardResponse.pagination = {
+        total: data.length,
+        page: 1,
+        limit: data.length,
+        totalPages: 1
+      }
+    }
+
+    return standardResponse
   }
 
   normalizeError(error) {

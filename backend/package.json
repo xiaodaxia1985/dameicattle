@@ -5,6 +5,7 @@
   "main": "dist/app.js",
   "scripts": {
     "dev": "nodemon -r tsconfig-paths/register src/app.ts",
+    "dev:debug": "nodemon --inspect=0.0.0.0:9229 -r tsconfig-paths/register src/app.ts",
     "build": "tsc",
     "start": "node -r tsconfig-paths/register dist/app.js",
     "test": "jest",
@@ -35,6 +36,7 @@
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/node-cron": "^3.0.11",
+    "@types/uuid": "^9.0.7",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
@@ -56,6 +58,7 @@
     "pg-hstore": "^2.3.4",
     "redis": "^4.6.10",
     "sequelize": "^6.35.2",
+    "uuid": "^9.0.1",
     "winston": "^3.11.0",
     "xlsx": "^0.18.5"
   },

@@ -57,7 +57,7 @@ export class ConfigValidator {
   private static instance: ConfigValidator;
   private validatedConfig: SystemConfig | null = null;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ConfigValidator {
     if (!ConfigValidator.instance) {
@@ -74,24 +74,24 @@ export class ConfigValidator {
       NODE_ENV: Joi.string()
         .valid('development', 'test', 'production')
         .default('development'),
-      
+
       PORT: Joi.number()
         .port()
         .optional(),
-      
+
       FRONTEND_URL: Joi.string()
         .uri()
         .default('http://localhost:5173'),
-      
+
       // Database configuration
       DB_HOST: Joi.string()
         .hostname()
         .default('localhost'),
-      
+
       DB_PORT: Joi.number()
         .port()
         .default(5432),
-      
+
       DB_NAME: Joi.string()
         .min(1)
         .required()
@@ -99,7 +99,7 @@ export class ConfigValidator {
           'any.required': 'Database name (DB_NAME) is required',
           'string.empty': 'Database name (DB_NAME) cannot be empty'
         }),
-      
+
       DB_USER: Joi.string()
         .min(1)
         .required()
@@ -107,7 +107,7 @@ export class ConfigValidator {
           'any.required': 'Database user (DB_USER) is required',
           'string.empty': 'Database user (DB_USER) cannot be empty'
         }),
-      
+
       DB_PASSWORD: Joi.string()
         .min(1)
         .required()
@@ -115,35 +115,35 @@ export class ConfigValidator {
           'any.required': 'Database password (DB_PASSWORD) is required',
           'string.empty': 'Database password (DB_PASSWORD) cannot be empty'
         }),
-      
+
       DB_SSL: Joi.boolean()
         .default(false),
-      
+
       DB_POOL_SIZE: Joi.number()
         .integer()
         .min(1)
         .max(50)
         .default(10),
-      
+
       // Redis configuration
       REDIS_HOST: Joi.string()
         .hostname()
         .default('localhost'),
-      
+
       REDIS_PORT: Joi.number()
         .port()
         .default(6379),
-      
+
       REDIS_PASSWORD: Joi.string()
         .allow('')
         .optional(),
-      
+
       REDIS_DB: Joi.number()
         .integer()
         .min(0)
         .max(15)
         .default(0),
-      
+
       // JWT configuration
       JWT_SECRET: Joi.string()
         .min(32)
@@ -152,55 +152,55 @@ export class ConfigValidator {
           'any.required': 'JWT secret (JWT_SECRET) is required',
           'string.min': 'JWT secret (JWT_SECRET) must be at least 32 characters long for security'
         }),
-      
+
       JWT_EXPIRES_IN: Joi.string()
         .pattern(/^(\d+[smhd]|\d+)$/)
         .default('24h')
         .messages({
           'string.pattern.base': 'JWT_EXPIRES_IN must be in format like "24h", "30m", "7d", etc.'
         }),
-      
+
       // Upload configuration
       UPLOAD_PATH: Joi.string()
         .default('uploads'),
-      
+
       MAX_FILE_SIZE: Joi.number()
         .integer()
         .min(1024) // 1KB minimum
         .max(100 * 1024 * 1024) // 100MB maximum
         .default(10 * 1024 * 1024), // 10MB default
-      
+
       ALLOWED_FILE_TYPES: Joi.string()
         .default('jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx'),
-      
+
       // Logging configuration
       LOG_LEVEL: Joi.string()
         .valid('error', 'warn', 'info', 'debug')
         .optional(),
-      
+
       // Optional email configuration
       SMTP_HOST: Joi.string()
         .hostname()
         .optional(),
-      
+
       SMTP_PORT: Joi.number()
         .port()
         .optional(),
-      
+
       SMTP_USER: Joi.string()
         .optional(),
-      
+
       SMTP_PASS: Joi.string()
         .optional(),
-      
+
       SMTP_FROM: Joi.string()
         .email()
         .optional(),
-      
+
       // Optional WeChat configuration
       WECHAT_APP_ID: Joi.string()
         .optional(),
-      
+
       WECHAT_APP_SECRET: Joi.string()
         .optional()
     });
@@ -211,35 +211,35 @@ export class ConfigValidator {
    */
   private applyEnvironmentDefaults(validatedValues: any): any {
     const env = validatedValues.NODE_ENV;
-    
+
     // Set defaults based on environment
     const defaults = {
       PORT: validatedValues.PORT,
       LOG_LEVEL: validatedValues.LOG_LEVEL
     };
-    
+
     switch (env) {
       case 'development':
         defaults.LOG_LEVEL = validatedValues.LOG_LEVEL || 'debug';
         defaults.PORT = validatedValues.PORT || 3000;
         break;
-      
+
       case 'test':
         defaults.LOG_LEVEL = validatedValues.LOG_LEVEL || 'error';
         defaults.PORT = validatedValues.PORT || 3001;
         break;
-      
+
       case 'production':
         defaults.LOG_LEVEL = validatedValues.LOG_LEVEL || 'warn';
         defaults.PORT = validatedValues.PORT || 3000;
         break;
-      
+
       default:
         defaults.LOG_LEVEL = validatedValues.LOG_LEVEL || 'info';
         defaults.PORT = validatedValues.PORT || 3000;
         break;
     }
-    
+
     return {
       ...validatedValues,
       ...defaults
@@ -258,13 +258,13 @@ export class ConfigValidator {
           'http://localhost:3000',
           frontendUrl
         ];
-      
+
       case 'test':
         return ['http://localhost:3001'];
-      
+
       case 'production':
         return []; // Should be set explicitly in production
-      
+
       default:
         return [frontendUrl];
     }
@@ -280,7 +280,7 @@ export class ConfigValidator {
     try {
       // Get validation schema
       const schema = this.getValidationSchema();
-      
+
       // Validate environment variables
       const { error, value } = schema.validate(process.env, {
         allowUnknown: true,
@@ -304,7 +304,7 @@ export class ConfigValidator {
 
       // Build system configuration
       const config = this.buildSystemConfig(value);
-      
+
       // Perform additional validation checks
       this.performAdditionalValidation(config, warnings, errors);
 
@@ -323,7 +323,7 @@ export class ConfigValidator {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown validation error';
       errors.push(`Configuration validation failed: ${errorMessage}`);
-      
+
       return {
         isValid: false,
         errors,
@@ -337,10 +337,10 @@ export class ConfigValidator {
    */
   private buildSystemConfig(envVars: any): SystemConfig {
     const environment = envVars.NODE_ENV as 'development' | 'test' | 'production';
-    
+
     // Apply environment-specific defaults
     const finalValues = this.applyEnvironmentDefaults(envVars);
-    
+
     return {
       environment,
       port: finalValues.PORT,
@@ -526,7 +526,7 @@ export class ConfigValidator {
     }
 
     logger.info('✅ Configuration validation passed');
-    
+
     // Log configuration report in debug mode
     if (result.config?.logLevel === 'debug') {
       logger.debug('Configuration Report:');

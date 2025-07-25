@@ -70,7 +70,7 @@ export class DatabaseManager {
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private config: DatabaseConfig | null = null;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): DatabaseManager {
     if (!DatabaseManager.instance) {
@@ -110,7 +110,7 @@ export class DatabaseManager {
       password: dbConfig.password,
       dialect: 'postgres',
       ssl: dbConfig.ssl || false,
-      logging: (environment === 'development' && logLevel === 'debug') ? 
+      logging: (environment === 'development' && logLevel === 'debug') ?
         (msg: string) => logger.debug(`[DB Query] ${msg}`) : false,
       pool: {
         max: dbConfig.poolSize || 10,
@@ -185,34 +185,34 @@ export class DatabaseManager {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         this.connectionStatus.connectionAttempts = attempt;
-        
+
         logger.info(`Attempting database connection (${attempt}/${maxRetries})...`);
-        
+
         await this.sequelize.authenticate();
-        
+
         this.connectionStatus.isConnected = true;
         this.connectionStatus.lastConnected = new Date();
         this.connectionStatus.lastError = undefined;
-        
+
         logger.info('Database connection established successfully');
         return;
-        
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         this.connectionStatus.lastError = errorMessage;
-        
+
         logger.warn(`Database connection attempt ${attempt} failed: ${errorMessage}`);
-        
+
         if (attempt === maxRetries) {
           this.connectionStatus.isConnected = false;
           logger.error('All database connection attempts failed');
           throw new Error(`Database connection failed after ${maxRetries} attempts: ${errorMessage}`);
         }
-        
+
         // Calculate exponential backoff delay
         const delay = baseDelay * Math.pow(exponent, attempt - 1);
         logger.info(`Retrying database connection in ${delay}ms...`);
-        
+
         await this.sleep(delay);
       }
     }
@@ -236,12 +236,12 @@ export class DatabaseManager {
       if (!this.sequelize) {
         return false;
       }
-      
+
       await this.sequelize.authenticate();
       this.connectionStatus.isConnected = true;
       this.connectionStatus.lastConnected = new Date();
       return true;
-      
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.connectionStatus.isConnected = false;
@@ -287,7 +287,7 @@ export class DatabaseManager {
       try {
         const [results] = await this.sequelize.query('SELECT version() as version, now() as current_time');
         const dbInfo = (results as any)[0];
-        
+
         if (dbInfo?.version) {
           result.details.version = dbInfo.version.split(' ')[0] + ' ' + dbInfo.version.split(' ')[1];
           result.details.query = true;
@@ -302,7 +302,7 @@ export class DatabaseManager {
       try {
         const poolStatus = this.getPoolStatus();
         result.details.poolHealth = poolStatus.total > 0;
-        
+
         // Update connection status with pool info
         this.connectionStatus.poolStatus = poolStatus;
       } catch (error) {
@@ -332,7 +332,7 @@ export class DatabaseManager {
 
     try {
       const pool = (this.sequelize as any).connectionManager?.pool;
-      
+
       if (pool) {
         return {
           total: pool.size || 0,
@@ -361,16 +361,16 @@ export class DatabaseManager {
   public async reconnect(): Promise<void> {
     try {
       logger.info('Attempting to reconnect to database...');
-      
+
       if (this.sequelize) {
         await this.sequelize.close();
       }
-      
+
       this.connectionStatus.isConnected = false;
       this.connectionStatus.connectionAttempts = 0;
-      
+
       await this.createConnection();
-      
+
       logger.info('Database reconnection successful');
     } catch (error) {
       logger.error('Database reconnection failed:', error);
@@ -391,17 +391,17 @@ export class DatabaseManager {
     this.healthCheckInterval = setInterval(async () => {
       try {
         const healthResult = await this.performHealthCheck();
-        
+
         if (healthResult.status === 'unhealthy' && this.connectionStatus.isConnected) {
           logger.warn('Database health check failed, attempting reconnection...');
           await this.reconnect();
         }
-        
+
         // Log health status periodically (every 5 minutes)
         if (Date.now() % 300000 < 30000) {
           logger.info(`Database health: ${healthResult.status} (${healthResult.responseTime}ms)`);
         }
-        
+
       } catch (error) {
         logger.error('Health monitoring error:', error);
       }
@@ -424,23 +424,23 @@ export class DatabaseManager {
   public async shutdown(): Promise<void> {
     try {
       logger.info('Shutting down database manager...');
-      
+
       // Stop health monitoring
       this.stopHealthMonitoring();
-      
+
       // Clear retry timeouts
       this.retryTimeouts.forEach(timeout => clearTimeout(timeout));
       this.retryTimeouts = [];
-      
+
       // Close database connection
       if (this.sequelize) {
         await this.sequelize.close();
         this.sequelize = null;
       }
-      
+
       this.connectionStatus.isConnected = false;
       logger.info('Database manager shutdown complete');
-      
+
     } catch (error) {
       logger.error('Error during database manager shutdown:', error);
       throw error;
@@ -458,25 +458,25 @@ export class DatabaseManager {
       try {
         return await operation();
       } catch (error) {
-        const isConnectionError = error instanceof ConnectionError || 
-                                error instanceof TimeoutError ||
-                                (error instanceof Error && error.message.includes('connection'));
-        
+        const isConnectionError = error instanceof ConnectionError ||
+          error instanceof TimeoutError ||
+          (error instanceof Error && error.message.includes('connection'));
+
         if (isConnectionError && attempt < maxRetries) {
           logger.warn(`Database operation failed (attempt ${attempt}/${maxRetries}), retrying...`);
-          
+
           // Try to reconnect
           await this.reconnect();
-          
+
           // Wait before retry
           await this.sleep(1000 * attempt);
           continue;
         }
-        
+
         throw error;
       }
     }
-    
+
     throw new Error('This should never be reached');
   }
 

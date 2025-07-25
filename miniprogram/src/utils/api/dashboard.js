@@ -1,77 +1,67 @@
-import request from '../request.js'
+// 仪表板API
+import { api } from '../apiClient'
 
-/**
- * 仪表盘API接口
- */
 export const dashboardApi = {
-  // 获取关键业务指标
-  async getKeyIndicators(params = {}) {
-    return await request({
-      url: '/dashboard/indicators',
-      method: 'GET',
-      data: params
-    })
+  // 获取仪表板统计数据
+  async getStatistics() {
+    try {
+      const response = await api.get('/dashboard/statistics')
+      return response.success ? response.data : {}
+    } catch (error) {
+      console.error('获取仪表板统计数据失败:', error)
+      throw error
+    }
   },
 
-  // 获取趋势分析
-  async getTrendAnalysis(params = {}) {
-    return await request({
-      url: '/dashboard/trends',
-      method: 'GET',
-      data: params
-    })
+  // 获取最近活动
+  async getRecentActivities(params = {}) {
+    try {
+      const response = await api.get('/dashboard/activities', params)
+      return response.success ? {
+        data: response.data || [],
+        pagination: response.pagination
+      } : { data: [], pagination: null }
+    } catch (error) {
+      console.error('获取最近活动失败:', error)
+      throw error
+    }
   },
 
-  // 获取实时统计
-  async getRealTimeStats(params = {}) {
-    return await request({
-      url: '/dashboard/realtime',
-      method: 'GET',
-      data: params
-    })
+  // 获取图表数据
+  async getChartData(type, params = {}) {
+    try {
+      const response = await api.get(`/dashboard/charts/${type}`, params)
+      return response.success ? response.data : {}
+    } catch (error) {
+      console.error('获取图表数据失败:', error)
+      throw error
+    }
   },
 
-  // 获取待处理任务
-  async getPendingTasks(params = {}) {
-    return await request({
-      url: '/dashboard/tasks',
-      method: 'GET',
-      data: params
-    })
+  // 获取预警信息
+  async getAlerts(params = {}) {
+    try {
+      const response = await api.get('/dashboard/alerts', params)
+      return response.success ? {
+        data: response.data || [],
+        pagination: response.pagination
+      } : { data: [], pagination: null }
+    } catch (error) {
+      console.error('获取预警信息失败:', error)
+      throw error
+    }
   },
 
-  // 获取对比分析
-  async getComparativeAnalysis(params = {}) {
-    return await request({
-      url: '/dashboard/compare',
-      method: 'GET',
-      data: params
-    })
-  },
-
-  // 获取基地统计数据
-  async getBaseStats(baseId) {
-    return await request({
-      url: `/bases/${baseId}/stats`,
-      method: 'GET'
-    })
-  },
-
-  // 获取健康状态分布
-  async getHealthDistribution(params = {}) {
-    return await request({
-      url: '/dashboard/health-distribution',
-      method: 'GET',
-      data: params
-    })
-  },
-
-  // 获取饲喂统计
-  async getFeedingStats(params = {}) {
-    return await request({
-      url: '/dashboard/feeding-stats',
-      method: 'GET',
-      data: params
-    })
+  // 获取天气信息
+  async getWeatherInfo() {
+    try {
+      const response = await api.get('/dashboard/weather')
+      return response.success ? response.data : {}
+    } catch (error) {
+      console.error('获取天气信息失败:', error)
+      throw error
+    }
   }
 }
+
+export default dashboardApi

@@ -6,7 +6,8 @@ import dotenv from 'dotenv';
 import passport from 'passport';
 
 // Load environment variables first
-dotenv.config();
+const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
+dotenv.config({ path: envFile });
 
 // Configuration validation and management
 import { configManager } from '@/config/ConfigManager';
@@ -19,9 +20,22 @@ import { notFoundHandler } from '@/middleware/notFoundHandler';
 import { responseWrapper } from '@/middleware/responseWrapper';
 import { authMiddleware } from '@/middleware/auth';
 import { performanceMonitoring } from '@/middleware/performanceMonitoring';
+import { 
+  requestLoggingMiddleware, 
+  errorLoggingMiddleware, 
+  slowQueryLoggingMiddleware,
+  securityLoggingMiddleware 
+} from '@/middleware/requestLogging';
 import { sequelize } from '@/config/database';
 import { redisManager } from '@/config/redis';
 import { routeRegistry } from '@/config/RouteRegistry';
+
+// Error recovery system imports
+import { 
+  initializeRecoveryContext, 
+  requestRecovery, 
+  errorRecoveryHandler 
+} from '@/middleware/errorRecoveryMiddleware';
 
 // Import routes
 import authRoutes from '@/routes/auth';
@@ -53,6 +67,7 @@ import performanceRoutes from '@/routes/performance';
 import monitoringRoutes from '@/routes/monitoring';
 import securityRoutes from '@/routes/security';
 import routeHealthRoutes from '@/routes/route-health';
+import errorRecoveryRoutes from '@/routes/error-recovery';
 import { serveUploads } from '@/middleware/staticFileServer';
 
 const app = express();
@@ -68,7 +83,7 @@ const setupMiddleware = (app: express.Application, config: any) => {
     origin: config.cors.origins,
     credentials: config.cors.credentials,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Request-ID'],
   }));
 
   // Basic middleware
@@ -79,20 +94,26 @@ const setupMiddleware = (app: express.Application, config: any) => {
   // Passport middleware
   app.use(passport.initialize());
 
+  // Request logging middleware (must be early to capture all requests)
+  app.use(requestLoggingMiddleware);
+
+  // Security logging middleware
+  app.use(securityLoggingMiddleware);
+
+  // Error recovery context initialization (must be early)
+  app.use(initializeRecoveryContext);
+
   // Performance monitoring middleware
   app.use(performanceMonitoring);
+
+  // Slow query logging middleware (5 second threshold)
+  app.use(slowQueryLoggingMiddleware(5000));
 
   // Response wrapper middleware (must be before routes)
   app.use(responseWrapper);
 
-  // Request logging
-  app.use((req, res, next) => {
-    logger.info(`${req.method} ${req.path}`, {
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-    });
-    next();
-  });
+  // Request recovery middleware (after response wrapper)
+  app.use(requestRecovery);
 };
 
 // Setup routes function
@@ -164,9 +185,12 @@ const setupRoutes = (app: express.Application) => {
   app.use('/api/v1/monitoring', authMiddleware, monitoringRoutes);
   app.use('/api/v1/security', authMiddleware, securityRoutes);
   app.use('/api/v1/system', authMiddleware, routeHealthRoutes);
+  app.use('/api/v1/error-recovery', errorRecoveryRoutes);
 
   // Error handling middleware (must be last)
   app.use(notFoundHandler);
+  app.use(errorLoggingMiddleware);
+  app.use(errorRecoveryHandler);
   app.use(errorHandler);
 };
 
@@ -229,6 +253,20 @@ const startServer = async () => {
       logger.info('Monitoring and security services initialized successfully');
     }
 
+    // 6. Initialize error recovery services
+    if (config.environment !== 'test') {
+      const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
+      const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
+      const { selfHealingService } = await import('@/services/SelfHealingService');
+      
+      // Start monitoring for automatic recovery
+      errorRecoveryService.startMonitoring(30000); // Check every 30 seconds
+      serviceDegradationManager.startMonitoring(30000);
+      selfHealingService.startMonitoring(60000); // Check every minute
+      
+      logger.info('Error recovery services initialized and monitoring started');
+    }
+
     // 6. Start scheduled tasks
     if (config.environment !== 'test') {
       const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
@@ -263,6 +301,18 @@ process.on('SIGTERM', async () => {
     ScheduledTaskService.stopAllTasks();
   }
   
+  // Stop error recovery services
+  if (process.env.NODE_ENV !== 'test') {
+    const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
+    const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
+    const { selfHealingService } = await import('@/services/SelfHealingService');
+    
+    errorRecoveryService.shutdown();
+    serviceDegradationManager.shutdown();
+    selfHealingService.shutdown();
+    logger.info('Error recovery services shutdown complete');
+  }
+  
   await sequelize.close();
   await redisManager.shutdown();
   process.exit(0);
@@ -275,6 +325,18 @@ process.on('SIGINT', async () => {
   if (process.env.NODE_ENV !== 'test') {
     const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
     ScheduledTaskService.stopAllTasks();
+  }
+  
+  // Stop error recovery services
+  if (process.env.NODE_ENV !== 'test') {
+    const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
+    const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
+    const { selfHealingService } = await import('@/services/SelfHealingService');
+    
+    errorRecoveryService.shutdown();
+    serviceDegradationManager.shutdown();
+    selfHealingService.shutdown();
+    logger.info('Error recovery services shutdown complete');
   }
   
   await sequelize.close();

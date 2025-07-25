@@ -1,211 +1,427 @@
 import fs from 'fs';
 import path from 'path';
-import { logger } from '@/utils/logger';
-import { redisClient } from '@/config/redis';
+import { logger, createContextLogger } from '@/utils/logger';
 
 export interface LogEntry {
   timestamp: Date;
-  level: 'error' | 'warn' | 'info' | 'debug';
+  level: string;
   message: string;
-  meta?: any;
-  source?: string;
-  user_id?: number;
-  ip_address?: string;
-  request_id?: string;
-}
-
-export interface LogAnalysis {
-  total_entries: number;
-  level_distribution: Record<string, number>;
-  error_patterns: Array<{
-    pattern: string;
-    count: number;
-    examples: string[];
-  }>;
-  top_error_messages: Array<{
-    message: string;
-    count: number;
-    first_seen: Date;
-    last_seen: Date;
-  }>;
-  hourly_distribution: Array<{
-    hour: number;
-    count: number;
-    error_count: number;
-  }>;
-  user_activity: Array<{
-    user_id: number;
-    action_count: number;
-    error_count: number;
-  }>;
-  performance_insights: {
-    slow_operations: Array<{
-      operation: string;
-      avg_duration: number;
-      count: number;
-    }>;
-    high_frequency_operations: Array<{
-      operation: string;
-      count: number;
-      error_rate: number;
-    }>;
-  };
+  service?: string;
+  module?: string;
+  requestId?: string;
+  userId?: string;
+  action?: string;
+  metadata?: Record<string, any>;
+  stack?: string;
 }
 
 export interface LogSearchOptions {
-  level?: 'error' | 'warn' | 'info' | 'debug';
-  start_time?: Date;
-  end_time?: Date;
-  message_pattern?: string;
-  user_id?: number;
-  ip_address?: string;
-  source?: string;
+  level?: string;
+  startDate?: Date;
+  endDate?: Date;
+  module?: string;
+  userId?: string;
+  requestId?: string;
+  keyword?: string;
   limit?: number;
   offset?: number;
+}
+
+export interface LogStatistics {
+  total_entries: number;
+  level_distribution: Record<string, number>;
+  module_distribution: Record<string, number>;
+  error_rate: number;
+  top_errors: Array<{ message: string; count: number }>;
+  hourly_distribution: Array<{ hour: number; count: number }>;
+  recent_trends: Array<{ timestamp: Date; count: number }>;
 }
 
 export interface LogAlert {
   id: string;
   name: string;
   description: string;
-  conditions: {
-    level?: string;
-    message_pattern?: string;
-    frequency_threshold?: number;
-    time_window_minutes?: number;
-  };
+  pattern: string;
+  level?: string;
+  threshold: number;
+  time_window_minutes: number;
   enabled: boolean;
   last_triggered?: Date;
   notification_channels: string[];
 }
 
 export class LogAnalysisService {
-  private static logBuffer: LogEntry[] = [];
+  private static readonly LOG_DIR = path.join(process.cwd(), 'logs');
   private static logAlerts: LogAlert[] = [];
-  private static readonly MAX_BUFFER_SIZE = 10000;
-  private static readonly LOG_RETENTION_DAYS = 30;
+  private static alertCounts: Map<string, { count: number; windowStart: Date }> = new Map();
+  private static initialized = false;
 
   /**
    * 初始化日志分析服务
    */
   static initialize(): void {
-    // 初始化默认日志警报
-    this.initializeDefaultAlerts();
-    
-    // 启动日志清理任务
-    this.startLogCleanupTask();
-    
-    logger.info('日志分析服务初始化完成');
+    if (this.initialized) {
+      return;
+    }
+
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'initialize'
+    });
+
+    try {
+      // 初始化默认日志警报规则
+      this.initializeDefaultLogAlerts();
+
+      // 启动定期检查任务
+      this.startPeriodicChecks();
+
+      this.initialized = true;
+      contextLogger.info('日志分析服务初始化完成');
+    } catch (error) {
+      contextLogger.error('日志分析服务初始化失败', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
   }
 
   /**
-   * 添加日志条目到缓冲区
+   * 初始化默认日志警报规则
    */
-  static addLogEntry(entry: LogEntry): void {
-    this.logBuffer.push(entry);
-    
-    // 保持缓冲区大小在限制范围内
-    if (this.logBuffer.length > this.MAX_BUFFER_SIZE) {
-      this.logBuffer.shift();
+  private static initializeDefaultLogAlerts(): void {
+    const defaultAlerts: Omit<LogAlert, 'id'>[] = [
+      {
+        name: '高错误率警报',
+        description: '5分钟内错误日志超过10条',
+        pattern: 'error',
+        level: 'error',
+        threshold: 10,
+        time_window_minutes: 5,
+        enabled: true,
+        notification_channels: ['log', 'email']
+      },
+      {
+        name: '安全事件警报',
+        description: '检测到安全相关事件',
+        pattern: 'security',
+        threshold: 1,
+        time_window_minutes: 1,
+        enabled: true,
+        notification_channels: ['log', 'email', 'sms']
+      },
+      {
+        name: '数据库连接失败警报',
+        description: '数据库连接失败事件',
+        pattern: '数据库.*失败',
+        level: 'error',
+        threshold: 3,
+        time_window_minutes: 5,
+        enabled: true,
+        notification_channels: ['log', 'email']
+      },
+      {
+        name: '慢查询警报',
+        description: '慢查询检测',
+        pattern: '慢查询',
+        level: 'warn',
+        threshold: 5,
+        time_window_minutes: 10,
+        enabled: true,
+        notification_channels: ['log']
+      }
+    ];
+
+    defaultAlerts.forEach(alert => {
+      this.addLogAlert(alert);
+    });
+
+    logger.info('默认日志警报规则初始化完成', { count: defaultAlerts.length });
+  }
+
+  /**
+   * 启动定期检查任务
+   */
+  private static startPeriodicChecks(): void {
+    // 每分钟检查一次日志警报
+    setInterval(async () => {
+      try {
+        await this.checkLogAlerts();
+      } catch (error) {
+        logger.error('定期日志警报检查失败', { error: error instanceof Error ? error.message : error });
+      }
+    }, 60 * 1000);
+
+    logger.info('日志警报定期检查任务已启动');
+  }
+
+  /**
+   * 搜索日志条目
+   */
+  static async searchLogs(options: LogSearchOptions): Promise<{
+    entries: LogEntry[];
+    total: number;
+    hasMore: boolean;
+  }> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'searchLogs'
+    });
+
+    try {
+      contextLogger.info('开始搜索日志', options);
+
+      const logFiles = await this.getLogFiles();
+      const entries: LogEntry[] = [];
+      let totalCount = 0;
+
+      for (const logFile of logFiles) {
+        const fileEntries = await this.parseLogFile(logFile, options);
+        entries.push(...fileEntries);
+        totalCount += fileEntries.length;
+      }
+
+      // 按时间戳排序
+      entries.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+      // 应用分页
+      const limit = options.limit || 100;
+      const offset = options.offset || 0;
+      const paginatedEntries = entries.slice(offset, offset + limit);
+      const hasMore = entries.length > offset + limit;
+
+      contextLogger.info('日志搜索完成', {
+        totalFound: entries.length,
+        returned: paginatedEntries.length,
+        hasMore
+      });
+
+      return {
+        entries: paginatedEntries,
+        total: entries.length,
+        hasMore
+      };
+    } catch (error) {
+      contextLogger.error('日志搜索失败', { error: error instanceof Error ? error.message : error });
+      throw error;
     }
+  }
 
-    // 异步保存到Redis
-    this.saveLogToRedis(entry).catch(error => {
-      console.error('保存日志到Redis失败:', error);
+  /**
+   * 获取日志统计信息
+   */
+  static async getLogStatistics(days: number = 7): Promise<LogStatistics> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'getLogStatistics'
     });
 
-    // 检查日志警报
-    this.checkLogAlerts(entry).catch(error => {
-      console.error('检查日志警报失败:', error);
-    });
+    try {
+      contextLogger.info('开始获取日志统计', { days });
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+
+      const searchOptions: LogSearchOptions = {
+        startDate,
+        limit: 10000 // 获取更多数据用于统计
+      };
+
+      const { entries } = await this.searchLogs(searchOptions);
+
+      const statistics: LogStatistics = {
+        total_entries: entries.length,
+        level_distribution: {},
+        module_distribution: {},
+        error_rate: 0,
+        top_errors: [],
+        hourly_distribution: Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0 })),
+        recent_trends: []
+      };
+
+      // 计算级别分布
+      const levelCounts: Record<string, number> = {};
+      const moduleCounts: Record<string, number> = {};
+      const errorMessages: Record<string, number> = {};
+      let errorCount = 0;
+
+      entries.forEach(entry => {
+        // 级别分布
+        levelCounts[entry.level] = (levelCounts[entry.level] || 0) + 1;
+
+        // 模块分布
+        if (entry.module) {
+          moduleCounts[entry.module] = (moduleCounts[entry.module] || 0) + 1;
+        }
+
+        // 错误统计
+        if (entry.level === 'error') {
+          errorCount++;
+          const errorMsg = entry.message.substring(0, 100); // 截取前100字符
+          errorMessages[errorMsg] = (errorMessages[errorMsg] || 0) + 1;
+        }
+
+        // 小时分布
+        const hour = entry.timestamp.getHours();
+        statistics.hourly_distribution[hour].count++;
+      });
+
+      statistics.level_distribution = levelCounts;
+      statistics.module_distribution = moduleCounts;
+      statistics.error_rate = entries.length > 0 ? (errorCount / entries.length) * 100 : 0;
+
+      // 获取前10个错误
+      statistics.top_errors = Object.entries(errorMessages)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([message, count]) => ({ message, count }));
+
+      // 计算最近趋势（按小时）
+      const now = new Date();
+      for (let i = 23; i >= 0; i--) {
+        const hourStart = new Date(now);
+        hourStart.setHours(now.getHours() - i, 0, 0, 0);
+        const hourEnd = new Date(hourStart);
+        hourEnd.setHours(hourStart.getHours() + 1);
+
+        const hourCount = entries.filter(entry => 
+          entry.timestamp >= hourStart && entry.timestamp < hourEnd
+        ).length;
+
+        statistics.recent_trends.push({
+          timestamp: hourStart,
+          count: hourCount
+        });
+      }
+
+      contextLogger.info('日志统计获取完成', {
+        totalEntries: statistics.total_entries,
+        errorRate: statistics.error_rate
+      });
+
+      return statistics;
+    } catch (error) {
+      contextLogger.error('获取日志统计失败', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
   }
 
   /**
    * 分析日志数据
    */
-  static async analyzeLogData(
-    startTime?: Date, 
-    endTime?: Date
-  ): Promise<LogAnalysis> {
+  static async analyzeLogData(analysisType: 'errors' | 'performance' | 'security' | 'trends', options?: any): Promise<any> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'analyzeLogData'
+    });
+
     try {
-      const logs = await this.getLogEntries({
-        start_time: startTime,
-        end_time: endTime,
-        limit: 50000 // 分析最近5万条日志
-      });
+      contextLogger.info('开始日志数据分析', { analysisType, options });
 
-      const analysis: LogAnalysis = {
-        total_entries: logs.length,
-        level_distribution: this.analyzeLevelDistribution(logs),
-        error_patterns: this.analyzeErrorPatterns(logs),
-        top_error_messages: this.analyzeTopErrorMessages(logs),
-        hourly_distribution: this.analyzeHourlyDistribution(logs),
-        user_activity: this.analyzeUserActivity(logs),
-        performance_insights: this.analyzePerformanceInsights(logs)
-      };
-
-      logger.info('日志分析完成', {
-        totalEntries: analysis.total_entries,
-        errorCount: analysis.level_distribution.error || 0,
-        timeRange: { startTime, endTime }
-      });
-
-      return analysis;
-    } catch (error) {
-      logger.error('日志分析失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 搜索日志
-   */
-  static async searchLogs(options: LogSearchOptions): Promise<{
-    logs: LogEntry[];
-    total: number;
-    has_more: boolean;
-  }> {
-    try {
-      const logs = await this.getLogEntries(options);
-      const total = await this.countLogEntries(options);
-      const hasMore = (options.offset || 0) + logs.length < total;
-
-      return {
-        logs,
-        total,
-        has_more: hasMore
-      };
-    } catch (error) {
-      logger.error('搜索日志失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 获取实时日志流
-   */
-  static getRealtimeLogs(limit: number = 100): LogEntry[] {
-    return this.logBuffer
-      .slice(-limit)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-  }
-
-  /**
-   * 导出日志数据
-   */
-  static async exportLogs(
-    options: LogSearchOptions & { format: 'json' | 'csv' }
-  ): Promise<string> {
-    try {
-      const logs = await this.getLogEntries(options);
-
-      if (options.format === 'csv') {
-        return this.exportLogsAsCSV(logs);
-      } else {
-        return JSON.stringify(logs, null, 2);
+      switch (analysisType) {
+        case 'errors':
+          return await this.analyzeErrors(options);
+        case 'performance':
+          return await this.analyzePerformance(options);
+        case 'security':
+          return await this.analyzeSecurity(options);
+        case 'trends':
+          return await this.analyzeTrends(options);
+        default:
+          throw new Error(`不支持的分析类型: ${analysisType}`);
       }
     } catch (error) {
-      logger.error('导出日志失败:', error);
+      contextLogger.error('日志数据分析失败', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
+  }
+
+  /**
+   * 获取实时日志
+   */
+  static async getRealtimeLogs(limit: number = 50): Promise<LogEntry[]> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'getRealtimeLogs'
+    });
+
+    try {
+      contextLogger.debug('获取实时日志', { limit });
+
+      const searchOptions: LogSearchOptions = {
+        limit,
+        offset: 0
+      };
+
+      const { entries } = await this.searchLogs(searchOptions);
+      return entries;
+    } catch (error) {
+      contextLogger.error('获取实时日志失败', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
+  }
+
+  /**
+   * 导出日志
+   */
+  static async exportLogs(options: LogSearchOptions, format: 'json' | 'csv' = 'json'): Promise<string> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'exportLogs'
+    });
+
+    try {
+      contextLogger.info('开始导出日志', { format, options });
+
+      const { entries } = await this.searchLogs({ ...options, limit: 10000 });
+
+      if (format === 'json') {
+        return JSON.stringify(entries, null, 2);
+      } else if (format === 'csv') {
+        return this.convertToCSV(entries);
+      }
+
+      throw new Error(`不支持的导出格式: ${format}`);
+    } catch (error) {
+      contextLogger.error('导出日志失败', { error: error instanceof Error ? error.message : error });
+      throw error;
+    }
+  }
+
+  /**
+   * 清理旧日志
+   */
+  static async cleanupOldLogs(daysToKeep: number = 30): Promise<{ deletedFiles: string[]; totalSize: number }> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'cleanupOldLogs'
+    });
+
+    try {
+      contextLogger.info('开始清理旧日志', { daysToKeep });
+
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+      const logFiles = await this.getLogFiles();
+      const deletedFiles: string[] = [];
+      let totalSize = 0;
+
+      for (const logFile of logFiles) {
+        const stats = fs.statSync(logFile);
+        if (stats.mtime < cutoffDate) {
+          totalSize += stats.size;
+          fs.unlinkSync(logFile);
+          deletedFiles.push(path.basename(logFile));
+        }
+      }
+
+      contextLogger.info('旧日志清理完成', {
+        deletedCount: deletedFiles.length,
+        totalSizeMB: Math.round(totalSize / (1024 * 1024))
+      });
+
+      return { deletedFiles, totalSize };
+    } catch (error) {
+      contextLogger.error('清理旧日志失败', { error: error instanceof Error ? error.message : error });
       throw error;
     }
   }
@@ -256,192 +472,102 @@ export class LogAnalysisService {
   }
 
   /**
-   * 获取日志警报规则列表
+   * 获取日志警报规则
    */
   static getLogAlerts(): LogAlert[] {
     return [...this.logAlerts];
   }
 
   /**
-   * 获取日志统计信息
+   * 检查日志警报
    */
-  static async getLogStatistics(timeWindow: number = 24 * 60 * 60 * 1000): Promise<{
-    total_logs: number;
-    error_logs: number;
-    warn_logs: number;
-    info_logs: number;
-    debug_logs: number;
-    error_rate: number;
-    top_sources: Array<{ source: string; count: number }>;
-    recent_errors: LogEntry[];
-  }> {
+  static async checkLogAlerts(): Promise<void> {
+    const contextLogger = createContextLogger({
+      module: 'LogAnalysisService',
+      action: 'checkLogAlerts'
+    });
+
     try {
-      const startTime = new Date(Date.now() - timeWindow);
-      const logs = await this.getLogEntries({ start_time: startTime });
+      for (const alert of this.logAlerts) {
+        if (!alert.enabled) continue;
 
-      const levelCounts = this.analyzeLevelDistribution(logs);
-      const sourceCounts = this.analyzeSourceDistribution(logs);
-      const recentErrors = logs
-        .filter(log => log.level === 'error')
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-        .slice(0, 10);
-
-      return {
-        total_logs: logs.length,
-        error_logs: levelCounts.error || 0,
-        warn_logs: levelCounts.warn || 0,
-        info_logs: levelCounts.info || 0,
-        debug_logs: levelCounts.debug || 0,
-        error_rate: logs.length > 0 ? ((levelCounts.error || 0) / logs.length) * 100 : 0,
-        top_sources: Object.entries(sourceCounts)
-          .map(([source, count]) => ({ source, count }))
-          .sort((a, b) => b.count - a.count)
-          .slice(0, 10),
-        recent_errors: recentErrors
-      };
-    } catch (error) {
-      logger.error('获取日志统计失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 清理过期日志
-   */
-  static async cleanupOldLogs(): Promise<number> {
-    try {
-      const cutoffDate = new Date(Date.now() - this.LOG_RETENTION_DAYS * 24 * 60 * 60 * 1000);
-      const pattern = 'log:*';
-      const keys = await redisClient.keys(pattern);
-      
-      let deletedCount = 0;
-      
-      for (const key of keys) {
-        try {
-          const logData = await redisClient.get(key);
-          if (logData) {
-            const log = JSON.parse(logData);
-            if (new Date(log.timestamp) < cutoffDate) {
-              await redisClient.del(key);
-              deletedCount++;
-            }
-          }
-        } catch (error) {
-          // 忽略单个日志解析错误
-          continue;
-        }
+        await this.checkSingleLogAlert(alert);
       }
-
-      logger.info('清理过期日志完成', { deletedCount, cutoffDate });
-      return deletedCount;
     } catch (error) {
-      logger.error('清理过期日志失败:', error);
-      return 0;
+      contextLogger.error('检查日志警报失败', { error: error instanceof Error ? error.message : error });
     }
   }
 
   // 私有辅助方法
 
-  private static initializeDefaultAlerts(): void {
-    this.logAlerts = [
-      {
-        id: 'high_error_rate',
-        name: '高错误率警报',
-        description: '5分钟内错误日志超过10条',
-        conditions: {
-          level: 'error',
-          frequency_threshold: 10,
-          time_window_minutes: 5
-        },
-        enabled: true,
-        notification_channels: ['log', 'email']
-      },
-      {
-        id: 'database_errors',
-        name: '数据库错误警报',
-        description: '数据库相关错误',
-        conditions: {
-          level: 'error',
-          message_pattern: 'database|sequelize|sql',
-          frequency_threshold: 3,
-          time_window_minutes: 10
-        },
-        enabled: true,
-        notification_channels: ['log', 'email']
-      },
-      {
-        id: 'authentication_failures',
-        name: '认证失败警报',
-        description: '认证失败次数过多',
-        conditions: {
-          message_pattern: 'authentication|login.*failed|unauthorized',
-          frequency_threshold: 5,
-          time_window_minutes: 5
-        },
-        enabled: true,
-        notification_channels: ['log']
-      }
-    ];
+  private static async getLogFiles(): Promise<string[]> {
+    if (!fs.existsSync(this.LOG_DIR)) {
+      return [];
+    }
+
+    const files = fs.readdirSync(this.LOG_DIR);
+    return files
+      .filter(file => file.endsWith('.log'))
+      .map(file => path.join(this.LOG_DIR, file));
   }
 
-  private static startLogCleanupTask(): void {
-    // 每天凌晨2点执行日志清理
-    const cleanupInterval = 24 * 60 * 60 * 1000; // 24小时
-    
-    setInterval(async () => {
-      try {
-        await this.cleanupOldLogs();
-      } catch (error) {
-        logger.error('定时日志清理失败:', error);
-      }
-    }, cleanupInterval);
-  }
+  private static async parseLogFile(filePath: string, options: LogSearchOptions): Promise<LogEntry[]> {
+    const entries: LogEntry[] = [];
 
-  private static async saveLogToRedis(entry: LogEntry): Promise<void> {
     try {
-      const key = `log:${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const ttl = this.LOG_RETENTION_DAYS * 24 * 60 * 60; // 秒
-      
-      await redisClient.setEx(key, ttl, JSON.stringify(entry));
-    } catch (error) {
-      // 静默处理Redis保存错误，避免影响主要业务流程
-      console.error('保存日志到Redis失败:', error);
-    }
-  }
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const lines = content.split('\n').filter(line => line.trim());
 
-  private static async checkLogAlerts(entry: LogEntry): Promise<void> {
-    for (const alert of this.logAlerts) {
-      if (!alert.enabled) continue;
+      for (const line of lines) {
+        try {
+          const entry = JSON.parse(line) as LogEntry;
+          entry.timestamp = new Date(entry.timestamp);
 
-      // 检查条件是否匹配
-      if (!this.matchesAlertConditions(entry, alert.conditions)) {
-        continue;
-      }
-
-      // 检查频率阈值
-      if (alert.conditions.frequency_threshold && alert.conditions.time_window_minutes) {
-        const recentCount = await this.countRecentMatchingLogs(alert);
-        
-        if (recentCount >= alert.conditions.frequency_threshold) {
-          await this.triggerLogAlert(alert, entry, recentCount);
+          // 应用过滤条件
+          if (this.matchesSearchOptions(entry, options)) {
+            entries.push(entry);
+          }
+        } catch (parseError) {
+          // 跳过无法解析的行
+          continue;
         }
-      } else {
-        // 立即触发警报
-        await this.triggerLogAlert(alert, entry, 1);
       }
+    } catch (error) {
+      logger.warn('解析日志文件失败', { filePath, error: error instanceof Error ? error.message : error });
     }
+
+    return entries;
   }
 
-  private static matchesAlertConditions(entry: LogEntry, conditions: LogAlert['conditions']): boolean {
-    // 检查日志级别
-    if (conditions.level && entry.level !== conditions.level) {
+  private static matchesSearchOptions(entry: LogEntry, options: LogSearchOptions): boolean {
+    if (options.level && entry.level !== options.level) {
       return false;
     }
 
-    // 检查消息模式
-    if (conditions.message_pattern) {
-      const regex = new RegExp(conditions.message_pattern, 'i');
-      if (!regex.test(entry.message)) {
+    if (options.startDate && entry.timestamp < options.startDate) {
+      return false;
+    }
+
+    if (options.endDate && entry.timestamp > options.endDate) {
+      return false;
+    }
+
+    if (options.module && entry.module !== options.module) {
+      return false;
+    }
+
+    if (options.userId && entry.userId !== options.userId) {
+      return false;
+    }
+
+    if (options.requestId && entry.requestId !== options.requestId) {
+      return false;
+    }
+
+    if (options.keyword) {
+      const keyword = options.keyword.toLowerCase();
+      const searchText = `${entry.message} ${JSON.stringify(entry.metadata || {})}`.toLowerCase();
+      if (!searchText.includes(keyword)) {
         return false;
       }
     }
@@ -449,53 +575,240 @@ export class LogAnalysisService {
     return true;
   }
 
-  private static async countRecentMatchingLogs(alert: LogAlert): Promise<number> {
-    try {
-      const timeWindow = (alert.conditions.time_window_minutes || 5) * 60 * 1000;
-      const startTime = new Date(Date.now() - timeWindow);
-      
-      const logs = await this.getLogEntries({
-        level: alert.conditions.level as any,
-        start_time: startTime,
-        message_pattern: alert.conditions.message_pattern,
-        limit: 1000
-      });
+  private static async analyzeErrors(options?: any): Promise<any> {
+    const searchOptions: LogSearchOptions = {
+      level: 'error',
+      startDate: options?.startDate || new Date(Date.now() - 24 * 60 * 60 * 1000),
+      limit: 1000
+    };
 
-      return logs.length;
-    } catch (error) {
-      logger.error('统计匹配日志数量失败:', error);
-      return 0;
+    const { entries } = await this.searchLogs(searchOptions);
+
+    const errorPatterns: Record<string, number> = {};
+    const errorModules: Record<string, number> = {};
+
+    entries.forEach(entry => {
+      // 分析错误模式
+      const pattern = entry.message.replace(/\d+/g, 'N').replace(/['"]/g, '');
+      errorPatterns[pattern] = (errorPatterns[pattern] || 0) + 1;
+
+      // 分析错误模块
+      if (entry.module) {
+        errorModules[entry.module] = (errorModules[entry.module] || 0) + 1;
+      }
+    });
+
+    return {
+      total_errors: entries.length,
+      error_patterns: Object.entries(errorPatterns)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10)
+        .map(([pattern, count]) => ({ pattern, count })),
+      error_modules: Object.entries(errorModules)
+        .sort(([, a], [, b]) => b - a)
+        .map(([module, count]) => ({ module, count }))
+    };
+  }
+
+  private static async analyzePerformance(options?: any): Promise<any> {
+    const searchOptions: LogSearchOptions = {
+      startDate: options?.startDate || new Date(Date.now() - 24 * 60 * 60 * 1000),
+      limit: 1000
+    };
+
+    const { entries } = await this.searchLogs(searchOptions);
+
+    const performanceEntries = entries.filter(entry => 
+      entry.metadata?.type === 'performance' || 
+      entry.metadata?.duration_ms !== undefined
+    );
+
+    const operationTimes: Record<string, number[]> = {};
+
+    performanceEntries.forEach(entry => {
+      const operation = entry.metadata?.operation || 'unknown';
+      const duration = entry.metadata?.duration_ms;
+
+      if (duration !== undefined) {
+        if (!operationTimes[operation]) {
+          operationTimes[operation] = [];
+        }
+        operationTimes[operation].push(duration);
+      }
+    });
+
+    const performanceStats = Object.entries(operationTimes).map(([operation, times]) => {
+      times.sort((a, b) => a - b);
+      const avg = times.reduce((sum, time) => sum + time, 0) / times.length;
+      const p95 = times[Math.floor(times.length * 0.95)];
+      const p99 = times[Math.floor(times.length * 0.99)];
+
+      return {
+        operation,
+        count: times.length,
+        avg_ms: Math.round(avg),
+        p95_ms: p95,
+        p99_ms: p99,
+        min_ms: times[0],
+        max_ms: times[times.length - 1]
+      };
+    });
+
+    return {
+      total_performance_entries: performanceEntries.length,
+      operation_stats: performanceStats.sort((a, b) => b.avg_ms - a.avg_ms)
+    };
+  }
+
+  private static async analyzeSecurity(options?: any): Promise<any> {
+    const searchOptions: LogSearchOptions = {
+      startDate: options?.startDate || new Date(Date.now() - 24 * 60 * 60 * 1000),
+      keyword: 'security',
+      limit: 1000
+    };
+
+    const { entries } = await this.searchLogs(searchOptions);
+
+    const securityEvents: Record<string, number> = {};
+    const suspiciousIPs: Record<string, number> = {};
+
+    entries.forEach(entry => {
+      if (entry.metadata?.type === 'security') {
+        const event = entry.metadata.event || 'unknown';
+        securityEvents[event] = (securityEvents[event] || 0) + 1;
+
+        const ip = entry.metadata.ip;
+        if (ip) {
+          suspiciousIPs[ip] = (suspiciousIPs[ip] || 0) + 1;
+        }
+      }
+    });
+
+    return {
+      total_security_events: entries.length,
+      security_events: Object.entries(securityEvents)
+        .sort(([, a], [, b]) => b - a)
+        .map(([event, count]) => ({ event, count })),
+      suspicious_ips: Object.entries(suspiciousIPs)
+        .filter(([, count]) => count > 5)
+        .sort(([, a], [, b]) => b - a)
+        .map(([ip, count]) => ({ ip, count }))
+    };
+  }
+
+  private static async analyzeTrends(options?: any): Promise<any> {
+    const days = options?.days || 7;
+    const searchOptions: LogSearchOptions = {
+      startDate: new Date(Date.now() - days * 24 * 60 * 60 * 1000),
+      limit: 10000
+    };
+
+    const { entries } = await this.searchLogs(searchOptions);
+
+    const dailyTrends: Record<string, Record<string, number>> = {};
+
+    entries.forEach(entry => {
+      const date = entry.timestamp.toISOString().split('T')[0];
+      const level = entry.level;
+
+      if (!dailyTrends[date]) {
+        dailyTrends[date] = {};
+      }
+
+      dailyTrends[date][level] = (dailyTrends[date][level] || 0) + 1;
+    });
+
+    return {
+      daily_trends: Object.entries(dailyTrends)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, levels]) => ({ date, levels }))
+    };
+  }
+
+  private static convertToCSV(entries: LogEntry[]): string {
+    const headers = ['timestamp', 'level', 'message', 'service', 'module', 'requestId', 'userId', 'action'];
+    const csvLines = [headers.join(',')];
+
+    entries.forEach(entry => {
+      const row = [
+        entry.timestamp.toISOString(),
+        entry.level,
+        `"${entry.message.replace(/"/g, '""')}"`,
+        entry.service || '',
+        entry.module || '',
+        entry.requestId || '',
+        entry.userId || '',
+        entry.action || ''
+      ];
+      csvLines.push(row.join(','));
+    });
+
+    return csvLines.join('\n');
+  }
+
+  private static async checkSingleLogAlert(alert: LogAlert): Promise<void> {
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - alert.time_window_minutes * 60 * 1000);
+
+    const searchOptions: LogSearchOptions = {
+      startDate: windowStart,
+      level: alert.level,
+      keyword: alert.pattern,
+      limit: 1000
+    };
+
+    const { entries } = await this.searchLogs(searchOptions);
+    const matchCount = entries.length;
+
+    const alertKey = alert.id;
+    const currentWindow = this.alertCounts.get(alertKey);
+
+    // 检查是否需要重置窗口
+    if (!currentWindow || now.getTime() - currentWindow.windowStart.getTime() > alert.time_window_minutes * 60 * 1000) {
+      this.alertCounts.set(alertKey, { count: matchCount, windowStart: now });
+    } else {
+      this.alertCounts.set(alertKey, { ...currentWindow, count: matchCount });
+    }
+
+    // 检查是否触发警报
+    if (matchCount >= alert.threshold) {
+      const timeSinceLastTrigger = alert.last_triggered ? 
+        now.getTime() - alert.last_triggered.getTime() : 
+        Infinity;
+
+      // 避免频繁触发（至少间隔5分钟）
+      if (timeSinceLastTrigger > 5 * 60 * 1000) {
+        await this.triggerLogAlert(alert, matchCount);
+        alert.last_triggered = now;
+      }
     }
   }
 
-  private static async triggerLogAlert(alert: LogAlert, entry: LogEntry, count: number): Promise<void> {
-    // 检查冷却时间（避免重复警报）
-    if (alert.last_triggered) {
-      const cooldownMs = 10 * 60 * 1000; // 10分钟冷却时间
-      if (Date.now() - alert.last_triggered.getTime() < cooldownMs) {
-        return;
-      }
-    }
+  private static async triggerLogAlert(alert: LogAlert, matchCount: number): Promise<void> {
+    const alertMessage = `日志警报触发: ${alert.name} - 在${alert.time_window_minutes}分钟内检测到${matchCount}次匹配（阈值: ${alert.threshold}）`;
 
-    alert.last_triggered = new Date();
+    logger.warn('日志警报触发', {
+      alertId: alert.id,
+      alertName: alert.name,
+      matchCount,
+      threshold: alert.threshold,
+      timeWindow: alert.time_window_minutes
+    });
 
-    const alertMessage = `日志警报触发: ${alert.name} - 匹配条目数: ${count}`;
-    
-    // 发送通知
+    // 这里可以集成通知服务
     for (const channel of alert.notification_channels) {
       try {
         switch (channel) {
           case 'log':
-            logger.warn('日志警报', {
-              alertId: alert.id,
-              alertName: alert.name,
-              count,
-              triggerEntry: entry
-            });
+            logger.error(alertMessage);
             break;
           case 'email':
-            // 这里可以集成邮件发送服务
-            logger.info('发送日志警报邮件', { alertId: alert.id });
+            // 集成邮件发送
+            logger.info('发送邮件警报', { alertId: alert.id });
+            break;
+          case 'sms':
+            // 集成短信发送
+            logger.info('发送短信警报', { alertId: alert.id });
             break;
           default:
             logger.warn('未知的通知渠道', { channel });
@@ -504,265 +817,5 @@ export class LogAnalysisService {
         logger.error(`发送日志警报通知失败 (${channel}):`, error);
       }
     }
-  }
-
-  private static async getLogEntries(options: LogSearchOptions): Promise<LogEntry[]> {
-    try {
-      // 首先从内存缓冲区获取
-      let logs = [...this.logBuffer];
-
-      // 然后从Redis获取更多历史日志
-      const redisLogs = await this.getLogsFromRedis(options);
-      logs = [...logs, ...redisLogs];
-
-      // 应用过滤条件
-      logs = this.filterLogs(logs, options);
-
-      // 排序
-      logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-      // 应用分页
-      const offset = options.offset || 0;
-      const limit = options.limit || 100;
-      
-      return logs.slice(offset, offset + limit);
-    } catch (error) {
-      logger.error('获取日志条目失败:', error);
-      return [];
-    }
-  }
-
-  private static async getLogsFromRedis(options: LogSearchOptions): Promise<LogEntry[]> {
-    try {
-      const pattern = 'log:*';
-      const keys = await redisClient.keys(pattern);
-      const logs: LogEntry[] = [];
-
-      // 批量获取日志数据
-      const batchSize = 100;
-      for (let i = 0; i < keys.length; i += batchSize) {
-        const batch = keys.slice(i, i + batchSize);
-        const values = await redisClient.mGet(batch);
-        
-        for (const value of values) {
-          if (value) {
-            try {
-              const log = JSON.parse(value);
-              log.timestamp = new Date(log.timestamp);
-              logs.push(log);
-            } catch (error) {
-              // 忽略解析错误的日志
-              continue;
-            }
-          }
-        }
-      }
-
-      return logs;
-    } catch (error) {
-      logger.error('从Redis获取日志失败:', error);
-      return [];
-    }
-  }
-
-  private static filterLogs(logs: LogEntry[], options: LogSearchOptions): LogEntry[] {
-    return logs.filter(log => {
-      // 过滤日志级别
-      if (options.level && log.level !== options.level) {
-        return false;
-      }
-
-      // 过滤时间范围
-      if (options.start_time && log.timestamp < options.start_time) {
-        return false;
-      }
-      if (options.end_time && log.timestamp > options.end_time) {
-        return false;
-      }
-
-      // 过滤消息模式
-      if (options.message_pattern) {
-        const regex = new RegExp(options.message_pattern, 'i');
-        if (!regex.test(log.message)) {
-          return false;
-        }
-      }
-
-      // 过滤用户ID
-      if (options.user_id && log.user_id !== options.user_id) {
-        return false;
-      }
-
-      // 过滤IP地址
-      if (options.ip_address && log.ip_address !== options.ip_address) {
-        return false;
-      }
-
-      // 过滤来源
-      if (options.source && log.source !== options.source) {
-        return false;
-      }
-
-      return true;
-    });
-  }
-
-  private static async countLogEntries(options: LogSearchOptions): Promise<number> {
-    const logs = await this.getLogEntries({ ...options, limit: undefined, offset: undefined });
-    return logs.length;
-  }
-
-  private static analyzeLevelDistribution(logs: LogEntry[]): Record<string, number> {
-    const distribution: Record<string, number> = {};
-    
-    for (const log of logs) {
-      distribution[log.level] = (distribution[log.level] || 0) + 1;
-    }
-
-    return distribution;
-  }
-
-  private static analyzeSourceDistribution(logs: LogEntry[]): Record<string, number> {
-    const distribution: Record<string, number> = {};
-    
-    for (const log of logs) {
-      const source = log.source || 'unknown';
-      distribution[source] = (distribution[source] || 0) + 1;
-    }
-
-    return distribution;
-  }
-
-  private static analyzeErrorPatterns(logs: LogEntry[]): LogAnalysis['error_patterns'] {
-    const errorLogs = logs.filter(log => log.level === 'error');
-    const patterns = new Map<string, { count: number; examples: string[] }>();
-
-    for (const log of errorLogs) {
-      // 简单的错误模式识别
-      const pattern = this.extractErrorPattern(log.message);
-      
-      if (!patterns.has(pattern)) {
-        patterns.set(pattern, { count: 0, examples: [] });
-      }
-
-      const patternData = patterns.get(pattern)!;
-      patternData.count++;
-      
-      if (patternData.examples.length < 3) {
-        patternData.examples.push(log.message);
-      }
-    }
-
-    return Array.from(patterns.entries())
-      .map(([pattern, data]) => ({ pattern, ...data }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  }
-
-  private static extractErrorPattern(message: string): string {
-    // 简化的错误模式提取
-    return message
-      .replace(/\d+/g, 'N') // 替换数字
-      .replace(/['"]/g, '') // 移除引号
-      .replace(/\s+/g, ' ') // 标准化空格
-      .substring(0, 100); // 限制长度
-  }
-
-  private static analyzeTopErrorMessages(logs: LogEntry[]): LogAnalysis['top_error_messages'] {
-    const errorLogs = logs.filter(log => log.level === 'error');
-    const messages = new Map<string, { count: number; first_seen: Date; last_seen: Date }>();
-
-    for (const log of errorLogs) {
-      if (!messages.has(log.message)) {
-        messages.set(log.message, {
-          count: 0,
-          first_seen: log.timestamp,
-          last_seen: log.timestamp
-        });
-      }
-
-      const messageData = messages.get(log.message)!;
-      messageData.count++;
-      
-      if (log.timestamp < messageData.first_seen) {
-        messageData.first_seen = log.timestamp;
-      }
-      if (log.timestamp > messageData.last_seen) {
-        messageData.last_seen = log.timestamp;
-      }
-    }
-
-    return Array.from(messages.entries())
-      .map(([message, data]) => ({ message, ...data }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  }
-
-  private static analyzeHourlyDistribution(logs: LogEntry[]): LogAnalysis['hourly_distribution'] {
-    const hourly = new Array(24).fill(0).map((_, hour) => ({
-      hour,
-      count: 0,
-      error_count: 0
-    }));
-
-    for (const log of logs) {
-      const hour = log.timestamp.getHours();
-      hourly[hour].count++;
-      
-      if (log.level === 'error') {
-        hourly[hour].error_count++;
-      }
-    }
-
-    return hourly;
-  }
-
-  private static analyzeUserActivity(logs: LogEntry[]): LogAnalysis['user_activity'] {
-    const users = new Map<number, { action_count: number; error_count: number }>();
-
-    for (const log of logs) {
-      if (log.user_id) {
-        if (!users.has(log.user_id)) {
-          users.set(log.user_id, { action_count: 0, error_count: 0 });
-        }
-
-        const userData = users.get(log.user_id)!;
-        userData.action_count++;
-        
-        if (log.level === 'error') {
-          userData.error_count++;
-        }
-      }
-    }
-
-    return Array.from(users.entries())
-      .map(([user_id, data]) => ({ user_id, ...data }))
-      .sort((a, b) => b.action_count - a.action_count)
-      .slice(0, 20);
-  }
-
-  private static analyzePerformanceInsights(logs: LogEntry[]): LogAnalysis['performance_insights'] {
-    // 这是一个简化的实现，实际应该从性能日志中提取更详细的信息
-    return {
-      slow_operations: [],
-      high_frequency_operations: []
-    };
-  }
-
-  private static exportLogsAsCSV(logs: LogEntry[]): string {
-    const headers = ['timestamp', 'level', 'message', 'source', 'user_id', 'ip_address'];
-    const csvData = [
-      headers.join(','),
-      ...logs.map(log => [
-        log.timestamp.toISOString(),
-        log.level,
-        `"${log.message.replace(/"/g, '""')}"`, // 转义CSV中的引号
-        log.source || '',
-        log.user_id || '',
-        log.ip_address || ''
-      ].join(','))
-    ];
-
-    return csvData.join('\n');
   }
 }
