@@ -6,69 +6,52 @@ import dotenv from 'dotenv';
 import passport from 'passport';
 
 // Load environment variables first
+import path from 'path';
+import fs from 'fs';
+
 const envFile = process.env.NODE_ENV === 'production' ? '.env.production' : '.env.development';
-dotenv.config({ path: envFile });
 
-// Configuration validation and management
-import { configManager } from '@/config/ConfigManager';
-import { startupChecker } from '@/config/StartupChecker';
+// Try multiple possible locations for the .env file (prioritize backend directory)
+const possiblePaths = [
+  path.resolve(process.cwd(), 'backend', envFile), // ./backend/.env.development (highest priority)
+  path.resolve(__dirname, '..', '..', envFile),  // backend/.env.development
+  path.resolve(process.cwd(), envFile), // ./.env.development (lowest priority)
+];
 
-// Types are automatically loaded by TypeScript compiler
-import { logger } from '@/utils/logger';
-import { errorHandler, setupGlobalErrorHandlers } from '@/middleware/errorHandler';
-import { notFoundHandler } from '@/middleware/notFoundHandler';
-import { responseWrapper } from '@/middleware/responseWrapper';
-import { authMiddleware } from '@/middleware/auth';
-import { performanceMonitoring } from '@/middleware/performanceMonitoring';
-import { 
-  requestLoggingMiddleware, 
-  errorLoggingMiddleware, 
-  slowQueryLoggingMiddleware,
-  securityLoggingMiddleware 
-} from '@/middleware/requestLogging';
-import { sequelize } from '@/config/database';
-import { redisManager } from '@/config/redis';
-import { routeRegistry } from '@/config/RouteRegistry';
+let envLoaded = false;
+for (const envPath of possiblePaths) {
+  if (fs.existsSync(envPath)) {
+    console.log(`Trying to load environment from: ${envPath}`);
+    const result = dotenv.config({ path: envPath });
+    if (result.parsed && result.parsed.DB_NAME) {
+      envLoaded = true;
+      console.log(`Environment variables loaded successfully from: ${envPath}`);
+      console.log(`DB_NAME: ${process.env.DB_NAME ? 'Set' : 'Not set'}`);
+      console.log(`DB_USER: ${process.env.DB_USER ? 'Set' : 'Not set'}`);
+      console.log(`JWT_SECRET: ${process.env.JWT_SECRET ? 'Set' : 'Not set'}`);
+      break;
+    } else {
+      console.log(`Environment file found but missing required DB_NAME variable: ${envPath}`);
+    }
+  }
+}
 
-// Error recovery system imports
-import { 
-  initializeRecoveryContext, 
-  requestRecovery, 
-  errorRecoveryHandler 
-} from '@/middleware/errorRecoveryMiddleware';
+if (!envLoaded) {
+  console.warn('Warning: No environment file found, using system environment variables');
+  // Fallback to default dotenv behavior
+  dotenv.config();
+}
 
-// Import routes
-import authRoutes from '@/routes/auth';
-import userRoutes from '@/routes/users';
-import roleRoutes from '@/routes/roles';
-import permissionRoutes from '@/routes/permissions';
-import operationLogRoutes from '@/routes/operationLogs';
-import baseRoutes from '@/routes/bases';
-import barnRoutes from '@/routes/barns';
-import cattleRoutes from '@/routes/cattle';
-import healthRoutes from '@/routes/health';
-import redisHealthRoutes from '@/routes/redis-health';
-import feedingRoutes from '@/routes/feeding';
-import materialRoutes from '@/routes/materials';
-import equipmentRoutes from '@/routes/equipment';
-import supplierRoutes from '@/routes/suppliers';
-import purchaseOrderRoutes from '@/routes/purchaseOrders';
-import purchaseRoutes from '@/routes/purchase';
-import customerRoutes from '@/routes/customers';
-import salesOrderRoutes from '@/routes/salesOrders';
-import newsRoutes from '@/routes/news';
-import portalRoutes from '@/routes/portal';
-import publicRoutes from '@/routes/public';
-import helpRoutes from '@/routes/help';
-import uploadRoutes from '@/routes/upload';
-import dashboardRoutes from '@/routes/dashboard';
-import dataIntegrationRoutes from '@/routes/dataIntegration';
-import performanceRoutes from '@/routes/performance';
-import monitoringRoutes from '@/routes/monitoring';
-import securityRoutes from '@/routes/security';
-import routeHealthRoutes from '@/routes/route-health';
-import errorRecoveryRoutes from '@/routes/error-recovery';
-import { serveUploads } from '@/middleware/staticFileServer';
+// Debug: Print all environment variables after loading
+console.log('=== Environment Variables Debug ===');
+console.log(`NODE_ENV: ${process.env.NODE_ENV}`);
+console.log(`DB_NAME: ${process.env.DB_NAME}`);
+console.log(`DB_USER: ${process.env.DB_USER}`);
+console.log(`DB_PASSWORD: ${process.env.DB_PASSWORD ? 'Set' : 'Not set'}`);
+console.log(`JWT_SECRET: ${process.env.JWT_SECRET ? 'Set' : 'Not set'}`);
+console.log('===================================');
+
+// NOTE: All imports that depend on environment variables are deferred until after dotenv configuration
 
 const app = express();
 
@@ -76,7 +59,17 @@ const app = express();
 let config: any;
 
 // Setup middleware function (called after configuration validation)
-const setupMiddleware = (app: express.Application, config: any) => {
+const setupMiddleware = (app: express.Application, config: any, middleware: any) => {
+  const {
+    requestLoggingMiddleware,
+    securityLoggingMiddleware,
+    slowQueryLoggingMiddleware,
+    responseWrapper,
+    performanceMonitoring,
+    initializeRecoveryContext,
+    requestRecovery
+  } = middleware;
+
   // Security and CORS middleware (must be first)
   app.use(helmet());
   app.use(cors({
@@ -117,7 +110,22 @@ const setupMiddleware = (app: express.Application, config: any) => {
 };
 
 // Setup routes function
-const setupRoutes = (app: express.Application) => {
+const setupRoutes = (app: express.Application, routes: any, middleware: any, startupChecker: any) => {
+  const {
+    authRoutes, userRoutes, roleRoutes, permissionRoutes, operationLogRoutes,
+    baseRoutes, barnRoutes, cattleRoutes, healthRoutes, redisHealthRoutes,
+    feedingRoutes, materialRoutes, equipmentRoutes, supplierRoutes,
+    purchaseOrderRoutes, purchaseRoutes, customerRoutes, salesOrderRoutes,
+    newsRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
+    dashboardRoutes, dataIntegrationRoutes, performanceRoutes, monitoringRoutes,
+    securityRoutes, routeHealthRoutes, errorRecoveryRoutes, serveUploads
+  } = routes;
+
+  const {
+    authMiddleware, notFoundHandler, errorLoggingMiddleware,
+    errorRecoveryHandler, errorHandler
+  } = middleware;
+
   // Health check endpoints
   app.get('/health', async (req, res) => {
     try {
@@ -197,6 +205,63 @@ const setupRoutes = (app: express.Application) => {
 // Database connection and server startup
 const startServer = async () => {
   try {
+    // Import all modules that depend on environment variables AFTER dotenv configuration
+    const { configManager } = await import('@/config/ConfigManager');
+    const { startupChecker } = await import('@/config/StartupChecker');
+    const { logger } = await import('@/utils/logger');
+    const { errorHandler, setupGlobalErrorHandlers } = await import('@/middleware/errorHandler');
+    const { notFoundHandler } = await import('@/middleware/notFoundHandler');
+    const { responseWrapper } = await import('@/middleware/responseWrapper');
+    const { authMiddleware } = await import('@/middleware/auth');
+    const { performanceMonitoring } = await import('@/middleware/performanceMonitoring');
+    const { 
+      requestLoggingMiddleware, 
+      errorLoggingMiddleware, 
+      slowQueryLoggingMiddleware,
+      securityLoggingMiddleware 
+    } = await import('@/middleware/requestLogging');
+    const { sequelize } = await import('@/config/database');
+    const { redisManager } = await import('@/config/redis');
+    const { routeRegistry } = await import('@/config/RouteRegistry');
+    const { 
+      initializeRecoveryContext, 
+      requestRecovery, 
+      errorRecoveryHandler 
+    } = await import('@/middleware/errorRecoveryMiddleware');
+    
+    // Import all routes
+    const authRoutes = (await import('@/routes/auth')).default;
+    const userRoutes = (await import('@/routes/users')).default;
+    const roleRoutes = (await import('@/routes/roles')).default;
+    const permissionRoutes = (await import('@/routes/permissions')).default;
+    const operationLogRoutes = (await import('@/routes/operationLogs')).default;
+    const baseRoutes = (await import('@/routes/bases')).default;
+    const barnRoutes = (await import('@/routes/barns')).default;
+    const cattleRoutes = (await import('@/routes/cattle')).default;
+    const healthRoutes = (await import('@/routes/health')).default;
+    const redisHealthRoutes = (await import('@/routes/redis-health')).default;
+    const feedingRoutes = (await import('@/routes/feeding')).default;
+    const materialRoutes = (await import('@/routes/materials')).default;
+    const equipmentRoutes = (await import('@/routes/equipment')).default;
+    const supplierRoutes = (await import('@/routes/suppliers')).default;
+    const purchaseOrderRoutes = (await import('@/routes/purchaseOrders')).default;
+    const purchaseRoutes = (await import('@/routes/purchase')).default;
+    const customerRoutes = (await import('@/routes/customers')).default;
+    const salesOrderRoutes = (await import('@/routes/salesOrders')).default;
+    const newsRoutes = (await import('@/routes/news')).default;
+    const portalRoutes = (await import('@/routes/portal')).default;
+    const publicRoutes = (await import('@/routes/public')).default;
+    const helpRoutes = (await import('@/routes/help')).default;
+    const uploadRoutes = (await import('@/routes/upload')).default;
+    const dashboardRoutes = (await import('@/routes/dashboard')).default;
+    const dataIntegrationRoutes = (await import('@/routes/dataIntegration')).default;
+    const performanceRoutes = (await import('@/routes/performance')).default;
+    const monitoringRoutes = (await import('@/routes/monitoring')).default;
+    const securityRoutes = (await import('@/routes/security')).default;
+    const routeHealthRoutes = (await import('@/routes/route-health')).default;
+    const errorRecoveryRoutes = (await import('@/routes/error-recovery')).default;
+    const { serveUploads } = await import('@/middleware/staticFileServer');
+    
     logger.info('🚀 Starting application...');
 
     // 0. Setup global error handlers
@@ -215,7 +280,16 @@ const startServer = async () => {
     const PORT = config.port;
 
     // 3. Setup middleware with validated configuration
-    setupMiddleware(app, config);
+    const middleware = {
+      requestLoggingMiddleware,
+      securityLoggingMiddleware,
+      slowQueryLoggingMiddleware,
+      responseWrapper,
+      performanceMonitoring,
+      initializeRecoveryContext,
+      requestRecovery
+    };
+    setupMiddleware(app, config, middleware);
 
     // 4. Initialize route registry
     logger.info('Initializing route registry...');
@@ -233,12 +307,49 @@ const startServer = async () => {
     }
 
     // 5. Setup routes
-    setupRoutes(app);
+    const routes = {
+      authRoutes, userRoutes, roleRoutes, permissionRoutes, operationLogRoutes,
+      baseRoutes, barnRoutes, cattleRoutes, healthRoutes, redisHealthRoutes,
+      feedingRoutes, materialRoutes, equipmentRoutes, supplierRoutes,
+      purchaseOrderRoutes, purchaseRoutes, customerRoutes, salesOrderRoutes,
+      newsRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
+      dashboardRoutes, dataIntegrationRoutes, performanceRoutes, monitoringRoutes,
+      securityRoutes, routeHealthRoutes, errorRecoveryRoutes, serveUploads
+    };
+    
+    const routeMiddleware = {
+      authMiddleware, notFoundHandler, errorLoggingMiddleware,
+      errorRecoveryHandler, errorHandler
+    };
+    
+    setupRoutes(app, routes, routeMiddleware, startupChecker);
 
     // 6. Sync database models (in development)
     if (config.environment === 'development') {
-      await sequelize.sync({ alter: true });
-      logger.info('Database models synchronized');
+      try {
+        // First try basic sync without altering existing tables
+        await sequelize.sync({ force: false, alter: false });
+        logger.info('Database models synchronized (basic sync)');
+      } catch (error) {
+        logger.warn('Database basic sync failed, trying to create missing tables:', error);
+        try {
+          // If basic sync fails, try creating individual tables
+          const models = Object.values(sequelize.models);
+          for (const model of models) {
+            try {
+              await model.sync({ force: false, alter: false });
+              logger.debug(`Table ${model.tableName} synchronized`);
+            } catch (tableError) {
+              logger.warn(`Failed to sync table ${model.tableName}:`, tableError);
+            }
+          }
+          logger.info('Database models synchronized (individual table sync)');
+        } catch (fallbackError) {
+          logger.error('All database sync methods failed:', fallbackError);
+          // Continue without database sync - the app can still run with existing tables
+          logger.warn('Continuing without database sync - using existing database schema');
+        }
+      }
     }
 
     // 5. Initialize monitoring services
@@ -286,68 +397,86 @@ const startServer = async () => {
       }
     });
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 };
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  
-  // Stop scheduled tasks
-  if (process.env.NODE_ENV !== 'test') {
-    const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
-    ScheduledTaskService.stopAllTasks();
-  }
-  
-  // Stop error recovery services
-  if (process.env.NODE_ENV !== 'test') {
-    const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
-    const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
-    const { selfHealingService } = await import('@/services/SelfHealingService');
+  try {
+    const { logger } = await import('@/utils/logger');
+    const { sequelize } = await import('@/config/database');
+    const { redisManager } = await import('@/config/redis');
     
-    errorRecoveryService.shutdown();
-    serviceDegradationManager.shutdown();
-    selfHealingService.shutdown();
-    logger.info('Error recovery services shutdown complete');
+    logger.info('SIGTERM received, shutting down gracefully');
+    
+    // Stop scheduled tasks
+    if (process.env.NODE_ENV !== 'test') {
+      const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
+      ScheduledTaskService.stopAllTasks();
+    }
+    
+    // Stop error recovery services
+    if (process.env.NODE_ENV !== 'test') {
+      const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
+      const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
+      const { selfHealingService } = await import('@/services/SelfHealingService');
+      
+      errorRecoveryService.shutdown();
+      serviceDegradationManager.shutdown();
+      selfHealingService.shutdown();
+      logger.info('Error recovery services shutdown complete');
+    }
+    
+    await sequelize.close();
+    await redisManager.shutdown();
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during graceful shutdown:', error);
+    process.exit(1);
   }
-  
-  await sequelize.close();
-  await redisManager.shutdown();
-  process.exit(0);
 });
 
 process.on('SIGINT', async () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  
-  // Stop scheduled tasks
-  if (process.env.NODE_ENV !== 'test') {
-    const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
-    ScheduledTaskService.stopAllTasks();
-  }
-  
-  // Stop error recovery services
-  if (process.env.NODE_ENV !== 'test') {
-    const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
-    const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
-    const { selfHealingService } = await import('@/services/SelfHealingService');
+  try {
+    const { logger } = await import('@/utils/logger');
+    const { sequelize } = await import('@/config/database');
+    const { redisManager } = await import('@/config/redis');
     
-    errorRecoveryService.shutdown();
-    serviceDegradationManager.shutdown();
-    selfHealingService.shutdown();
-    logger.info('Error recovery services shutdown complete');
+    logger.info('SIGINT received, shutting down gracefully');
+    
+    // Stop scheduled tasks
+    if (process.env.NODE_ENV !== 'test') {
+      const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
+      ScheduledTaskService.stopAllTasks();
+    }
+    
+    // Stop error recovery services
+    if (process.env.NODE_ENV !== 'test') {
+      const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
+      const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
+      const { selfHealingService } = await import('@/services/SelfHealingService');
+      
+      errorRecoveryService.shutdown();
+      serviceDegradationManager.shutdown();
+      selfHealingService.shutdown();
+      logger.info('Error recovery services shutdown complete');
+    }
+    
+    await sequelize.close();
+    await redisManager.shutdown();
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during graceful shutdown:', error);
+    process.exit(1);
   }
-  
-  await sequelize.close();
-  await redisManager.shutdown();
-  process.exit(0);
 });
 
 // Start the server
 if (require.main === module) {
   startServer().catch(error => {
-    logger.error('Server startup failed:', error);
+    console.error('Server startup failed:', error);
     process.exit(1);
   });
 }

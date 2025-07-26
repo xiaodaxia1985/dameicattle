@@ -52,54 +52,47 @@ const initializeSequelize = () => {
   }
 };
 
-// Initialize sequelize if config is available
-try {
-  if (configManager.validate().isValid) {
-    initializeSequelize();
-  } else {
-    throw new Error('Config not valid');
-  }
-} catch (error) {
-  // Fallback for cases where config isn't initialized yet
-  const {
-    DB_HOST = 'localhost',
-    DB_PORT = '5432',
-    DB_NAME = 'cattle_management',
-    DB_USER = 'postgres',
-    DB_PASSWORD = 'dianxin99',
-    NODE_ENV = 'development',
-  } = process.env;
+// Initialize with fallback configuration (will be replaced when config is ready)
+const {
+  DB_HOST = 'localhost',
+  DB_PORT = '5432',
+  DB_NAME = 'cattle_management_dev',
+  DB_USER = 'cattle_user',
+  DB_PASSWORD = 'dianxin99',
+  NODE_ENV = 'development',
+} = process.env;
 
-  sequelize = createSequelizeInstance({
-    host: DB_HOST,
-    port: parseInt(DB_PORT, 10),
-    name: DB_NAME,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    ssl: false,
-    poolSize: 10,
-    logging: NODE_ENV === 'development' ? (msg: string) => logger.debug(msg) : false
-  });
-}
+sequelize = createSequelizeInstance({
+  host: DB_HOST,
+  port: parseInt(DB_PORT, 10),
+  name: DB_NAME,
+  user: DB_USER,
+  password: DB_PASSWORD,
+  ssl: false,
+  poolSize: 10,
+  logging: NODE_ENV === 'development' ? (msg: string) => logger.debug(msg) : false
+});
 
-// Initialize database manager
+// Initialize database manager (called after config is initialized)
 const initializeDatabaseManager = async () => {
   try {
+    // First, reinitialize sequelize with validated configuration
+    initializeSequelize();
+    
+    // Then initialize the database manager
     await databaseManager.initialize();
+    
     // Update legacy sequelize instance to use the managed connection
     sequelize = databaseManager.getConnection();
+    logger.info('Database manager initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize database manager:', error);
     // Keep using the legacy instance as fallback
   }
 };
 
-// Initialize database manager if not in test environment
-if (process.env.NODE_ENV !== 'test') {
-  initializeDatabaseManager().catch(error => {
-    logger.error('Database manager initialization failed:', error);
-  });
-}
+// Export initialization function to be called after config is ready
+export const initializeDatabase = initializeDatabaseManager;
 
 export { sequelize, databaseManager };
 

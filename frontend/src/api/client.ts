@@ -110,8 +110,5 @@ export const api = {
   }
 }
 
-// Export the raw client for advanced usage
-export { apiClient }
-
 // Export default as the convenience API
 export default api

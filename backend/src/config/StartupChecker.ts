@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 import { configManager } from './ConfigManager';
-import { sequelize } from './database';
-import { redisManager } from './redis';
+import { sequelize, initializeDatabase } from './database';
+import { redisManager, initializeRedisManager } from './redis';
 import fs from 'fs';
 import path from 'path';
 
@@ -159,6 +159,11 @@ export class StartupChecker {
     try {
       logger.info('🗄️  Checking database connectivity...');
       
+      // Initialize database manager now that config is ready
+      if (process.env.NODE_ENV !== 'test') {
+        await initializeDatabase();
+      }
+      
       // Test database connection
       await sequelize.authenticate();
       
@@ -187,8 +192,10 @@ export class StartupChecker {
     try {
       logger.info('🔴 Checking Redis connectivity...');
       
-      // Initialize Redis manager if not already done
-      await redisManager.initialize();
+      // Initialize Redis manager now that config is ready
+      if (process.env.NODE_ENV !== 'test') {
+        await initializeRedisManager();
+      }
       
       // Perform health check
       const healthStatus = await redisManager.healthCheck();

@@ -388,7 +388,7 @@ export class MonitoringDashboardService {
       
       const responseTimes = entries
         .filter(entry => entry.metadata?.duration_ms !== undefined)
-        .map(entry => entry.metadata.duration_ms);
+        .map(entry => entry.metadata?.duration_ms || 0);
 
       if (responseTimes.length === 0) {
         return 0;

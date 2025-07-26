@@ -1,7 +1,7 @@
 import { redisManager, CacheInterface } from './RedisManager';
 import { logger } from '@/utils/logger';
 
-// Initialize Redis manager
+// Initialize Redis manager (called after config is ready)
 let isInitialized = false;
 
 const initializeRedis = async () => {
@@ -17,10 +17,8 @@ const initializeRedis = async () => {
   }
 };
 
-// Only initialize if not in test environment
-if (process.env.NODE_ENV !== 'test') {
-  initializeRedis();
-}
+// Export initialization function to be called after config is ready
+export const initializeRedisManager = initializeRedis;
 
 // Export the cache interface for backward compatibility
 export const getCache = (): CacheInterface => {

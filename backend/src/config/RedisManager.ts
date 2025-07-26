@@ -242,15 +242,15 @@ export class RedisManager extends EventEmitter {
    */
   public async initialize(): Promise<void> {
     try {
-      // Get Redis configuration from ConfigManager
-      if (configManager.validate().isValid) {
+      // Try to get Redis configuration from ConfigManager if available
+      try {
         const redisConfig = configManager.getRedisConfig();
         this.config = {
           ...this.config,
           ...redisConfig,
         };
-      } else {
-        // Fallback to environment variables
+      } catch (error) {
+        // ConfigManager not initialized yet, fallback to environment variables
         this.loadConfigFromEnv();
       }
 
