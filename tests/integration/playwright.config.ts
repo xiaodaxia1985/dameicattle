@@ -20,7 +20,10 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        executablePath: 'D:\\software\\Chrome135_AllNew_2025.6.26\\App\\chrome.exe',
+      },
     },
     {
       name: 'firefox',
@@ -32,7 +35,10 @@ export default defineConfig({
     },
     {
       name: 'mobile-chrome',
-      use: { ...devices['Pixel 5'] },
+      use: { 
+        ...devices['Pixel 5'],
+        executablePath: 'D:\\software\\Chrome135_AllNew_2025.6.26\\App\\chrome.exe',
+      },
     },
   ],
   webServer: [
