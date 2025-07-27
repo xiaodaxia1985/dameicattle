@@ -252,6 +252,12 @@ export const requirePermission = (permission: string | string[]) => {
     const userPermissions = user.role.permissions as string[];
     const requiredPermissions = Array.isArray(permission) ? permission : [permission];
     
+    // Check if user has wildcard permission (admin access)
+    if (userPermissions.includes('*')) {
+      next();
+      return;
+    }
+    
     // Check if user has all required permissions
     const missingPermissions = requiredPermissions.filter(perm => !userPermissions.includes(perm));
     
@@ -311,6 +317,13 @@ export const requireAnyPermission = (permissions: string[]) => {
     }
 
     const userPermissions = user.role.permissions as string[];
+    
+    // Check if user has wildcard permission (admin access)
+    if (userPermissions.includes('*')) {
+      next();
+      return;
+    }
+    
     const hasAnyPermission = permissions.some(perm => userPermissions.includes(perm));
     
     if (!hasAnyPermission) {

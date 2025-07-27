@@ -1,5 +1,15 @@
 import { test, expect, Page } from '@playwright/test';
 
+// Enhanced test configuration
+const TEST_CONFIG = {
+  backend: {
+    baseURL: process.env.BACKEND_URL || 'http://localhost:3000'
+  },
+  frontend: {
+    baseURL: process.env.FRONTEND_URL || 'http://localhost:5173'
+  }
+};
+
 // Test data
 const TEST_USER = {
   username: 'admin',

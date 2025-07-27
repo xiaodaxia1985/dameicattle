@@ -81,6 +81,17 @@ const setupMiddleware = (app: express.Application, config: any, middleware: any)
 
   // Basic middleware
   app.use(compression());
+  
+  // Custom middleware to handle text/plain content type as JSON
+  app.use((req, res, next) => {
+    const contentType = req.get('Content-Type');
+    if (contentType && contentType.includes('text/plain')) {
+      // Override content type to application/json so express.json() can parse it
+      req.headers['content-type'] = 'application/json';
+    }
+    next();
+  });
+  
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
