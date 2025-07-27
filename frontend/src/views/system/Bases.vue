@@ -348,12 +348,29 @@
               <!-- 地图定位 -->
               <el-tab-pane label="地图定位" name="map">
                 <div class="map-section">
-                  <div id="base-map" class="map-container"></div>
+                  <div v-if="selectedBase.latitude && selectedBase.longitude" class="map-container">
+                    <BaiduMap
+                      :center="{ lng: selectedBase.longitude, lat: selectedBase.latitude }"
+                      :zoom="15"
+                      :markers="[{
+                        lng: selectedBase.longitude,
+                        lat: selectedBase.latitude,
+                        title: selectedBase.name,
+                        content: selectedBase.address
+                      }]"
+                      height="400px"
+                    />
+                  </div>
+                  <div v-else class="no-location">
+                    <el-empty description="暂无位置信息">
+                      <el-button type="primary" @click="handleUpdateLocation">设置位置</el-button>
+                    </el-empty>
+                  </div>
                   <div class="map-info">
-                    <p><strong>经纬度：</strong>{{ selectedBase.latitude }}, {{ selectedBase.longitude }}</p>
-                    <p><strong>地址：</strong>{{ selectedBase.address }}</p>
+                    <p><strong>经纬度：</strong>{{ selectedBase.latitude || '未设置' }}, {{ selectedBase.longitude || '未设置' }}</p>
+                    <p><strong>地址：</strong>{{ selectedBase.address || '未设置' }}</p>
                     <el-button type="primary" size="small" @click="handleUpdateLocation">
-                      更新位置
+                      {{ selectedBase.latitude && selectedBase.longitude ? '更新位置' : '设置位置' }}
                     </el-button>
                   </div>
                 </div>
@@ -538,7 +555,12 @@
 
     <!-- 地图选择对话框 -->
     <el-dialog v-model="mapDialogVisible" title="选择位置" width="800px">
-      <div id="location-map" class="location-map"></div>
+      <MapLocationPicker
+        v-model="selectedLocation"
+        :center="{ lng: baseForm.longitude || 116.404, lat: baseForm.latitude || 39.915 }"
+        height="400px"
+        @location-change="handleLocationChange"
+      />
       <template #footer>
         <el-button @click="mapDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleConfirmLocation">确定</el-button>
@@ -570,6 +592,8 @@ import { useBaseStore } from '@/stores/base'
 import { baseApi } from '@/api/base'
 import type { Base, Barn } from '@/api/base'
 import BarnVisualization from '@/components/BarnVisualization.vue'
+import BaiduMap from '@/components/BaiduMap.vue'
+import MapLocationPicker from '@/components/MapLocationPicker.vue'
 import dayjs from 'dayjs'
 
 // Store
@@ -673,7 +697,7 @@ const uploadRef = ref()
 
 // 地图相关
 const mapDialogVisible = ref(false)
-const selectedLocation = ref<{ latitude: number; longitude: number } | null>(null)
+const selectedLocation = ref<{ lng: number; lat: number } | null>(null)
 
 // 基地收藏功能
 const favoriteBaseIds = ref<Set<number>>(new Set())
@@ -1466,126 +1490,49 @@ const validateImportData = (data: any[]): { valid: boolean; message?: string } =
 const handleUpdateLocation = () => {
   if (!selectedBase.value) return
   
-  baseForm.latitude = selectedBase.value.latitude
-  baseForm.longitude = selectedBase.value.longitude
-  
-  mapDialogVisible.value = true
-  nextTick(() => {
-    initLocationMap()
+  // 填充表单数据
+  Object.assign(baseForm, {
+    id: selectedBase.value.id,
+    name: selectedBase.value.name,
+    code: selectedBase.value.code,
+    address: selectedBase.value.address,
+    area: selectedBase.value.area,
+    managerId: selectedBase.value.managerId,
+    latitude: selectedBase.value.latitude,
+    longitude: selectedBase.value.longitude
   })
+  
+  baseDialogTitle.value = '更新基地位置'
+  baseDialogVisible.value = true
 }
 
 // 选择位置
 const handleSelectLocation = () => {
   mapDialogVisible.value = true
-  nextTick(() => {
-    initLocationMap()
-  })
+  // 设置初始位置
+  if (baseForm.latitude && baseForm.longitude) {
+    selectedLocation.value = {
+      lng: baseForm.longitude,
+      lat: baseForm.latitude
+    }
+  }
 }
 
 // 确认位置
 const handleConfirmLocation = () => {
   if (selectedLocation.value) {
-    baseForm.latitude = selectedLocation.value.latitude
-    baseForm.longitude = selectedLocation.value.longitude
+    baseForm.latitude = selectedLocation.value.lat
+    baseForm.longitude = selectedLocation.value.lng
   }
   mapDialogVisible.value = false
 }
 
-// 初始化基地地图
-const initBaseMap = () => {
-  if (!selectedBase.value || !selectedBase.value.latitude || !selectedBase.value.longitude) {
-    const mapContainer = document.getElementById('base-map')
-    if (mapContainer) {
-      mapContainer.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; height: 300px; background: #f5f5f5; border: 1px dashed #ddd; border-radius: 4px;">
-          <div style="text-align: center; color: #909399;">
-            <p style="margin: 0 0 8px 0; font-size: 14px;">暂无位置信息</p>
-            <p style="margin: 0; font-size: 12px;">请在编辑基地时设置经纬度</p>
-          </div>
-        </div>
-      `
-    }
-    return
-  }
-  
-  const mapContainer = document.getElementById('base-map')
-  if (mapContainer) {
-    const { latitude, longitude } = selectedBase.value
-    mapContainer.innerHTML = `
-      <div style="height: 300px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white;">
-          <div style="width: 20px; height: 20px; background: #ff4757; border-radius: 50%; margin: 0 auto 12px; box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.3); animation: pulse 2s infinite;"></div>
-          <div style="background: rgba(0,0,0,0.7); padding: 8px 12px; border-radius: 4px; font-size: 12px;">
-            <div>纬度: ${latitude.toFixed(6)}</div>
-            <div>经度: ${longitude.toFixed(6)}</div>
-          </div>
-        </div>
-        <div style="position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px;">
-          ${selectedBase.value.name}
-        </div>
-      </div>
-      <style>
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
-        }
-      </style>
-    `
-  }
-}
-
-// 初始化位置选择地图
-const initLocationMap = () => {
-  const mapContainer = document.getElementById('location-map')
-  if (mapContainer) {
-    const defaultLat = baseForm.latitude || 39.9042
-    const defaultLng = baseForm.longitude || 116.4074
-    
-    mapContainer.innerHTML = `
-      <div style="height: 400px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; position: relative; overflow: hidden; cursor: crosshair;" id="interactive-map">
-        <div style="position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px;">
-          点击地图选择位置
-        </div>
-        <div id="map-marker" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 20px; height: 20px; background: #ff4757; border-radius: 50%; box-shadow: 0 0 0 4px rgba(255, 71, 87, 0.3); animation: pulse 2s infinite;"></div>
-        <div id="coordinates-display" style="position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8); color: white; padding: 8px 12px; border-radius: 4px; font-size: 12px;">
-          纬度: ${defaultLat.toFixed(6)}, 经度: ${defaultLng.toFixed(6)}
-        </div>
-      </div>
-      <style>
-        @keyframes pulse {
-          0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
-          70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
-        }
-      </style>
-    `
-    
-    const interactiveMap = document.getElementById('interactive-map')
-    if (interactiveMap) {
-      interactiveMap.addEventListener('click', (e) => {
-        const rect = interactiveMap.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-        
-        const lat = 39.9042 + (200 - y) * 0.0001
-        const lng = 116.4074 + (x - 200) * 0.0001
-        
-        const marker = document.getElementById('map-marker')
-        if (marker) {
-          marker.style.left = x + 'px'
-          marker.style.top = y + 'px'
-        }
-        
-        const coordsDisplay = document.getElementById('coordinates-display')
-        if (coordsDisplay) {
-          coordsDisplay.textContent = `纬度: ${lat.toFixed(6)}, 经度: ${lng.toFixed(6)}`
-        }
-        
-        selectedLocation.value = { latitude: lat, longitude: lng }
-      })
-    }
+// 处理位置变化
+const handleLocationChange = (location: { lng: number; lat: number }, address?: string) => {
+  selectedLocation.value = location
+  // 如果有地址信息，可以更新表单中的地址字段
+  if (address && !baseForm.address) {
+    baseForm.address = address
   }
 }
 
@@ -1841,14 +1788,35 @@ onMounted(() => {
 
       .map-container {
         margin-bottom: 16px;
-        height: 300px;
+        height: 400px;
+        border: 1px solid var(--el-border-color-lighter);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+
+      .no-location {
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--el-border-color-lighter);
+        border-radius: 4px;
+        margin-bottom: 16px;
       }
 
       .map-info {
+        padding: 12px;
+        background: var(--el-bg-color-page);
+        border-radius: 4px;
+        
         p {
           margin: 8px 0;
-          color: #606266;
+          color: var(--el-text-color-regular);
           font-size: 14px;
+          
+          strong {
+            color: var(--el-text-color-primary);
+          }
         }
       }
     }

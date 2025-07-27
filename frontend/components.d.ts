@@ -8,6 +8,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     ArticleDialog: typeof import('./src/components/help/ArticleDialog.vue')['default']
+    BaiduMap: typeof import('./src/components/BaiduMap.vue')['default']
     BarChart: typeof import('./src/components/dashboard/BarChart.vue')['default']
     BarnVisualization: typeof import('./src/components/BarnVisualization.vue')['default']
     BatchImportDialog: typeof import('./src/components/cattle/BatchImportDialog.vue')['default']
@@ -86,6 +87,7 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     GaugeChart: typeof import('./src/components/dashboard/GaugeChart.vue')['default']
     HelpCenter: typeof import('./src/components/help/HelpCenter.vue')['default']
+    MapLocationPicker: typeof import('./src/components/MapLocationPicker.vue')['default']
     ModernIcon: typeof import('./src/components/ModernIcon.vue')['default']
     PendingTasksCard: typeof import('./src/components/dashboard/PendingTasksCard.vue')['default']
     PieChart: typeof import('./src/components/dashboard/PieChart.vue')['default']

@@ -5,6 +5,17 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>肉牛全生命周期管理系统</title>
+    <!-- 百度地图API -->
+    <script>
+      // 百度地图API加载完成回调
+      window.initBaiduMap = function() {
+        console.log('百度地图API加载完成');
+        window.baiduMapReady = true;
+        // 触发自定义事件通知地图组件
+        window.dispatchEvent(new Event('baiduMapReady'));
+      }
+    </script>
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=f3l382LaL7pfs8RRHKO7Blr4zbW67nec&callback=initBaiduMap"></script>
   </head>
   <body>
     <div id="app"></div>
