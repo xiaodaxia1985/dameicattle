@@ -382,7 +382,7 @@ describe('Multi-Component System Integration', () => {
           { headers: { Authorization: `Bearer ${authToken}` } }
         );
       } catch (error) {
-        console.warn('Failed to cleanup test cattle:', error.message);
+        console.warn('Failed to cleanup test cattle:', error instanceof Error ? error.message : String(error));
       }
     }
   });

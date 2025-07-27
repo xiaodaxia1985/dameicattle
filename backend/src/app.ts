@@ -481,4 +481,116 @@ if (require.main === module) {
   });
 }
 
+// Initialize routes for testing
+let routesInitialized = false;
+
+export const initializeAppForTesting = async () => {
+  if (routesInitialized) return app;
+  
+  try {
+    // Import all modules that depend on environment variables
+    const { configManager } = await import('@/config/ConfigManager');
+    const { startupChecker } = await import('@/config/StartupChecker');
+    
+    // Initialize configuration
+    await configManager.initialize();
+    const { errorHandler } = await import('@/middleware/errorHandler');
+    const { notFoundHandler } = await import('@/middleware/notFoundHandler');
+    const { responseWrapper } = await import('@/middleware/responseWrapper');
+    const { authMiddleware } = await import('@/middleware/auth');
+    const { 
+      requestLoggingMiddleware, 
+      errorLoggingMiddleware, 
+      slowQueryLoggingMiddleware,
+      securityLoggingMiddleware 
+    } = await import('@/middleware/requestLogging');
+    const { performanceMonitoring } = await import('@/middleware/performanceMonitoring');
+    const { 
+      initializeRecoveryContext, 
+      requestRecovery, 
+      errorRecoveryHandler 
+    } = await import('@/middleware/errorRecoveryMiddleware');
+    
+    // Import all route modules individually
+    const authRoutes = (await import('@/routes/auth')).default;
+    const userRoutes = (await import('@/routes/users')).default;
+    const roleRoutes = (await import('@/routes/roles')).default;
+    const permissionRoutes = (await import('@/routes/permissions')).default;
+    const operationLogRoutes = (await import('@/routes/operationLogs')).default;
+    const baseRoutes = (await import('@/routes/bases')).default;
+    const barnRoutes = (await import('@/routes/barns')).default;
+    const cattleRoutes = (await import('@/routes/cattle')).default;
+    const healthRoutes = (await import('@/routes/health')).default;
+    const redisHealthRoutes = (await import('@/routes/redis-health')).default;
+    const feedingRoutes = (await import('@/routes/feeding')).default;
+    const materialRoutes = (await import('@/routes/materials')).default;
+    const equipmentRoutes = (await import('@/routes/equipment')).default;
+    const supplierRoutes = (await import('@/routes/suppliers')).default;
+    const purchaseOrderRoutes = (await import('@/routes/purchaseOrders')).default;
+    const purchaseRoutes = (await import('@/routes/purchase')).default;
+    const customerRoutes = (await import('@/routes/customers')).default;
+    const salesOrderRoutes = (await import('@/routes/salesOrders')).default;
+    const newsRoutes = (await import('@/routes/news')).default;
+    const portalRoutes = (await import('@/routes/portal')).default;
+    const publicRoutes = (await import('@/routes/public')).default;
+    const helpRoutes = (await import('@/routes/help')).default;
+    const uploadRoutes = (await import('@/routes/upload')).default;
+    const dashboardRoutes = (await import('@/routes/dashboard')).default;
+    const dataIntegrationRoutes = (await import('@/routes/dataIntegration')).default;
+    const performanceRoutes = (await import('@/routes/performance')).default;
+    const monitoringRoutes = (await import('@/routes/monitoring')).default;
+    const securityRoutes = (await import('@/routes/security')).default;
+    const routeHealthRoutes = (await import('@/routes/route-health')).default;
+    const errorRecoveryRoutes = (await import('@/routes/error-recovery')).default;
+    const { serveUploads } = await import('@/middleware/staticFileServer');
+    
+    // Get validated configuration
+    config = configManager.getConfig();
+    
+    // Setup middleware
+    const middlewareConfig = {
+      requestLoggingMiddleware,
+      securityLoggingMiddleware,
+      slowQueryLoggingMiddleware,
+      responseWrapper,
+      performanceMonitoring,
+      initializeRecoveryContext,
+      requestRecovery
+    };
+    setupMiddleware(app, config, middlewareConfig);
+    
+    // Setup routes
+    const routes = {
+      authRoutes, userRoutes, roleRoutes, permissionRoutes, operationLogRoutes,
+      baseRoutes, barnRoutes, cattleRoutes, healthRoutes, redisHealthRoutes,
+      feedingRoutes, materialRoutes, equipmentRoutes, supplierRoutes,
+      purchaseOrderRoutes, purchaseRoutes, customerRoutes, salesOrderRoutes,
+      newsRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
+      dashboardRoutes, dataIntegrationRoutes, performanceRoutes, monitoringRoutes,
+      securityRoutes, routeHealthRoutes, errorRecoveryRoutes, serveUploads
+    };
+    
+    const routeMiddleware = {
+      authMiddleware,
+      notFoundHandler,
+      errorLoggingMiddleware,
+      errorRecoveryHandler,
+      errorHandler
+    };
+    
+    setupRoutes(app, routes, routeMiddleware, startupChecker);
+    routesInitialized = true;
+    
+    return app;
+  } catch (error) {
+    console.error('Failed to initialize app for testing:', error);
+    throw error;
+  }
+};
+
+// Auto-initialize for testing if NODE_ENV is test
+if (process.env.NODE_ENV === 'test') {
+  initializeAppForTesting().catch(console.error);
+}
+
 export default app;

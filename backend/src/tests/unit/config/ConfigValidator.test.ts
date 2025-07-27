@@ -162,13 +162,13 @@ describe('ConfigValidator', () => {
     });
 
     it('should warn about short JWT secret in production', () => {
-      process.env.JWT_SECRET = 'this-is-a-short-jwt-secret-key'; // Less than 64 chars but more than 32
+      process.env.JWT_SECRET = 'short'; // Very short JWT secret
       process.env.FRONTEND_URL = 'https://example.com';
 
       const result = validator.validateEnvironment();
       
-      expect(result.isValid).toBe(false); // Should fail because CORS origins are empty in production
-      expect(result.errors).toContain('CORS origins must be explicitly configured in production');
+      expect(result.isValid).toBe(false); // Should fail because JWT secret is too short
+      expect(result.errors).toContain('JWT secret (JWT_SECRET) must be at least 32 characters long for security');
     });
 
     it('should warn about debug logging in production', () => {
@@ -213,7 +213,7 @@ describe('ConfigValidator', () => {
       const result = validator.validateEnvironment();
       
       expect(result.isValid).toBe(true);
-      expect(result.config?.logLevel).toBe('debug');
+      expect(result.config?.logLevel).toBe('error'); // Test environment uses error level
       expect(result.config?.cors.origins).toContain('http://localhost:5173');
       expect(result.config?.cors.origins).toContain('http://localhost:8080');
     });

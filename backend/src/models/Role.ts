@@ -44,9 +44,10 @@ Role.init(
       allowNull: false,
       defaultValue: [],
       validate: {
-        isArray: {
-          msg: 'Permissions must be an array',
-          args: true
+        isArrayValidator(value: any) {
+          if (!Array.isArray(value)) {
+            throw new Error('Permissions must be an array');
+          }
         }
       },
     },

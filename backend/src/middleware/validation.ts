@@ -34,6 +34,12 @@ export const validate = (validationRules: any[]) => {
 // Joi validation middleware (legacy)
 export const validateRequest = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
+    // Debug: Log the request body being validated
+    console.log('Validation middleware - Request body:', JSON.stringify(req.body, null, 2));
+    console.log('Validation middleware - Request body type:', typeof req.body);
+    console.log('Validation middleware - Request body keys:', Object.keys(req.body || {}));
+    console.log('Validation middleware - Content-Type:', req.get('Content-Type'));
+    
     const { error } = schema.validate(req.body, { abortEarly: false });
     
     if (error) {
@@ -41,6 +47,12 @@ export const validateRequest = (schema: Joi.ObjectSchema) => {
         field: detail.path.join('.'),
         message: detail.message,
       }));
+
+      console.log('Validation middleware - Validation failed:', {
+        error: error.message,
+        details: error.details,
+        requestBody: req.body
+      });
 
       res.status(422).json({
         success: false,
@@ -55,6 +67,7 @@ export const validateRequest = (schema: Joi.ObjectSchema) => {
       return;
     }
 
+    console.log('Validation middleware - Validation passed');
     next();
   };
 };

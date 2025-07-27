@@ -14,7 +14,7 @@ export const tokenStorage = {
       return uni.getStorageSync('token') || null
     } else if (typeof window !== 'undefined') {
       // Web environment
-      return localStorage.getItem('token') || sessionStorage.getItem('token')
+      return window.localStorage.getItem('token') || window.sessionStorage.getItem('token')
     }
     return null
   },
@@ -26,7 +26,7 @@ export const tokenStorage = {
       uni.setStorageSync('token', token)
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.setItem('token', token)
+      window.localStorage.setItem('token', token)
     }
   },
 
@@ -37,8 +37,8 @@ export const tokenStorage = {
       uni.removeStorageSync('token')
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.removeItem('token')
-      sessionStorage.removeItem('token')
+      window.localStorage.removeItem('token')
+      window.sessionStorage.removeItem('token')
     }
   },
 
@@ -50,7 +50,7 @@ export const tokenStorage = {
       return expiration ? parseInt(expiration) : null
     } else if (typeof window !== 'undefined') {
       // Web environment
-      const expiration = localStorage.getItem('tokenExpiration')
+      const expiration = window.localStorage.getItem('tokenExpiration')
       return expiration ? parseInt(expiration) : null
     }
     return null
@@ -63,7 +63,7 @@ export const tokenStorage = {
       uni.setStorageSync('tokenExpiration', expirationTime.toString())
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.setItem('tokenExpiration', expirationTime.toString())
+      window.localStorage.setItem('tokenExpiration', expirationTime.toString())
     }
   },
 
@@ -74,7 +74,7 @@ export const tokenStorage = {
       uni.removeStorageSync('tokenExpiration')
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.removeItem('tokenExpiration')
+      window.localStorage.removeItem('tokenExpiration')
     }
   }
 }
@@ -89,7 +89,7 @@ export const userStorage = {
       return userData ? JSON.parse(userData) : null
     } else if (typeof window !== 'undefined') {
       // Web environment
-      const userData = localStorage.getItem('user')
+      const userData = window.localStorage.getItem('user')
       return userData ? JSON.parse(userData) : null
     }
     return null
@@ -103,7 +103,7 @@ export const userStorage = {
       uni.setStorageSync('user', userData)
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.setItem('user', userData)
+      window.localStorage.setItem('user', userData)
     }
   },
 
@@ -114,7 +114,7 @@ export const userStorage = {
       uni.removeStorageSync('user')
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.removeItem('user')
+      window.localStorage.removeItem('user')
     }
   }
 }
@@ -129,7 +129,7 @@ export const permissionsStorage = {
       return permissions ? JSON.parse(permissions) : []
     } else if (typeof window !== 'undefined') {
       // Web environment
-      const permissions = localStorage.getItem('permissions')
+      const permissions = window.localStorage.getItem('permissions')
       return permissions ? JSON.parse(permissions) : []
     }
     return []
@@ -143,7 +143,7 @@ export const permissionsStorage = {
       uni.setStorageSync('permissions', permissionsData)
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.setItem('permissions', permissionsData)
+      window.localStorage.setItem('permissions', permissionsData)
     }
   },
 
@@ -154,7 +154,7 @@ export const permissionsStorage = {
       uni.removeStorageSync('permissions')
     } else if (typeof window !== 'undefined') {
       // Web environment
-      localStorage.removeItem('permissions')
+      window.localStorage.removeItem('permissions')
     }
   }
 }

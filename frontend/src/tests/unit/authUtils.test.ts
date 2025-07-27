@@ -58,6 +58,11 @@ describe('Authentication Utilities', () => {
     describe('Web Environment', () => {
       beforeEach(() => {
         (global as any).window = mockWindow
+        // Also set window on global for proper detection
+        Object.defineProperty(global, 'window', {
+          value: mockWindow,
+          writable: true
+        })
       })
 
       it('should get token from localStorage', () => {

@@ -1,25 +1,19 @@
 import request from 'supertest';
-import { Express } from 'express';
-import { setupTestDatabase, cleanupTestDatabase, closeTestDatabase } from '../helpers/database';
+import { setupTestDatabase, cleanupTestDatabase } from '../helpers/database';
 import { createTestToken } from '../helpers/auth';
-
-// 这里需要导入实际的app实例
-// import app from '../../app';
+import app, { initializeAppForTesting } from '../../app';
 
 describe('API Integration Tests', () => {
-  let app: Express;
   let authToken: string;
 
   beforeAll(async () => {
+    await initializeAppForTesting();
     await setupTestDatabase();
     authToken = createTestToken();
-    
-    // 这里应该初始化实际的Express应用
-    // app = createApp();
   });
 
   afterAll(async () => {
-    await closeTestDatabase();
+    await cleanupTestDatabase();
   });
 
   beforeEach(async () => {
@@ -93,14 +87,46 @@ describe('API Integration Tests', () => {
 
   describe('CRUD Operations', () => {
     it('should create new cattle record', async () => {
+      // First create required base and barn records
+      const baseData = {
+        name: 'Test Base',
+        code: 'TB001',
+        location: 'Test Location',
+        description: 'Test base for integration tests'
+      };
+
+      const baseResponse = await request(app)
+        .post('/api/v1/bases')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(baseData)
+        .expect(201);
+
+      const baseId = baseResponse.body.id;
+
+      const barnData = {
+        name: 'Test Barn',
+        code: 'TBN001',
+        baseId: baseId,
+        capacity: 100,
+        currentCount: 0
+      };
+
+      const barnResponse = await request(app)
+        .post('/api/v1/barns')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(barnData)
+        .expect(201);
+
+      const barnId = barnResponse.body.id;
+
       const cattleData = {
         earTag: 'TEST001',
         breed: '西门塔尔',
         gender: 'male',
         birthDate: '2023-01-01',
         weight: 500.00,
-        baseId: 1,
-        barnId: 1
+        baseId: baseId,
+        barnId: barnId
       };
 
       const response = await request(app)
@@ -125,12 +151,46 @@ describe('API Integration Tests', () => {
     });
 
     it('should update cattle record', async () => {
+      // First create required base and barn records
+      const baseData = {
+        name: 'Test Base 2',
+        code: 'TB002',
+        location: 'Test Location 2',
+        description: 'Test base for update test'
+      };
+
+      const baseResponse = await request(app)
+        .post('/api/v1/bases')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(baseData)
+        .expect(201);
+
+      const baseId = baseResponse.body.id;
+
+      const barnData = {
+        name: 'Test Barn 2',
+        code: 'TBN002',
+        baseId: baseId,
+        capacity: 100,
+        currentCount: 0
+      };
+
+      const barnResponse = await request(app)
+        .post('/api/v1/barns')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(barnData)
+        .expect(201);
+
+      const barnId = barnResponse.body.id;
+
       // 首先创建一个牛只记录
       const cattleData = {
         earTag: 'TEST002',
         breed: '安格斯',
         gender: 'female',
-        weight: 450.00
+        weight: 450.00,
+        baseId: baseId,
+        barnId: barnId
       };
 
       const createResponse = await request(app)
@@ -158,11 +218,45 @@ describe('API Integration Tests', () => {
     });
 
     it('should delete cattle record', async () => {
+      // First create required base and barn records
+      const baseData = {
+        name: 'Test Base 3',
+        code: 'TB003',
+        location: 'Test Location 3',
+        description: 'Test base for delete test'
+      };
+
+      const baseResponse = await request(app)
+        .post('/api/v1/bases')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(baseData)
+        .expect(201);
+
+      const baseId = baseResponse.body.id;
+
+      const barnData = {
+        name: 'Test Barn 3',
+        code: 'TBN003',
+        baseId: baseId,
+        capacity: 100,
+        currentCount: 0
+      };
+
+      const barnResponse = await request(app)
+        .post('/api/v1/barns')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(barnData)
+        .expect(201);
+
+      const barnId = barnResponse.body.id;
+
       // 首先创建一个牛只记录
       const cattleData = {
         earTag: 'TEST003',
         breed: '夏洛莱',
-        gender: 'male'
+        gender: 'male',
+        baseId: baseId,
+        barnId: barnId
       };
 
       const createResponse = await request(app)

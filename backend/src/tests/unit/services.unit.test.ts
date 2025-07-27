@@ -690,7 +690,7 @@ describe('Services Unit Tests', () => {
 
     it('should handle invalid input data', async () => {
       await expectAsyncError(
-        () => SecurityService.validatePasswordStrength(null as any),
+        async () => SecurityService.validatePasswordStrength(null as any),
         /Cannot read/
       );
     });

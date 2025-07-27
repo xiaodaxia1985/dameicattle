@@ -537,7 +537,12 @@ export const cleanupTestData = async (): Promise<void> => {
         }
       }
     }
-    // SQLite doesn't need sequence reset
+    // Reset PostgreSQL sequences if needed
+    if (sequelize.getDialect() === 'postgres') {
+      await sequelize.query('ALTER SEQUENCE IF EXISTS "Users_id_seq" RESTART WITH 1');
+      await sequelize.query('ALTER SEQUENCE IF EXISTS "Roles_id_seq" RESTART WITH 1');
+      await sequelize.query('ALTER SEQUENCE IF EXISTS "Cattle_id_seq" RESTART WITH 1');
+    }
   } catch (error) {
     console.warn('重置序列时出错:', error);
   }

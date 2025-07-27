@@ -8,16 +8,16 @@ import type { ApiError } from '@/utils/apiClient'
 
 // Mock Element Plus components
 vi.mock('element-plus', () => ({
-  ElMessage: {
-    error: vi.fn(),
-    warning: vi.fn()
-  },
+  ElMessage: vi.fn(),
   ElMessageBox: {
     alert: vi.fn().mockResolvedValue(undefined),
     confirm: vi.fn().mockResolvedValue(undefined)
   },
   ElNotification: vi.fn()
 }))
+
+// Import the mocked functions for testing
+import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 
 // Mock router
 vi.mock('@/router', () => ({
@@ -29,7 +29,7 @@ vi.mock('@/router', () => ({
   }
 }))
 
-import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
+// Element Plus components are mocked above
 
 describe('ErrorHandler', () => {
   let errorHandler: ErrorHandler
@@ -146,7 +146,7 @@ describe('ErrorHandler', () => {
 
       errorHandler.handleError(error)
 
-      expect(ElMessage.warning).toHaveBeenCalledWith(
+      expect(ElMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Test error',
           type: 'warning'
@@ -163,7 +163,7 @@ describe('ErrorHandler', () => {
 
       errorHandler.handleError(error)
 
-      expect(ElMessage.error).toHaveBeenCalledWith(
+      expect(ElMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           message: '服务器内部错误，请稍后重试',
           type: 'error'
@@ -217,8 +217,7 @@ describe('ErrorHandler', () => {
 
       errorHandler.handleError(error, undefined, FeedbackType.SILENT)
 
-      expect(ElMessage.error).not.toHaveBeenCalled()
-      expect(ElMessage.warning).not.toHaveBeenCalled()
+      expect(ElMessage).not.toHaveBeenCalled()
       expect(ElNotification).not.toHaveBeenCalled()
       expect(ElMessageBox.alert).not.toHaveBeenCalled()
     })
@@ -233,7 +232,7 @@ describe('ErrorHandler', () => {
 
       errorHandler.handleValidationErrors(errors)
 
-      expect(ElMessage.warning).toHaveBeenCalledWith(
+      expect(ElMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           message: '数据验证失败: Name is required; Email is invalid',
           type: 'warning'
@@ -249,7 +248,7 @@ describe('ErrorHandler', () => {
 
       errorHandler.handleValidationErrors(errors)
 
-      expect(ElMessage.warning).toHaveBeenCalledWith(
+      expect(ElMessage).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining('(共5个错误)')
         })
@@ -259,7 +258,7 @@ describe('ErrorHandler', () => {
     it('should handle empty error array', () => {
       errorHandler.handleValidationErrors([])
 
-      expect(ElMessage.warning).not.toHaveBeenCalled()
+      expect(ElMessage).not.toHaveBeenCalled()
     })
   })
 
@@ -293,7 +292,7 @@ describe('ErrorHandler', () => {
 
       errorHandler.handleAuthError(error)
 
-      expect(ElMessage.warning).toHaveBeenCalled()
+      expect(ElMessage).toHaveBeenCalled()
       expect(ElMessageBox.confirm).not.toHaveBeenCalled()
     })
   })
@@ -328,7 +327,7 @@ describe('ErrorHandler', () => {
 
       handleApiError(error)
 
-      expect(ElMessage.warning).toHaveBeenCalled()
+      expect(ElMessage).toHaveBeenCalled()
     })
   })
 
@@ -345,8 +344,8 @@ describe('ErrorHandler', () => {
 
       handler.handleError(error)
 
-      expect(ElMessage.error).not.toHaveBeenCalled()
-      expect(ElMessage.warning).not.toHaveBeenCalled()
+      expect(ElMessage).not.toHaveBeenCalled()
+      expect(ElNotification).not.toHaveBeenCalled()
     })
 
     it('should use custom default feedback type', () => {
@@ -362,7 +361,7 @@ describe('ErrorHandler', () => {
       handler.handleError(error)
 
       expect(ElNotification).toHaveBeenCalled()
-      expect(ElMessage.warning).not.toHaveBeenCalled()
+      expect(ElMessage).not.toHaveBeenCalled()
     })
   })
 })

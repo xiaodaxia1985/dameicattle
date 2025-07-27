@@ -1,13 +1,9 @@
 import { vi } from 'vitest';
 import { config } from '@vue/test-utils';
-import ElementPlus from 'element-plus';
 
 // Mock CSS imports
 vi.mock('element-plus/dist/index.css', () => ({}));
 vi.mock('element-plus/theme-chalk/dark/css-vars.css', () => ({}));
-
-// 全局测试配置
-config.global.plugins = [ElementPlus];
 
 // 模拟浏览器API
 Object.defineProperty(window, 'matchMedia', {
@@ -41,6 +37,28 @@ const sessionStorageMock = {
   clear: vi.fn(),
 };
 vi.stubGlobal('sessionStorage', sessionStorageMock);
+
+// 模拟Element Plus组件
+vi.mock('element-plus', () => ({
+  default: {}, // Provide default export
+  ElMessage: {
+    success: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+  ElMessageBox: {
+    alert: vi.fn().mockResolvedValue(undefined),
+    confirm: vi.fn().mockResolvedValue(undefined),
+    prompt: vi.fn().mockResolvedValue({ value: 'test' }),
+  },
+  ElNotification: vi.fn(),
+  ElLoading: {
+    service: vi.fn().mockReturnValue({
+      close: vi.fn(),
+    }),
+  },
+}));
 
 // 模拟IntersectionObserver
 global.IntersectionObserver = vi.fn().mockImplementation(() => ({

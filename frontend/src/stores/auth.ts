@@ -18,9 +18,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   const login = async (credentials: LoginRequest): Promise<void> => {
     try {
-      console.log('Attempting login with:', credentials)
       const response = await authApi.login(credentials)
-      console.log('Login response:', response)
       
       const { token: authToken, user: userData, permissions: userPermissions, expiresIn } = response.data
       
@@ -32,7 +30,6 @@ export const useAuthStore = defineStore('auth', () => {
       // Store authentication data using cross-platform utilities
       authState.storeAuthData(response.data, expiresIn)
       
-      console.log('Login successful, token stored:', authToken.substring(0, 20) + '...')
     } catch (error) {
       console.error('Login error:', error)
       throw error

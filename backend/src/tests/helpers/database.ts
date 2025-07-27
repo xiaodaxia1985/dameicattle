@@ -8,8 +8,12 @@ export const setupTestDatabase = async (): Promise<Sequelize> => {
   }
 
   sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: ':memory:', // Use in-memory SQLite for tests
+    dialect: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    database: process.env.DB_NAME || 'cattle_management_test',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'dianxin99',
     logging: false,
     define: {
       timestamps: true,
@@ -34,7 +38,7 @@ export const setupTestDatabase = async (): Promise<Sequelize> => {
       allowNull: true,
     },
     permissions: {
-      type: DataTypes.JSON, // Use JSON instead of JSONB for SQLite
+      type: DataTypes.JSONB,
       allowNull: false,
       defaultValue: [],
     },
@@ -171,7 +175,7 @@ export const setupTestDatabase = async (): Promise<Sequelize> => {
       allowNull: true,
     },
     details: {
-      type: DataTypes.JSON, // Use JSON instead of JSONB for SQLite
+      type: DataTypes.JSONB,
       allowNull: true,
     },
     created_at: {

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Login</title>
+</head>
+<body>
+    <h1>Debug Login Test</h1>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="result"></div>
+
+    <script>
+        async function testLogin() {
+            const resultDiv = document.getElementById('result');
+            
+            const loginData = {
+                username: 'admin',
+                password: 'Admin123'
+            };
+            
+            console.log('Sending login data:', loginData);
+            console.log('Data keys:', Object.keys(loginData));
+            console.log('Username type:', typeof loginData.username);
+            console.log('Password type:', typeof loginData.password);
+            
+            try {
+                const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>Response Status: ${response.status}</h3>
+                    <h4>Request Data:</h4>
+                    <pre>${JSON.stringify(loginData, null, 2)}</pre>
+                    <h4>Response Data:</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+                
+                console.log('Response status:', response.status);
+                console.log('Response data:', data);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>Error:</h3>
+                    <pre>${error.message}</pre>
+                `;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 import { StartupChecker } from '@/config/StartupChecker';
 import { configManager } from '@/config/ConfigManager';
 import { sequelize } from '@/config/database';
-import { redisClient } from '@/config/redis';
+import { redisManager } from '@/config/redis';
 import fs from 'fs';
 
 // Mock dependencies
@@ -16,7 +16,7 @@ describe('StartupChecker', () => {
 
   const mockConfigManager = configManager as jest.Mocked<typeof configManager>;
   const mockSequelize = sequelize as jest.Mocked<typeof sequelize>;
-  const mockRedisClient = redisClient as jest.Mocked<typeof redisClient>;
+  const mockRedisManager = redisManager as jest.Mocked<typeof redisManager>;
   const mockFs = fs as jest.Mocked<typeof fs>;
 
   beforeEach(() => {
@@ -72,10 +72,14 @@ describe('StartupChecker', () => {
       [{ version: 'PostgreSQL 13.0 on x86_64-pc-linux-gnu' }]
     ] as any);
     
-    Object.defineProperty(mockRedisClient, 'isOpen', { value: true, writable: true });
-    mockRedisClient.connect.mockResolvedValue(mockRedisClient as any);
-    mockRedisClient.ping.mockResolvedValue('PONG');
-    mockRedisClient.info.mockResolvedValue('redis_version:6.2.0\r\n');
+    mockRedisManager.healthCheck.mockResolvedValue({
+      status: 'healthy',
+      message: 'Redis connection is healthy',
+      timestamp: new Date(),
+      responseTime: 10,
+      connectionCount: 1,
+      memoryUsage: 1024
+    });
     
     mockFs.existsSync.mockReturnValue(true);
     mockFs.mkdirSync.mockReturnValue(undefined);
@@ -132,7 +136,7 @@ describe('StartupChecker', () => {
     });
 
     it('should continue when Redis connection fails (optional)', async () => {
-      mockRedisClient.connect.mockRejectedValue(new Error('Redis connection failed'));
+      mockRedisManager.healthCheck.mockRejectedValue(new Error('Redis connection failed'));
       
       const result = await startupChecker.performStartupChecks();
       
@@ -261,27 +265,44 @@ describe('StartupChecker', () => {
   });
 
   describe('Redis connectivity checks', () => {
-    it('should connect to Redis if not already connected', async () => {
-      Object.defineProperty(mockRedisClient, 'isOpen', { value: false, writable: true });
-      
+    it('should check Redis health status', async () => {
       await startupChecker.performStartupChecks();
       
-      expect(mockRedisClient.connect).toHaveBeenCalled();
+      expect(mockRedisManager.healthCheck).toHaveBeenCalled();
     });
 
-    it('should not connect to Redis if already connected', async () => {
-      Object.defineProperty(mockRedisClient, 'isOpen', { value: true, writable: true });
+    it('should handle degraded Redis status', async () => {
+      mockRedisManager.healthCheck.mockResolvedValue({
+        status: 'degraded',
+        message: 'Redis connection degraded',
+        timestamp: new Date(),
+        responseTime: 100,
+        connectionCount: 0,
+        memoryUsage: 0
+      });
       
-      await startupChecker.performStartupChecks();
+      const result = await startupChecker.performStartupChecks();
       
-      expect(mockRedisClient.connect).not.toHaveBeenCalled();
+      expect(result.success).toBe(true); // Should still succeed
+      expect(result.checks.redis).toBe(false);
+      expect(result.warnings).toContain('Redis connectivity degraded: Redis connection degraded');
     });
 
-    it('should log Redis version information', async () => {
-      await startupChecker.performStartupChecks();
+    it('should handle unhealthy Redis status', async () => {
+      mockRedisManager.healthCheck.mockResolvedValue({
+        status: 'unhealthy',
+        message: 'Redis connection failed',
+        timestamp: new Date(),
+        responseTime: 1000,
+        connectionCount: 0,
+        memoryUsage: 0
+      });
       
-      expect(mockRedisClient.ping).toHaveBeenCalled();
-      expect(mockRedisClient.info).toHaveBeenCalledWith('server');
+      const result = await startupChecker.performStartupChecks();
+      
+      expect(result.success).toBe(true); // Should still succeed
+      expect(result.checks.redis).toBe(false);
+      expect(result.warnings).toContain('Redis connectivity failed (optional): Redis connection failed');
     });
   });
 
@@ -337,7 +358,14 @@ describe('StartupChecker', () => {
     });
 
     it('should return degraded status when Redis fails', async () => {
-      mockRedisClient.ping.mockRejectedValue(new Error('Redis down'));
+      mockRedisManager.healthCheck.mockResolvedValue({
+        status: 'degraded',
+        message: 'Redis down',
+        timestamp: new Date(),
+        responseTime: 500,
+        connectionCount: 0,
+        memoryUsage: 0
+      });
       
       const result = await startupChecker.performHealthCheck();
       
@@ -367,8 +395,8 @@ describe('StartupChecker', () => {
       expect(result.checks.fileSystem).toBe(false);
     });
 
-    it('should handle Redis not being open', async () => {
-      Object.defineProperty(mockRedisClient, 'isOpen', { value: false, writable: true });
+    it('should handle Redis health check errors', async () => {
+      mockRedisManager.healthCheck.mockRejectedValue(new Error('Redis health check failed'));
       
       const result = await startupChecker.performHealthCheck();
       

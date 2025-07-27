@@ -112,15 +112,36 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
     
-    await authStore.login(loginForm)
+    // Use direct fetch to bypass complex API client
+    const response = await fetch('/api/v1/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: loginForm.username,
+        password: loginForm.password
+      })
+    })
+    
+    const data = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(data.error?.message || 'Login failed')
+    }
+    
+    // Store auth data directly
+    const { token, user, permissions } = data.data
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('permissions', JSON.stringify(permissions || []))
     
     ElMessage.success('登录成功')
     router.push('/')
+    
   } catch (error: any) {
     console.error('Login error:', error)
-    if (error.message) {
-      ElMessage.error(error.message)
-    }
+    ElMessage.error(error.message || '登录失败')
   } finally {
     loading.value = false
   }

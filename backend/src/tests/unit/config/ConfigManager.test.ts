@@ -81,7 +81,7 @@ describe('ConfigManager', () => {
       const jwtConfig = configManager.getJWTConfig();
       
       expect(jwtConfig.secret).toBe('this-is-a-very-long-jwt-secret-key-for-testing-purposes');
-      expect(jwtConfig.expiresIn).toBe('24h'); // Should use default value
+      expect(jwtConfig.expiresIn).toBe('1h'); // Should use test environment default
     });
 
     it('should get CORS configuration', () => {
@@ -94,8 +94,8 @@ describe('ConfigManager', () => {
     it('should get upload configuration', () => {
       const uploadConfig = configManager.getUploadConfig();
       
-      expect(uploadConfig.path).toBe('uploads');
-      expect(uploadConfig.maxSize).toBe(10 * 1024 * 1024);
+      expect(uploadConfig.path).toBe('./test-uploads'); // Test environment uses different path
+      expect(uploadConfig.maxSize).toBe(5 * 1024 * 1024); // Test environment uses smaller size
       expect(uploadConfig.allowedTypes).toContain('jpg');
     });
 
