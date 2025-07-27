@@ -75,6 +75,15 @@ router.get(
   baseController.getBaseCapacityInfo
 );
 
+// GET /api/v1/bases/:id/barns - Get barns for a specific base
+router.get(
+  '/:id/barns', 
+  requirePermission('bases:read'), 
+  dataPermissionMiddleware, 
+  operationLogMiddleware('read', 'base_barns'),
+  baseController.getBarnsByBaseId
+);
+
 // GET /api/v1/bases/:id - Get base by ID
 router.get(
   '/:id', 

@@ -694,6 +694,29 @@ const getBaseStats = (baseId: number) => {
   return baseStats.value[baseId]
 }
 
+// 刷新单个基地的统计信息
+const refreshBaseStats = async (baseId: number) => {
+  try {
+    const response = await baseApi.getBaseStatistics(baseId)
+    const stats = response.data?.statistics || response.data || {}
+    
+    // 将后端的 snake_case 字段映射为前端的 camelCase
+    baseStats.value[baseId] = {
+      barnCount: stats.barn_count || 0,
+      cattleCount: stats.cattle_count || 0,
+      userCount: stats.user_count || 0,
+      healthyCattleCount: stats.healthy_cattle_count || 0,
+      sickCattleCount: stats.sick_cattle_count || 0,
+      treatmentCattleCount: stats.treatment_cattle_count || 0,
+      feedingRecordsCount: stats.feeding_records_count || 0,
+      healthRecordsCount: stats.health_records_count || 0
+    }
+  } catch (error) {
+    console.warn(`获取基地 ${baseId} 统计信息失败:`, error)
+    baseStats.value[baseId] = { barnCount: 0, cattleCount: 0 }
+  }
+}
+
 // 处理基地选择
 const handleBaseSelection = (base: Base, checked: boolean) => {
   if (checked) {
@@ -771,8 +794,20 @@ const fetchBasesWithAdvancedSearch = async (params: any = {}) => {
     // 获取统计信息
     for (const base of bases.value) {
       try {
-        const stats = await baseApi.getBaseStatistics(base.id)
-        baseStats.value[base.id] = stats.data
+        const response = await baseApi.getBaseStatistics(base.id)
+        const stats = response.data?.statistics || response.data || {}
+        
+        // 将后端的 snake_case 字段映射为前端的 camelCase
+        baseStats.value[base.id] = {
+          barnCount: stats.barn_count || 0,
+          cattleCount: stats.cattle_count || 0,
+          userCount: stats.user_count || 0,
+          healthyCattleCount: stats.healthy_cattle_count || 0,
+          sickCattleCount: stats.sick_cattle_count || 0,
+          treatmentCattleCount: stats.treatment_cattle_count || 0,
+          feedingRecordsCount: stats.feeding_records_count || 0,
+          healthRecordsCount: stats.health_records_count || 0
+        }
       } catch (error) {
         console.warn(`获取基地 ${base.id} 统计信息失败:`, error)
         baseStats.value[base.id] = { barnCount: 0, cattleCount: 0 }
@@ -900,8 +935,20 @@ const fetchBases = async () => {
     // 获取每个基地的统计信息
     for (const base of bases.value) {
       try {
-        const stats = await baseApi.getBaseStatistics(base.id)
-        baseStats.value[base.id] = stats.data
+        const response = await baseApi.getBaseStatistics(base.id)
+        const stats = response.data?.statistics || response.data || {}
+        
+        // 将后端的 snake_case 字段映射为前端的 camelCase
+        baseStats.value[base.id] = {
+          barnCount: stats.barn_count || 0,
+          cattleCount: stats.cattle_count || 0,
+          userCount: stats.user_count || 0,
+          healthyCattleCount: stats.healthy_cattle_count || 0,
+          sickCattleCount: stats.sick_cattle_count || 0,
+          treatmentCattleCount: stats.treatment_cattle_count || 0,
+          feedingRecordsCount: stats.feeding_records_count || 0,
+          healthRecordsCount: stats.health_records_count || 0
+        }
       } catch (error) {
         console.warn(`获取基地 ${base.id} 统计信息失败:`, error)
         baseStats.value[base.id] = { barnCount: 0, cattleCount: 0 }
@@ -932,7 +979,17 @@ const fetchManagers = async () => {
 const fetchBarns = async (baseId: number) => {
   try {
     const response = await baseApi.getBarnsByBaseId(baseId)
-    currentBarns.value = response.data
+    
+    // 后端返回的数据结构是 { success: true, data: { barns: [...], base_info: {...} } }
+    const barns = response.data?.barns || response.data || []
+    
+    // 确保数据是数组且去重
+    const barnArray = Array.isArray(barns) ? barns : []
+    const uniqueBarns = barnArray.filter((barn, index, self) => 
+      index === self.findIndex(b => b.id === barn.id)
+    )
+    
+    currentBarns.value = uniqueBarns
   } catch (error) {
     ElMessage.error('获取牛棚列表失败')
     console.error(error)
@@ -1163,7 +1220,10 @@ const handleSaveBarn = async () => {
     barnDialogVisible.value = false
     
     if (selectedBase.value) {
+      // 刷新牛棚列表
       fetchBarns(selectedBase.value.id)
+      // 刷新基地统计信息（更新牛棚数量显示）
+      refreshBaseStats(selectedBase.value.id)
     }
   } catch (error) {
     ElMessage.error(barnForm.id ? '更新失败' : '创建失败')

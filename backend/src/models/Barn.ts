@@ -100,7 +100,7 @@ Barn.init(
       type: DataTypes.STRING(50),
       allowNull: true,
       validate: {
-        isIn: [['育肥棚', '繁殖棚', '隔离棚', '治疗棚', '其他']],
+        isIn: [['育肥棚', '繁殖棚', '隔离棚', '治疗棚', '其他', 'fattening', 'breeding', 'isolation', 'treatment', 'other']],
       },
     },
     description: {

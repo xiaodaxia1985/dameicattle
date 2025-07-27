@@ -1,6 +1,6 @@
 ﻿import { Request, Response, NextFunction } from 'express';
 import { Op, QueryTypes } from 'sequelize';
-import { Base, User } from '@/models';
+import { Base, User, Barn } from '@/models';
 import { sequelize } from '@/config/database';
 import { logger } from '@/utils/logger';
 import { applyBaseFilter } from '@/middleware/dataPermission';
@@ -796,6 +796,60 @@ export class BaseController {
         success: true,
         data: {
           capacity_info: capacityInfo,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async getBarnsByBaseId(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+
+      // Validate that ID is a number
+      const baseId = parseInt(id, 10);
+      if (isNaN(baseId)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_BASE_ID',
+            message: '基地ID必须是数字',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Check if base exists
+      const base = await Base.findByPk(baseId);
+      if (!base) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'BASE_NOT_FOUND',
+            message: '基地不存在',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Get barns for this base
+      const barns = await Barn.findAll({
+        where: { base_id: baseId },
+        order: [['created_at', 'DESC']],
+      });
+
+      res.json({
+        success: true,
+        data: {
+          barns: barns.map(barn => barn.toJSON()),
+          base_info: {
+            id: base.id,
+            name: base.name,
+            code: base.code,
+          },
         },
       });
     } catch (error) {

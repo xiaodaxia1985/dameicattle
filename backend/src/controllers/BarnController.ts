@@ -137,10 +137,14 @@ export class BarnController {
    */
   static async createBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
-      const { name, code, base_id, capacity, barn_type, description, facilities } = req.body;
+      const { name, code, base_id, baseId, capacity, barn_type, barnType, description, facilities } = req.body;
+      
+      // Handle both parameter formats: base_id/baseId and barn_type/barnType
+      const actualBaseId = base_id || baseId;
+      const actualBarnType = barn_type || barnType;
 
       // 数据权限检查
-      if (req.user?.base_id && req.user.base_id !== base_id) {
+      if (req.user?.base_id && req.user.base_id !== actualBaseId) {
         return res.status(403).json({
           success: false,
           error: {
@@ -151,7 +155,7 @@ export class BarnController {
       }
 
       // 检查基地是否存在
-      const base = await Base.findByPk(base_id);
+      const base = await Base.findByPk(actualBaseId);
       if (!base) {
         return res.status(404).json({
           success: false,
@@ -166,7 +170,7 @@ export class BarnController {
       const existingBarn = await Barn.findOne({
         where: {
           code,
-          base_id,
+          base_id: actualBaseId,
         },
       });
 
@@ -183,9 +187,9 @@ export class BarnController {
       const barn = await Barn.create({
         name,
         code,
-        base_id,
+        base_id: actualBaseId,
         capacity,
-        barn_type,
+        barn_type: actualBarnType,
         description,
         facilities: facilities || {},
       });
@@ -224,7 +228,10 @@ export class BarnController {
   static async updateBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const { id } = req.params;
-      const { name, code, capacity, barn_type, description, facilities } = req.body;
+      const { name, code, capacity, barn_type, barnType, description, facilities } = req.body;
+      
+      // Handle both parameter formats: barn_type/barnType
+      const actualBarnType = barn_type !== undefined ? barn_type : barnType;
 
       const whereConditions: WhereOptions = { id: Number(id) };
 
@@ -281,7 +288,7 @@ export class BarnController {
         ...(name && { name }),
         ...(code && { code }),
         ...(capacity && { capacity }),
-        ...(barn_type !== undefined && { barn_type }),
+        ...(actualBarnType !== undefined && { barn_type: actualBarnType }),
         ...(description !== undefined && { description }),
         ...(facilities !== undefined && { facilities }),
       });
