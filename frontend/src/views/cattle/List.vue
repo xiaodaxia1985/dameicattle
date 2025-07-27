@@ -52,7 +52,7 @@
         <!-- 搜索和筛选 -->
         <div class="search-section">
           <el-row :gutter="16">
-            <el-col :span="6">
+            <el-col :span="5">
               <el-input
                 v-model="searchForm.search"
                 placeholder="搜索耳标号、品种"
@@ -65,26 +65,39 @@
               </el-input>
             </el-col>
             <el-col :span="4">
+              <el-select v-model="searchForm.baseId" placeholder="选择基地" clearable @change="handleBaseChange">
+                <el-option
+                  v-for="base in baseStore.bases"
+                  :key="base.id"
+                  :label="base.name"
+                  :value="base.id"
+                />
+              </el-select>
+            </el-col>
+            <el-col :span="4">
+              <el-select v-model="searchForm.barnId" placeholder="选择牛棚" clearable>
+                <el-option
+                  v-for="barn in availableBarns"
+                  :key="barn.value"
+                  :label="barn.label"
+                  :value="barn.value"
+                />
+              </el-select>
+            </el-col>
+            <el-col :span="3">
               <el-select v-model="searchForm.healthStatus" placeholder="健康状态" clearable>
                 <el-option label="健康" value="healthy" />
                 <el-option label="患病" value="sick" />
                 <el-option label="治疗中" value="treatment" />
               </el-select>
             </el-col>
-            <el-col :span="4">
+            <el-col :span="3">
               <el-select v-model="searchForm.gender" placeholder="性别" clearable>
                 <el-option label="公牛" value="male" />
                 <el-option label="母牛" value="female" />
               </el-select>
             </el-col>
-            <el-col :span="4">
-              <el-select v-model="searchForm.status" placeholder="状态" clearable>
-                <el-option label="在场" value="active" />
-                <el-option label="已售" value="sold" />
-                <el-option label="转出" value="transferred" />
-              </el-select>
-            </el-col>
-            <el-col :span="6">
+            <el-col :span="5">
               <el-button type="primary" @click="handleSearch">
                 <el-icon><Search /></el-icon>
                 搜索
@@ -312,10 +325,37 @@ const router = useRouter()
 // 搜索表单
 const searchForm = reactive({
   search: '',
+  baseId: undefined as number | undefined,
+  barnId: undefined as number | undefined,
   healthStatus: undefined as 'healthy' | 'sick' | 'treatment' | undefined,
   gender: undefined as 'male' | 'female' | undefined,
   status: 'active' as 'active' | 'sold' | 'dead' | 'transferred'
 })
+
+// 可用的牛棚选项
+const availableBarns = ref<Array<{
+  value: number
+  label: string
+}>>([])
+
+// 基地变更处理
+const handleBaseChange = async (baseId: number | undefined) => {
+  searchForm.barnId = undefined
+  availableBarns.value = []
+  
+  if (baseId) {
+    try {
+      const response = await baseStore.fetchBarnsByBaseId(baseId)
+      availableBarns.value = response.map((barn: any) => ({
+        value: barn.id,
+        label: `${barn.name} (${barn.code})`
+      }))
+    } catch (error) {
+      console.error('加载牛棚选项失败:', error)
+      ElMessage.error('加载牛棚选项失败')
+    }
+  }
+}
 
 // 视图模式
 const viewMode = ref<'table' | 'card'>('table')
@@ -356,7 +396,7 @@ const loadCattleList = async () => {
     
     await cattleStore.fetchCattleList({
       ...searchForm,
-      page: 1
+      page: currentPage.value
     })
     
     console.log('牛只列表加载成功:', cattleStore.cattleList)
@@ -374,10 +414,13 @@ const handleSearch = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     search: '',
+    baseId: undefined,
+    barnId: undefined,
     healthStatus: undefined,
     gender: undefined,
     status: 'active'
   })
+  availableBarns.value = []
   handleSearch()
 }
 

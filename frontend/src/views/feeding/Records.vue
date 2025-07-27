@@ -3,6 +3,14 @@
     <div class="page-header">
       <h1>饲喂记录管理</h1>
       <div class="header-actions">
+        <!-- 基地牛棚牛只级联选择 -->
+        <CascadeSelector
+          v-model="searchForm.cascade"
+          cattle-label="选择牛只(可选)"
+          :required="false"
+          @change="handleCascadeChange"
+        />
+        
         <el-date-picker
           v-model="dateRange"
           type="daterange"
@@ -13,14 +21,6 @@
           value-format="YYYY-MM-DD"
           @change="handleDateRangeChange"
         />
-        <el-select v-model="selectedBase" placeholder="选择基地" @change="handleBaseChange">
-          <el-option
-            v-for="base in bases"
-            :key="base.id"
-            :label="base.name"
-            :value="base.id"
-          />
-        </el-select>
         <el-select v-model="selectedFormula" placeholder="选择配方" clearable @change="handleFormulaChange">
           <el-option
             v-for="formula in formulas"
@@ -191,26 +191,16 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="基地" prop="baseId">
-          <el-select v-model="formData.baseId" placeholder="选择基地" style="width: 100%" @change="handleFormBaseChange">
-            <el-option
-              v-for="base in bases"
-              :key="base.id"
-              :label="base.name"
-              :value="base.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="牛棚" prop="barnId">
-          <el-select v-model="formData.barnId" placeholder="选择牛棚" style="width: 100%">
-            <el-option
-              v-for="barn in availableBarns"
-              :key="barn.id"
-              :label="barn.name"
-              :value="barn.id"
-            />
-          </el-select>
-        </el-form-item>
+        <!-- 基地牛棚牛只级联选择 -->
+        <CascadeSelector
+          v-model="formData.cascade"
+          barn-label="目标牛棚"
+          cattle-label="目标牛只(可选)"
+          barn-prop="barnId"
+          cattle-prop="cattleId"
+          :required="true"
+          @change="handleFormCascadeChange"
+        />
         <el-form-item label="饲喂量(kg)" prop="amount">
           <el-input-number
             v-model="formData.amount"
@@ -311,6 +301,7 @@ import { DataLine, Dish, Money, TrendCharts, Plus, Download, Upload } from '@ele
 import { feedingApi } from '@/api/feeding'
 import { baseApi } from '@/api/base'
 import { barnApi } from '@/api/barn'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import type { FeedingRecord, FeedFormula, CreateFeedingRecordRequest, UpdateFeedingRecordRequest } from '@/api/feeding'
 
 // 响应式数据
@@ -325,8 +316,16 @@ const selectedRows = ref<FeedingRecord[]>([])
 
 // 筛选条件
 const dateRange = ref<[string, string]>(['', ''])
-const selectedBase = ref<number>()
 const selectedFormula = ref<string>()
+
+// 搜索表单
+const searchForm = ref({
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  }
+})
 
 // 分页
 const pagination = ref({
@@ -412,9 +411,6 @@ const fetchBases = async () => {
     const response = await baseApi.getBases()
     // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
     bases.value = response.data.bases || []
-    if (bases.value.length > 0) {
-      selectedBase.value = bases.value[0].id
-    }
   } catch (error) {
     console.error('获取基地列表失败:', error)
   }
@@ -450,7 +446,10 @@ const fetchRecords = async () => {
       limit: pagination.value.limit
     }
     
-    if (selectedBase.value) params.baseId = selectedBase.value
+    // 使用级联选择的值
+    if (searchForm.value.cascade.baseId) params.baseId = searchForm.value.cascade.baseId
+    if (searchForm.value.cascade.barnId) params.barnId = searchForm.value.cascade.barnId
+    if (searchForm.value.cascade.cattleId) params.cattleId = searchForm.value.cascade.cattleId
     if (selectedFormula.value) params.formulaId = selectedFormula.value
     if (dateRange.value) {
       params.startDate = dateRange.value[0]
@@ -469,13 +468,22 @@ const fetchRecords = async () => {
   }
 }
 
-// 处理筛选条件变化
-const handleDateRangeChange = () => {
+// 级联选择变更处理
+const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  searchForm.value.cascade = value
   pagination.value.page = 1
   fetchRecords()
 }
 
-const handleBaseChange = () => {
+// 表单级联选择变更处理
+const handleFormCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  formData.value.cascade = value
+  formData.value.baseId = value.baseId || 0
+  formData.value.barnId = value.barnId || 0
+}
+
+// 处理筛选条件变化
+const handleDateRangeChange = () => {
   pagination.value.page = 1
   fetchRecords()
 }
@@ -504,9 +512,6 @@ const showCreateDialog = () => {
   dialogMode.value = 'create'
   resetForm()
   formData.value.feedingDate = new Date().toISOString().split('T')[0]
-  if (selectedBase.value) {
-    formData.value.baseId = selectedBase.value
-  }
   dialogVisible.value = true
 }
 
@@ -659,11 +664,9 @@ onMounted(() => {
   fetchFormulas()
 })
 
-// 监听基地变化
-watch(() => selectedBase.value, () => {
-  if (selectedBase.value) {
-    fetchRecords()
-  }
+// 监听搜索条件变化
+watch(() => searchForm.value.cascade.baseId, () => {
+  fetchRecords()
 })
 </script>
 

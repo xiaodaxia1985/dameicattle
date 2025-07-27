@@ -14,6 +14,15 @@
         <el-form-item label="订单号">
           <el-input v-model="searchForm.orderNumber" placeholder="请输入订单号" clearable />
         </el-form-item>
+        <!-- 基地选择 -->
+        <CascadeSelector
+          v-model="searchForm.cascade"
+          base-label="选择基地"
+          barn-label="选择牛棚(可选)"
+          cattle-label=""
+          :required="false"
+          @change="handleCascadeChange"
+        />
         <el-form-item label="供应商">
           <el-select v-model="searchForm.supplierId" placeholder="请选择供应商" clearable filterable>
             <el-option 
@@ -478,6 +487,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { purchaseApi, type PurchaseOrder } from '@/api/purchase'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -493,7 +503,12 @@ const searchForm = reactive({
   supplierId: undefined as number | undefined,
   orderType: '',
   status: '',
-  dateRange: undefined as [string, string] | undefined
+  dateRange: undefined as [string, string] | undefined,
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  }
 })
 
 // 分页
@@ -581,6 +596,13 @@ const fetchSuppliers = async () => {
   }
 }
 
+// 级联选择变更处理
+const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  searchForm.cascade = value
+  pagination.page = 1
+  fetchOrders()
+}
+
 const handleSearch = () => {
   pagination.page = 1
   fetchOrders()
@@ -592,7 +614,12 @@ const handleReset = () => {
     supplierId: null,
     orderType: '',
     status: '',
-    dateRange: null
+    dateRange: null,
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    }
   })
   handleSearch()
 }

@@ -81,20 +81,15 @@
                 />
               </el-select>
 
-              <el-select
-                v-model="selectedBase"
-                placeholder="选择基地"
-                style="width: 150px"
-                clearable
-                @change="handleSearch"
-              >
-                <el-option
-                  v-for="base in bases"
-                  :key="base.id"
-                  :label="base.name"
-                  :value="base.id"
-                />
-              </el-select>
+              <!-- 基地选择 -->
+              <CascadeSelector
+                v-model="searchForm.cascade"
+                base-label="选择基地"
+                barn-label="选择牛棚(可选)"
+                cattle-label=""
+                :required="false"
+                @change="handleCascadeChange"
+              />
 
               <el-checkbox v-model="lowStockOnly" @change="handleSearch">
                 仅显示低库存
@@ -582,6 +577,7 @@ import {
 import { useMaterialStore } from '@/stores/material'
 import { useBaseStore } from '@/stores/base'
 import { materialApi } from '@/api/material'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import type { FormInstance } from 'element-plus'
 import type { Inventory, InventoryTransaction, InventoryAlert } from '@/types/material'
 
@@ -593,9 +589,17 @@ const baseStore = useBaseStore()
 const activeTab = ref('inventory')
 const searchKeyword = ref('')
 const selectedMaterial = ref<number | undefined>()
-const selectedBase = ref<number | undefined>()
 const lowStockOnly = ref(false)
 const selectedInventory = ref<Inventory[]>([])
+
+// 搜索表单
+const searchForm = ref({
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  }
+})
 
 // Transaction filters
 const transactionMaterialId = ref<number | undefined>()
@@ -666,6 +670,12 @@ const handleTabChange = (tabName: string | number) => {
   }
 }
 
+// 级联选择变更处理
+const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  searchForm.value.cascade = value
+  loadInventory()
+}
+
 const handleSearch = () => {
   loadInventory()
 }
@@ -717,7 +727,8 @@ const loadInventory = async () => {
       limit: materialStore.pageSize,
       keyword: searchKeyword.value || undefined,
       material_id: selectedMaterial.value,
-      base_id: selectedBase.value,
+      base_id: searchForm.value.cascade.baseId,
+      barn_id: searchForm.value.cascade.barnId,
       low_stock_only: lowStockOnly.value || undefined
     })
   } catch (error) {

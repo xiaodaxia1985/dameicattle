@@ -16,6 +16,17 @@
         <el-form-item label="设备名称">
           <el-input v-model="searchForm.search" placeholder="请输入设备名称或编码" clearable />
         </el-form-item>
+        
+        <!-- 基地牛棚级联选择 -->
+        <CascadeSelector
+          v-model="searchForm.cascade"
+          base-label="选择基地"
+          barn-label="选择牛棚(可选)"
+          cattle-label=""
+          :required="false"
+          @change="handleCascadeChange"
+        />
+        
         <el-form-item label="设备分类">
           <el-select v-model="searchForm.categoryId" placeholder="请选择分类" clearable>
             <el-option
@@ -124,6 +135,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
 import { equipmentApi } from '@/api/equipment'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import EquipmentForm from './components/EquipmentForm.vue'
 import EquipmentDetail from './components/EquipmentDetail.vue'
 
@@ -141,6 +153,11 @@ const searchForm = reactive({
   search: '',
   categoryId: '',
   status: '',
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  }
 })
 
 // 分页
@@ -150,6 +167,13 @@ const pagination = reactive({
   total: 0,
 })
 
+// 级联选择变更处理
+const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  searchForm.cascade = value
+  pagination.page = 1
+  loadEquipment()
+}
+
 // 加载设备列表
 const loadEquipment = async () => {
   loading.value = true
@@ -157,7 +181,11 @@ const loadEquipment = async () => {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
-      ...searchForm,
+      search: searchForm.search,
+      categoryId: searchForm.categoryId,
+      status: searchForm.status,
+      baseId: searchForm.cascade.baseId,
+      barnId: searchForm.cascade.barnId,
     }
     const response = await equipmentApi.getEquipment(params)
     // 根据API实现，response.data 可能直接是数据或包含data字段

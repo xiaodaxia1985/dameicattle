@@ -17,61 +17,71 @@
 
     <!-- 搜索筛选 -->
     <el-card class="search-card">
-      <el-form :model="searchForm" inline>
-        <el-form-item label="牛只耳标">
-          <el-input 
-            v-model="searchForm.cattleEarTag" 
-            placeholder="请输入牛只耳标"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item label="诊断状态">
-          <el-select 
-            v-model="searchForm.status" 
-            placeholder="请选择状态"
-            clearable
-            style="width: 150px"
-          >
-            <el-option label="进行中" value="ongoing" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="已取消" value="cancelled" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="诊断日期">
-          <el-date-picker
-            v-model="searchForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            style="width: 240px"
-          />
-        </el-form-item>
-        <el-form-item label="兽医">
-          <el-select 
-            v-model="searchForm.veterinarianId" 
-            placeholder="请选择兽医"
-            clearable
-            style="width: 150px"
-          >
-            <el-option 
-              v-for="vet in veterinarians" 
-              :key="vet.id" 
-              :label="vet.name" 
-              :value="vet.id" 
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="searchRecords">
-            <el-icon><Search /></el-icon>
-            搜索
-          </el-button>
-          <el-button @click="resetSearch">重置</el-button>
-        </el-form-item>
+      <el-form :model="searchForm" label-width="80px">
+        <!-- 基地牛棚牛只级联选择 -->
+        <CascadeSelector
+          v-model="searchForm.cascade"
+          cattle-label="选择牛只(可选)"
+          :required="false"
+          @change="handleCascadeChange"
+        />
+        
+        <el-row :gutter="16" style="margin-top: 16px;">
+          <el-col :span="6">
+            <el-form-item label="诊断状态">
+              <el-select 
+                v-model="searchForm.status" 
+                placeholder="请选择状态"
+                clearable
+                style="width: 100%"
+              >
+                <el-option label="进行中" value="ongoing" />
+                <el-option label="已完成" value="completed" />
+                <el-option label="已取消" value="cancelled" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="诊断日期">
+              <el-date-picker
+                v-model="searchForm.dateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+              />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item label="兽医">
+              <el-select 
+                v-model="searchForm.veterinarianId" 
+                placeholder="请选择兽医"
+                clearable
+                style="width: 100%"
+              >
+                <el-option 
+                  v-for="vet in veterinarians" 
+                  :key="vet.id" 
+                  :label="vet.name" 
+                  :value="vet.id" 
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item>
+              <el-button type="primary" @click="searchRecords">
+                <el-icon><Search /></el-icon>
+                搜索
+              </el-button>
+              <el-button @click="resetSearch">重置</el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
     </el-card>
 
@@ -182,21 +192,14 @@
         :rules="formRules"
         label-width="100px"
       >
-        <el-form-item label="牛只" prop="cattleId">
-          <el-select 
-            v-model="recordForm.cattleId" 
-            placeholder="请选择牛只"
-            filterable
-            style="width: 100%"
-          >
-            <el-option 
-              v-for="cattle in cattleList" 
-              :key="cattle.id" 
-              :label="`${cattle.earTag} - ${cattle.breed}`" 
-              :value="cattle.id" 
-            />
-          </el-select>
-        </el-form-item>
+        <!-- 基地牛棚牛只级联选择 -->
+        <CascadeSelector
+          v-model="recordForm.cascade"
+          cattle-label="选择牛只"
+          cattle-prop="cattleId"
+          :required="true"
+          @change="handleFormCascadeChange"
+        />
         <el-form-item label="症状" prop="symptoms">
           <el-input 
             v-model="recordForm.symptoms" 
@@ -310,6 +313,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Download, Search } from '@element-plus/icons-vue'
 import { healthApi } from '@/api/health'
 import type { HealthRecord } from '@/api/health'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 
 // 响应式数据
 const loading = ref(false)
@@ -325,11 +329,20 @@ const showDetailDialog = ref(false)
 
 // 搜索表单
 const searchForm = reactive({
-  cattleEarTag: '',
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  },
   status: undefined as 'ongoing' | 'completed' | 'cancelled' | undefined,
   dateRange: [],
   veterinarianId: ''
 })
+
+// 级联选择变更处理
+const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  searchForm.cascade = value
+}
 
 // 分页信息
 const pagination = reactive({
@@ -340,6 +353,11 @@ const pagination = reactive({
 
 // 表单数据
 const recordForm = reactive({
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  },
   cattleId: '',
   symptoms: '',
   diagnosis: '',
@@ -348,6 +366,12 @@ const recordForm = reactive({
   diagnosisDate: '',
   status: 'ongoing' as 'ongoing' | 'completed' | 'cancelled'
 })
+
+// 表单级联选择变更处理
+const handleFormCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  recordForm.cascade = value
+  recordForm.cattleId = value.cattleId?.toString() || ''
+}
 
 // 表单验证规则
 const formRules = {
