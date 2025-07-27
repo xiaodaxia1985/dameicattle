@@ -14,7 +14,8 @@ export const useBaseStore = defineStore('base', () => {
     loading.value = true
     try {
       const response = await baseApi.getBases(params)
-      bases.value = response.data.data
+      // 后端返回的数据结构是 { data: { bases: [], pagination: {} } }
+      bases.value = response.data.bases || response.data.data || []
       return response.data
     } catch (error) {
       console.error('获取基地列表失败:', error)
@@ -29,7 +30,7 @@ export const useBaseStore = defineStore('base', () => {
     loading.value = true
     try {
       const response = await baseApi.getAllBases()
-      bases.value = response.data
+      bases.value = response.data || []
       return response.data
     } catch (error) {
       console.error('获取基地列表失败:', error)
@@ -44,7 +45,8 @@ export const useBaseStore = defineStore('base', () => {
     loading.value = true
     try {
       const response = await baseApi.getBarns(params)
-      barns.value = response.data.data
+      // 后端返回的数据结构是 { data: { barns: [], pagination: {} } }
+      barns.value = response.data.barns || response.data.data || []
       return response.data
     } catch (error) {
       console.error('获取牛棚列表失败:', error)
@@ -59,7 +61,8 @@ export const useBaseStore = defineStore('base', () => {
     loading.value = true
     try {
       const response = await baseApi.getBarnsByBaseId(baseId)
-      return response.data
+      // 后端返回 { data: { barns: [], base_info: {} } }
+      return response.data.barns || []
     } catch (error) {
       console.error('获取牛棚列表失败:', error)
       throw error

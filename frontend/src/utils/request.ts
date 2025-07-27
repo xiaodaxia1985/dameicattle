@@ -112,16 +112,30 @@ export class RequestService {
 
       clearTimeout(timeoutId)
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
       const result = await response.json()
+
+      if (!response.ok) {
+        // 创建包含状态码和响应数据的错误对象
+        const error = new Error(result.error?.message || result.message || `HTTP ${response.status}`) as any
+        error.response = {
+          status: response.status,
+          data: result
+        }
+        error.status = response.status
+        throw error
+      }
       
       if (result.success) {
-        return result.data
+        // 返回完整的结果对象，而不仅仅是data字段
+        // 这样API层可以访问pagination等其他字段
+        return result
       } else {
-        throw new Error(result.message || '请求失败')
+        const error = new Error(result.error?.message || result.message || '请求失败') as any
+        error.response = {
+          status: response.status,
+          data: result
+        }
+        throw error
       }
     } catch (error) {
       clearTimeout(timeoutId)

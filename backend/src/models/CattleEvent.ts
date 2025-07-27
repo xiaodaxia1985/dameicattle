@@ -52,10 +52,10 @@ CattleEvent.init(
       allowNull: false,
       validate: {
         isIn: [[
-          'birth', 'purchase', 'transfer_in', 'transfer_out',
+          'birth', 'born', 'purchase', 'purchased', 'transfer_in', 'transfer_out', 'transferred',
           'weight_record', 'health_check', 'vaccination',
           'treatment', 'breeding', 'pregnancy_check',
-          'calving', 'weaning', 'sale', 'death', 'other'
+          'calving', 'weaning', 'sale', 'sold', 'death', 'dead', 'other'
         ]],
       },
     },

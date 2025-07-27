@@ -47,6 +47,15 @@ router.post(
   baseController.validateBaseLocation
 );
 
+// GET /api/v1/bases/all - Get all bases without pagination
+router.get(
+  '/all', 
+  requirePermission('bases:read'), 
+  dataPermissionMiddleware, 
+  operationLogMiddleware('read', 'all_bases'),
+  baseController.getAllBases
+);
+
 // GET /api/v1/bases - Get all bases with pagination and search
 router.get(
   '/', 

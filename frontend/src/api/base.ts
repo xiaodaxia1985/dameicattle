@@ -1,32 +1,45 @@
-import request from './request'
-import type { ApiResponse } from './request'
+import { apiService } from '@/utils/request'
 
 // 基地和牛棚相关类型定义
 export interface Base {
   id: number
   name: string
   code: string
-  address: string
-  latitude: number
-  longitude: number
-  area: number
-  managerId: number
-  managerName: string
-  createdAt: string
-  updatedAt: string
+  address?: string
+  latitude?: number
+  longitude?: number
+  area?: number
+  manager_id?: number
+  created_at: string
+  updated_at: string
+  // 关联数据
+  manager?: {
+    id: number
+    real_name: string
+    username: string
+    phone?: string
+    email?: string
+  }
 }
 
 export interface Barn {
   id: number
   name: string
   code: string
-  baseId: number
-  baseName: string
+  base_id: number
   capacity: number
-  currentCount: number
-  barnType: string
-  createdAt: string
-  updatedAt: string
+  current_count: number
+  barn_type?: string
+  description?: string
+  facilities?: object
+  created_at: string
+  updated_at: string
+  // 关联数据
+  base?: {
+    id: number
+    name: string
+    code: string
+  }
 }
 
 export interface BaseListParams {
@@ -93,124 +106,94 @@ export interface UpdateBarnRequest {
 
 export const baseApi = {
   // 获取基地列表
-  getBases(params: BaseListParams = {}): Promise<{ data: BaseListResponse }> {
-    return request.get<ApiResponse<BaseListResponse>>('/bases', { params })
-      .then(response => ({ data: response.data.data }))
+  async getBases(params: BaseListParams = {}): Promise<{ data: { bases: Base[], pagination: any } }> {
+    const response = await apiService.get('/bases', params)
+    // 后端返回 { success: true, data: { bases: [], pagination: {} } }
+    // apiService现在返回完整响应，所以response就是完整的响应对象
+    return { data: response.data }
   },
 
   // 获取所有基地（不分页）
-  getAllBases(): Promise<{ data: Base[] }> {
-    return request.get<ApiResponse<Base[]>>('/bases/all')
-      .then(response => ({ data: response.data.data }))
+  async getAllBases(): Promise<{ data: Base[] }> {
+    const response = await apiService.get('/bases/all')
+    return { data: response.data }
   },
 
   // 获取基地详情
-  getBaseById(id: number): Promise<{ data: Base }> {
-    return request.get<ApiResponse<Base>>(`/bases/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getBaseById(id: number): Promise<{ data: Base }> {
+    const response = await apiService.get(`/bases/${id}`)
+    // 后端返回 { success: true, data: { base: {} } }
+    return { data: response.data.base || response.data }
   },
 
   // 创建基地
-  createBase(data: CreateBaseRequest): Promise<{ data: Base }> {
-    return request.post<ApiResponse<Base>>('/bases', data)
-      .then(response => ({ data: response.data.data }))
+  async createBase(data: CreateBaseRequest): Promise<{ data: Base }> {
+    const response = await apiService.post('/bases', data)
+    return { data: response.data.base || response.data }
   },
 
   // 更新基地信息
-  updateBase(id: number, data: UpdateBaseRequest): Promise<{ data: Base }> {
-    return request.put<ApiResponse<Base>>(`/bases/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateBase(id: number, data: UpdateBaseRequest): Promise<{ data: Base }> {
+    const response = await apiService.put(`/bases/${id}`, data)
+    return { data: response.data.base || response.data }
   },
 
   // 删除基地
-  deleteBase(id: number): Promise<void> {
-    return request.delete(`/bases/${id}`)
+  async deleteBase(id: number): Promise<void> {
+    await apiService.delete(`/bases/${id}`)
   },
 
   // 获取基地统计信息
-  getBaseStatistics(id: number): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/bases/${id}/statistics`)
-      .then(response => ({ data: response.data.data }))
+  async getBaseStatistics(id: number): Promise<{ data: any }> {
+    const response = await apiService.get(`/bases/${id}/statistics`)
+    return { data: response.data }
   },
 
   // 获取基地GPS位置
-  getBaseLocation(id: number): Promise<{ data: { latitude: number; longitude: number; address: string } }> {
-    return request.get<ApiResponse<{ latitude: number; longitude: number; address: string }>>(`/bases/${id}/location`)
-      .then(response => ({ data: response.data.data }))
+  async getBaseLocation(id: number): Promise<{ data: { latitude: number; longitude: number; address: string } }> {
+    const response = await apiService.get(`/bases/${id}/location`)
+    return { data: response.data }
   },
 
   // 获取牛棚列表
-  getBarns(params: BarnListParams = {}): Promise<{ data: BarnListResponse }> {
-    return request.get<ApiResponse<BarnListResponse>>('/barns', { params })
-      .then(response => ({ data: response.data.data }))
+  async getBarns(params: BarnListParams = {}): Promise<{ data: BarnListResponse }> {
+    const response = await apiService.get('/barns', params)
+    return { data: response.data }
   },
 
   // 获取指定基地的牛棚列表
-  getBarnsByBaseId(baseId: number): Promise<{ data: Barn[] }> {
-    return request.get<ApiResponse<Barn[]>>(`/bases/${baseId}/barns`)
-      .then(response => ({ data: response.data.data }))
+  async getBarnsByBaseId(baseId: number): Promise<{ data: { barns: Barn[], base_info: any } }> {
+    const response = await apiService.get(`/bases/${baseId}/barns`)
+    // 后端返回 { success: true, data: { barns: [], base_info: {} } }
+    return { data: response.data }
   },
 
   // 获取牛棚详情
-  getBarnById(id: number): Promise<{ data: Barn }> {
-    return request.get<ApiResponse<Barn>>(`/barns/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getBarnById(id: number): Promise<{ data: Barn }> {
+    const response = await apiService.get(`/barns/${id}`)
+    return { data: response.data }
   },
 
   // 创建牛棚
-  createBarn(data: CreateBarnRequest): Promise<{ data: Barn }> {
-    return request.post<ApiResponse<Barn>>('/barns', data)
-      .then(response => ({ data: response.data.data }))
+  async createBarn(data: CreateBarnRequest): Promise<{ data: Barn }> {
+    const response = await apiService.post('/barns', data)
+    return { data: response.data }
   },
 
   // 更新牛棚信息
-  updateBarn(id: number, data: UpdateBarnRequest): Promise<{ data: Barn }> {
-    return request.put<ApiResponse<Barn>>(`/barns/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateBarn(id: number, data: UpdateBarnRequest): Promise<{ data: Barn }> {
+    const response = await apiService.put(`/barns/${id}`, data)
+    return { data: response.data }
   },
 
   // 删除牛棚
-  deleteBarn(id: number): Promise<void> {
-    return request.delete(`/barns/${id}`)
+  async deleteBarn(id: number): Promise<void> {
+    await apiService.delete(`/barns/${id}`)
   },
 
   // 获取牛棚统计信息
-  getBarnStatistics(id: number): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/barns/${id}/statistics`)
-      .then(response => ({ data: response.data.data }))
-  },
-
-  // 批量导入基地数据
-  importBases(file: FormData): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/bases/import', file, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }).then(response => ({ data: response.data.data }))
-  },
-
-  // 导出基地数据
-  exportBases(params: BaseListParams = {}): Promise<Blob> {
-    return request.get('/bases/export', { 
-      params,
-      responseType: 'blob'
-    })
-  },
-
-  // 批量导入牛棚数据
-  importBarns(file: FormData): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/barns/import', file, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }).then(response => ({ data: response.data.data }))
-  },
-
-  // 导出牛棚数据
-  exportBarns(params: BarnListParams = {}): Promise<Blob> {
-    return request.get('/barns/export', { 
-      params,
-      responseType: 'blob'
-    })
+  async getBarnStatistics(id: number): Promise<{ data: any }> {
+    const response = await apiService.get(`/barns/${id}/statistics`)
+    return { data: response.data }
   }
 }

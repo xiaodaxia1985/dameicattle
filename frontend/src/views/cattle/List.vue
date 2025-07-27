@@ -246,8 +246,8 @@
         <!-- 分页 -->
         <div class="pagination">
           <el-pagination
-            v-model:current-page="ensureNumber(safeGet(cattleStore.searchParams, 'page', 1), 1)"
-            v-model:page-size="ensureNumber(safeGet(cattleStore.searchParams, 'limit', 20), 20)"
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50, 100]"
             :total="ensureNumber(cattleStore.total, 0)"
             layout="total, sizes, prev, pager, next, jumper"
@@ -258,8 +258,7 @@
       </el-card>
     </div>
 
-    <!-- 对话框组件暂时移除，需要创建 -->
-    <!-- 
+    <!-- 对话框组件 -->
     <CattleFormDialog
       v-model="showFormDialog"
       :cattle="currentCattle"
@@ -276,17 +275,12 @@
       :cattle-ids="selectedCattle"
       @success="handleTransferSuccess"
     />
-
-    <CattleDetailDialog
-      v-model="showDetailDialog"
-      :cattle-id="detailCattleId"
-    />
-    -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   DataAnalysis, 
@@ -304,18 +298,16 @@ import {
 } from '@element-plus/icons-vue'
 import { useCattleStore } from '@/stores/cattle'
 import { useBaseStore } from '@/stores/base'
-import type { Cattle } from '@/api/cattle'
+import { cattleApi, type Cattle } from '@/api/cattle'
 import { safeGet, ensureArray, ensureNumber } from '@/utils/safeAccess'
-// 组件暂时注释，需要创建
-// import CattleCard from '@/components/cattle/CattleCard.vue'
-// import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'
-// import BatchImportDialog from '@/components/cattle/BatchImportDialog.vue'
-// import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
-// import CattleDetailDialog from '@/components/cattle/CattleDetailDialog.vue'
+import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'
+import BatchImportDialog from '@/components/cattle/BatchImportDialog.vue'
+import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
 import dayjs from 'dayjs'
 
 const cattleStore = useCattleStore()
 const baseStore = useBaseStore()
+const router = useRouter()
 
 // 搜索表单
 const searchForm = reactive({
@@ -341,9 +333,20 @@ const showDetailDialog = ref(false)
 const currentCattle = ref<Cattle | null>(null)
 const detailCattleId = ref<number | null>(null)
 
-onMounted(() => {
-  loadCattleList()
-  baseStore.fetchBases()
+// 分页相关
+const currentPage = ref(1)
+const pageSize = ref(20)
+
+onMounted(async () => {
+  try {
+    // 并行加载牛只列表和基地数据
+    await Promise.all([
+      loadCattleList(),
+      baseStore.fetchAllBases()
+    ])
+  } catch (error) {
+    console.error('初始化数据加载失败:', error)
+  }
 })
 
 const loadCattleList = async () => {
@@ -396,11 +399,15 @@ const handleCardSelect = (cattleId: number, selected: boolean) => {
 }
 
 const handleSizeChange = (size: number) => {
+  pageSize.value = size
   cattleStore.searchParams.limit = size
+  currentPage.value = 1
+  cattleStore.searchParams.page = 1
   loadCattleList()
 }
 
 const handleCurrentChange = (page: number) => {
+  currentPage.value = page
   cattleStore.searchParams.page = page
   loadCattleList()
 }
@@ -411,8 +418,7 @@ const showAddDialog = () => {
 }
 
 const viewDetail = (cattle: Cattle) => {
-  detailCattleId.value = cattle.id
-  showDetailDialog.value = true
+  router.push(`/admin/cattle/detail/${cattle.id}`)
 }
 
 const editCattle = (cattle: Cattle) => {
@@ -471,7 +477,6 @@ const showBatchTransferDialog = () => {
 
 const handleExport = async () => {
   try {
-    const { cattleApi } = await import('@/api/cattle')
     const blob = await cattleApi.export(searchForm)
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')

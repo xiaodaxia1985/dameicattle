@@ -6,6 +6,33 @@ import { logger } from '@/utils/logger';
 import { applyBaseFilter } from '@/middleware/dataPermission';
 
 export class BaseController {
+  public async getAllBases(req: Request, res: Response, next: NextFunction) {
+    try {
+      // Apply data permission filtering - users can only see their own base (unless admin)
+      const whereClause = applyBaseFilter({}, req, 'id');
+
+      const bases = await Base.findAll({
+        where: whereClause,
+        include: [
+          { 
+            model: User, 
+            as: 'manager',
+            attributes: ['id', 'real_name', 'username', 'phone', 'email'],
+            required: false,
+          }
+        ],
+        order: [['name', 'ASC']],
+      });
+
+      res.json({
+        success: true,
+        data: bases,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public async getBases(req: Request, res: Response, next: NextFunction) {
     try {
       const { page = 1, limit = 20, search, manager_id } = req.query;

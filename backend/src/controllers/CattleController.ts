@@ -326,15 +326,32 @@ export class CattleController {
       const cattle = await Cattle.create(cattleData);
 
       // Create initial event
+      const eventTypeMap: Record<string, string> = {
+        'born': 'born',
+        'purchased': 'purchased', 
+        'transferred': 'transferred'
+      };
+      
+      const descriptionMap: Record<string, string> = {
+        'born': '出生',
+        'purchased': '采购',
+        'transferred': '转入'
+      };
+      
+      const eventType = eventTypeMap[cattleData.source] || 'purchased';
+      const eventDescription = descriptionMap[cattleData.source] || '采购';
+      
       await CattleEvent.create({
         cattle_id: cattle.id,
-        event_type: cattleData.source || 'purchase',
-        event_date: cattleData.purchase_date || new Date(),
-        description: `牛只入场 - ${cattleData.source === 'born' ? '出生' : '采购'}`,
+        event_type: eventType,
+        event_date: cattleData.purchase_date || cattleData.birth_date || new Date(),
+        description: `牛只入场 - ${eventDescription}`,
         operator_id: user.id,
         data: {
           initial_weight: cattleData.weight,
-          purchase_price: cattleData.purchase_price
+          purchase_price: cattleData.purchase_price,
+          birth_date: cattleData.birth_date,
+          source: cattleData.source
         }
       });
 

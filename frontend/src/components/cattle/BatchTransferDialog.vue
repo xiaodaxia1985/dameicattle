@@ -1,124 +1,116 @@
 <template>
   <el-dialog
-    v-model="dialogVisible"
+    v-model="visible"
     title="批量转群"
     width="600px"
-    :close-on-click-modal="false"
     @close="handleClose"
   >
     <div class="transfer-content">
-      <!-- 选中的牛只信息 -->
-      <div class="selected-cattle">
-        <el-alert
-          :title="`已选择 ${cattleIds.length} 头牛只`"
-          type="info"
-          :closable="false"
-          show-icon
-        />
-        
-        <div class="cattle-list" v-if="selectedCattleList.length > 0">
-          <el-tag
-            v-for="cattle in selectedCattleList"
-            :key="cattle.id"
-            class="cattle-tag"
-            closable
-            @close="removeCattle(cattle.id)"
-          >
-            {{ cattle.ear_tag }} - {{ cattle.breed }}
-          </el-tag>
-        </div>
-      </div>
+      <el-alert
+        title="转群说明"
+        type="info"
+        :closable="false"
+        show-icon
+        class="transfer-alert"
+      >
+        <template #default>
+          <p>已选择 {{ cattleIds.length }} 头牛只进行转群操作</p>
+          <p>请选择目标牛棚，系统将自动检查牛棚容量</p>
+        </template>
+      </el-alert>
 
-      <!-- 转移表单 -->
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
         label-width="100px"
-        @submit.prevent
+        class="transfer-form"
       >
-        <el-form-item label="源牛棚" prop="from_barn_id">
+        <el-form-item label="目标基地" prop="target_base_id">
           <el-select 
-            v-model="form.from_barn_id" 
-            placeholder="选择源牛棚（可选）" 
+            v-model="form.target_base_id" 
+            placeholder="请选择目标基地" 
             style="width: 100%"
-            clearable
+            @change="handleBaseChange"
+          >
+            <el-option
+              v-for="base in baseStore.bases"
+              :key="base.id"
+              :label="base.name"
+              :value="base.id"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="目标牛棚" prop="target_barn_id">
+          <el-select 
+            v-model="form.target_barn_id" 
+            placeholder="请选择目标牛棚" 
+            style="width: 100%"
           >
             <el-option
               v-for="barn in availableBarns"
-              :key="barn.id"
-              :label="`${barn.name} (${barn.code})`"
-              :value="barn.id"
-            />
+              :key="barn.value"
+              :label="barn.label"
+              :value="barn.value"
+              :disabled="barn.disabled"
+            >
+              <div class="barn-option">
+                <span>{{ barn.label }}</span>
+                <span class="barn-capacity">
+                  ({{ barn.current_count }}/{{ barn.capacity }})
+                </span>
+              </div>
+            </el-option>
           </el-select>
-          <div class="form-tip">
-            如果选择源牛棚，只会转移当前在该牛棚的牛只
+          <div v-if="selectedBarn" class="barn-info">
+            <el-tag :type="getCapacityType(selectedBarn)" size="small">
+              可用容量: {{ selectedBarn.available_capacity }}
+            </el-tag>
           </div>
         </el-form-item>
 
-        <el-form-item label="目标牛棚" prop="to_barn_id">
-          <el-select 
-            v-model="form.to_barn_id" 
-            placeholder="选择目标牛棚" 
-            style="width: 100%"
-            clearable
-          >
-            <el-option
-              v-for="barn in availableBarns"
-              :key="barn.id"
-              :label="`${barn.name} (${barn.code}) - 可用容量: ${barn.available_capacity || 0}`"
-              :value="barn.id"
-              :disabled="barn.available_capacity === 0"
-            />
-          </el-select>
-          <div class="form-tip">
-            选择空值表示转移到无牛棚状态
-          </div>
-        </el-form-item>
-
-        <el-form-item label="转移原因" prop="reason">
+        <el-form-item label="转群原因" prop="reason">
           <el-input
             v-model="form.reason"
             type="textarea"
             :rows="3"
-            placeholder="请输入转移原因（可选）"
+            placeholder="请输入转群原因"
           />
         </el-form-item>
       </el-form>
 
-      <!-- 容量检查警告 -->
-      <div v-if="capacityWarning" class="capacity-warning">
-        <el-alert
-          :title="capacityWarning"
-          type="warning"
-          :closable="false"
-          show-icon
-        />
-      </div>
+      <!-- 容量警告 -->
+      <el-alert
+        v-if="capacityWarning"
+        :title="capacityWarning"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="capacity-warning"
+      />
     </div>
 
     <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="handleClose">取消</el-button>
-        <el-button 
-          type="primary" 
-          :loading="loading"
-          :disabled="cattleIds.length === 0"
-          @click="handleSubmit"
-        >
-          确认转移
-        </el-button>
-      </div>
+      <el-button @click="handleClose">取消</el-button>
+      <el-button 
+        type="primary" 
+        @click="handleTransfer"
+        :loading="transferring"
+        :disabled="!canTransfer"
+      >
+        确认转群
+      </el-button>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { useCattleStore } from '@/stores/cattle'
-import { useBarnStore } from '@/stores/barn'
-import type { Cattle } from '@/api/cattle'
+import { ref, reactive, computed, watch } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { useBaseStore } from '@/stores/base'
+import { cattleApi } from '@/api/cattle'
+import { barnApi } from '@/api/barn'
 
 interface Props {
   modelValue: boolean
@@ -133,118 +125,124 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const cattleStore = useCattleStore()
-const barnStore = useBarnStore()
-
+const baseStore = useBaseStore()
 const formRef = ref<FormInstance>()
-const loading = ref(false)
+const transferring = ref(false)
 
-const dialogVisible = computed({
+const availableBarns = ref<Array<{
+  value: number
+  label: string
+  capacity: number
+  current_count: number
+  available_capacity: number
+  barn_type: string
+  disabled: boolean
+}>>([])
+
+const visible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
 
-// 表单数据
 const form = reactive({
-  from_barn_id: undefined as number | undefined,
-  to_barn_id: undefined as number | undefined,
+  target_base_id: undefined as number | undefined,
+  target_barn_id: undefined as number | undefined,
   reason: ''
 })
 
-// 表单验证规则
-const rules: FormRules = {
-  // 暂时不设置必填验证，允许灵活转移
+const rules = {
+  target_base_id: [
+    { required: true, message: '请选择目标基地', trigger: 'change' }
+  ],
+  target_barn_id: [
+    { required: true, message: '请选择目标牛棚', trigger: 'change' }
+  ],
+  reason: [
+    { required: true, message: '请输入转群原因', trigger: 'blur' }
+  ]
 }
 
-// 选中的牛只列表
-const selectedCattleList = computed(() => {
-  return cattleStore.cattleList.filter(cattle => props.cattleIds.includes(cattle.id))
+const selectedBarn = computed(() => {
+  if (!form.target_barn_id) return null
+  return availableBarns.value.find(barn => barn.value === form.target_barn_id)
 })
 
-// 可用的牛棚列表
-const availableBarns = computed(() => {
-  // 获取选中牛只所属的基地
-  const baseIds = [...new Set(selectedCattleList.value.map(cattle => cattle.base_id))]
-  if (baseIds.length === 0) return []
-  
-  // 如果牛只来自多个基地，只显示第一个基地的牛棚
-  const baseId = baseIds[0]
-  return barnStore.barnList.filter(barn => barn.base_id === baseId)
-})
-
-// 容量检查警告
 const capacityWarning = computed(() => {
-  if (!form.to_barn_id) return ''
+  if (!selectedBarn.value) return null
   
-  const targetBarn = availableBarns.value.find(barn => barn.id === form.to_barn_id)
-  if (!targetBarn) return ''
+  const requiredCapacity = props.cattleIds.length
+  const availableCapacity = selectedBarn.value.available_capacity
   
-  const transferCount = props.cattleIds.length
-  const availableCapacity = targetBarn.available_capacity || 0
-  
-  if (transferCount > availableCapacity) {
-    return `目标牛棚容量不足！需要转移 ${transferCount} 头牛，但只有 ${availableCapacity} 个空位`
+  if (requiredCapacity > availableCapacity) {
+    return `目标牛棚容量不足！需要 ${requiredCapacity} 个位置，但只有 ${availableCapacity} 个可用位置`
   }
   
-  return ''
+  return null
 })
 
-// 监听对话框打开
-watch(dialogVisible, (visible) => {
-  if (visible) {
-    loadData()
+const canTransfer = computed(() => {
+  return form.target_base_id && 
+         form.target_barn_id && 
+         form.reason && 
+         !capacityWarning.value
+})
+
+watch(() => props.modelValue, async (newVal) => {
+  if (newVal) {
     resetForm()
+    
+    // 确保基地数据已加载
+    if (baseStore.bases.length === 0) {
+      try {
+        await baseStore.fetchAllBases()
+      } catch (error) {
+        console.error('加载基地数据失败:', error)
+        ElMessage.error('加载基地数据失败')
+      }
+    }
   }
 })
 
-const loadData = async () => {
-  try {
-    await barnStore.fetchBarnList()
-  } catch (error) {
-    console.error('加载牛棚列表失败:', error)
+const handleBaseChange = (baseId: number) => {
+  form.target_barn_id = undefined
+  if (baseId) {
+    loadBarns(baseId)
+  } else {
+    availableBarns.value = []
   }
 }
 
-const resetForm = () => {
-  form.from_barn_id = undefined
-  form.to_barn_id = undefined
-  form.reason = ''
+const loadBarns = async (baseId: number) => {
+  try {
+    const response = await barnApi.getBarnOptions({ base_id: baseId })
+    availableBarns.value = response.data
+  } catch (error) {
+    console.error('加载牛棚选项失败:', error)
+    ElMessage.error('加载牛棚选项失败')
+  }
 }
 
-const removeCattle = (cattleId: number) => {
-  // 这里需要通知父组件移除选中的牛只
-  // 由于props是只读的，需要通过事件通知父组件
-  ElMessage.info('请在列表中取消选择该牛只')
+const getCapacityType = (barn: any) => {
+  const rate = barn.current_count / barn.capacity
+  if (rate < 0.5) return 'success'
+  if (rate < 0.8) return 'warning'
+  return 'danger'
 }
 
-const handleSubmit = async () => {
+const handleTransfer = async () => {
   if (!formRef.value) return
   
   try {
-    // 容量检查
+    await formRef.value.validate()
+    
     if (capacityWarning.value) {
-      await ElMessageBox.confirm(
-        capacityWarning.value + '，是否继续？',
-        '容量警告',
-        {
-          confirmButtonText: '继续转移',
-          cancelButtonText: '取消',
-          type: 'warning',
-        }
-      )
+      ElMessage.error('目标牛棚容量不足，无法完成转群')
+      return
     }
     
-    // 确认转移
-    const fromBarnName = form.from_barn_id 
-      ? availableBarns.value.find(b => b.id === form.from_barn_id)?.name || '未知牛棚'
-      : '任意牛棚'
-    const toBarnName = form.to_barn_id 
-      ? availableBarns.value.find(b => b.id === form.to_barn_id)?.name || '未知牛棚'
-      : '无牛棚'
-    
     await ElMessageBox.confirm(
-      `确定要将 ${props.cattleIds.length} 头牛只从 ${fromBarnName} 转移到 ${toBarnName} 吗？`,
-      '确认转移',
+      `确定要将 ${props.cattleIds.length} 头牛只转移到选定的牛棚吗？`,
+      '确认转群',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -252,62 +250,68 @@ const handleSubmit = async () => {
       }
     )
     
-    loading.value = true
+    transferring.value = true
     
-    await cattleStore.batchTransferCattle(
-      props.cattleIds,
-      form.from_barn_id,
-      form.to_barn_id,
-      form.reason
-    )
+    await cattleApi.batchTransfer({
+      cattle_ids: props.cattleIds,
+      to_barn_id: form.target_barn_id!,
+      reason: form.reason
+    })
     
+    ElMessage.success('转群成功')
     emit('success')
-  } catch (error) {
+    handleClose()
+  } catch (error: any) {
     if (error !== 'cancel') {
-      console.error('批量转移失败:', error)
-      ElMessage.error('转移失败，请重试')
+      ElMessage.error(error.message || '转群失败')
     }
   } finally {
-    loading.value = false
+    transferring.value = false
   }
 }
 
 const handleClose = () => {
-  formRef.value?.resetFields()
-  emit('update:modelValue', false)
+  visible.value = false
+  resetForm()
+}
+
+const resetForm = () => {
+  Object.assign(form, {
+    target_base_id: undefined,
+    target_barn_id: undefined,
+    reason: ''
+  })
+  availableBarns.value = []
+  formRef.value?.clearValidate()
 }
 </script>
 
 <style lang="scss" scoped>
 .transfer-content {
-  .selected-cattle {
+  .transfer-alert {
     margin-bottom: 20px;
-    
-    .cattle-list {
-      margin-top: 12px;
+  }
+  
+  .transfer-form {
+    .barn-option {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
       
-      .cattle-tag {
-        margin: 0;
+      .barn-capacity {
+        color: #909399;
+        font-size: 12px;
       }
+    }
+    
+    .barn-info {
+      margin-top: 8px;
     }
   }
   
-  .form-tip {
-    font-size: 12px;
-    color: #909399;
-    margin-top: 4px;
-    line-height: 1.4;
-  }
-  
   .capacity-warning {
-    margin-top: 16px;
+    margin-top: 20px;
   }
-}
-
-.dialog-footer {
-  text-align: right;
 }
 </style>
