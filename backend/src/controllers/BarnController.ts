@@ -12,6 +12,14 @@ export class BarnController {
    */
   static async getBarns(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
+      console.log('=== BarnController.getBarns 调试信息 ===');
+      console.log('用户信息:', {
+        id: req.user?.id,
+        username: req.user?.username,
+        base_id: req.user?.base_id,
+        role: req.user?.role
+      });
+
       const {
         page = 1,
         limit = 20,
@@ -20,14 +28,31 @@ export class BarnController {
         search,
       } = req.query;
 
+      console.log('查询参数:', { page, limit, base_id, barn_type, search });
+
       const offset = (Number(page) - 1) * Number(limit);
       const whereConditions: WhereOptions = {};
 
       // 数据权限过滤
-      if (req.user?.base_id) {
+      console.log('用户角色:', req.user?.role?.name);
+      
+      // Admin用户可以查看所有牛棚，其他用户只能查看所属基地的牛棚
+      if (req.user?.role?.name === '超级管理员') {
+        // Admin用户：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚
+        if (base_id) {
+          whereConditions.base_id = Number(base_id);
+          console.log('Admin用户，按查询参数base_id过滤:', base_id);
+        } else {
+          console.log('Admin用户，显示所有牛棚');
+        }
+      } else if (req.user?.base_id) {
+        // 基地用户：只能查看所属基地的牛棚
         whereConditions.base_id = req.user.base_id;
-      } else if (base_id) {
-        whereConditions.base_id = Number(base_id);
+        console.log('基地用户，按用户base_id过滤:', req.user.base_id);
+      } else {
+        // 没有基地权限的用户，不显示任何牛棚
+        whereConditions.base_id = -1; // 使用一个不存在的ID
+        console.log('无基地权限用户，不显示牛棚');
       }
 
       // 牛棚类型过滤
@@ -138,7 +163,7 @@ export class BarnController {
   static async createBarn(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
       const { name, code, base_id, baseId, capacity, barn_type, barnType, description, facilities } = req.body;
-      
+
       // Handle both parameter formats: base_id/baseId and barn_type/barnType
       const actualBaseId = base_id || baseId;
       const actualBarnType = barn_type || barnType;
@@ -229,7 +254,7 @@ export class BarnController {
     try {
       const { id } = req.params;
       const { name, code, capacity, barn_type, barnType, description, facilities } = req.body;
-      
+
       // Handle both parameter formats: barn_type/barnType
       const actualBarnType = barn_type !== undefined ? barn_type : barnType;
 
@@ -386,10 +411,18 @@ export class BarnController {
       const whereConditions: WhereOptions = {};
 
       // 数据权限过滤
-      if (req.user?.base_id) {
+      // Admin用户可以查看所有牛棚统计，其他用户只能查看所属基地的牛棚统计
+      if (req.user?.role?.name === '超级管理员') {
+        // Admin用户：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚统计
+        if (base_id) {
+          whereConditions.base_id = Number(base_id);
+        }
+      } else if (req.user?.base_id) {
+        // 基地用户：只能查看所属基地的牛棚统计
         whereConditions.base_id = req.user.base_id;
-      } else if (base_id) {
-        whereConditions.base_id = Number(base_id);
+      } else {
+        // 没有基地权限的用户，不显示任何牛棚统计
+        whereConditions.base_id = -1;
       }
 
       const barns = await Barn.findAll({
@@ -425,8 +458,8 @@ export class BarnController {
         acc[type].count += 1;
         acc[type].capacity += barn.capacity;
         acc[type].current_count += barn.current_count;
-        acc[type].utilization_rate = acc[type].capacity > 0 
-          ? Math.round((acc[type].current_count / acc[type].capacity) * 100) 
+        acc[type].utilization_rate = acc[type].capacity > 0
+          ? Math.round((acc[type].current_count / acc[type].capacity) * 100)
           : 0;
         return acc;
       }, {} as Record<string, any>);
@@ -488,10 +521,18 @@ export class BarnController {
       const whereConditions: WhereOptions = {};
 
       // 数据权限过滤
-      if (req.user?.base_id) {
+      // Admin用户可以查看所有牛棚选项，其他用户只能查看所属基地的牛棚选项
+      if (req.user?.role?.name === '超级管理员') {
+        // Admin用户：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚选项
+        if (base_id) {
+          whereConditions.base_id = Number(base_id);
+        }
+      } else if (req.user?.base_id) {
+        // 基地用户：只能查看所属基地的牛棚选项
         whereConditions.base_id = req.user.base_id;
-      } else if (base_id) {
-        whereConditions.base_id = Number(base_id);
+      } else {
+        // 没有基地权限的用户，不显示任何牛棚选项
+        whereConditions.base_id = -1;
       }
 
       const barns = await Barn.findAll({
