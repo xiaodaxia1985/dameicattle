@@ -219,6 +219,38 @@ export const permissionUtils = {
   // Check if user has specific permission
   hasPermission(permission: string): boolean {
     const permissions = permissionsStorage.getPermissions()
+    const user = userStorage.getUser()
+    
+    // 如果没有权限数据，返回false
+    if (!permissions || permissions.length === 0) {
+      return false
+    }
+    
+    // 检查通配符权限（超级管理员）
+    if (permissions.includes('*')) {
+      return true
+    }
+    
+    // 检查系统管理员权限
+    if (permissions.includes('system:admin') && permission.startsWith('system:')) {
+      return true
+    }
+    
+    // 检查基地全权限
+    if (permissions.includes('bases:all') && (
+      permission.startsWith('base:') || 
+      permission.startsWith('cattle:') || 
+      permission.startsWith('health:') || 
+      permission.startsWith('feeding:') ||
+      permission.startsWith('material:') ||
+      permission.startsWith('inventory:') ||
+      permission.startsWith('purchase:') ||
+      permission.startsWith('sales:')
+    )) {
+      return true
+    }
+    
+    // 检查具体权限
     return permissions.includes(permission)
   },
 

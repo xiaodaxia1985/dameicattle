@@ -11,22 +11,14 @@ import type { RequestConfig, ResponseInterceptor, RequestInterceptor, ApiError }
 
 // Request interceptors
 export const authRequestInterceptor: RequestInterceptor = async (config) => {
-  // Check and refresh token proactively if needed
-  const authStore = useAuthStore()
-  if (authStore.isAuthenticated && authStore.isTokenNearExpiration && !authStore.isRefreshing) {
-    try {
-      await authStore.checkAndRefreshToken()
-    } catch (error) {
-      console.warn('Proactive token refresh failed:', error)
-      // Continue with current token, let the response interceptor handle it
-    }
-  }
-
-  // Add authentication token
+  // 简化请求拦截器，只添加token，不进行复杂的刷新逻辑
   const token = getAuthToken()
   if (token) {
     config.headers = config.headers || {}
     config.headers.Authorization = `Bearer ${token}`
+    console.log('添加认证token到请求头')
+  } else {
+    console.log('没有找到认证token')
   }
 
   return config
@@ -59,57 +51,35 @@ export const authResponseInterceptor: ResponseInterceptor = {
     return response
   },
   onRejected: async (error: ApiError) => {
+    console.log('API响应拦截器处理错误:', {
+      status: error.status,
+      code: error.code,
+      url: error.response?.config?.url
+    })
+    
     if (error.status === 401) {
       const authStore = useAuthStore()
       
-      // Handle different types of authentication errors
-      switch (error.code) {
-        case 'TOKEN_EXPIRED':
-        case 'TOKEN_NOT_IN_SESSION':
-        case 'TOKEN_MISMATCH':
-          try {
-            // Try to refresh token
-            await authStore.refreshToken()
-            
-            // Return null to indicate the error was handled and request should be retried
-            return null
-          } catch (refreshError) {
-            // Refresh failed, redirect to login
-            handleAuthError(error, { action: 'token_refresh_failed', refreshError })
-            redirectToLogin()
-          }
-          break
-          
-        case 'MISSING_TOKEN':
-        case 'INVALID_TOKEN_FORMAT':
-        case 'INVALID_TOKEN':
-          // These errors indicate the token is completely invalid
-          handleAuthError(error, { action: 'invalid_token' })
-          await authStore.logout()
-          redirectToLogin()
-          break
-          
-        case 'USER_NOT_FOUND':
-        case 'ACCOUNT_INACTIVE':
-        case 'ACCOUNT_LOCKED':
-          // These errors require user action or admin intervention
-          handleAuthError(error, { action: 'account_issue' })
-          await authStore.logout()
-          redirectToLogin()
-          break
-          
-        case 'TOKEN_EXPIRED_BEYOND_GRACE':
-          // Token is too old to refresh
-          handleAuthError(error, { action: 'session_expired' })
-          await authStore.logout()
-          redirectToLogin()
-          break
-          
-        default:
-          // Generic auth error
-          handleAuthError(error, { action: 'auth_failed' })
-          await authStore.logout()
-          redirectToLogin()
+      // 避免在登录和登出API调用时进行额外处理
+      const url = error.response?.config?.url || ''
+      if (url.includes('/auth/login') || url.includes('/auth/logout')) {
+        console.log('登录或登出API错误，直接抛出')
+        throw error
+      }
+      
+      console.log('处理401认证错误')
+      
+      // 清除认证状态并跳转到登录页面
+      try {
+        await authStore.logout()
+      } catch (logoutError) {
+        console.error('登出过程中出错:', logoutError)
+      }
+      
+      // 避免在已经在登录页面时重复跳转
+      if (router.currentRoute.value.path !== '/login') {
+        console.log('跳转到登录页面')
+        router.push('/login')
       }
     }
 

@@ -239,46 +239,56 @@ export class RoleController {
   public async getPermissions(req: Request, res: Response, next: NextFunction) {
     try {
       // Define all available permissions in the system
-      const permissions = [
+      const permissions = {
         // User Management
-        { category: '用户管理', permissions: ['users:read', 'users:create', 'users:update', 'users:delete'] },
+        'user': ['user:create', 'user:read', 'user:update', 'user:delete', 'user:reset-password'],
         
         // Role Management
-        { category: '角色管理', permissions: ['roles:read', 'roles:create', 'roles:update', 'roles:delete'] },
+        'role': ['role:create', 'role:read', 'role:update', 'role:delete'],
         
         // Base Management
-        { category: '基地管理', permissions: ['bases:read', 'bases:create', 'bases:update', 'bases:delete'] },
+        'base': ['base:create', 'base:read', 'base:update', 'base:delete'],
         
         // Cattle Management
-        { category: '牛只管理', permissions: ['cattle:read', 'cattle:create', 'cattle:update', 'cattle:delete'] },
+        'cattle': ['cattle:create', 'cattle:read', 'cattle:update', 'cattle:delete'],
         
         // Health Management
-        { category: '健康管理', permissions: ['health:read', 'health:create', 'health:update', 'health:delete'] },
+        'health': ['health:create', 'health:read', 'health:update', 'health:delete'],
         
         // Feeding Management
-        { category: '饲喂管理', permissions: ['feeding:read', 'feeding:create', 'feeding:update', 'feeding:delete'] },
+        'feeding': ['feeding:create', 'feeding:read', 'feeding:update', 'feeding:delete'],
         
         // Purchase Management
-        { category: '采购管理', permissions: ['purchase:read', 'purchase:create', 'purchase:update', 'purchase:delete'] },
+        'purchase': ['purchase:create', 'purchase:read', 'purchase:update', 'purchase:delete', 'purchase:approve'],
         
         // Sales Management
-        { category: '销售管理', permissions: ['sales:read', 'sales:create', 'sales:update', 'sales:delete'] },
+        'sales': ['sales:create', 'sales:read', 'sales:update', 'sales:delete'],
         
         // Material Management
-        { category: '物资管理', permissions: ['materials:read', 'materials:create', 'materials:update', 'materials:delete'] },
+        'material': ['material:create', 'material:read', 'material:update', 'material:delete'],
+        
+        // Inventory Management
+        'inventory': ['inventory:create', 'inventory:read', 'inventory:update', 'inventory:delete'],
         
         // Equipment Management
-        { category: '设备管理', permissions: ['equipment:read', 'equipment:create', 'equipment:update', 'equipment:delete'] },
+        'equipment': ['equipment:create', 'equipment:read', 'equipment:update', 'equipment:delete'],
         
         // News Management
-        { category: '新闻管理', permissions: ['news:read', 'news:create', 'news:update', 'news:delete'] },
+        'news': ['news:create', 'news:read', 'news:update', 'news:delete'],
+        
+        // Operation Log Management
+        'operation-log': ['operation-log:read', 'operation-log:export'],
         
         // System Management
-        { category: '系统管理', permissions: ['system:read', 'system:config', 'system:logs', 'system:backup'] },
+        'system': ['system:logs', 'system:manage', 'system:admin'],
         
-        // Reports
-        { category: '报表管理', permissions: ['reports:read', 'reports:export', 'reports:dashboard'] },
-      ];
+        // Dashboard and Reports
+        'dashboard': ['dashboard:read'],
+        'reports': ['reports:read', 'reports:export'],
+        
+        // Special Permissions
+        'special': ['*', 'bases:all']
+      };
 
       res.json({
         success: true,

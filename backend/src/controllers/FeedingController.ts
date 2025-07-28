@@ -29,6 +29,7 @@ export class FeedingController {
         description,
         ingredients,
         cost_per_kg,
+        ingredients_version: 2, // 标记为新版本格式
         created_by
       });
 
@@ -220,7 +221,8 @@ export class FeedingController {
         name: name || formula.name,
         description: description !== undefined ? description : formula.description,
         ingredients: ingredients || formula.ingredients,
-        cost_per_kg: cost_per_kg !== undefined ? cost_per_kg : formula.cost_per_kg
+        cost_per_kg: cost_per_kg !== undefined ? cost_per_kg : formula.cost_per_kg,
+        ingredients_version: ingredients ? 2 : formula.ingredients_version // 更新版本号如果成分有变化
       });
 
       // Fetch updated formula with creator info

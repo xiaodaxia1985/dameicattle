@@ -1,53 +1,57 @@
-const { Client } = require('pg');
-const bcrypt = require('bcryptjs');
+// 修复用户密码
+const { Sequelize } = require('sequelize');
+require('dotenv').config({ path: '.env.development' });
 
-async function fixAdminPassword() {
-  const client = new Client({
-    host: 'localhost',
-    port: 5432,
-    database: 'cattle_management',
-    user: 'postgres',
-    password: 'dianxin99'
-  });
+const sequelize = new Sequelize({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  dialect: 'postgres',
+  logging: false
+});
 
+async function fixPasswords() {
   try {
-    await client.connect();
-    console.log('Connected to database');
-
-    // Generate correct hash for Admin123
-    const password = 'Admin123';
-    const hash = await bcrypt.hash(password, 12);
-    console.log('Generated hash:', hash);
-
-    // Update admin user password
-    const result = await client.query(
-      'UPDATE users SET password_hash = $1 WHERE username = $2',
-      [hash, 'admin']
-    );
-
-    console.log('Updated rows:', result.rowCount);
-
-    // Verify the update
-    const user = await client.query(
-      'SELECT username, password_hash FROM users WHERE username = $1',
-      ['admin']
-    );
-
-    if (user.rows.length > 0) {
-      console.log('Admin user found:', user.rows[0].username);
-      
-      // Test password verification
-      const isValid = await bcrypt.compare(password, user.rows[0].password_hash);
-      console.log('Password verification:', isValid);
-    } else {
-      console.log('Admin user not found');
-    }
-
+    console.log('🔧 修复用户密码...\n');
+    
+    await sequelize.authenticate();
+    console.log('✅ 数据库连接成功');
+    
+    // 更新所有用户的密码
+    await sequelize.query(`
+      UPDATE users SET password_hash = '$2a$12$/6QcEqRteccqM6ZsxXK9VeiE/EiL65kp7Psfc8YaiGEvMePX6q/OW' WHERE username = 'admin';
+      UPDATE users SET password_hash = '$2a$12$IPOVk.ZevakFsRCqIZ5yWup0fr47RVw6Sr2PxKNCBa.6nkfXmfIWu' WHERE username = 'manager_east';
+      UPDATE users SET password_hash = '$2a$12$IPOVk.ZevakFsRCqIZ5yWup0fr47RVw6Sr2PxKNCBa.6nkfXmfIWu' WHERE username = 'manager_west';
+      UPDATE users SET password_hash = '$2a$12$M/Gz25bk37Hy1tYMyI3f.uuzEUV60mrCaCvgA6jPFiQEYgG1wkeUu' WHERE username = 'vet_east';
+      UPDATE users SET password_hash = '$2a$12$c0mOw29qxMEIhPPHtmpXPeZwBKhXjBVVm0VEKZ73dx8RcF88.pW6q' WHERE username = 'feeder_west';
+    `);
+    
+    console.log('✅ 密码更新成功');
+    
+    // 验证更新结果
+    const [results] = await sequelize.query(`
+      SELECT username, real_name, 
+             CASE 
+               WHEN username = 'admin' THEN 'Admin123'
+               WHEN username LIKE 'manager_%' THEN 'Manager123'
+               WHEN username LIKE 'vet_%' THEN 'Vet123'
+               WHEN username LIKE 'feeder_%' THEN 'Feed123'
+               ELSE 'Unknown'
+             END as password
+      FROM users 
+      ORDER BY id
+    `);
+    
+    console.log('\n📊 用户密码信息:');
+    console.table(results);
+    
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error('❌ 修复过程中出现错误:', error.message);
   } finally {
-    await client.end();
+    await sequelize.close();
   }
 }
 
-fixAdminPassword();
+fixPasswords();

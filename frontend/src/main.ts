@@ -34,8 +34,25 @@ registerCustomTheme()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 
-// Initialize auth state
-authStore.initializeAuth()
+// Initialize auth state (async)
+authStore.initializeAuth().then(() => {
+  console.log('认证状态初始化完成')
+}).catch((error) => {
+  console.error('认证状态初始化失败:', error)
+})
+
+// 监听认证状态失效事件
+if (typeof window !== 'undefined') {
+  window.addEventListener('auth:token-invalid', () => {
+    console.log('收到token失效事件，跳转到登录页面')
+    // 延迟一下再跳转，避免与当前操作冲突
+    setTimeout(() => {
+      if (router.currentRoute.value.path !== '/login') {
+        router.push({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
+      }
+    }, 100)
+  })
+}
 
 // Initialize app state
 appStore.initializeApp()

@@ -13,6 +13,15 @@
           <el-icon><Plus /></el-icon>
           新增角色
         </el-button>
+        <el-button 
+          type="danger" 
+          :disabled="selectedRoles.length === 0"
+          @click="handleBatchDelete"
+          v-if="hasPermission('role:delete')"
+        >
+          <el-icon><Delete /></el-icon>
+          批量删除
+        </el-button>
       </div>
       <div class="toolbar-right">
         <el-input
@@ -42,15 +51,17 @@
       <el-table
         v-loading="loading"
         :data="filteredRoles"
+        @selection-change="handleSelectionChange"
         stripe
         border
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="角色名称" width="150" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
         <el-table-column label="权限数量" width="120">
           <template #default="{ row }">
-            <el-tag type="info">{{ row.permissions.length }} 个权限</el-tag>
+            <el-tag type="info">{{ (row.permissions || []).length }} 个权限</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="用户数量" width="120">
@@ -160,6 +171,7 @@
           :default-checked-keys="selectedPermissions"
           @check="handlePermissionCheck"
           class="permission-tree"
+          v-if="permissionTree.length > 0"
         >
           <template #default="{ node, data }">
             <div class="tree-node">
@@ -185,9 +197,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Delete } from '@element-plus/icons-vue'
 import { userApi } from '@/api/user'
 import { useAuthStore } from '@/stores/auth'
 import type { Role } from '@/types/auth'
@@ -202,6 +214,7 @@ const hasPermission = (permission: string) => {
 // 响应式数据
 const loading = ref(false)
 const roles = ref<Role[]>([])
+const selectedRoles = ref<Role[]>([])
 const searchKeyword = ref('')
 
 // 角色表单对话框
@@ -255,7 +268,18 @@ const filteredRoles = computed(() => {
 const loadRoles = async () => {
   try {
     loading.value = true
-    roles.value = await userApi.getRoles()
+    console.log('加载角色列表...')
+    
+    const response = await userApi.getRolesList({
+      keyword: searchKeyword.value
+    })
+    
+    console.log('角色列表API响应:', response)
+    roles.value = response.data || []
+    
+    console.log('角色列表加载完成:', {
+      rolesCount: roles.value.length
+    })
   } catch (error) {
     console.error('Load roles error:', error)
     ElMessage.error('加载角色列表失败')
@@ -462,6 +486,53 @@ const handlePermissions = async (role: Role) => {
   if (permissionTree.value.length === 0) {
     await loadPermissions()
   }
+  
+  // 等待权限树加载完成后设置选中状态
+  await nextTick()
+  setPermissionTreeChecked(role.permissions)
+}
+
+const setPermissionTreeChecked = (permissions: string[]) => {
+  if (!permissionTreeRef.value || !permissionTree.value.length) {
+    console.log('权限树未准备好，稍后重试...')
+    setTimeout(() => setPermissionTreeChecked(permissions), 100)
+    return
+  }
+  
+  console.log('设置权限树选中状态:', {
+    permissions,
+    hasWildcard: permissions.includes('*'),
+    treeLength: permissionTree.value.length
+  })
+  
+  // 如果有通配符权限，选中所有权限
+  if (permissions.includes('*')) {
+    console.log('检测到通配符权限，选中所有权限')
+    handleSelectAll()
+    return
+  }
+  
+  // 收集所有叶子节点的key
+  const allLeafKeys: string[] = []
+  const collectLeafKeys = (nodes: any[]) => {
+    nodes.forEach(node => {
+      if (node.children && node.children.length > 0) {
+        collectLeafKeys(node.children)
+      } else {
+        allLeafKeys.push(node.key)
+      }
+    })
+  }
+  collectLeafKeys(permissionTree.value)
+  
+  console.log('所有叶子节点权限:', allLeafKeys)
+  
+  // 过滤出用户实际拥有的权限
+  const checkedKeys = allLeafKeys.filter(key => permissions.includes(key))
+  
+  console.log('用户拥有的权限:', checkedKeys)
+  
+  permissionTreeRef.value.setCheckedKeys(checkedKeys)
 }
 
 const handlePermissionDialogClose = () => {
@@ -470,32 +541,41 @@ const handlePermissionDialogClose = () => {
 }
 
 const handleSelectAll = () => {
+  if (!permissionTreeRef.value || !permissionTree.value.length) return
+  
   const allKeys: string[] = []
   const collectKeys = (nodes: any[]) => {
     nodes.forEach(node => {
-      allKeys.push(node.key)
-      if (node.children) {
-        collectKeys(node.children)
+      if (node && node.key) {
+        allKeys.push(node.key)
+        if (node.children && Array.isArray(node.children)) {
+          collectKeys(node.children)
+        }
       }
     })
   }
   collectKeys(permissionTree.value)
   
-  permissionTreeRef.value?.setCheckedKeys(allKeys)
+  permissionTreeRef.value.setCheckedKeys(allKeys)
 }
 
 const handleSelectNone = () => {
-  permissionTreeRef.value?.setCheckedKeys([])
+  if (!permissionTreeRef.value) return
+  permissionTreeRef.value.setCheckedKeys([])
 }
 
 const handleExpandAll = () => {
+  if (!permissionTreeRef.value || !permissionTree.value.length) return
+  
   expandAll.value = !expandAll.value
   
   // 手动展开/收起节点
   permissionTree.value.forEach(node => {
-    const treeNode = permissionTreeRef.value?.store?.nodesMap?.[node.key]
-    if (treeNode) {
-      treeNode.expanded = expandAll.value
+    if (node && node.key && permissionTreeRef.value?.store?.nodesMap) {
+      const treeNode = permissionTreeRef.value.store.nodesMap[node.key]
+      if (treeNode) {
+        treeNode.expanded = expandAll.value
+      }
     }
   })
 }
@@ -505,17 +585,17 @@ const handlePermissionCheck = () => {
 }
 
 const handlePermissionSubmit = async () => {
-  if (!currentRole.value) return
+  if (!currentRole.value || !permissionTreeRef.value) return
   
   try {
     permissionSubmitLoading.value = true
     
-    const checkedKeys = permissionTreeRef.value?.getCheckedKeys() || []
-    const halfCheckedKeys = permissionTreeRef.value?.getHalfCheckedKeys() || []
+    const checkedKeys = permissionTreeRef.value.getCheckedKeys() || []
+    const halfCheckedKeys = permissionTreeRef.value.getHalfCheckedKeys() || []
     
     // 只保存叶子节点的权限
     const leafPermissions = checkedKeys.filter((key: string) => {
-      return key.includes(':') // 权限格式为 module:action
+      return key && typeof key === 'string' && key.includes(':') // 权限格式为 module:action
     })
     
     await userApi.updateRole(currentRole.value.id, {
@@ -530,6 +610,46 @@ const handlePermissionSubmit = async () => {
     ElMessage.error(error.message || '权限配置保存失败')
   } finally {
     permissionSubmitLoading.value = false
+  }
+}
+
+const handleSelectionChange = (selection: Role[]) => {
+  selectedRoles.value = selection
+}
+
+const handleBatchDelete = async () => {
+  if (selectedRoles.value.length === 0) return
+  
+  // 检查是否有角色仍有用户
+  const rolesWithUsers = selectedRoles.value.filter(role => role.user_count > 0)
+  if (rolesWithUsers.length > 0) {
+    ElMessage.error(`以下角色仍有用户，无法删除：${rolesWithUsers.map(r => r.name).join(', ')}`)
+    return
+  }
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedRoles.value.length} 个角色吗？此操作不可恢复！`,
+      '批量删除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    // 逐个删除角色（如果后端没有批量删除接口）
+    for (const role of selectedRoles.value) {
+      await userApi.deleteRole(role.id)
+    }
+    
+    ElMessage.success('批量删除成功')
+    loadRoles()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Batch delete error:', error)
+      ElMessage.error(error.message || '批量删除失败')
+    }
   }
 }
 

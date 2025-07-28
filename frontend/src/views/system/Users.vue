@@ -54,7 +54,7 @@
           @change="handleSearch"
         >
           <el-option
-            v-for="role in roles"
+            v-for="role in validRoles"
             :key="role.id"
             :label="role.name"
             :value="role.id"
@@ -88,7 +88,7 @@
         <el-table-column prop="phone" label="手机号" width="130" />
         <el-table-column label="角色" width="120">
           <template #default="{ row }">
-            <el-tag v-if="row.role" :type="getRoleTagType(row.role.name)">
+            <el-tag v-if="row.role && row.role.name" :type="getRoleTagType(row.role.name)">
               {{ row.role.name }}
             </el-tag>
             <span v-else>-</span>
@@ -224,7 +224,7 @@
         <el-form-item label="角色" prop="role_id">
           <el-select v-model="userForm.role_id" placeholder="请选择角色" style="width: 100%">
             <el-option
-              v-for="role in roles"
+              v-for="role in validRoles"
               :key="role.id"
               :label="role.name"
               :value="role.id"
@@ -234,7 +234,7 @@
         <el-form-item label="所属基地" prop="base_id">
           <el-select v-model="userForm.base_id" placeholder="请选择基地" style="width: 100%" clearable>
             <el-option
-              v-for="base in bases"
+              v-for="base in validBases"
               :key="base.id"
               :label="base.name"
               :value="base.id"
@@ -431,7 +431,7 @@ const userForm = reactive<CreateUserRequest & { id?: number }>({
   real_name: '',
   email: '',
   phone: '',
-  role_id: 0,
+  role_id: undefined,
   base_id: undefined,
   status: 'active'
 })
@@ -512,6 +512,14 @@ const logPagination = reactive({
 // 计算属性
 const dialogTitle = computed(() => {
   return isEdit.value ? '编辑用户' : '新增用户'
+})
+
+const validRoles = computed(() => {
+  return roles.value.filter(role => role && role.id !== undefined && role.id !== null)
+})
+
+const validBases = computed(() => {
+  return bases.value.filter(base => base && base.id !== undefined && base.id !== null)
 })
 
 // 方法
@@ -618,8 +626,8 @@ const resetUserForm = () => {
     real_name: '',
     email: '',
     phone: '',
-    role_id: 0,
-    base_id: undefined,
+    role_id: undefined, // 使用 undefined 保持一致性
+    base_id: undefined, // 使用 undefined 保持一致性
     status: 'active'
   })
 }

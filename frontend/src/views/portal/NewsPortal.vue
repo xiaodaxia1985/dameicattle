@@ -229,31 +229,49 @@ const fetchCategories = async () => {
 const fetchArticles = async () => {
   loading.value = true
   try {
-    let response
+    const response = await newsApi.getPublicNews({
+      page: pagination.page,
+      limit: pagination.limit,
+      categoryId: selectedCategoryId.value,
+      status: 'published'
+    })
     
-    if (searchKeyword.value) {
-      // 搜索文章
-      response = await newsApi.searchArticles({
-        keyword: searchKeyword.value,
-        page: pagination.page,
-        limit: pagination.limit
-      })
+    console.log('文章列表API响应:', response)
+    
+    // 安全地获取数据数组
+    let articlesData = []
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      articlesData = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      articlesData = response.data
     } else {
-      // 获取普通文章列表
-      response = await newsApi.getArticles({
-        page: pagination.page,
-        limit: pagination.limit,
-        categoryId: selectedCategoryId.value,
-        status: 'published'
-      })
+      console.warn('文章列表数据格式不正确:', response)
+      articlesData = []
     }
     
-    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
-    articles.value = response.data.data || []
-    pagination.total = response.data.pagination?.total || 0
+    if (searchKeyword.value) {
+      // 在客户端进行关键词过滤
+      const filteredData = articlesData.filter(article => 
+        article && article.title && 
+        (article.title.toLowerCase().includes(searchKeyword.value.toLowerCase()) ||
+        (article.summary && article.summary.toLowerCase().includes(searchKeyword.value.toLowerCase())))
+      )
+      articles.value = filteredData
+      pagination.total = filteredData.length
+    } else {
+      articles.value = articlesData
+      pagination.total = response.data.pagination?.total || articlesData.length
+    }
+    
+    console.log('文章列表处理结果:', {
+      articlesCount: articles.value.length,
+      total: pagination.total
+    })
   } catch (error) {
     console.error('获取文章列表失败:', error)
-    ElMessage.error('获取文章列表失败')
+    articles.value = []
+    pagination.total = 0
+    // 不显示错误消息，避免在公开页面显示错误
   } finally {
     loading.value = false
   }
@@ -262,34 +280,69 @@ const fetchArticles = async () => {
 // 获取推荐文章
 const fetchFeaturedArticles = async () => {
   try {
-    const response = await newsApi.getArticles({
+    const response = await newsApi.getPublicNews({
       page: 1,
-      limit: 3,
-      status: 'published',
-      isFeatured: true
+      limit: 10,
+      status: 'published'
     })
-    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
-    featuredArticles.value = response.data.data || []
+    
+    console.log('推荐文章API响应:', response)
+    
+    // 安全地获取数据数组
+    let articlesData = []
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      articlesData = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      articlesData = response.data
+    } else {
+      console.warn('推荐文章数据格式不正确:', response)
+      articlesData = []
+    }
+    
+    // 过滤出推荐文章，取前3个
+    featuredArticles.value = articlesData
+      .filter(article => article && article.isFeatured)
+      .slice(0, 3)
+      
+    console.log('推荐文章处理结果:', featuredArticles.value)
   } catch (error) {
     console.error('获取推荐文章失败:', error)
+    featuredArticles.value = []
   }
 }
 
 // 获取热门文章
 const fetchHotArticles = async () => {
   try {
-    const response = await newsApi.getArticles({
+    const response = await newsApi.getPublicNews({
       page: 1,
-      limit: 5,
+      limit: 20,
       status: 'published'
     })
-    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
-    // 按浏览量排序
-    hotArticles.value = (response.data.data || [])
+    
+    console.log('热门文章API响应:', response)
+    
+    // 安全地获取数据数组
+    let articlesData = []
+    if (response.data && response.data.data && Array.isArray(response.data.data)) {
+      articlesData = response.data.data
+    } else if (response.data && Array.isArray(response.data)) {
+      articlesData = response.data
+    } else {
+      console.warn('热门文章数据格式不正确:', response)
+      articlesData = []
+    }
+    
+    // 按浏览量排序，取前5个
+    hotArticles.value = articlesData
+      .filter(article => article && typeof article.viewCount === 'number')
       .sort((a, b) => b.viewCount - a.viewCount)
       .slice(0, 5)
+      
+    console.log('热门文章处理结果:', hotArticles.value)
   } catch (error) {
     console.error('获取热门文章失败:', error)
+    hotArticles.value = []
   }
 }
 

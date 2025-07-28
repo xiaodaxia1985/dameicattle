@@ -38,12 +38,19 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = async (): Promise<void> => {
     try {
+      // 只有在有有效token时才调用后端logout API
       if (token.value) {
+        console.log('调用后端logout API...')
         await authApi.logout()
+        console.log('后端logout成功')
       }
-    } catch (error) {
-      console.error('Logout error:', error)
+    } catch (error: any) {
+      console.error('Logout API error:', error)
+      // 即使后端logout失败，也要继续清除本地状态
+      // 不要抛出错误，避免影响用户体验
     } finally {
+      console.log('清除本地认证状态...')
+      
       // Clear reactive state
       token.value = ''
       user.value = null
@@ -51,29 +58,22 @@ export const useAuthStore = defineStore('auth', () => {
       
       // Clear authentication data using cross-platform utilities
       authState.clearAuthData()
+      
+      console.log('本地认证状态已清除')
     }
   }
 
   const refreshToken = async (): Promise<void> => {
-    // Prevent multiple simultaneous refresh attempts
-    if (isRefreshing.value && refreshPromise.value) {
-      return refreshPromise.value
+    // 简化token刷新逻辑，避免复杂的并发控制
+    if (isRefreshing.value) {
+      console.log('Token刷新已在进行中，跳过')
+      return
     }
 
     isRefreshing.value = true
-    refreshPromise.value = performTokenRefresh()
     
     try {
-      await refreshPromise.value
-    } finally {
-      isRefreshing.value = false
-      refreshPromise.value = null
-    }
-  }
-
-  const performTokenRefresh = async (): Promise<void> => {
-    try {
-      console.log('Attempting to refresh token...')
+      console.log('开始刷新token...')
       const response = await authApi.refreshToken()
       
       const { token: newToken, user: userData, permissions: userPermissions, expiresIn } = response.data
@@ -86,53 +86,112 @@ export const useAuthStore = defineStore('auth', () => {
       // Store authentication data using cross-platform utilities
       authState.storeAuthData(response.data, expiresIn)
       
-      console.log('Token refreshed successfully')
+      console.log('Token刷新成功')
     } catch (error: any) {
-      console.error('Token refresh failed:', error)
+      console.error('Token刷新失败:', error)
       
-      // Handle specific refresh errors
-      if (error.code === 'TOKEN_EXPIRED_BEYOND_GRACE' || 
-          error.code === 'TOKEN_NOT_IN_SESSION' ||
-          error.code === 'ACCOUNT_INACTIVE' ||
-          error.code === 'ACCOUNT_LOCKED') {
-        // These errors require re-login
-        await logout()
-        throw new Error('Session expired. Please login again.')
-      }
+      // Token刷新失败，清除认证状态
+      token.value = ''
+      user.value = null
+      permissions.value = []
+      authState.clearAuthData()
       
-      // For other errors, still logout but with different message
-      await logout()
-      throw error
+      throw new Error('登录已过期，请重新登录')
+    } finally {
+      isRefreshing.value = false
     }
   }
 
+
+
   // Proactive token refresh when near expiration
   const checkAndRefreshToken = async (): Promise<void> => {
+    // 简化token检查逻辑
     if (!isAuthenticated.value || isRefreshing.value) {
+      console.log('跳过token检查：未认证或正在刷新中')
       return
     }
 
     if (isTokenNearExpiration.value) {
+      console.log('Token即将过期，尝试刷新')
       try {
         await refreshToken()
       } catch (error) {
-        console.error('Proactive token refresh failed:', error)
-        // Error is already handled in refreshToken method
+        console.error('主动token刷新失败:', error)
+        // 刷新失败时清除认证状态
+        await logout()
       }
     }
   }
 
-  const initializeAuth = (): void => {
+  const initializeAuth = async (): Promise<void> => {
+    console.log('初始化认证状态...')
+    
     // Use cross-platform utilities to get stored data
     const storedToken = tokenStorage.getToken()
     const storedUser = userStorage.getUser()
     const storedPermissions = permissionsStorage.getPermissions()
     
+    console.log('从存储中读取的数据:', {
+      hasToken: !!storedToken,
+      hasUser: !!storedUser,
+      permissionsCount: storedPermissions.length
+    })
+    
     if (storedToken && storedUser) {
-      token.value = storedToken
-      user.value = storedUser
-      permissions.value = storedPermissions
+      // 检查token是否过期
+      if (authState.isTokenExpired()) {
+        console.log('Token已过期，清除认证状态')
+        authState.clearAuthData()
+        token.value = ''
+        user.value = null
+        permissions.value = []
+      } else {
+        console.log('Token存在且未过期，设置认证状态')
+        
+        // 先设置认证状态，这样用户可以正常使用系统
+        token.value = storedToken
+        user.value = storedUser
+        permissions.value = storedPermissions
+        
+        // 在后台验证token有效性，但不阻塞用户操作
+        // 如果验证失败，只在用户下次操作时才处理
+        setTimeout(async () => {
+          try {
+            console.log('后台验证token有效性...')
+            await authApi.getProfile()
+            console.log('Token验证成功')
+          } catch (error: any) {
+            console.log('Token后台验证失败:', error.message)
+            // 只有在明确的认证错误时才清除状态
+            if (error.response?.status === 401 || error.response?.status === 403) {
+              console.log('Token无效，清除认证状态')
+              authState.clearAuthData()
+              token.value = ''
+              user.value = null
+              permissions.value = []
+              
+              // 触发一个自定义事件，通知应用认证状态已失效
+              if (typeof window !== 'undefined') {
+                const event = new CustomEvent('auth:token-invalid')
+                window.dispatchEvent(event)
+              }
+            }
+          }
+        }, 100) // 延迟100ms执行，避免阻塞初始化
+      }
+    } else {
+      console.log('没有有效的认证数据')
+      token.value = ''
+      user.value = null
+      permissions.value = []
     }
+    
+    console.log('认证状态初始化完成:', {
+      isAuthenticated: isAuthenticated.value,
+      hasToken: !!token.value,
+      hasUser: !!user.value
+    })
   }
 
   const hasPermission = (permission: string): boolean => {

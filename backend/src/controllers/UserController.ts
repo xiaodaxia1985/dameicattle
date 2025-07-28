@@ -277,4 +277,161 @@ export class UserController {
       next(error);
     }
   }
+
+  public async resetPassword(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const { password } = req.body;
+
+      const user = await User.findByPk(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: '用户不存在',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Check data permission - users can only reset passwords for users in their base (unless admin)
+      const filteredWhereClause = applyBaseFilter({ id }, req);
+      const accessibleUser = await User.findOne({ where: filteredWhereClause });
+      
+      if (!accessibleUser) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'ACCESS_DENIED',
+            message: '无权限重置该用户密码',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      const bcrypt = require('bcryptjs');
+      const hashedPassword = await bcrypt.hash(password, 12);
+
+      await user.update({ password_hash: hashedPassword });
+
+      logger.info(`Password reset for user: ${user.username}`, {
+        userId: user.id,
+        resetBy: req.user?.id,
+      });
+
+      res.json({
+        success: true,
+        message: '密码重置成功',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async batchDeleteUsers(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      const { ids } = req.body;
+
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_IDS',
+            message: '请提供有效的用户ID列表',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Check data permission - users can only delete users from their base (unless admin)
+      const filteredWhereClause = applyBaseFilter({ id: { [Op.in]: ids } }, req);
+      const accessibleUsers = await User.findAll({ where: filteredWhereClause });
+      
+      if (accessibleUsers.length !== ids.length) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'ACCESS_DENIED',
+            message: '无权限删除部分用户',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      const deletedCount = await User.destroy({
+        where: filteredWhereClause,
+      });
+
+      logger.info(`Batch deleted ${deletedCount} users`, {
+        userIds: ids,
+        deletedBy: req.user?.id,
+      });
+
+      res.json({
+        success: true,
+        message: `成功删除 ${deletedCount} 个用户`,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async toggleUserStatus(req: Request, res: Response, next: NextFunction): Promise<Response | void> {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+
+      if (!['active', 'inactive', 'locked'].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_STATUS',
+            message: '无效的用户状态',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      // Check data permission - users can only toggle status for users in their base (unless admin)
+      const filteredWhereClause = applyBaseFilter({ id }, req);
+      const user = await User.findOne({ where: filteredWhereClause });
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: '用户不存在或无权限访问',
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+      }
+
+      await user.update({ status });
+
+      logger.info(`User status changed: ${user.username} -> ${status}`, {
+        userId: user.id,
+        oldStatus: user.status,
+        newStatus: status,
+        changedBy: req.user?.id,
+      });
+
+      res.json({
+        success: true,
+        data: {
+          user: user.toJSON(),
+        },
+        message: '用户状态更新成功',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

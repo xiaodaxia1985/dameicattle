@@ -83,7 +83,8 @@
     <el-dialog
       v-model="dialogVisible"
       :title="dialogMode === 'create' ? '新建配方' : '编辑配方'"
-      width="800px"
+      width="90%"
+      :close-on-click-modal="false"
       @close="resetForm"
     >
       <el-form
@@ -104,68 +105,10 @@
           />
         </el-form-item>
         <el-form-item label="配方成分" prop="ingredients">
-          <div class="ingredients-editor">
-            <div class="ingredients-header">
-              <span>成分配比</span>
-              <el-button type="text" @click="addIngredient">
-                <el-icon><Plus /></el-icon>
-                添加成分
-              </el-button>
-            </div>
-            <div class="ingredients-list">
-              <div
-                v-for="(ingredient, index) in formData.ingredients"
-                :key="index"
-                class="ingredient-item"
-              >
-                <el-input
-                  v-model="ingredient.name"
-                  placeholder="成分名称"
-                  style="width: 120px"
-                />
-                <el-input-number
-                  v-model="ingredient.ratio"
-                  :min="0"
-                  :max="100"
-                  :precision="1"
-                  style="width: 100px"
-                  @change="calculateTotalRatio"
-                />
-                <span>%</span>
-                <el-input
-                  v-model="ingredient.unit"
-                  placeholder="单位"
-                  style="width: 80px"
-                />
-                <el-input-number
-                  v-model="ingredient.cost"
-                  :min="0"
-                  :precision="2"
-                  style="width: 100px"
-                  @change="calculateCost"
-                />
-                <span>¥/kg</span>
-                <el-button
-                  type="text"
-                  style="color: #f56c6c"
-                  @click="removeIngredient(index)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
-            </div>
-            <div class="ingredients-summary">
-              <div class="summary-item">
-                <span>总比例: {{ totalRatio }}%</span>
-                <span :class="{ 'error': totalRatio !== 100 }">
-                  {{ totalRatio === 100 ? '✓' : '⚠️ 比例总和应为100%' }}
-                </span>
-              </div>
-              <div class="summary-item">
-                <span>预估成本: ¥{{ estimatedCost.toFixed(2) }}/kg</span>
-              </div>
-            </div>
-          </div>
+          <IngredientEditor
+            v-model="formData.ingredients"
+            @save="handleIngredientsSave"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -177,7 +120,7 @@
     </el-dialog>
 
     <!-- 配方详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="配方详情" width="600px">
+    <el-dialog v-model="detailDialogVisible" title="配方详情" width="80%">
       <div v-if="selectedFormula" class="formula-detail">
         <div class="detail-section">
           <h3>基本信息</h3>
@@ -190,17 +133,10 @@
           </el-descriptions>
         </div>
         <div class="detail-section">
-          <h3>配方成分</h3>
-          <el-table :data="selectedFormula.ingredients" border>
-            <el-table-column prop="name" label="成分名称" />
-            <el-table-column prop="ratio" label="比例" width="80">
-              <template #default="{ row }">{{ row.ratio }}%</template>
-            </el-table-column>
-            <el-table-column prop="unit" label="单位" width="80" />
-            <el-table-column prop="cost" label="成本(¥/kg)" width="100">
-              <template #default="{ row }">¥{{ row.cost?.toFixed(2) || '0.00' }}</template>
-            </el-table-column>
-          </el-table>
+          <IngredientTable
+            :ingredients="selectedFormula.ingredients || []"
+            :show-summary="true"
+          />
         </div>
       </div>
     </el-dialog>
@@ -212,7 +148,9 @@ import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete } from '@element-plus/icons-vue'
 import { feedingApi } from '@/api/feeding'
-import type { FeedFormula, CreateFormulaRequest, UpdateFormulaRequest } from '@/api/feeding'
+import type { FeedFormula, CreateFormulaRequest, UpdateFormulaRequest, IngredientItem } from '@/api/feeding'
+import IngredientEditor from '@/components/feeding/IngredientEditor.vue'
+import IngredientTable from '@/components/feeding/IngredientTable.vue'
 
 // 响应式数据
 const formulas = ref<FeedFormula[]>([])
@@ -265,21 +203,37 @@ const estimatedCost = computed(() => {
 })
 
 // 验证配方成分
-function validateIngredients(rule: any, value: any, callback: any) {
+function validateIngredients(rule: any, value: IngredientItem[], callback: any) {
   if (!value || value.length === 0) {
     callback(new Error('请添加至少一个配方成分'))
     return
   }
   
-  const total = value.reduce((sum: number, ingredient: any) => sum + (ingredient.ratio || 0), 0)
-  if (Math.abs(total - 100) > 0.1) {
-    callback(new Error('配方成分比例总和必须等于100%'))
+  const total = value.reduce((sum: number, ingredient: IngredientItem) => sum + (ingredient.ratio || 0), 0)
+  if (Math.abs(total - 100) > 0.01) {
+    callback(new Error(`配方成分比重总和必须等于100%，当前为${total.toFixed(1)}%`))
     return
   }
   
   for (const ingredient of value) {
-    if (!ingredient.name || !ingredient.ratio || ingredient.ratio <= 0) {
-      callback(new Error('请完善所有成分信息'))
+    if (!ingredient.name || ingredient.name.trim() === '') {
+      callback(new Error('请填写所有成分名称'))
+      return
+    }
+    if (!ingredient.weight || ingredient.weight <= 0) {
+      callback(new Error('请填写所有成分重量，且必须大于0'))
+      return
+    }
+    if (ingredient.cost < 0) {
+      callback(new Error('成分成本不能为负数'))
+      return
+    }
+    if (ingredient.energy < 0) {
+      callback(new Error('成分能量不能为负数'))
+      return
+    }
+    if (!ingredient.ratio || ingredient.ratio <= 0) {
+      callback(new Error('请填写所有成分比重，且必须大于0'))
       return
     }
   }
@@ -387,46 +341,41 @@ const deleteFormula = async (formula: FeedFormula) => {
   }
 }
 
-// 添加成分
-const addIngredient = () => {
-  formData.value.ingredients.push({
-    name: '',
-    ratio: 0,
-    unit: '%',
-    cost: 0
-  })
-}
-
-// 移除成分
-const removeIngredient = (index: number) => {
-  formData.value.ingredients.splice(index, 1)
-  calculateTotalRatio()
-  calculateCost()
-}
-
-// 计算总比例
-const calculateTotalRatio = () => {
-  // 触发响应式更新
-}
-
-// 计算成本
-const calculateCost = () => {
-  // 触发响应式更新
+// 处理成分保存
+const handleIngredientsSave = (ingredients: IngredientItem[]) => {
+  formData.value.ingredients = ingredients
 }
 
 // 提交表单
 const submitForm = async () => {
-  if (!formRef.value) return
+  console.log('submitForm called')
+  console.log('formRef.value:', formRef.value)
+  console.log('formData.value:', formData.value)
+  
+  if (!formRef.value) {
+    console.error('formRef is null')
+    ElMessage.error('表单引用为空')
+    return
+  }
   
   try {
+    console.log('开始表单验证...')
     await formRef.value.validate()
+    console.log('表单验证通过')
+    
     submitting.value = true
     
+    console.log('准备调用API, dialogMode:', dialogMode.value)
+    
     if (dialogMode.value === 'create') {
-      await feedingApi.createFormula(formData.value)
+      console.log('调用创建API, 数据:', formData.value)
+      const result = await feedingApi.createFormula(formData.value)
+      console.log('创建API响应:', result)
       ElMessage.success('创建成功')
     } else {
-      await feedingApi.updateFormula(selectedFormula.value!.id, formData.value)
+      console.log('调用更新API, ID:', selectedFormula.value?.id, '数据:', formData.value)
+      const result = await feedingApi.updateFormula(selectedFormula.value!.id, formData.value)
+      console.log('更新API响应:', result)
       ElMessage.success('更新成功')
     }
     
@@ -434,7 +383,10 @@ const submitForm = async () => {
     fetchFormulas()
   } catch (error) {
     console.error('提交失败:', error)
-    ElMessage.error('提交失败')
+    if (error.errors) {
+      console.error('验证错误:', error.errors)
+    }
+    ElMessage.error('提交失败: ' + (error.message || '未知错误'))
   } finally {
     submitting.value = false
   }
@@ -445,7 +397,13 @@ const resetForm = () => {
   formData.value = {
     name: '',
     description: '',
-    ingredients: []
+    ingredients: [{
+      name: '',
+      weight: 0,
+      cost: 0,
+      energy: 0,
+      ratio: 0
+    }]
   }
   selectedFormula.value = null
   if (formRef.value) {

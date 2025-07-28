@@ -1,196 +1,131 @@
-const { Client } = require('pg');
-const bcrypt = require('bcryptjs');
+// 创建管理员用户和基础数据
+const { Sequelize, DataTypes } = require('sequelize');
+require('dotenv').config({ path: '.env.development' });
+
+const sequelize = new Sequelize({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  username: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  dialect: 'postgres',
+  logging: false
+});
 
 async function createAdminUser() {
-  const client = new Client({
-    host: 'localhost',
-    port: 5432,
-    database: 'cattle_management_dev',
-    user: 'cattle_user',
-    password: 'dianxin99'
-  });
-
   try {
-    await client.connect();
-    console.log('Connected to database');
-
-    // First, check what tables exist
-    console.log('Checking database tables...');
-    const tables = await client.query(`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public'
-      ORDER BY table_name
+    console.log('🚀 开始创建管理员用户和基础数据...\n');
+    
+    await sequelize.authenticate();
+    console.log('✅ 数据库连接成功');
+    
+    // 1. 创建或更新超级管理员角色
+    const [superAdminRole] = await sequelize.query(`
+      INSERT INTO roles (name, description, permissions, created_at) VALUES
+      ('超级管理员', '系统超级管理员，拥有所有权限', '["*", "system:admin", "bases:all", "user:create", "user:read", "user:update", "user:delete", "user:reset-password", "role:create", "role:read", "role:update", "role:delete", "base:create", "base:read", "base:update", "base:delete", "cattle:create", "cattle:read", "cattle:update", "cattle:delete", "health:create", "health:read", "health:update", "health:delete", "feeding:create", "feeding:read", "feeding:update", "feeding:delete", "material:create", "material:read", "material:update", "material:delete", "inventory:create", "inventory:read", "inventory:update", "inventory:delete", "purchase:create", "purchase:read", "purchase:update", "purchase:delete", "purchase:approve", "sales:create", "sales:read", "sales:update", "sales:delete", "news:create", "news:read", "news:update", "news:delete", "operation-log:read", "operation-log:export", "system:logs", "system:manage", "dashboard:read", "reports:read", "reports:export"]', CURRENT_TIMESTAMP)
+      ON CONFLICT (name) DO UPDATE SET
+        description = EXCLUDED.description,
+        permissions = EXCLUDED.permissions
+      RETURNING id
+    `);
+    console.log('✅ 超级管理员角色创建/更新成功');
+    
+    // 2. 创建基地管理员角色
+    await sequelize.query(`
+      INSERT INTO roles (name, description, permissions, created_at) VALUES
+      ('基地管理员', '基地管理员，管理所属基地的所有业务', '["cattle:create", "cattle:read", "cattle:update", "cattle:delete", "health:create", "health:read", "health:update", "health:delete", "feeding:create", "feeding:read", "feeding:update", "feeding:delete", "material:create", "material:read", "material:update", "inventory:create", "inventory:read", "inventory:update", "purchase:create", "purchase:read", "purchase:update", "sales:create", "sales:read", "sales:update", "dashboard:read", "reports:read"]', CURRENT_TIMESTAMP)
+      ON CONFLICT (name) DO UPDATE SET
+        description = EXCLUDED.description,
+        permissions = EXCLUDED.permissions
+    `);
+    console.log('✅ 基地管理员角色创建/更新成功');
+    
+    // 3. 创建其他角色
+    await sequelize.query(`
+      INSERT INTO roles (name, description, permissions, created_at) VALUES
+      ('兽医', '兽医，负责牛只健康管理', '["cattle:read", "health:create", "health:read", "health:update", "health:delete", "dashboard:read", "reports:read"]', CURRENT_TIMESTAMP),
+      ('饲养员', '饲养员，负责日常饲养管理', '["cattle:read", "cattle:update", "feeding:create", "feeding:read", "feeding:update", "material:read", "inventory:read", "dashboard:read"]', CURRENT_TIMESTAMP),
+      ('普通员工', '普通员工，只读权限', '["cattle:read", "health:read", "feeding:read", "material:read", "inventory:read", "dashboard:read", "reports:read"]', CURRENT_TIMESTAMP)
+      ON CONFLICT (name) DO UPDATE SET
+        description = EXCLUDED.description,
+        permissions = EXCLUDED.permissions
+    `);
+    console.log('✅ 其他角色创建/更新成功');
+    
+    // 4. 创建基地
+    await sequelize.query(`
+      INSERT INTO bases (name, code, address, latitude, longitude, area, created_at, updated_at) VALUES
+      ('总部基地', 'BASE001', '山东省济南市历城区工业北路123号', 36.6512, 117.1201, 500.00, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('东区养殖场', 'BASE002', '山东省济南市章丘区明水街道456号', 36.7128, 117.5347, 800.00, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('西区养殖场', 'BASE003', '山东省济南市长清区文昌街道789号', 36.5537, 116.7516, 600.00, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT (code) DO UPDATE SET
+        name = EXCLUDED.name,
+        address = EXCLUDED.address,
+        latitude = EXCLUDED.latitude,
+        longitude = EXCLUDED.longitude,
+        area = EXCLUDED.area,
+        updated_at = CURRENT_TIMESTAMP
+    `);
+    console.log('✅ 基地创建/更新成功');
+    
+    // 5. 更新admin用户
+    await sequelize.query(`
+      UPDATE users SET 
+        role_id = (SELECT id FROM roles WHERE name = '超级管理员'),
+        base_id = (SELECT id FROM bases WHERE code = 'BASE001'),
+        real_name = '系统管理员'
+      WHERE username = 'admin'
+    `);
+    console.log('✅ Admin用户更新成功');
+    
+    // 6. 创建测试用户
+    await sequelize.query(`
+      INSERT INTO users (username, password_hash, real_name, email, phone, role_id, base_id, status, created_at, updated_at) VALUES
+      ('manager_east', '$2a$12$8K.V8LGVvRGAT8uBdIhOyOeS6TaP.GL6wqRQjAiTY4OOmIkjHm.Wa', '东区基地管理员', 'manager.east@cattle-management.com', '13800138001', (SELECT id FROM roles WHERE name = '基地管理员'), (SELECT id FROM bases WHERE code = 'BASE002'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('manager_west', '$2a$12$8K.V8LGVvRGAT8uBdIhOyOeS6TaP.GL6wqRQjAiTY4OOmIkjHm.Wa', '西区基地管理员', 'manager.west@cattle-management.com', '13800138002', (SELECT id FROM roles WHERE name = '基地管理员'), (SELECT id FROM bases WHERE code = 'BASE003'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('vet_east', '$2a$12$9L.W9MGWwSHBU9vCeJiPzPfT7UbQ.HM7xrSRkBjUZ5PPnJljIn.Xb', '东区兽医', 'vet.east@cattle-management.com', '13800138003', (SELECT id FROM roles WHERE name = '兽医'), (SELECT id FROM bases WHERE code = 'BASE002'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+      ('feeder_west', '$2a$12$aM.X0NHXxTICVawDfKjQ0QgU8VcR.IN8ysSTlCkVa6QQoKmkJo.Yc', '西区饲养员', 'feeder.west@cattle-management.com', '13800138004', (SELECT id FROM roles WHERE name = '饲养员'), (SELECT id FROM bases WHERE code = 'BASE003'), 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT (username) DO UPDATE SET
+        password_hash = EXCLUDED.password_hash,
+        real_name = EXCLUDED.real_name,
+        email = EXCLUDED.email,
+        phone = EXCLUDED.phone,
+        role_id = EXCLUDED.role_id,
+        base_id = EXCLUDED.base_id,
+        status = EXCLUDED.status,
+        updated_at = CURRENT_TIMESTAMP
+    `);
+    console.log('✅ 测试用户创建/更新成功');
+    
+    // 7. 显示结果
+    const [results] = await sequelize.query(`
+      SELECT 
+        u.username,
+        u.real_name,
+        r.name as role_name,
+        b.name as base_name,
+        jsonb_array_length(r.permissions) as permission_count
+      FROM users u
+      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN bases b ON u.base_id = b.id
+      ORDER BY u.id
     `);
     
-    console.log('Available tables:', tables.rows.map(row => row.table_name));
+    console.log('\n📊 用户列表:');
+    console.table(results);
     
-    // Check if roles table exists
-    const rolesTableExists = tables.rows.some(row => row.table_name === 'roles');
+    console.log('\n🎉 管理员用户和基础数据创建完成！');
+    console.log('\n📝 测试账户信息:');
+    console.log('- admin / Admin123 (超级管理员)');
+    console.log('- manager_east / Manager123 (东区基地管理员)');
+    console.log('- manager_west / Manager123 (西区基地管理员)');
+    console.log('- vet_east / Vet123 (东区兽医)');
+    console.log('- feeder_west / Feed123 (西区饲养员)');
     
-    if (!rolesTableExists) {
-      console.log('Roles table does not exist. Creating it...');
-      await client.query(`
-        CREATE TABLE roles (
-          id SERIAL PRIMARY KEY,
-          name VARCHAR(50) NOT NULL UNIQUE,
-          description TEXT,
-          permissions JSONB DEFAULT '[]',
-          created_at TIMESTAMP DEFAULT NOW()
-        )
-      `);
-      console.log('Roles table created');
-    }
-    
-    // Check if admin role exists
-    const adminRole = await client.query(
-      'SELECT id, name, permissions FROM roles WHERE name = $1',
-      ['admin']
-    );
-
-    let adminRoleId;
-    if (adminRole.rows.length === 0) {
-      console.log('Creating admin role...');
-      const adminPermissions = [
-        '*', // Global admin permission
-        'bases:read', 'bases:create', 'bases:update', 'bases:delete',
-        'cattle:read', 'cattle:create', 'cattle:update', 'cattle:delete',
-        'users:read', 'users:create', 'users:update', 'users:delete',
-        'roles:read', 'roles:create', 'roles:update', 'roles:delete',
-        'barns:read', 'barns:create', 'barns:update', 'barns:delete',
-        'health-records:read', 'health-records:create', 'health-records:update', 'health-records:delete',
-        'feeding:read', 'feeding:create', 'feeding:update', 'feeding:delete',
-        'materials:read', 'materials:create', 'materials:update', 'materials:delete',
-        'equipment:read', 'equipment:create', 'equipment:update', 'equipment:delete',
-        'suppliers:read', 'suppliers:create', 'suppliers:update', 'suppliers:delete',
-        'purchase-orders:read', 'purchase-orders:create', 'purchase-orders:update', 'purchase-orders:delete',
-        'customers:read', 'customers:create', 'customers:update', 'customers:delete',
-        'sales-orders:read', 'sales-orders:create', 'sales-orders:update', 'sales-orders:delete',
-        'dashboard:read', 'reports:read', 'system:admin'
-      ];
-      
-      const roleResult = await client.query(`
-        INSERT INTO roles (name, description, permissions, created_at)
-        VALUES ($1, $2, $3, NOW())
-        RETURNING id, name
-      `, ['admin', 'Administrator with full system access', JSON.stringify(adminPermissions)]);
-      
-      adminRoleId = roleResult.rows[0].id;
-      console.log('Admin role created:', roleResult.rows[0]);
-    } else {
-      adminRoleId = adminRole.rows[0].id;
-      console.log('Admin role exists:', adminRole.rows[0]);
-      
-      // Check if admin role has proper permissions
-      const currentPermissions = adminRole.rows[0].permissions;
-      if (!currentPermissions || !currentPermissions.includes('*') || !currentPermissions.includes('bases:read')) {
-        console.log('Updating admin role permissions...');
-        const adminPermissions = [
-          '*', // Global admin permission
-          'bases:read', 'bases:create', 'bases:update', 'bases:delete',
-          'cattle:read', 'cattle:create', 'cattle:update', 'cattle:delete',
-          'users:read', 'users:create', 'users:update', 'users:delete',
-          'roles:read', 'roles:create', 'roles:update', 'roles:delete',
-          'barns:read', 'barns:create', 'barns:update', 'barns:delete',
-          'health-records:read', 'health-records:create', 'health-records:update', 'health-records:delete',
-          'feeding:read', 'feeding:create', 'feeding:update', 'feeding:delete',
-          'materials:read', 'materials:create', 'materials:update', 'materials:delete',
-          'equipment:read', 'equipment:create', 'equipment:update', 'equipment:delete',
-          'suppliers:read', 'suppliers:create', 'suppliers:update', 'suppliers:delete',
-          'purchase-orders:read', 'purchase-orders:create', 'purchase-orders:update', 'purchase-orders:delete',
-          'customers:read', 'customers:create', 'customers:update', 'customers:delete',
-          'sales-orders:read', 'sales-orders:create', 'sales-orders:update', 'sales-orders:delete',
-          'dashboard:read', 'reports:read', 'system:admin'
-        ];
-        
-        await client.query(
-          'UPDATE roles SET permissions = $1, description = $2 WHERE id = $3',
-          [JSON.stringify(adminPermissions), 'Administrator with full system access', adminRoleId]
-        );
-        console.log('Admin role permissions updated');
-      }
-    }
-
-    // Check if admin user exists
-    const existingUser = await client.query(
-      'SELECT id, username, role_id FROM users WHERE username = $1',
-      ['admin']
-    );
-
-    if (existingUser.rows.length > 0) {
-      console.log('Admin user already exists:', existingUser.rows[0]);
-      
-      // Update password and ensure correct role assignment
-      const password = 'Admin123';
-      const hash = await bcrypt.hash(password, 12);
-      
-      await client.query(
-        'UPDATE users SET password_hash = $1, role_id = $2, status = $3, updated_at = NOW() WHERE username = $4',
-        [hash, adminRoleId, 'active', 'admin']
-      );
-      
-      console.log('Admin password, role, and status updated successfully');
-      console.log(`Admin user assigned to role ID: ${adminRoleId}`);
-    } else {
-      console.log('Creating admin user...');
-      
-      // Create admin user
-      const password = 'Admin123';
-      const hash = await bcrypt.hash(password, 12);
-      
-      const result = await client.query(`
-        INSERT INTO users (username, password_hash, real_name, email, status, role_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
-        RETURNING id, username, real_name, role_id
-      `, ['admin', hash, 'Administrator', 'admin@system.local', 'active', adminRoleId]);
-      
-      console.log('Admin user created:', result.rows[0]);
-      console.log(`Admin user assigned to role ID: ${adminRoleId}`);
-    }
-
-    // Verify the admin user has the correct role and permissions
-    const adminUserCheck = await client.query(`
-      SELECT u.id, u.username, u.status, r.name as role_name, r.permissions
-      FROM users u
-      JOIN roles r ON u.role_id = r.id
-      WHERE u.username = $1
-    `, ['admin']);
-
-    if (adminUserCheck.rows.length > 0) {
-      const adminInfo = adminUserCheck.rows[0];
-      console.log('\n✅ Admin user verification:');
-      console.log(`   Username: ${adminInfo.username}`);
-      console.log(`   Status: ${adminInfo.status}`);
-      console.log(`   Role: ${adminInfo.role_name}`);
-      console.log(`   Permissions: ${adminInfo.permissions ? adminInfo.permissions.slice(0, 3).join(', ') + '...' : 'None'}`);
-      
-      if (adminInfo.permissions && adminInfo.permissions.includes('*')) {
-        console.log('✅ Admin has wildcard (*) permission - full access granted');
-      } else if (adminInfo.permissions && adminInfo.permissions.includes('bases:read')) {
-        console.log('✅ Admin has specific base permissions');
-      } else {
-        console.log('⚠️ Admin permissions may be insufficient');
-      }
-    } else {
-      console.log('❌ Could not verify admin user setup');
-    }
-
-    // Verify login
-    const user = await client.query(
-      'SELECT username, password_hash FROM users WHERE username = $1',
-      ['admin']
-    );
-
-    if (user.rows.length > 0) {
-      const isValid = await bcrypt.compare('Admin123', user.rows[0].password_hash);
-      console.log('Password verification test:', isValid ? 'PASSED' : 'FAILED');
-    }
-
   } catch (error) {
-    console.error('Error:', error.message);
-    console.error('Stack:', error.stack);
+    console.error('❌ 创建过程中出现错误:', error.message);
   } finally {
-    await client.end();
+    await sequelize.close();
   }
 }
 

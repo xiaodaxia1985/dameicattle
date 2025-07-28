@@ -161,10 +161,12 @@ const getChildRoutePath = (parentPath: string, childPath: string) => {
 const handleCommand = async (command: string) => {
   switch (command) {
     case 'profile':
-      // TODO: Open profile dialog
+      // 跳转到用户管理页面或打开个人资料对话框
+      router.push('/admin/system/users')
       break
     case 'settings':
-      // TODO: Navigate to settings
+      // 跳转到系统设置页面
+      router.push('/admin/system/roles')
       break
     case 'logout':
       try {
@@ -174,10 +176,20 @@ const handleCommand = async (command: string) => {
           type: 'warning'
         })
         
+        console.log('开始登出...')
+        
+        // 使用认证store进行登出
         await authStore.logout()
+        
+        console.log('登出成功，跳转到登录页面')
+        
+        // 跳转到登录页面
         router.push('/login')
       } catch (error) {
-        // User cancelled
+        console.error('Logout error:', error)
+        // 即使登出API失败，也要清除本地状态并跳转
+        authStore.logout()
+        router.push('/login')
       }
       break
   }

@@ -7,6 +7,7 @@ export class OperationLogController {
             const {
                 user_id,
                 operation,
+                action, // 兼容前端传递的action参数
                 resource,
                 start_date,
                 end_date,
@@ -25,6 +26,11 @@ export class OperationLogController {
 
             if (operation) {
                 filters.operation = operation as string;
+            }
+
+            // 兼容前端传递的action参数
+            if (action) {
+                filters.operation = action as string;
             }
 
             if (resource) {

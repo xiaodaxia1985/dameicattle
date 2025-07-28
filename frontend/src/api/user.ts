@@ -69,8 +69,16 @@ export interface OperationLogParams {
 export const userApi = {
   // 获取用户列表
   getUsers(params: UserListParams = {}): Promise<UserListResponse> {
-    return request.get<ApiResponse<UserListResponse>>('/users', { params })
-      .then(response => response.data.data)
+    return request.get<ApiResponse<any>>('/users', { params })
+      .then(response => {
+        const responseData = response.data.data;
+        return {
+          data: responseData.users || [],
+          total: responseData.pagination?.total || 0,
+          page: responseData.pagination?.page || 1,
+          limit: responseData.pagination?.limit || 20
+        };
+      })
   },
 
   // 获取用户详情
@@ -116,10 +124,36 @@ export const userApi = {
     return request.put(`/users/${id}/status`, { status })
   },
 
-  // 获取角色列表
+  // 获取角色列表（用于下拉选择器）
   getRoles(): Promise<Role[]> {
-    return request.get<ApiResponse<Role[]>>('/roles')
-      .then(response => response.data.data)
+    return request.get<ApiResponse<any>>('/roles')
+      .then(response => {
+        const responseData = response.data.data;
+        // 如果后端返回的是 { roles: [...] } 格式
+        if (responseData.roles) {
+          return responseData.roles;
+        }
+        // 如果后端返回的是直接的数组格式
+        if (Array.isArray(responseData)) {
+          return responseData;
+        }
+        // 默认返回空数组
+        return [];
+      })
+  },
+
+  // 获取角色列表（用于角色管理页面，支持分页）
+  getRolesList(params: { page?: number; limit?: number; keyword?: string } = {}): Promise<{ data: Role[]; total: number; page: number; limit: number }> {
+    return request.get<ApiResponse<any>>('/roles', { params })
+      .then(response => {
+        const responseData = response.data.data;
+        return {
+          data: responseData.roles || [],
+          total: responseData.pagination?.total || 0,
+          page: responseData.pagination?.page || 1,
+          limit: responseData.pagination?.limit || 20
+        };
+      })
   },
 
   // 创建角色
@@ -147,7 +181,29 @@ export const userApi = {
 
   // 获取操作日志
   getOperationLogs(params: OperationLogParams = {}): Promise<{ data: OperationLog[]; total: number; page: number; limit: number }> {
-    return request.get<ApiResponse<{ data: OperationLog[]; total: number; page: number; limit: number }>>('/operation-logs', { params })
-      .then(response => response.data.data)
+    return request.get<ApiResponse<any>>('/operation-logs', { params })
+      .then(response => {
+        const responseData = response.data.data;
+        // 转换后端数据结构到前端期望的格式
+        const logs = (responseData.logs || []).map((log: any) => ({
+          id: log.id || Math.random(), // 如果没有id，生成一个临时id
+          user_id: log.user_id,
+          user_name: log.username || '未知用户',
+          action: log.operation || log.action, // 兼容两种字段名
+          resource: log.resource,
+          resource_id: log.resource_id,
+          ip_address: log.ip_address,
+          user_agent: log.user_agent || '',
+          created_at: log.timestamp || log.created_at,
+          details: log.request_body || log.details
+        }));
+        
+        return {
+          data: logs,
+          total: responseData.pagination?.total || responseData.total || 0,
+          page: responseData.pagination?.page || responseData.page || 1,
+          limit: responseData.pagination?.limit || responseData.limit || 20
+        };
+      })
   }
 }

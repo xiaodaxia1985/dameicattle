@@ -112,36 +112,27 @@ const handleLogin = async () => {
     await loginFormRef.value.validate()
     loading.value = true
     
-    // Use direct fetch to bypass complex API client
-    const response = await fetch('/api/v1/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username: loginForm.username,
-        password: loginForm.password
-      })
+    console.log('开始登录...', loginForm)
+    
+    // 使用认证store进行登录
+    await authStore.login({
+      username: loginForm.username,
+      password: loginForm.password
     })
     
-    const data = await response.json()
-    
-    if (!response.ok) {
-      throw new Error(data.error?.message || 'Login failed')
-    }
-    
-    // Store auth data directly
-    const { token, user, permissions } = data.data
-    localStorage.setItem('token', token)
-    localStorage.setItem('user', JSON.stringify(user))
-    localStorage.setItem('permissions', JSON.stringify(permissions || []))
-    
+    console.log('登录成功')
     ElMessage.success('登录成功')
-    router.push('/')
+    
+    // 检查是否有重定向参数
+    const redirect = router.currentRoute.value.query.redirect as string
+    const targetPath = redirect || '/admin/dashboard'
+    
+    console.log('跳转到:', targetPath)
+    router.push(targetPath)
     
   } catch (error: any) {
     console.error('Login error:', error)
-    ElMessage.error(error.message || '登录失败')
+    ElMessage.error(error.message || '登录失败，请检查用户名和密码')
   } finally {
     loading.value = false
   }

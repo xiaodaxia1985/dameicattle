@@ -3,6 +3,7 @@ import { logger } from '@/utils/logger';
 
 // Define operation log entry interface
 interface OperationLogEntry {
+  id: number;
   user_id?: number;
   username?: string;
   operation: string;
@@ -18,8 +19,115 @@ interface OperationLogEntry {
   duration?: number;
 }
 
+// Counter for generating unique IDs
+let logIdCounter = 1;
+
 // In-memory operation log storage (in production, this should be stored in database)
 const operationLogs: OperationLogEntry[] = [];
+
+// Initialize with some test data for demonstration
+const initializeTestData = () => {
+  const testLogs: OperationLogEntry[] = [
+    {
+      id: logIdCounter++,
+      user_id: 1,
+      username: 'admin',
+      operation: 'login',
+      resource: 'user',
+      resource_id: '1',
+      method: 'POST',
+      path: '/auth/login',
+      ip_address: '127.0.0.1',
+      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      request_body: { username: 'admin' },
+      response_status: 200,
+      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+      duration: 150
+    },
+    {
+      id: logIdCounter++,
+      user_id: 1,
+      username: 'admin',
+      operation: 'create',
+      resource: 'user',
+      resource_id: '2',
+      method: 'POST',
+      path: '/users',
+      ip_address: '127.0.0.1',
+      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      request_body: { username: 'testuser', real_name: '测试用户' },
+      response_status: 201,
+      timestamp: new Date(Date.now() - 1000 * 60 * 25), // 25 minutes ago
+      duration: 200
+    },
+    {
+      id: logIdCounter++,
+      user_id: 2,
+      username: 'testuser',
+      operation: 'login',
+      resource: 'user',
+      resource_id: '2',
+      method: 'POST',
+      path: '/auth/login',
+      ip_address: '192.168.1.100',
+      user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      request_body: { username: 'testuser' },
+      response_status: 200,
+      timestamp: new Date(Date.now() - 1000 * 60 * 20), // 20 minutes ago
+      duration: 120
+    },
+    {
+      id: logIdCounter++,
+      user_id: 1,
+      username: 'admin',
+      operation: 'update',
+      resource: 'role',
+      resource_id: '1',
+      method: 'PUT',
+      path: '/roles/1',
+      ip_address: '127.0.0.1',
+      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      request_body: { name: '超级管理员', permissions: ['user:create', 'user:read'] },
+      response_status: 200,
+      timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
+      duration: 180
+    },
+    {
+      id: logIdCounter++,
+      user_id: 2,
+      username: 'testuser',
+      operation: 'read',
+      resource: 'cattle',
+      method: 'GET',
+      path: '/cattle',
+      ip_address: '192.168.1.100',
+      user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      response_status: 200,
+      timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
+      duration: 80
+    },
+    {
+      id: logIdCounter++,
+      user_id: 1,
+      username: 'admin',
+      operation: 'delete',
+      resource: 'user',
+      resource_id: '3',
+      method: 'DELETE',
+      path: '/users/3',
+      ip_address: '127.0.0.1',
+      user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      response_status: 200,
+      timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
+      duration: 100
+    }
+  ];
+  
+  operationLogs.push(...testLogs);
+};
+
+// Initialize test data when module loads
+initializeTestData();
 
 /**
  * Operation logging middleware
@@ -32,6 +140,7 @@ export const operationLog = (operation: string) => {
     
     // Create log entry
     const logEntry: OperationLogEntry = {
+      id: logIdCounter++,
       user_id: user?.id,
       username: user?.username,
       operation,
@@ -78,6 +187,7 @@ export const operationLogMiddleware = (operation: string, resource: string) => {
     
     // Create log entry
     const logEntry: OperationLogEntry = {
+      id: logIdCounter++,
       user_id: user?.id,
       username: user?.username,
       operation,

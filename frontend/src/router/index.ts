@@ -377,18 +377,49 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
+// 添加一个标志来跟踪认证状态是否已经初始化
+let authInitialized = false
+
 // Navigation guards
 router.beforeEach(async (to, from, next) => {
   NProgress.start()
   
   const authStore = useAuthStore()
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth !== false)
+  
+  // 只在第一次访问时初始化认证状态
+  if (!authInitialized) {
+    console.log('首次访问，初始化认证状态...')
+    authInitialized = true
+    try {
+      await authStore.initializeAuth()
+    } catch (error) {
+      console.error('认证状态初始化失败:', error)
+    }
+  }
+  
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth === true)
+  
+  console.log('路由守卫:', {
+    to: to.path,
+    from: from.path,
+    requiresAuth,
+    isAuthenticated: authStore.isAuthenticated,
+    hasToken: !!authStore.token,
+    hasUser: !!authStore.user
+  })
   
   if (requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
+    console.log('需要认证但未登录，跳转到登录页面')
+    if (to.path !== '/login') {
+      next({ path: '/login', query: { redirect: to.fullPath } })
+    } else {
+      next()
+    }
   } else if (to.path === '/login' && authStore.isAuthenticated) {
-    next('/admin')
+    console.log('已登录用户访问登录页面，跳转到仪表盘')
+    next('/admin/dashboard')
   } else {
+    console.log('正常访问')
     next()
   }
 })

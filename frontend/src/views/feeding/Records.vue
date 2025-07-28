@@ -191,16 +191,49 @@
             />
           </el-select>
         </el-form-item>
-        <!-- 基地牛棚牛只级联选择 -->
-        <CascadeSelector
-          v-model="formData.cascade"
-          barn-label="目标牛棚"
-          cattle-label="目标牛只(可选)"
-          barn-prop="barnId"
-          cattle-prop="cattleId"
-          :required="true"
-          @change="handleFormCascadeChange"
-        />
+        <!-- 基地牛棚选择 -->
+        <el-form-item label="目标基地" prop="baseId">
+          <el-select v-model="formData.baseId" placeholder="请选择基地" style="width: 100%" @change="handleBaseChange">
+            <el-option
+              v-for="base in bases"
+              :key="base.id"
+              :label="base.name"
+              :value="base.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="目标牛棚" prop="barnId">
+          <el-select 
+            v-model="formData.barnId" 
+            placeholder="请选择牛棚" 
+            style="width: 100%" 
+            :disabled="!formData.baseId"
+            @change="handleBarnChange"
+          >
+            <el-option
+              v-for="barn in availableBarns"
+              :key="barn.value"
+              :label="barn.label"
+              :value="barn.value"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="饲喂说明">
+          <el-alert
+            v-if="formData.barnId && selectedBarnInfo"
+            :title="`将为牛棚「${selectedBarnInfo.name}」中的所有牛只（共${selectedBarnInfo.cattleCount}头）进行饲喂`"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+          <el-alert
+            v-else-if="formData.baseId && !formData.barnId"
+            title="请选择具体的牛棚进行饲喂"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+        </el-form-item>
         <el-form-item label="饲喂量(kg)" prop="amount">
           <el-input-number
             v-model="formData.amount"
@@ -345,13 +378,18 @@ const selectedRecord = ref<FeedingRecord | null>(null)
 const formRef = ref()
 const uploadRef = ref()
 const uploadFile = ref<File | null>(null)
-const formData = ref<CreateFeedingRecordRequest>({
+const formData = ref<CreateFeedingRecordRequest & { cascade?: { baseId?: number; barnId?: number; cattleId?: number } }>({
   formulaId: '',
   baseId: 0,
   barnId: 0,
   amount: 0,
   feedingDate: '',
-  remark: ''
+  remark: '',
+  cascade: {
+    baseId: undefined,
+    barnId: undefined,
+    cattleId: undefined
+  }
 })
 
 const formRules: Record<string, any> = {
@@ -362,7 +400,30 @@ const formRules: Record<string, any> = {
     { required: true, message: '请选择配方', trigger: 'change' }
   ],
   baseId: [
-    { required: true, message: '请选择基地', trigger: 'change' }
+    { required: true, message: '请选择基地', trigger: 'change' },
+    { 
+      validator: (rule: any, value: any, callback: Function) => {
+        if (!value || value === 0) {
+          callback(new Error('请选择基地'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'change' 
+    }
+  ],
+  barnId: [
+    { required: true, message: '请选择牛棚', trigger: 'change' },
+    { 
+      validator: (rule: any, value: any, callback: Function) => {
+        if (!value || value === 0) {
+          callback(new Error('请选择牛棚'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'change' 
+    }
   ],
   amount: [
     { required: true, message: '请输入饲喂量', trigger: 'blur' },
@@ -385,7 +446,33 @@ const avgDailyCost = computed(() => {
 })
 
 const availableBarns = computed(() => {
-  return barns.value.filter(barn => barn.baseId === formData.value.baseId)
+  console.log('计算可用牛棚:', {
+    allBarns: barns.value,
+    selectedBaseId: formData.value.baseId,
+    barnsCount: barns.value.length
+  })
+  
+  const filtered = barns.value.filter(barn => {
+    const barnBaseId = barn.baseId || barn.base_id
+    console.log(`牛棚 ${barn.name} 的基地ID: ${barnBaseId}, 选中基地ID: ${formData.value.baseId}`)
+    return barnBaseId === formData.value.baseId
+  })
+  
+  console.log('过滤后的牛棚:', filtered)
+  
+  return filtered.map(barn => ({
+    value: barn.id,
+    label: `${barn.name} (${barn.code || ''})`
+  }))
+})
+
+const selectedBarnInfo = computed(() => {
+  if (!formData.value.barnId) return null
+  const barn = barns.value.find(b => b.id === formData.value.barnId)
+  return barn ? {
+    name: barn.name,
+    cattleCount: barn.current_count || 0
+  } : null
 })
 
 const estimatedCost = computed(() => {
@@ -477,9 +564,10 @@ const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId
 
 // 表单级联选择变更处理
 const handleFormCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
-  formData.value.cascade = value
+  console.log('级联选择变更:', value)
   formData.value.baseId = value.baseId || 0
   formData.value.barnId = value.barnId || 0
+  console.log('更新后的formData:', formData.value)
 }
 
 // 处理筛选条件变化
@@ -561,8 +649,14 @@ const deleteRecord = async (record: FeedingRecord) => {
 }
 
 // 处理表单基地变化
-const handleFormBaseChange = () => {
+const handleBaseChange = () => {
+  console.log('基地变更:', formData.value.baseId)
   formData.value.barnId = 0
+}
+
+// 处理表单牛棚变化
+const handleBarnChange = () => {
+  console.log('牛棚变更:', formData.value.barnId)
 }
 
 // 计算预估成本
@@ -572,17 +666,44 @@ const calculateEstimatedCost = () => {
 
 // 提交表单
 const submitForm = async () => {
-  if (!formRef.value) return
+  console.log('submitForm called')
+  console.log('formRef.value:', formRef.value)
+  console.log('formData.value:', formData.value)
+  
+  if (!formRef.value) {
+    console.error('formRef is null')
+    ElMessage.error('表单引用为空')
+    return
+  }
   
   try {
+    console.log('开始表单验证...')
     await formRef.value.validate()
+    console.log('表单验证通过')
+    
     submitting.value = true
     
+    // 准备提交的数据，移除cascade属性
+    const submitData = {
+      formulaId: formData.value.formulaId,
+      baseId: formData.value.baseId,
+      barnId: formData.value.barnId,
+      amount: formData.value.amount,
+      feedingDate: formData.value.feedingDate,
+      remark: formData.value.remark
+    }
+    
+    console.log('准备提交的数据:', submitData)
+    
     if (dialogMode.value === 'create') {
-      await feedingApi.createFeedingRecord(formData.value)
+      console.log('调用创建API')
+      const result = await feedingApi.createFeedingRecord(submitData)
+      console.log('创建API响应:', result)
       ElMessage.success('添加成功')
     } else {
-      await feedingApi.updateFeedingRecord(selectedRecord.value!.id, formData.value)
+      console.log('调用更新API, ID:', selectedRecord.value?.id)
+      const result = await feedingApi.updateFeedingRecord(selectedRecord.value!.id, submitData)
+      console.log('更新API响应:', result)
       ElMessage.success('更新成功')
     }
     
@@ -590,7 +711,10 @@ const submitForm = async () => {
     fetchRecords()
   } catch (error) {
     console.error('提交失败:', error)
-    ElMessage.error('提交失败')
+    if (error.response) {
+      console.error('错误响应:', error.response.data)
+    }
+    ElMessage.error('提交失败: ' + (error.message || '未知错误'))
   } finally {
     submitting.value = false
   }
@@ -604,7 +728,12 @@ const resetForm = () => {
     barnId: 0,
     amount: 0,
     feedingDate: '',
-    remark: ''
+    remark: '',
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    }
   }
   selectedRecord.value = null
   if (formRef.value) {

@@ -83,6 +83,8 @@ declare module 'vue' {
     ElUpload: typeof import('element-plus/es')['ElUpload']
     GaugeChart: typeof import('./src/components/dashboard/GaugeChart.vue')['default']
     HelpCenter: typeof import('./src/components/help/HelpCenter.vue')['default']
+    IngredientEditor: typeof import('./src/components/feeding/IngredientEditor.vue')['default']
+    IngredientTable: typeof import('./src/components/feeding/IngredientTable.vue')['default']
     MapLocationPicker: typeof import('./src/components/MapLocationPicker.vue')['default']
     ModernIcon: typeof import('./src/components/ModernIcon.vue')['default']
     PendingTasksCard: typeof import('./src/components/dashboard/PendingTasksCard.vue')['default']

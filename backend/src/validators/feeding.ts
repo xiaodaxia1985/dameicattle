@@ -16,46 +16,75 @@ export const createFeedFormulaValidator = [
   body('ingredients')
     .notEmpty()
     .withMessage('配方成分不能为空')
-    .isObject()
-    .withMessage('配方成分必须是对象格式')
+    .isArray({ min: 1 })
+    .withMessage('配方成分必须是数组格式，且至少包含一个成分')
     .custom((value: any) => {
-      if (!value || typeof value !== 'object') {
-        throw new Error('配方成分必须是有效的对象');
+      if (!value || !Array.isArray(value)) {
+        throw new Error('配方成分必须是有效的数组');
       }
       
-      let totalRatio = 0;
-      const ingredientNames = Object.keys(value);
-      
-      if (ingredientNames.length === 0) {
+      if (value.length === 0) {
         throw new Error('至少需要一种配方成分');
       }
       
-      for (const [ingredient, details] of Object.entries(value)) {
-        if (!details || typeof details !== 'object') {
-          throw new Error(`配方成分 ${ingredient} 的详情格式不正确`);
+      let totalRatio = 0;
+      const ingredientNames = new Set();
+      
+      for (let i = 0; i < value.length; i++) {
+        const ingredient = value[i];
+        if (!ingredient || typeof ingredient !== 'object') {
+          throw new Error(`第${i + 1}个配方成分格式不正确`);
         }
         
-        const detailsObj = details as any;
-        if (!('ratio' in detailsObj) || !('unit' in detailsObj) || !('cost' in detailsObj)) {
-          throw new Error(`配方成分 ${ingredient} 缺少必要字段 (ratio, unit, cost)`);
+        // 检查必要字段
+        const requiredFields = ['name', 'weight', 'cost', 'energy', 'ratio'];
+        for (const field of requiredFields) {
+          if (!(field in ingredient)) {
+            throw new Error(`第${i + 1}个配方成分缺少必要字段: ${field}`);
+          }
         }
         
-        const ratio = parseFloat(detailsObj.ratio);
-        const cost = parseFloat(detailsObj.cost);
-        
-        if (isNaN(ratio) || ratio <= 0 || ratio > 100) {
-          throw new Error(`配方成分 ${ingredient} 的比例必须在 0-100 之间`);
+        // 验证名称
+        if (!ingredient.name || typeof ingredient.name !== 'string' || ingredient.name.trim() === '') {
+          throw new Error(`第${i + 1}个配方成分的名称不能为空`);
         }
         
+        // 检查名称重复
+        if (ingredientNames.has(ingredient.name.trim())) {
+          throw new Error(`配方成分名称不能重复: ${ingredient.name}`);
+        }
+        ingredientNames.add(ingredient.name.trim());
+        
+        // 验证重量
+        const weight = parseFloat(ingredient.weight);
+        if (isNaN(weight) || weight <= 0) {
+          throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的重量必须大于0`);
+        }
+        
+        // 验证成本
+        const cost = parseFloat(ingredient.cost);
         if (isNaN(cost) || cost < 0) {
-          throw new Error(`配方成分 ${ingredient} 的成本必须大于等于0`);
+          throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的成本必须大于等于0`);
+        }
+        
+        // 验证能量
+        const energy = parseFloat(ingredient.energy);
+        if (isNaN(energy) || energy < 0) {
+          throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的能量必须大于等于0`);
+        }
+        
+        // 验证比重
+        const ratio = parseFloat(ingredient.ratio);
+        if (isNaN(ratio) || ratio <= 0 || ratio > 100) {
+          throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的比重必须在0-100之间`);
         }
         
         totalRatio += ratio;
       }
       
+      // 验证比重总和
       if (Math.abs(totalRatio - 100) > 0.01) {
-        throw new Error(`配方成分比例总和必须等于100%，当前为 ${totalRatio.toFixed(2)}%`);
+        throw new Error(`配方成分比重总和必须等于100%，当前为 ${totalRatio.toFixed(2)}%`);
       }
       
       return true;
@@ -86,37 +115,72 @@ export const updateFeedFormulaValidator = [
   
   body('ingredients')
     .optional()
-    .isObject()
-    .withMessage('配方成分必须是对象格式')
+    .isArray({ min: 1 })
+    .withMessage('配方成分必须是数组格式，且至少包含一个成分')
     .custom((value: any) => {
-      if (value && typeof value === 'object') {
+      if (value && Array.isArray(value)) {
+        if (value.length === 0) {
+          throw new Error('至少需要一种配方成分');
+        }
+        
         let totalRatio = 0;
-        for (const [ingredient, details] of Object.entries(value)) {
-          if (!details || typeof details !== 'object') {
-            throw new Error(`配方成分 ${ingredient} 的详情格式不正确`);
+        const ingredientNames = new Set();
+        
+        for (let i = 0; i < value.length; i++) {
+          const ingredient = value[i];
+          if (!ingredient || typeof ingredient !== 'object') {
+            throw new Error(`第${i + 1}个配方成分格式不正确`);
           }
           
-          const detailsObj = details as any;
-          if (!('ratio' in detailsObj) || !('unit' in detailsObj) || !('cost' in detailsObj)) {
-            throw new Error(`配方成分 ${ingredient} 缺少必要字段 (ratio, unit, cost)`);
+          // 检查必要字段
+          const requiredFields = ['name', 'weight', 'cost', 'energy', 'ratio'];
+          for (const field of requiredFields) {
+            if (!(field in ingredient)) {
+              throw new Error(`第${i + 1}个配方成分缺少必要字段: ${field}`);
+            }
           }
           
-          const ratio = parseFloat(detailsObj.ratio);
-          const cost = parseFloat(detailsObj.cost);
-          
-          if (isNaN(ratio) || ratio <= 0 || ratio > 100) {
-            throw new Error(`配方成分 ${ingredient} 的比例必须在 0-100 之间`);
+          // 验证名称
+          if (!ingredient.name || typeof ingredient.name !== 'string' || ingredient.name.trim() === '') {
+            throw new Error(`第${i + 1}个配方成分的名称不能为空`);
           }
           
+          // 检查名称重复
+          if (ingredientNames.has(ingredient.name.trim())) {
+            throw new Error(`配方成分名称不能重复: ${ingredient.name}`);
+          }
+          ingredientNames.add(ingredient.name.trim());
+          
+          // 验证重量
+          const weight = parseFloat(ingredient.weight);
+          if (isNaN(weight) || weight <= 0) {
+            throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的重量必须大于0`);
+          }
+          
+          // 验证成本
+          const cost = parseFloat(ingredient.cost);
           if (isNaN(cost) || cost < 0) {
-            throw new Error(`配方成分 ${ingredient} 的成本必须大于等于0`);
+            throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的成本必须大于等于0`);
+          }
+          
+          // 验证能量
+          const energy = parseFloat(ingredient.energy);
+          if (isNaN(energy) || energy < 0) {
+            throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的能量必须大于等于0`);
+          }
+          
+          // 验证比重
+          const ratio = parseFloat(ingredient.ratio);
+          if (isNaN(ratio) || ratio <= 0 || ratio > 100) {
+            throw new Error(`第${i + 1}个配方成分"${ingredient.name}"的比重必须在0-100之间`);
           }
           
           totalRatio += ratio;
         }
         
+        // 验证比重总和
         if (Math.abs(totalRatio - 100) > 0.01) {
-          throw new Error(`配方成分比例总和必须等于100%，当前为 ${totalRatio.toFixed(2)}%`);
+          throw new Error(`配方成分比重总和必须等于100%，当前为 ${totalRatio.toFixed(2)}%`);
         }
       }
       return true;

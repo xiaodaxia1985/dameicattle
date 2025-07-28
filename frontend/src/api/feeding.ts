@@ -2,17 +2,21 @@ import request from './request'
 import type { ApiResponse } from './request'
 
 // 饲喂管理相关类型定义
+export interface IngredientItem {
+  name: string      // 成分名称
+  weight: number    // 重量 (kg)
+  cost: number      // 成本 (元/kg)
+  energy: number    // 能量 (MJ/kg)
+  ratio: number     // 所占比重 (%)
+}
+
 export interface FeedFormula {
   id: string
   name: string
   description: string
-  ingredients: Array<{
-    name: string
-    ratio: number
-    unit: string
-    cost?: number
-  }>
+  ingredients: IngredientItem[]
   costPerKg: number
+  ingredientsVersion?: number
   createdBy: string
   createdByName: string
   createdAt: string
@@ -88,23 +92,13 @@ export interface FeedingListResponse {
 export interface CreateFormulaRequest {
   name: string
   description?: string
-  ingredients: Array<{
-    name: string
-    ratio: number
-    unit: string
-    cost?: number
-  }>
+  ingredients: IngredientItem[]
 }
 
 export interface UpdateFormulaRequest {
   name?: string
   description?: string
-  ingredients?: Array<{
-    name: string
-    ratio: number
-    unit: string
-    cost?: number
-  }>
+  ingredients?: IngredientItem[]
 }
 
 export interface CreateFeedingRecordRequest {
@@ -125,8 +119,18 @@ export interface UpdateFeedingRecordRequest {
 export const feedingApi = {
   // 获取饲料配方列表
   getFormulas(params: FormulaListParams = {}): Promise<{ data: FormulaListResponse }> {
-    return request.get<ApiResponse<FormulaListResponse>>('/feeding/formulas', { params })
-      .then(response => ({ data: response.data.data }))
+    return request.get<ApiResponse<any>>('/feeding/formulas', { params })
+      .then(response => {
+        const responseData = response.data.data;
+        return {
+          data: {
+            data: responseData.formulas || [],
+            total: responseData.pagination?.total || 0,
+            page: responseData.pagination?.page || 1,
+            limit: responseData.pagination?.limit || 20
+          }
+        };
+      })
   },
 
   // 获取饲料配方详情
@@ -166,7 +170,16 @@ export const feedingApi = {
 
   // 创建饲喂记录
   createFeedingRecord(data: CreateFeedingRecordRequest): Promise<{ data: FeedingRecord }> {
-    return request.post<ApiResponse<FeedingRecord>>('/feeding/records', data)
+    // 转换字段名为后端期望的格式
+    const requestData = {
+      formula_id: data.formulaId,
+      base_id: data.baseId,
+      barn_id: data.barnId,
+      amount: data.amount,
+      feeding_date: data.feedingDate,
+      remark: data.remark
+    }
+    return request.post<ApiResponse<FeedingRecord>>('/feeding/records', requestData)
       .then(response => ({ data: response.data.data }))
   },
 

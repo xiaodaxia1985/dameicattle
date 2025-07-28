@@ -68,6 +68,127 @@
         </el-card>
       </div>
 
+      <!-- 主要内容区域 -->
+      <div class="main-content">
+        <!-- 图表区域 -->
+        <div class="charts-section">
+          <div class="chart-row">
+            <!-- 牛只分布饼图 -->
+            <el-card class="chart-card">
+              <template #header>
+                <span>牛只分布</span>
+              </template>
+              <div class="chart-placeholder">
+                <div class="placeholder-content">
+                  <el-icon size="48"><PieChart /></el-icon>
+                  <p>牛只分布统计图表</p>
+                </div>
+              </div>
+            </el-card>
+            
+            <!-- 健康趋势图 -->
+            <el-card class="chart-card">
+              <template #header>
+                <span>健康趋势</span>
+              </template>
+              <div class="chart-placeholder">
+                <div class="placeholder-content">
+                  <el-icon size="48"><TrendCharts /></el-icon>
+                  <p>健康状况趋势图表</p>
+                </div>
+              </div>
+            </el-card>
+          </div>
+          
+          <div class="chart-row">
+            <!-- 饲喂效率仪表盘 -->
+            <el-card class="chart-card">
+              <template #header>
+                <span>饲喂效率</span>
+              </template>
+              <div class="chart-placeholder">
+                <div class="placeholder-content">
+                  <el-icon size="48"><Odometer /></el-icon>
+                  <p>饲喂效率仪表盘</p>
+                </div>
+              </div>
+            </el-card>
+            
+            <!-- 收入统计柱状图 -->
+            <el-card class="chart-card">
+              <template #header>
+                <span>收入统计</span>
+              </template>
+              <div class="chart-placeholder">
+                <div class="placeholder-content">
+                  <el-icon size="48"><Histogram /></el-icon>
+                  <p>月度收入统计图表</p>
+                </div>
+              </div>
+            </el-card>
+          </div>
+        </div>
+        
+        <!-- 任务和通知区域 -->
+        <div class="tasks-section">
+          <el-card class="tasks-card">
+            <template #header>
+              <div class="card-header">
+                <span>待处理任务</span>
+                <el-badge :value="pendingTasks.length" class="task-badge" />
+              </div>
+            </template>
+            <div class="tasks-list">
+              <div 
+                v-for="task in pendingTasks" 
+                :key="task.id"
+                class="task-item"
+                :class="task.priority"
+              >
+                <div class="task-icon">
+                  <el-icon><component :is="task.icon" /></el-icon>
+                </div>
+                <div class="task-content">
+                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-time">{{ task.time }}</div>
+                </div>
+                <div class="task-action">
+                  <el-button size="small" type="text" @click="handleTask(task)">
+                    处理
+                  </el-button>
+                </div>
+              </div>
+            </div>
+          </el-card>
+          
+          <!-- 系统通知 -->
+          <el-card class="notifications-card">
+            <template #header>
+              <div class="card-header">
+                <span>系统通知</span>
+                <el-badge :value="notifications.length" class="notification-badge" />
+              </div>
+            </template>
+            <div class="notifications-list">
+              <div 
+                v-for="notification in notifications" 
+                :key="notification.id"
+                class="notification-item"
+                :class="notification.type"
+              >
+                <div class="notification-icon">
+                  <el-icon><component :is="notification.icon" /></el-icon>
+                </div>
+                <div class="notification-content">
+                  <div class="notification-title">{{ notification.title }}</div>
+                  <div class="notification-time">{{ notification.time }}</div>
+                </div>
+              </div>
+            </div>
+          </el-card>
+        </div>
+      </div>
+
       <!-- 快捷操作区域 -->
       <div class="quick-actions">
         <el-card>
@@ -107,6 +228,38 @@
               <el-icon><ShoppingCart /></el-icon>
               采购管理
             </el-button>
+            <el-button 
+              type="default" 
+              size="large"
+              @click="$router.push('/admin/sales/orders')"
+            >
+              <el-icon><Sell /></el-icon>
+              销售管理
+            </el-button>
+            <el-button 
+              type="default" 
+              size="large"
+              @click="$router.push('/admin/materials/dashboard')"
+            >
+              <el-icon><Box /></el-icon>
+              物资管理
+            </el-button>
+            <el-button 
+              type="default" 
+              size="large"
+              @click="$router.push('/admin/news/list')"
+            >
+              <el-icon><Document /></el-icon>
+              新闻管理
+            </el-button>
+            <el-button 
+              type="default" 
+              size="large"
+              @click="$router.push('/admin/system/users')"
+            >
+              <el-icon><Setting /></el-icon>
+              系统管理
+            </el-button>
           </div>
         </el-card>
       </div>
@@ -127,7 +280,17 @@ import {
   Plus,
   Document,
   Food,
-  ShoppingCart
+  ShoppingCart,
+  PieChart,
+  Odometer,
+  Histogram,
+  Sell,
+  Box,
+  Setting,
+  Bell,
+  Clock,
+  User,
+  Tools
 } from '@element-plus/icons-vue'
 import { safeGet } from '@/utils/safeAccess'
 
@@ -140,6 +303,67 @@ const keyIndicators = ref<any>({
   pendingTasks: 0
 })
 const loading = ref(false)
+
+// 待处理任务数据
+const pendingTasks = ref([
+  {
+    id: 1,
+    title: '牛只健康检查',
+    time: '2小时前',
+    priority: 'high',
+    icon: 'Monitor',
+    type: 'health'
+  },
+  {
+    id: 2,
+    title: '饲料配方审核',
+    time: '4小时前',
+    priority: 'medium',
+    icon: 'Food',
+    type: 'feeding'
+  },
+  {
+    id: 3,
+    title: '采购订单确认',
+    time: '6小时前',
+    priority: 'high',
+    icon: 'ShoppingCart',
+    type: 'purchase'
+  },
+  {
+    id: 4,
+    title: '设备维护提醒',
+    time: '1天前',
+    priority: 'low',
+    icon: 'Tools',
+    type: 'equipment'
+  }
+])
+
+// 系统通知数据
+const notifications = ref([
+  {
+    id: 1,
+    title: '系统更新完成',
+    time: '1小时前',
+    type: 'success',
+    icon: 'Bell'
+  },
+  {
+    id: 2,
+    title: '数据备份提醒',
+    time: '3小时前',
+    type: 'warning',
+    icon: 'Clock'
+  },
+  {
+    id: 3,
+    title: '新用户注册',
+    time: '5小时前',
+    type: 'info',
+    icon: 'User'
+  }
+])
 
 onMounted(() => {
   loadDashboardData()
@@ -170,6 +394,26 @@ const loadDashboardData = async () => {
 const handleRefreshAll = async () => {
   await loadDashboardData()
   ElMessage.success('数据已刷新')
+}
+
+// 处理任务
+const handleTask = (task: any) => {
+  switch (task.type) {
+    case 'health':
+      router.push('/admin/health/dashboard')
+      break
+    case 'feeding':
+      router.push('/admin/feeding/formulas')
+      break
+    case 'purchase':
+      router.push('/admin/purchase/orders')
+      break
+    case 'equipment':
+      router.push('/admin/system/barns')
+      break
+    default:
+      ElMessage.info('功能开发中...')
+  }
 }
 </script>
 
@@ -297,6 +541,32 @@ const handleRefreshAll = async () => {
           &:last-child {
             grid-template-columns: 350px 1fr;
           }
+          
+          .chart-card {
+            .chart-placeholder {
+              height: 200px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background-color: var(--el-fill-color-lighter);
+              border-radius: 8px;
+              
+              .placeholder-content {
+                text-align: center;
+                color: var(--el-text-color-secondary);
+                
+                .el-icon {
+                  margin-bottom: 12px;
+                  color: var(--el-color-info);
+                }
+                
+                p {
+                  margin: 0;
+                  font-size: 14px;
+                }
+              }
+            }
+          }
         }
       }
       
@@ -304,6 +574,124 @@ const handleRefreshAll = async () => {
         position: sticky;
         top: 24px;
         height: fit-content;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        
+        .tasks-card,
+        .notifications-card {
+          .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            
+            .task-badge,
+            .notification-badge {
+              .el-badge__content {
+                font-size: 12px;
+              }
+            }
+          }
+          
+          .tasks-list,
+          .notifications-list {
+            max-height: 300px;
+            overflow-y: auto;
+            
+            .task-item,
+            .notification-item {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 12px 0;
+              border-bottom: 1px solid var(--el-border-color-lighter);
+              
+              &:last-child {
+                border-bottom: none;
+              }
+              
+              .task-icon,
+              .notification-icon {
+                width: 32px;
+                height: 32px;
+                border-radius: 6px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 16px;
+              }
+              
+              .task-content,
+              .notification-content {
+                flex: 1;
+                
+                .task-title,
+                .notification-title {
+                  font-size: 14px;
+                  font-weight: 500;
+                  color: var(--el-text-color-primary);
+                  margin-bottom: 4px;
+                }
+                
+                .task-time,
+                .notification-time {
+                  font-size: 12px;
+                  color: var(--el-text-color-secondary);
+                }
+              }
+              
+              .task-action {
+                .el-button {
+                  font-size: 12px;
+                }
+              }
+              
+              // 任务优先级样式
+              &.high {
+                .task-icon {
+                  background-color: var(--el-color-danger-light-9);
+                  color: var(--el-color-danger);
+                }
+              }
+              
+              &.medium {
+                .task-icon {
+                  background-color: var(--el-color-warning-light-9);
+                  color: var(--el-color-warning);
+                }
+              }
+              
+              &.low {
+                .task-icon {
+                  background-color: var(--el-color-info-light-9);
+                  color: var(--el-color-info);
+                }
+              }
+              
+              // 通知类型样式
+              &.success {
+                .notification-icon {
+                  background-color: var(--el-color-success-light-9);
+                  color: var(--el-color-success);
+                }
+              }
+              
+              &.warning {
+                .notification-icon {
+                  background-color: var(--el-color-warning-light-9);
+                  color: var(--el-color-warning);
+                }
+              }
+              
+              &.info {
+                .notification-icon {
+                  background-color: var(--el-color-info-light-9);
+                  color: var(--el-color-info);
+                }
+              }
+            }
+          }
+        }
       }
     }
     
