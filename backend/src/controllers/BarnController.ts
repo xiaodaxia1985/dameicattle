@@ -116,8 +116,15 @@ export class BarnController {
       const whereConditions: WhereOptions = { id: Number(id) };
 
       // 数据权限过滤
-      if (req.user?.base_id) {
+      // 超级管理员可以查看所有牛棚，其他用户只能查看所属基地的牛棚
+      if (req.user?.role?.name === '超级管理员') {
+        // 超级管理员不需要额外的过滤条件
+      } else if (req.user?.base_id) {
+        // 基地用户只能查看所属基地的牛棚
         whereConditions.base_id = req.user.base_id;
+      } else {
+        // 没有基地权限的用户，不能查看任何牛棚
+        whereConditions.base_id = -1;
       }
 
       const barn = await Barn.findOne({
@@ -169,12 +176,23 @@ export class BarnController {
       const actualBarnType = barn_type || barnType;
 
       // 数据权限检查
-      if (req.user?.base_id && req.user.base_id !== actualBaseId) {
+      // 超级管理员可以在任何基地创建牛棚，其他用户只能在所属基地创建牛棚
+      if (req.user?.role?.name === '超级管理员') {
+        // 超级管理员不需要权限检查
+      } else if (req.user?.base_id && req.user.base_id !== actualBaseId) {
         return res.status(403).json({
           success: false,
           error: {
             code: 'PERMISSION_DENIED',
             message: '无权限在该基地创建牛棚',
+          },
+        });
+      } else if (!req.user?.base_id) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'PERMISSION_DENIED',
+            message: '没有基地权限，无法创建牛棚',
           },
         });
       }
@@ -261,8 +279,15 @@ export class BarnController {
       const whereConditions: WhereOptions = { id: Number(id) };
 
       // 数据权限过滤
-      if (req.user?.base_id) {
+      // 超级管理员可以更新所有牛棚，其他用户只能更新所属基地的牛棚
+      if (req.user?.role?.name === '超级管理员') {
+        // 超级管理员不需要额外的过滤条件
+      } else if (req.user?.base_id) {
+        // 基地用户只能更新所属基地的牛棚
         whereConditions.base_id = req.user.base_id;
+      } else {
+        // 没有基地权限的用户，不能更新任何牛棚
+        whereConditions.base_id = -1;
       }
 
       const barn = await Barn.findOne({ where: whereConditions });
@@ -356,8 +381,15 @@ export class BarnController {
       const whereConditions: WhereOptions = { id: Number(id) };
 
       // 数据权限过滤
-      if (req.user?.base_id) {
+      // 超级管理员可以删除所有牛棚，其他用户只能删除所属基地的牛棚
+      if (req.user?.role?.name === '超级管理员') {
+        // 超级管理员不需要额外的过滤条件
+      } else if (req.user?.base_id) {
+        // 基地用户只能删除所属基地的牛棚
         whereConditions.base_id = req.user.base_id;
+      } else {
+        // 没有基地权限的用户，不能删除任何牛棚
+        whereConditions.base_id = -1;
       }
 
       const barn = await Barn.findOne({ where: whereConditions });
