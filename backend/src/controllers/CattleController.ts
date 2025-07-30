@@ -25,9 +25,24 @@ export class CattleController {
       const offset = (Number(page) - 1) * Number(limit);
       const whereClause: WhereOptions = {};
 
-      // Apply filters
-      if (baseId) {
-        whereClause.base_id = baseId;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有牛只
+        if (baseId) {
+          whereClause.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的牛只
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何牛只
+        whereClause.base_id = -1;
+      }
+
+      // Apply other filters
+      if (baseId && (!dataPermission || dataPermission.canAccessAllBases)) {
+        // 只有超级管理员才能通过baseId参数过滤（已在上面处理）
       }
       if (barnId) {
         whereClause.barn_id = barnId;
@@ -52,11 +67,7 @@ export class CattleController {
         ];
       }
 
-      // Check user permissions - limit to user's base if not admin
-      const user = (req as any).user;
-      if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
-      }
+      // 注意：数据权限过滤已在上面处理，这里不需要重复处理
 
       const { count, rows } = await Cattle.findAndCountAll({
         where: whereClause,
@@ -114,13 +125,19 @@ export class CattleController {
   static async getCattleById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const user = (req as any).user;
 
       const whereClause: WhereOptions = { id };
       
-      // Check user permissions
-      if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的牛只
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能查看任何牛只
+        whereClause.base_id = -1;
       }
 
       const cattle = await Cattle.findOne({
@@ -193,13 +210,19 @@ export class CattleController {
   static async getCattleByEarTag(req: Request, res: Response) {
     try {
       const { earTag } = req.params;
-      const user = (req as any).user;
 
       const whereClause: WhereOptions = { ear_tag: earTag };
       
-      // Check user permissions
-      if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的牛只
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能查看任何牛只
+        whereClause.base_id = -1;
       }
 
       const cattle = await Cattle.findOne({
@@ -284,13 +307,24 @@ export class CattleController {
         });
       }
 
-      // Check user permissions for base access
-      if (user.role?.name !== 'admin' && user.base_id && cattleData.base_id !== user.base_id) {
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以在任何基地创建牛只
+      } else if (dataPermission.baseId && cattleData.base_id !== dataPermission.baseId) {
         return res.status(403).json({
           success: false,
           error: {
             code: 'INSUFFICIENT_PERMISSIONS',
-            message: '权限不足'
+            message: '权限不足，只能在所属基地创建牛只'
+          }
+        });
+      } else if (!dataPermission.baseId) {
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'INSUFFICIENT_PERMISSIONS',
+            message: '没有基地权限，无法创建牛只'
           }
         });
       }
@@ -346,7 +380,7 @@ export class CattleController {
         event_type: eventType,
         event_date: cattleData.purchase_date || cattleData.birth_date || new Date(),
         description: `牛只入场 - ${eventDescription}`,
-        operator_id: user.id,
+        operator_id: (req as any).user?.id,
         data: {
           initial_weight: cattleData.weight,
           purchase_price: cattleData.purchase_price,
@@ -409,14 +443,20 @@ export class CattleController {
   static async updateCattle(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const user = (req as any).user;
       const updateData = req.body;
 
       const whereClause: WhereOptions = { id };
       
-      // Check user permissions
-      if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能更新所属基地的牛只
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能更新任何牛只
+        whereClause.base_id = -1;
       }
 
       const cattle = await Cattle.findOne({ where: whereClause });
@@ -481,7 +521,7 @@ export class CattleController {
           event_type: 'transfer_in',
           event_date: new Date(),
           description: `牛只转群 - 从${cattle.barn_id ? '牛棚' + cattle.barn_id : '无牛棚'}转至${updateData.barn_id ? '牛棚' + updateData.barn_id : '无牛棚'}`,
-          operator_id: user.id,
+          operator_id: (req as any).user?.id,
           data: {
             from_barn_id: cattle.barn_id,
             to_barn_id: updateData.barn_id
@@ -496,7 +536,7 @@ export class CattleController {
           event_type: 'weight_record',
           event_date: new Date(),
           description: `体重记录 - 从${cattle.weight || 0}kg更新为${updateData.weight}kg`,
-          operator_id: user.id,
+          operator_id: (req as any).user?.id,
           data: {
             previous_weight: cattle.weight,
             new_weight: updateData.weight
@@ -547,9 +587,16 @@ export class CattleController {
 
       const whereClause: WhereOptions = { id };
       
-      // Check user permissions
-      if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能删除所属基地的牛只
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能删除任何牛只
+        whereClause.base_id = -1;
       }
 
       const cattle = await Cattle.findOne({ where: whereClause });
@@ -580,7 +627,7 @@ export class CattleController {
         event_type: 'death',
         event_date: new Date(),
         description: '牛只死亡记录',
-        operator_id: user.id
+        operator_id: (req as any).user?.id
       });
 
       return res.json({
@@ -608,11 +655,19 @@ export class CattleController {
 
       const whereClause: WhereOptions = { status: 'active' };
       
-      // Apply base filter
-      if (baseId) {
-        whereClause.base_id = baseId;
-      } else if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有牛只统计
+        if (baseId) {
+          whereClause.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的牛只统计
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何牛只统计
+        whereClause.base_id = -1;
       }
 
       // Get total count

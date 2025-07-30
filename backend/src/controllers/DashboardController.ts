@@ -23,11 +23,22 @@ export class DashboardController {
   static async getKeyIndicators(req: Request, res: Response) {
     try {
       const { baseId, startDate, endDate } = req.query;
-      const userBaseId = (req as any).user?.base_id;
       
-      // Apply base filter based on user permissions
-      const baseFilter = baseId ? { base_id: baseId } : 
-                        userBaseId ? { base_id: userBaseId } : {};
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      let baseFilter: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有数据
+        if (baseId) {
+          baseFilter.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的数据
+        baseFilter.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何数据
+        baseFilter.base_id = -1;
+      }
 
       // Date range filter
       const dateFilter = startDate && endDate ? {
@@ -74,50 +85,46 @@ export class DashboardController {
       const pendingTasks = {
         healthAlerts: await HealthRecord.count({
           where: {
-            status: 'ongoing',
-            ...(userBaseId && { 
-              '$cattle.base_id$': userBaseId 
-            })
+            status: 'ongoing'
           },
           include: [{
             model: Cattle,
             as: 'cattle',
-            attributes: []
+            attributes: [],
+            where: baseFilter
           }]
         }),
         inventoryAlerts: await InventoryAlert.count({
           where: {
             is_resolved: false,
-            ...(userBaseId && { base_id: userBaseId })
+            ...baseFilter
           }
         }),
         equipmentFailures: await EquipmentFailure.count({
           where: {
-            status: { [Op.in]: ['reported', 'in_repair'] },
-            ...(userBaseId && { 
-              '$equipment.base_id$': userBaseId 
-            })
+            status: { [Op.in]: ['reported', 'in_repair'] }
           },
           include: [{
             model: ProductionEquipment,
             as: 'equipment',
-            attributes: []
+            attributes: [],
+            where: baseFilter
           }]
         }),
         overdueVaccinations: await VaccinationRecord.count({
           where: {
             next_due_date: {
               [Op.lt]: new Date()
-            },
-            ...(userBaseId && { 
-              '$cattle.base_id$': userBaseId 
-            })
+            }
           },
           include: [{
             model: Cattle,
             as: 'cattle',
             attributes: [],
-            where: { status: 'active' }
+            where: { 
+              status: 'active',
+              ...baseFilter
+            }
           }]
         })
       };
@@ -167,9 +174,21 @@ export class DashboardController {
         metrics = 'cattle,health,feeding,sales' 
       } = req.query;
       
-      const userBaseId = (req as any).user?.base_id;
-      const baseFilter = baseId ? { base_id: baseId } : 
-                        userBaseId ? { base_id: userBaseId } : {};
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      let baseFilter: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有数据
+        if (baseId) {
+          baseFilter.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的数据
+        baseFilter.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何数据
+        baseFilter.base_id = -1;
+      }
 
       // Calculate date range based on period
       const now = new Date();
@@ -209,13 +228,13 @@ export class DashboardController {
           FROM cattle 
           WHERE created_at >= :startDate 
             AND status = 'active'
-            ${userBaseId ? 'AND base_id = :baseId' : ''}
+            ${baseFilter.base_id ? 'AND base_id = :baseId' : ''}
           GROUP BY ${groupBy}
           ORDER BY date
         `, {
           replacements: { 
             startDate: startDate.toISOString(),
-            ...(userBaseId && { baseId: userBaseId })
+            ...(baseFilter.base_id && { baseId: baseFilter.base_id })
           },
           type: QueryTypes.SELECT
         });
@@ -234,13 +253,13 @@ export class DashboardController {
           FROM health_records hr
           JOIN cattle c ON hr.cattle_id = c.id
           WHERE hr.created_at >= :startDate
-            ${userBaseId ? 'AND c.base_id = :baseId' : ''}
+            ${baseFilter.base_id ? 'AND c.base_id = :baseId' : ''}
           GROUP BY ${groupBy}
           ORDER BY date
         `, {
           replacements: { 
             startDate: startDate.toISOString(),
-            ...(userBaseId && { baseId: userBaseId })
+            ...(baseFilter.base_id && { baseId: baseFilter.base_id })
           },
           type: QueryTypes.SELECT
         });
@@ -258,13 +277,13 @@ export class DashboardController {
             AVG(amount) as avg_amount
           FROM feeding_records
           WHERE created_at >= :startDate
-            ${userBaseId ? 'AND base_id = :baseId' : ''}
+            ${baseFilter.base_id ? 'AND base_id = :baseId' : ''}
           GROUP BY ${groupBy}
           ORDER BY date
         `, {
           replacements: { 
             startDate: startDate.toISOString(),
-            ...(userBaseId && { baseId: userBaseId })
+            ...(baseFilter.base_id && { baseId: baseFilter.base_id })
           },
           type: QueryTypes.SELECT
         });
@@ -283,13 +302,13 @@ export class DashboardController {
           FROM sales_orders
           WHERE created_at >= :startDate
             AND status = 'completed'
-            ${userBaseId ? 'AND base_id = :baseId' : ''}
+            ${baseFilter.base_id ? 'AND base_id = :baseId' : ''}
           GROUP BY ${groupBy}
           ORDER BY date
         `, {
           replacements: { 
             startDate: startDate.toISOString(),
-            ...(userBaseId && { baseId: userBaseId })
+            ...(baseFilter.base_id && { baseId: baseFilter.base_id })
           },
           type: QueryTypes.SELECT
         });
@@ -321,8 +340,18 @@ export class DashboardController {
   // Get real-time statistics
   static async getRealTimeStats(req: Request, res: Response) {
     try {
-      const userBaseId = (req as any).user?.base_id;
-      const baseFilter = userBaseId ? { base_id: userBaseId } : {};
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      let baseFilter: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以查看所有数据
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的数据
+        baseFilter.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何数据
+        baseFilter.base_id = -1;
+      }
 
       // Get current statistics
       const stats = await Promise.all([
@@ -349,15 +378,13 @@ export class DashboardController {
           where: {
             diagnosis_date: {
               [Op.gte]: new Date().toISOString().split('T')[0]
-            },
-            ...(userBaseId && { 
-              '$cattle.base_id$': userBaseId 
-            })
+            }
           },
           include: [{
             model: Cattle,
             as: 'cattle',
-            attributes: []
+            attributes: [],
+            where: baseFilter
           }]
         }),
         
@@ -365,22 +392,20 @@ export class DashboardController {
         InventoryAlert.count({
           where: {
             is_resolved: false,
-            ...(userBaseId && { base_id: userBaseId })
+            ...baseFilter
           }
         }),
         
         // Equipment failures
         EquipmentFailure.count({
           where: {
-            status: { [Op.in]: ['reported', 'in_repair'] },
-            ...(userBaseId && { 
-              '$equipment.base_id$': userBaseId 
-            })
+            status: { [Op.in]: ['reported', 'in_repair'] }
           },
           include: [{
             model: ProductionEquipment,
             as: 'equipment',
-            attributes: []
+            attributes: [],
+            where: baseFilter
           }]
         })
       ]);
@@ -412,22 +437,32 @@ export class DashboardController {
   static async getPendingTasks(req: Request, res: Response) {
     try {
       const { limit = 20 } = req.query;
-      const userBaseId = (req as any).user?.base_id;
+      
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      let baseFilter: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以查看所有数据
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的数据
+        baseFilter.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何数据
+        baseFilter.base_id = -1;
+      }
 
       const tasks: any[] = [];
 
       // High priority: Equipment failures
       const equipmentFailures = await EquipmentFailure.findAll({
         where: {
-          status: { [Op.in]: ['reported', 'in_repair'] },
-          ...(userBaseId && { 
-            '$equipment.base_id$': userBaseId 
-          })
+          status: { [Op.in]: ['reported', 'in_repair'] }
         },
         include: [{
           model: ProductionEquipment,
           as: 'equipment',
-          attributes: ['name', 'code']
+          attributes: ['name', 'code'],
+          where: baseFilter
         }],
         order: [['failure_date', 'DESC']],
         limit: 5
@@ -449,15 +484,13 @@ export class DashboardController {
       // Medium priority: Health alerts
       const healthAlerts = await HealthRecord.findAll({
         where: {
-          status: 'ongoing',
-          ...(userBaseId && { 
-            '$cattle.base_id$': userBaseId 
-          })
+          status: 'ongoing'
         },
         include: [{
           model: Cattle,
           as: 'cattle',
-          attributes: ['ear_tag', 'breed']
+          attributes: ['ear_tag', 'breed'],
+          where: baseFilter
         }],
         order: [['diagnosis_date', 'DESC']],
         limit: 5
@@ -481,16 +514,16 @@ export class DashboardController {
         where: {
           next_due_date: {
             [Op.lt]: new Date()
-          },
-          ...(userBaseId && { 
-            '$cattle.base_id$': userBaseId 
-          })
+          }
         },
         include: [{
           model: Cattle,
           as: 'cattle',
           attributes: ['ear_tag', 'breed'],
-          where: { status: 'active' }
+          where: { 
+            status: 'active',
+            ...baseFilter
+          }
         }],
         order: [['next_due_date', 'ASC']],
         limit: 5
@@ -513,7 +546,7 @@ export class DashboardController {
       const inventoryAlerts = await InventoryAlert.findAll({
         where: {
           is_resolved: false,
-          ...(userBaseId && { base_id: userBaseId })
+          ...baseFilter
         },
         include: [{
           model: ProductionMaterial,
@@ -579,8 +612,18 @@ export class DashboardController {
         baseIds 
       } = req.query;
       
-      const userBaseId = (req as any).user?.base_id;
-      const baseFilter = userBaseId ? { base_id: userBaseId } : {};
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      let baseFilter: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以查看所有数据
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的数据
+        baseFilter.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何数据
+        baseFilter.base_id = -1;
+      }
 
       if (compareType === 'period') {
         // Period comparison

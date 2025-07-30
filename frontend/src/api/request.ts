@@ -39,6 +39,7 @@ const request = {
 
   // POST method
   post: <T = any>(url: string, data?: any, config?: any): Promise<{ data: ApiResponse<T> }> => {
+    // Ensure config is properly passed through to the underlying API client
     return api.post<T>(url, data, config).then(response => ({ data: response }))
   },
 

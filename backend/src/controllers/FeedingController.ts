@@ -315,6 +315,16 @@ export class FeedingController {
         }
       }
 
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以在任何基地创建饲喂记录
+      } else if (dataPermission.baseId && dataPermission.baseId !== Number(base_id)) {
+        throw new AppError('权限不足，只能在所属基地创建饲喂记录', 403);
+      } else if (!dataPermission.baseId) {
+        throw new AppError('没有基地权限，无法创建饲喂记录', 403);
+      }
+
       // Validate base exists
       const base = await Base.findByPk(base_id);
       if (!base) {
@@ -404,8 +414,22 @@ export class FeedingController {
       const offset = (Number(page) - 1) * Number(limit);
       const whereClause: any = {};
 
-      // Add filters
-      if (base_id) whereClause.base_id = base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有饲喂记录
+        if (base_id) {
+          whereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的饲喂记录
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何饲喂记录
+        whereClause.base_id = -1;
+      }
+
+      // Add other filters
       if (barn_id) whereClause.barn_id = barn_id;
       if (formula_id) whereClause.formula_id = formula_id;
       if (operator_id) whereClause.operator_id = operator_id;

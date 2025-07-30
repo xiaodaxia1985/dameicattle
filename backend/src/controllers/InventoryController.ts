@@ -21,8 +21,19 @@ export class InventoryController {
 
       const whereClause: any = {};
 
-      if (base_id) {
-        whereClause.base_id = base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有库存
+        if (base_id) {
+          whereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的库存
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何库存
+        whereClause.base_id = -1;
       }
 
       if (material_id) {
@@ -83,8 +94,19 @@ export class InventoryController {
       const { base_id } = req.query;
       const whereClause: any = {};
 
-      if (base_id) {
-        whereClause.base_id = base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有库存统计
+        if (base_id) {
+          whereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的库存统计
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何库存统计
+        whereClause.base_id = -1;
       }
 
       // Get total inventory value and low stock count

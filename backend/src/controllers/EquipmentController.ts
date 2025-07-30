@@ -125,10 +125,22 @@ export class EquipmentController {
       const offset = (Number(page) - 1) * Number(limit);
       const where: any = {};
 
-      // Apply filters
-      if (baseId) {
-        where.base_id = baseId;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有设备
+        if (baseId) {
+          where.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的设备
+        where.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何设备
+        where.base_id = -1;
       }
+
+      // Apply other filters
 
       if (categoryId) {
         where.category_id = categoryId;
@@ -411,8 +423,19 @@ export class EquipmentController {
       const { baseId } = req.query;
       const where: any = {};
 
-      if (baseId) {
-        where.base_id = baseId;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有设备统计
+        if (baseId) {
+          where.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的设备统计
+        where.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何设备统计
+        where.base_id = -1;
       }
 
       const [

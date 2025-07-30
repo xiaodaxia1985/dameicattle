@@ -5,8 +5,12 @@ import { CattleEventController } from '@/controllers/CattleEventController';
 import { CattleBatchController } from '@/controllers/CattleBatchController';
 import { validateCattle, validateCattleEvent } from '@/validators/cattleValidator';
 import { permissionMiddleware } from '@/middleware/permission';
+import { dataPermissionMiddleware } from '@/middleware/dataPermission';
 
 const router = Router();
+
+// Apply data permission middleware to all routes
+router.use(dataPermissionMiddleware);
 
 // Configure multer for file uploads
 const upload = multer({

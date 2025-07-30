@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { BarnController } from '@/controllers/BarnController';
 import { authMiddleware } from '@/middleware/auth';
+import { dataPermissionMiddleware } from '@/middleware/dataPermission';
 import {
   createBarnValidator,
   updateBarnValidator,
@@ -12,8 +13,9 @@ import {
 
 const router = Router();
 
-// 所有路由都需要认证
+// 所有路由都需要认证和数据权限检查
 router.use(authMiddleware);
+router.use(dataPermissionMiddleware);
 
 /**
  * @swagger

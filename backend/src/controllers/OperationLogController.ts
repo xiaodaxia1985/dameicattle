@@ -20,8 +20,20 @@ export class OperationLogController {
                 limit: Number(limit),
             };
 
-            if (user_id) {
-                filters.user_id = Number(user_id);
+            // 数据权限过滤
+            const dataPermission = (req as any).dataPermission;
+            if (!dataPermission || dataPermission.canAccessAllBases) {
+                // 超级管理员可以查看所有操作日志
+                if (user_id) {
+                    filters.user_id = Number(user_id);
+                }
+            } else if (dataPermission.baseId) {
+                // 基地用户只能查看与自己基地相关的操作日志
+                // 这里可以根据具体需求实现，比如只查看自己的操作日志
+                filters.user_id = (req as any).user?.id;
+            } else {
+                // 没有基地权限的用户，不显示任何操作日志
+                filters.user_id = -1;
             }
 
             if (operation) {

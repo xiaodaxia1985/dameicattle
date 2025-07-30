@@ -12,14 +12,6 @@ export class BarnController {
    */
   static async getBarns(req: AuthenticatedRequest, res: Response): Promise<Response | void> {
     try {
-      console.log('=== BarnController.getBarns 调试信息 ===');
-      console.log('用户信息:', {
-        id: req.user?.id,
-        username: req.user?.username,
-        base_id: req.user?.base_id,
-        role: req.user?.role
-      });
-
       const {
         page = 1,
         limit = 20,
@@ -28,31 +20,23 @@ export class BarnController {
         search,
       } = req.query;
 
-      console.log('查询参数:', { page, limit, base_id, barn_type, search });
-
       const offset = (Number(page) - 1) * Number(limit);
       const whereConditions: WhereOptions = {};
 
       // 数据权限过滤
-      console.log('用户角色:', req.user?.role?.name);
+      const dataPermission = (req as any).dataPermission;
       
-      // Admin用户可以查看所有牛棚，其他用户只能查看所属基地的牛棚
-      if (req.user?.role?.name === '超级管理员') {
-        // Admin用户：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚
         if (base_id) {
           whereConditions.base_id = Number(base_id);
-          console.log('Admin用户，按查询参数base_id过滤:', base_id);
-        } else {
-          console.log('Admin用户，显示所有牛棚');
         }
-      } else if (req.user?.base_id) {
+      } else if (dataPermission.baseId) {
         // 基地用户：只能查看所属基地的牛棚
-        whereConditions.base_id = req.user.base_id;
-        console.log('基地用户，按用户base_id过滤:', req.user.base_id);
+        whereConditions.base_id = dataPermission.baseId;
       } else {
         // 没有基地权限的用户，不显示任何牛棚
-        whereConditions.base_id = -1; // 使用一个不存在的ID
-        console.log('无基地权限用户，不显示牛棚');
+        whereConditions.base_id = -1;
       }
 
       // 牛棚类型过滤
@@ -116,12 +100,14 @@ export class BarnController {
       const whereConditions: WhereOptions = { id: Number(id) };
 
       // 数据权限过滤
-      // 超级管理员可以查看所有牛棚，其他用户只能查看所属基地的牛棚
-      if (req.user?.role?.name === '超级管理员') {
+      // 使用统一的数据权限过滤逻辑
+      const dataPermission = (req as any).dataPermission;
+      
+      if (!dataPermission || dataPermission.canAccessAllBases) {
         // 超级管理员不需要额外的过滤条件
-      } else if (req.user?.base_id) {
+      } else if (dataPermission.baseId) {
         // 基地用户只能查看所属基地的牛棚
-        whereConditions.base_id = req.user.base_id;
+        whereConditions.base_id = dataPermission.baseId;
       } else {
         // 没有基地权限的用户，不能查看任何牛棚
         whereConditions.base_id = -1;
@@ -176,10 +162,12 @@ export class BarnController {
       const actualBarnType = barn_type || barnType;
 
       // 数据权限检查
-      // 超级管理员可以在任何基地创建牛棚，其他用户只能在所属基地创建牛棚
-      if (req.user?.role?.name === '超级管理员') {
-        // 超级管理员不需要权限检查
-      } else if (req.user?.base_id && req.user.base_id !== actualBaseId) {
+      // 使用统一的数据权限过滤逻辑
+      const dataPermission = (req as any).dataPermission;
+      
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以在任何基地创建牛棚
+      } else if (dataPermission.baseId && dataPermission.baseId !== actualBaseId) {
         return res.status(403).json({
           success: false,
           error: {
@@ -187,7 +175,7 @@ export class BarnController {
             message: '无权限在该基地创建牛棚',
           },
         });
-      } else if (!req.user?.base_id) {
+      } else if (!dataPermission.baseId) {
         return res.status(403).json({
           success: false,
           error: {
@@ -279,12 +267,14 @@ export class BarnController {
       const whereConditions: WhereOptions = { id: Number(id) };
 
       // 数据权限过滤
-      // 超级管理员可以更新所有牛棚，其他用户只能更新所属基地的牛棚
-      if (req.user?.role?.name === '超级管理员') {
+      // 使用统一的数据权限过滤逻辑
+      const dataPermission = (req as any).dataPermission;
+      
+      if (!dataPermission || dataPermission.canAccessAllBases) {
         // 超级管理员不需要额外的过滤条件
-      } else if (req.user?.base_id) {
+      } else if (dataPermission.baseId) {
         // 基地用户只能更新所属基地的牛棚
-        whereConditions.base_id = req.user.base_id;
+        whereConditions.base_id = dataPermission.baseId;
       } else {
         // 没有基地权限的用户，不能更新任何牛棚
         whereConditions.base_id = -1;
@@ -381,12 +371,14 @@ export class BarnController {
       const whereConditions: WhereOptions = { id: Number(id) };
 
       // 数据权限过滤
-      // 超级管理员可以删除所有牛棚，其他用户只能删除所属基地的牛棚
-      if (req.user?.role?.name === '超级管理员') {
+      // 使用统一的数据权限过滤逻辑
+      const dataPermission = (req as any).dataPermission;
+      
+      if (!dataPermission || dataPermission.canAccessAllBases) {
         // 超级管理员不需要额外的过滤条件
-      } else if (req.user?.base_id) {
+      } else if (dataPermission.baseId) {
         // 基地用户只能删除所属基地的牛棚
-        whereConditions.base_id = req.user.base_id;
+        whereConditions.base_id = dataPermission.baseId;
       } else {
         // 没有基地权限的用户，不能删除任何牛棚
         whereConditions.base_id = -1;
@@ -443,15 +435,17 @@ export class BarnController {
       const whereConditions: WhereOptions = {};
 
       // 数据权限过滤
-      // Admin用户可以查看所有牛棚统计，其他用户只能查看所属基地的牛棚统计
-      if (req.user?.role?.name === '超级管理员') {
-        // Admin用户：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚统计
+      // 使用统一的数据权限过滤逻辑
+      const dataPermission = (req as any).dataPermission;
+      
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚统计
         if (base_id) {
           whereConditions.base_id = Number(base_id);
         }
-      } else if (req.user?.base_id) {
+      } else if (dataPermission.baseId) {
         // 基地用户：只能查看所属基地的牛棚统计
-        whereConditions.base_id = req.user.base_id;
+        whereConditions.base_id = dataPermission.baseId;
       } else {
         // 没有基地权限的用户，不显示任何牛棚统计
         whereConditions.base_id = -1;
@@ -553,15 +547,17 @@ export class BarnController {
       const whereConditions: WhereOptions = {};
 
       // 数据权限过滤
-      // Admin用户可以查看所有牛棚选项，其他用户只能查看所属基地的牛棚选项
-      if (req.user?.role?.name === '超级管理员') {
-        // Admin用户：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚选项
+      // 使用统一的数据权限过滤逻辑
+      const dataPermission = (req as any).dataPermission;
+      
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有牛棚选项
         if (base_id) {
           whereConditions.base_id = Number(base_id);
         }
-      } else if (req.user?.base_id) {
+      } else if (dataPermission.baseId) {
         // 基地用户：只能查看所属基地的牛棚选项
-        whereConditions.base_id = req.user.base_id;
+        whereConditions.base_id = dataPermission.baseId;
       } else {
         // 没有基地权限的用户，不显示任何牛棚选项
         whereConditions.base_id = -1;

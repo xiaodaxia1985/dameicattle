@@ -170,6 +170,7 @@ import * as echarts from 'echarts'
 import { feedingApi } from '@/api/feeding'
 import { baseApi } from '@/api/base'
 import type { FeedingStatistics, FeedingRecord } from '@/api/feeding'
+import { validateStatisticsData, validateDataArray, ensureArray, ensureNumber, safeGet } from '@/utils/dataValidation'
 
 // 响应式数据
 const dateRange = ref<[string, string]>(['', ''])
@@ -207,13 +208,15 @@ const initDateRange = () => {
 const fetchBases = async () => {
   try {
     const response = await baseApi.getBases()
-    // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
-    bases.value = response.data.bases || []
+    // 使用数据验证工具处理基地数据
+    const basesData = safeGet(response, 'data.bases', [])
+    bases.value = ensureArray(basesData)
     if (bases.value.length > 0) {
-      selectedBase.value = bases.value[0].id
+      selectedBase.value = ensureNumber(bases.value[0].id, 0)
     }
   } catch (error) {
     console.error('获取基地列表失败:', error)
+    bases.value = []
   }
 }
 

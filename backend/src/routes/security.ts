@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { SecurityController } from '@/controllers/SecurityController';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
+import { dataPermissionMiddleware } from '@/middleware/dataPermission';
 
 const router = Router();
 
@@ -43,6 +44,7 @@ router.post('/generate-token',
 // 审计日志相关路由
 router.get('/audit-logs', 
   permission('system:read'), 
+  dataPermissionMiddleware,
   SecurityController.getAuditLogs
 );
 

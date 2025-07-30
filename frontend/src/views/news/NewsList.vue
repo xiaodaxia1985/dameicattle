@@ -22,7 +22,7 @@
         <el-form-item label="分类">
           <el-select v-model="searchForm.categoryId" placeholder="选择分类" clearable>
             <el-option
-              v-for="category in categories"
+              v-for="(category, index) in validCategories"
               :key="category.id"
               :label="category.name"
               :value="category.id"
@@ -57,7 +57,11 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="category.name" label="分类" width="120" />
+        <el-table-column label="分类" width="120">
+          <template #default="{ row }">
+            {{ row.category?.name || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="authorName" label="作者" width="100" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
@@ -129,12 +133,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
 import { newsApi, type NewsArticle, type NewsCategory } from '@/api/news'
 import { formatDate } from '@/utils/date'
+import { validatePaginationData, validateDataArray, validateNewsData } from '@/utils/dataValidation'
 
 const router = useRouter()
 
@@ -155,13 +160,35 @@ const pagination = reactive({
   total: 0
 })
 
+// 计算属性：过滤有效的分类
+const validCategories = computed(() => {
+  return categories.value.filter(category => 
+    category && 
+    typeof category === 'object' && 
+    category.id !== undefined && 
+    category.id !== null &&
+    category.name &&
+    typeof category.name === 'string'
+  )
+})
+
 // 获取分类列表
 const fetchCategories = async () => {
   try {
     const response = await newsApi.getCategories({ isActive: true })
-    categories.value = response.data
+    // 确保返回的数据是数组，并过滤掉无效的分类
+    const categoriesData = Array.isArray(response.data) ? response.data : []
+    categories.value = categoriesData.filter(category => 
+      category && 
+      typeof category === 'object' && 
+      category.id !== undefined && 
+      category.id !== null &&
+      category.name
+    )
   } catch (error) {
     console.error('获取分类失败:', error)
+    ElMessage.error('获取分类失败')
+    categories.value = []
   }
 }
 
@@ -175,13 +202,38 @@ const fetchArticles = async () => {
       ...searchForm
     }
     
-    const response = await newsApi.getArticles(params)
-    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
-    articles.value = response.data.data || []
-    pagination.total = response.data.pagination?.total || 0
-  } catch (error) {
+    // 首先尝试备用端点，如果失败再使用重试机制
+    let response
+    try {
+      response = await newsApi.getArticlesFallback(params)
+    } catch (fallbackError) {
+      console.log('备用端点失败，尝试重试机制...')
+      response = await newsApi.getArticlesWithRetry(params, 3)
+    }
+    
+    // 使用数据验证工具处理响应
+    const validatedData = validatePaginationData(response.data || response)
+    
+    // 验证每个文章数据
+    articles.value = validateDataArray(validatedData.data, validateNewsData)
+    pagination.total = validatedData.pagination.total
+  } catch (error: any) {
     console.error('获取文章列表失败:', error)
-    ElMessage.error('获取文章列表失败')
+    
+    // 处理不同类型的错误
+    let errorMessage = '获取文章列表失败'
+    
+    if (error.message?.includes('timeout') || error.message?.includes('Request timeout')) {
+      errorMessage = '请求超时，请检查网络连接后重试'
+    } else if (error.response?.status >= 500) {
+      errorMessage = '服务器错误，请稍后重试'
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    ElMessage.error(errorMessage)
+    articles.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }

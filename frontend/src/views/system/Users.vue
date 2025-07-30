@@ -389,6 +389,7 @@ import { useAuthStore } from '@/stores/auth'
 import type { User, Role, Base } from '@/types/auth'
 import type { Base as ApiBase } from '@/api/base'
 import type { OperationLog } from '@/api/user'
+import { validatePaginationData, validateDataArray, validateUserData, validateBaseData } from '@/utils/dataValidation'
 
 const authStore = useAuthStore()
 
@@ -533,12 +534,18 @@ const loadUsers = async () => {
     }
     
     const response = await userApi.getUsers(params)
-    // 根据API实现，response 应该是 { data: [...], total: number, page: number, limit: number }
-    users.value = response.data || []
-    pagination.total = response.total || 0
+    
+    // 使用数据验证工具处理响应
+    const validatedData = validatePaginationData(response)
+    
+    // 验证每个用户数据
+    users.value = validateDataArray(validatedData.data, validateUserData)
+    pagination.total = validatedData.pagination.total
   } catch (error) {
     console.error('Load users error:', error)
     ElMessage.error('加载用户列表失败')
+    users.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }

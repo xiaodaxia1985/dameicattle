@@ -148,11 +148,25 @@ const rules = {
 const fetchCategories = async () => {
   loading.value = true
   try {
+    // 先测试端点连通性
+    const isConnected = await newsApi.testCategoriesEndpoint()
+    if (!isConnected) {
+      console.warn('新闻分类端点连通性测试失败，但仍尝试获取数据...')
+    }
+    
     const response = await newsApi.getCategories()
     categories.value = response.data
-  } catch (error) {
+  } catch (error: any) {
     console.error('获取分类列表失败:', error)
-    ElMessage.error('获取分类列表失败')
+    
+    let errorMessage = '获取分类列表失败'
+    if (error.message?.includes('timeout')) {
+      errorMessage = '请求超时，请检查网络连接'
+    } else if (error.response?.status >= 500) {
+      errorMessage = '服务器错误，请稍后重试'
+    }
+    
+    ElMessage.error(errorMessage)
   } finally {
     loading.value = false
   }
@@ -223,15 +237,38 @@ const handleSubmit = async () => {
       await newsApi.updateCategory(form.id, data)
       ElMessage.success('分类更新成功')
     } else {
-      await newsApi.createCategory(data)
-      ElMessage.success('分类创建成功')
+      // 首先尝试备用端点，如果失败再使用重试机制
+      try {
+        await newsApi.createCategoryFallback(data)
+        ElMessage.success('分类创建成功')
+      } catch (fallbackError) {
+        console.log('备用端点失败，尝试重试机制...')
+        await newsApi.createCategoryWithRetry(data, 3)
+        ElMessage.success('分类创建成功')
+      }
     }
 
     dialogVisible.value = false
     fetchCategories()
-  } catch (error) {
+  } catch (error: any) {
     console.error('保存分类失败:', error)
-    ElMessage.error('保存分类失败')
+    
+    // 处理不同类型的错误
+    let errorMessage = '保存分类失败'
+    
+    if (error.message?.includes('timeout') || error.message?.includes('Request timeout')) {
+      errorMessage = '请求超时，请检查网络连接后重试'
+    } else if (error.response?.status === 409) {
+      errorMessage = '分类代码已存在，请使用其他代码'
+    } else if (error.response?.status === 422) {
+      errorMessage = '数据验证失败，请检查输入内容'
+    } else if (error.response?.status >= 500) {
+      errorMessage = '服务器错误，请稍后重试'
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    ElMessage.error(errorMessage)
   } finally {
     submitting.value = false
   }

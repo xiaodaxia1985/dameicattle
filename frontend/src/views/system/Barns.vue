@@ -229,6 +229,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useBaseStore } from '@/stores/base'
 import { barnApi, type Barn } from '@/api/barn'
+import { validatePaginationData, validateDataArray, validateBarnData, validateStatisticsData } from '@/utils/dataValidation'
 
 const baseStore = useBaseStore()
 
@@ -309,11 +310,18 @@ const loadBarnList = async () => {
     }
     
     const response = await barnApi.getBarns(params)
-    barnList.value = response.data.barns
-    total.value = response.data.pagination.total
+    
+    // 使用数据验证工具处理响应
+    const validatedData = validatePaginationData(response.data || response)
+    
+    // 验证每个牛棚数据
+    barnList.value = validateDataArray(validatedData.data, validateBarnData)
+    total.value = validatedData.pagination.total
   } catch (error) {
     console.error('加载牛棚列表失败:', error)
     ElMessage.error('加载牛棚列表失败')
+    barnList.value = []
+    total.value = 0
   } finally {
     loading.value = false
   }

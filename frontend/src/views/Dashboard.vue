@@ -293,6 +293,7 @@ import {
   Tools
 } from '@element-plus/icons-vue'
 import { safeGet } from '@/utils/safeAccess'
+import { validateStatisticsData, ensureArray, ensureNumber } from '@/utils/dataValidation'
 
 const router = useRouter()
 

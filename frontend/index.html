@@ -9,13 +9,46 @@
     <script>
       // 百度地图API加载完成回调
       window.initBaiduMap = function() {
-        console.log('百度地图API加载完成');
-        window.baiduMapReady = true;
-        // 触发自定义事件通知地图组件
-        window.dispatchEvent(new Event('baiduMapReady'));
+        try {
+          console.log('百度地图API加载完成');
+          window.baiduMapReady = true;
+          // 触发自定义事件通知地图组件
+          if (typeof window.dispatchEvent === 'function') {
+            window.dispatchEvent(new Event('baiduMapReady'));
+          }
+        } catch (error) {
+          console.error('百度地图初始化失败:', error);
+          window.baiduMapReady = false;
+        }
+      }
+      
+      // 处理地图API加载错误
+      window.addEventListener('error', function(e) {
+        if (e.target && e.target.src && e.target.src.includes('api.map.baidu.com')) {
+          console.error('百度地图API加载失败:', e);
+          window.baiduMapReady = false;
+        }
+      }, true);
+
+      // 延迟加载百度地图API，确保DOM准备就绪
+      function loadBaiduMapAPI() {
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = 'https://api.map.baidu.com/api?v=3.0&ak=f3l382LaL7pfs8RRHKO7Blr4zbW67nec&callback=initBaiduMap';
+        script.onerror = function() {
+          console.error('百度地图API脚本加载失败');
+          window.baiduMapReady = false;
+        };
+        document.head.appendChild(script);
+      }
+
+      // 等待DOM加载完成后再加载地图API
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadBaiduMapAPI);
+      } else {
+        loadBaiduMapAPI();
       }
     </script>
-    <script type="text/javascript" src="https://api.map.baidu.com/api?v=3.0&ak=f3l382LaL7pfs8RRHKO7Blr4zbW67nec&callback=initBaiduMap"></script>
   </head>
   <body>
     <div id="app"></div>

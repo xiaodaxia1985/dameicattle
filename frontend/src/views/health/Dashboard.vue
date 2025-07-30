@@ -220,6 +220,7 @@ import {
   CircleCloseFilled, WarningFilled, InfoFilled,
   Document, Download
 } from '@element-plus/icons-vue'
+import { validateStatisticsData, ensureArray, ensureNumber, safeGet } from '@/utils/dataValidation'
 
 // 定义类型
 interface AlertData {
@@ -291,9 +292,17 @@ const loadData = async () => {
 const loadHealthStatistics = async () => {
   try {
     const { data } = await healthApi.getHealthStatistics()
-    healthStats.value = data
+    // 使用数据验证工具处理统计数据
+    healthStats.value = validateStatisticsData(data)
   } catch (error) {
     console.error('加载健康统计失败:', error)
+    // 设置安全的默认值
+    healthStats.value = {
+      healthy: 0,
+      sick: 0,
+      treatment: 0,
+      total: 0
+    }
   }
 }
 

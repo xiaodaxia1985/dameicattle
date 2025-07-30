@@ -138,6 +138,7 @@ import { equipmentApi } from '@/api/equipment'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import EquipmentForm from './components/EquipmentForm.vue'
 import EquipmentDetail from './components/EquipmentDetail.vue'
+import { validatePaginationData, validateDataArray, validateEquipmentData } from '@/utils/dataValidation'
 
 // 响应式数据
 const loading = ref(false)
@@ -188,16 +189,18 @@ const loadEquipment = async () => {
       barnId: searchForm.cascade.barnId,
     }
     const response = await equipmentApi.getEquipment(params)
-    // 根据API实现，response.data 可能直接是数据或包含data字段
-    if (response.data.data) {
-      equipmentList.value = response.data.data || []
-      pagination.total = response.data.pagination?.total || 0
-    } else {
-      equipmentList.value = response.data || []
-      pagination.total = response.data.length || 0
-    }
+    
+    // 使用数据验证工具处理响应
+    const validatedData = validatePaginationData(response.data || response)
+    
+    // 验证每个设备数据
+    equipmentList.value = validateDataArray(validatedData.data, validateEquipmentData)
+    pagination.total = validatedData.pagination.total
   } catch (error) {
+    console.error('加载设备列表失败:', error)
     ElMessage.error('加载设备列表失败')
+    equipmentList.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }

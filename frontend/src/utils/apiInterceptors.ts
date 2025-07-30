@@ -5,7 +5,7 @@
 
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
-import { errorHandler, handleAuthError, handleNetworkError } from './errorHandler'
+import { showErrorMessage, createApiError, isNetworkError, isPermissionError } from './errorHandler'
 import { tokenStorage, authErrorUtils, navigationUtils } from './authUtils'
 import type { RequestConfig, ResponseInterceptor, RequestInterceptor, ApiError } from './apiClient'
 
@@ -125,14 +125,17 @@ export const errorHandlingResponseInterceptor: ResponseInterceptor = {
     }
 
     // Handle specific error types
-    if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT') {
-      handleNetworkError(error, context)
+    const apiError = createApiError(error)
+    
+    if (isNetworkError(apiError) || error.code === 'TIMEOUT') {
+      // Handle network errors
+      showErrorMessage(apiError, { showMessage: true, logError: true })
     } else if (error.status === 422 && error.response?.data?.errors) {
       // Handle validation errors
-      errorHandler.handleValidationErrors(error.response.data.errors, context)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
     } else if (error.status !== 401) {
       // Handle other errors (auth errors are handled by authResponseInterceptor)
-      errorHandler.handleError(error, context)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
     }
 
     throw error

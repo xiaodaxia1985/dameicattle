@@ -22,6 +22,22 @@ export class HealthController {
       const offset = (Number(page) - 1) * Number(limit);
       const where: any = {};
 
+      // 数据权限过滤 - 通过牛只的基地进行过滤
+      const dataPermission = (req as any).dataPermission;
+      let cattleWhereClause: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有健康记录
+        if (base_id) {
+          cattleWhereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的健康记录
+        cattleWhereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何健康记录
+        cattleWhereClause.base_id = -1;
+      }
+
       // 构建查询条件
       if (cattle_id) {
         where.cattle_id = cattle_id;
@@ -51,9 +67,7 @@ export class HealthController {
           model: Cattle,
           as: 'cattle',
           attributes: ['id', 'ear_tag', 'breed', 'gender', 'health_status'],
-          ...(base_id && {
-            where: { base_id }
-          })
+          where: cattleWhereClause
         },
         {
           model: User,
@@ -265,6 +279,22 @@ export class HealthController {
       const offset = (Number(page) - 1) * Number(limit);
       const where: any = {};
 
+      // 数据权限过滤 - 通过牛只的基地进行过滤
+      const dataPermission = (req as any).dataPermission;
+      let cattleWhereClause: any = {};
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有疫苗记录
+        if (base_id) {
+          cattleWhereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的疫苗记录
+        cattleWhereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何疫苗记录
+        cattleWhereClause.base_id = -1;
+      }
+
       // 构建查询条件
       if (cattle_id) {
         where.cattle_id = cattle_id;
@@ -307,9 +337,7 @@ export class HealthController {
           model: Cattle,
           as: 'cattle',
           attributes: ['id', 'ear_tag', 'breed', 'gender'],
-          ...(base_id && {
-            where: { base_id }
-          })
+          where: cattleWhereClause
         },
         {
           model: User,

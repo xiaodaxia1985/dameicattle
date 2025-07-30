@@ -46,10 +46,17 @@ export class CattleEventController {
       }
 
       // Check user permissions - limit to user's base cattle if not admin
-      const user = (req as any).user;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
       let cattleWhereClause: WhereOptions = {};
-      if (user.role?.name !== 'admin' && user.base_id) {
-        cattleWhereClause.base_id = user.base_id;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的牛只事件
+        cattleWhereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能查看任何牛只事件
+        cattleWhereClause.base_id = -1;
       }
 
       const { count, rows } = await CattleEvent.findAndCountAll({
@@ -99,11 +106,18 @@ export class CattleEventController {
   static async getCattleEventById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const user = (req as any).user;
 
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
       let cattleWhereClause: WhereOptions = {};
-      if (user.role?.name !== 'admin' && user.base_id) {
-        cattleWhereClause.base_id = user.base_id;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的牛只事件
+        cattleWhereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能查看任何牛只事件
+        cattleWhereClause.base_id = -1;
       }
 
       const event = await CattleEvent.findOne({
@@ -161,10 +175,17 @@ export class CattleEventController {
         throw new ValidationError('缺少必填字段');
       }
 
-      // Check if cattle exists and user has permission
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
       const whereClause: WhereOptions = { id: eventData.cattle_id };
-      if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能为所属基地的牛只创建事件
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能创建任何牛只事件
+        whereClause.base_id = -1;
       }
 
       const cattle = await Cattle.findOne({ where: whereClause });
@@ -179,7 +200,7 @@ export class CattleEventController {
       }
 
       // Set operator
-      eventData.operator_id = user.id;
+      eventData.operator_id = (req as any).user?.id;
 
       const event = await CattleEvent.create(eventData);
 
@@ -230,13 +251,19 @@ export class CattleEventController {
   static async updateCattleEvent(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const user = (req as any).user;
       const updateData = req.body;
 
-      // Find event with cattle permission check
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
       let cattleWhereClause: WhereOptions = {};
-      if (user.role?.name !== 'admin' && user.base_id) {
-        cattleWhereClause.base_id = user.base_id;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能更新所属基地的牛只事件
+        cattleWhereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能更新任何牛只事件
+        cattleWhereClause.base_id = -1;
       }
 
       const event = await CattleEvent.findOne({
@@ -299,12 +326,18 @@ export class CattleEventController {
   static async deleteCattleEvent(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const user = (req as any).user;
 
-      // Find event with cattle permission check
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
       let cattleWhereClause: WhereOptions = {};
-      if (user.role?.name !== 'admin' && user.base_id) {
-        cattleWhereClause.base_id = user.base_id;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能删除所属基地的牛只事件
+        cattleWhereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能删除任何牛只事件
+        cattleWhereClause.base_id = -1;
       }
 
       const event = await CattleEvent.findOne({

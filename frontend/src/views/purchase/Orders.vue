@@ -488,6 +488,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { purchaseApi, type PurchaseOrder } from '@/api/purchase'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
+import { validatePaginationData, validateDataArray, validateOrderData } from '@/utils/dataValidation'
 
 // 响应式数据
 const loading = ref(false)
@@ -567,16 +568,18 @@ const fetchOrders = async () => {
     const { dateRange, ...finalParams } = params
     
     const response = await purchaseApi.getOrders(params)
-    // 根据API实现，response.data 可能是 { items: [...], total: number } 或直接是数组
-    if (response.data.items) {
-      orders.value = response.data.items || []
-      pagination.total = response.data.total || 0
-    } else {
-      orders.value = response.data || []
-      pagination.total = response.data.length || 0
-    }
+    
+    // 使用数据验证工具处理响应
+    const validatedData = validatePaginationData(response.data || response)
+    
+    // 验证每个订单数据
+    orders.value = validateDataArray(validatedData.data, validateOrderData)
+    pagination.total = validatedData.pagination.total
   } catch (error) {
+    console.error('获取订单列表失败:', error)
     ElMessage.error('获取订单列表失败')
+    orders.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }

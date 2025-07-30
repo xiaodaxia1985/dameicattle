@@ -2,12 +2,14 @@ import { Router } from 'express';
 import { MonitoringController } from '@/controllers/MonitoringController';
 import { auth as authenticate } from '@/middleware/auth';
 import { authorize } from '@/middleware/permission';
+import { dataPermissionMiddleware } from '@/middleware/dataPermission';
 import { validate } from '@/middleware/validation';
 
 const router = Router();
 
-// 所有监控路由都需要认证
+// 所有监控路由都需要认证和数据权限检查
 router.use(authenticate);
+router.use(dataPermissionMiddleware);
 
 // 系统监控路由
 router.get('/health', 

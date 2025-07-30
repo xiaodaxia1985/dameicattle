@@ -200,6 +200,18 @@ export class SecurityController {
         limit: limit ? parseInt(limit as string) : undefined
       };
 
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以查看所有审计日志
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看与自己相关的审计日志
+        filters.user_id = (req as any).user?.id;
+      } else {
+        // 没有基地权限的用户，不显示任何审计日志
+        filters.user_id = -1;
+      }
+
       const auditLogs = SecurityService.getAuditLogs(filters);
 
       res.json({

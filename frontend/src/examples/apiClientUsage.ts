@@ -3,8 +3,10 @@
  * Demonstrates how to use the API client in different scenarios
  */
 
+import { ref, readonly } from 'vue'
+import { defineStore } from 'pinia'
 import { api } from '@/api/client'
-import { handleApiError, handleValidationError } from '@/utils/errorHandler'
+import { showErrorMessage, createApiError } from '@/utils/errorHandler'
 import type { ApiResponse } from '@/utils/apiClient'
 
 // Example interfaces
@@ -38,7 +40,8 @@ export class ExampleApiService {
       const response: ApiResponse<PaginatedData<User>> = await api.get('/users', params)
       return response.data.data
     } catch (error) {
-      handleApiError(error, { component: 'UserService', action: 'getUsers' })
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -50,14 +53,8 @@ export class ExampleApiService {
       return response.data
     } catch (error) {
       // Handle validation errors specifically
-      if (error.status === 422 && error.response?.data?.errors) {
-        handleValidationError(error.response.data.errors, { 
-          component: 'UserService', 
-          action: 'createUser' 
-        })
-      } else {
-        handleApiError(error, { component: 'UserService', action: 'createUser' })
-      }
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -68,7 +65,8 @@ export class ExampleApiService {
       const response: ApiResponse<User> = await api.put(`/users/${id}`, userData)
       return response.data
     } catch (error) {
-      handleApiError(error, { component: 'UserService', action: 'updateUser' })
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -78,7 +76,8 @@ export class ExampleApiService {
     try {
       await api.delete(`/users/${id}`)
     } catch (error) {
-      handleApiError(error, { component: 'UserService', action: 'deleteUser' })
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -93,7 +92,8 @@ export class ExampleApiService {
       const response: ApiResponse<{ url: string }> = await api.upload('/upload/avatar', formData)
       return response.data
     } catch (error) {
-      handleApiError(error, { component: 'UserService', action: 'uploadAvatar' })
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -103,7 +103,8 @@ export class ExampleApiService {
     try {
       await api.download(`/users/${userId}/report`, `user-${userId}-report.pdf`)
     } catch (error) {
-      handleApiError(error, { component: 'UserService', action: 'downloadUserReport' })
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -117,7 +118,8 @@ export class ExampleApiService {
       })
       return response.data
     } catch (error) {
-      handleApiError(error, { component: 'UserService', action: 'getCriticalData' })
+      const apiError = createApiError(error)
+      showErrorMessage(apiError, { showMessage: true, logError: true })
       throw error
     }
   }
@@ -254,7 +256,8 @@ export const errorHandlingExamples = {
       return response.data
     } catch (error) {
       // Handle error silently, don't show user feedback
-      handleApiError(error, { component: 'Background' }, 'SILENT')
+      const apiError = createApiError(error)
+      console.error('Silent request failed:', apiError)
       return null // Return fallback data
     }
   }

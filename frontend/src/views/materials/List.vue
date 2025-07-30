@@ -536,6 +536,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
 import type { FormInstance } from 'element-plus'
 import type { ProductionMaterial, MaterialCategory, Supplier } from '@/types/material'
+import { validatePaginationData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
 
 // Store
 const materialStore = useMaterialStore()

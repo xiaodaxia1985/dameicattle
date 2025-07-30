@@ -55,6 +55,21 @@ export class PurchaseOrderController {
       const offset = (Number(page) - 1) * Number(limit);
       const whereClause: any = {};
 
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了base_id参数，则按base_id过滤，否则显示所有采购订单
+        if (base_id) {
+          whereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能查看所属基地的采购订单
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不显示任何采购订单
+        whereClause.base_id = -1;
+      }
+
       // 搜索条件
       if (search) {
         whereClause[Op.or] = [
@@ -68,9 +83,7 @@ export class PurchaseOrderController {
         whereClause.supplier_id = supplier_id;
       }
 
-      if (base_id) {
-        whereClause.base_id = base_id;
-      }
+      // base_id过滤已在数据权限过滤中处理，这里不需要重复处理
 
       if (status) {
         whereClause.status = status;
@@ -139,7 +152,22 @@ export class PurchaseOrderController {
     try {
       const { id } = req.params;
 
-      const order = await PurchaseOrder.findByPk(id, {
+      const whereClause: any = { id };
+
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员不需要额外的过滤条件
+      } else if (dataPermission.baseId) {
+        // 基地用户只能查看所属基地的采购订单
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能查看任何采购订单
+        whereClause.base_id = -1;
+      }
+
+      const order = await PurchaseOrder.findOne({
+        where: whereClause,
         include: [
           {
             model: Supplier,
@@ -211,6 +239,16 @@ export class PurchaseOrderController {
       // 验证必填字段
       if (!supplier_id || !base_id || !order_type || !items || !Array.isArray(items) || items.length === 0) {
         throw new ValidationError('请填写完整的订单信息');
+      }
+
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以在任何基地创建采购订单
+      } else if (dataPermission.baseId && dataPermission.baseId !== Number(base_id)) {
+        throw new ValidationError('权限不足，只能在所属基地创建采购订单');
+      } else if (!dataPermission.baseId) {
+        throw new ValidationError('没有基地权限，无法创建采购订单');
       }
 
       // 验证供应商和基地是否存在

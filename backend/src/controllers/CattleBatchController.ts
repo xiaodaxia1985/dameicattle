@@ -151,9 +151,15 @@ export class CattleBatchController {
             }
           }
 
-          // Check user permissions for base access
-          if (user.role?.name !== 'admin' && user.base_id && mappedData.base_id !== user.base_id) {
-            errors.push({ row: rowIndex, field: 'base_id', message: '权限不足，无法访问该基地' });
+          // 数据权限检查
+          const dataPermission = (req as any).dataPermission;
+          if (!dataPermission || dataPermission.canAccessAllBases) {
+            // 超级管理员可以在任何基地创建牛只
+          } else if (dataPermission.baseId && dataPermission.baseId !== mappedData.base_id) {
+            errors.push({ row: rowIndex, field: 'base_id', message: '权限不足，只能在所属基地创建牛只' });
+            continue;
+          } else if (!dataPermission.baseId) {
+            errors.push({ row: rowIndex, field: 'base_id', message: '没有基地权限，无法创建牛只' });
             continue;
           }
 
@@ -189,7 +195,7 @@ export class CattleBatchController {
             event_type: cattleData.source || 'purchase',
             event_date: cattleData.purchase_date || new Date(),
             description: `批量导入 - ${cattleData.source === 'born' ? '出生' : '采购'}`,
-            operator_id: user.id,
+            operator_id: (req as any).user?.id,
             data: {
               initial_weight: cattleData.weight,
               purchase_price: cattleData.purchase_price,
@@ -269,11 +275,19 @@ export class CattleBatchController {
 
       const whereClause: any = { status: 'active' };
       
-      // Apply base filter
-      if (baseId) {
-        whereClause.base_id = baseId;
-      } else if (user.role?.name !== 'admin' && user.base_id) {
-        whereClause.base_id = user.base_id;
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员：如果指定了baseId参数，则按baseId过滤，否则显示所有牛只
+        if (baseId) {
+          whereClause.base_id = baseId;
+        }
+      } else if (dataPermission.baseId) {
+        // 基地用户：只能导出所属基地的牛只
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        // 没有基地权限的用户，不能导出任何牛只
+        whereClause.base_id = -1;
       }
 
       const cattle = await Cattle.findAll({
@@ -504,7 +518,7 @@ export class CattleBatchController {
             event_type: 'transfer_in',
             event_date: new Date(),
             description: `批量转群 - 从${from_barn_id ? '牛棚' + from_barn_id : '无牛棚'}转至${to_barn_id ? '牛棚' + to_barn_id : '无牛棚'}`,
-            operator_id: user.id,
+            operator_id: (req as any).user?.id,
             data: {
               from_barn_id: from_barn_id,
               to_barn_id: to_barn_id,

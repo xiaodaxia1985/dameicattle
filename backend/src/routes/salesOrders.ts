@@ -3,12 +3,14 @@ import { SalesOrderController } from '@/controllers/SalesOrderController';
 import { salesOrderValidators } from '@/validators/salesOrder';
 import { auth } from '@/middleware/auth';
 import { permission } from '@/middleware/permission';
+import { dataPermissionMiddleware } from '@/middleware/dataPermission';
 import { validate } from '@/middleware/validation';
 
 const router = Router();
 
-// 所有路由都需要认证
+// 所有路由都需要认证和数据权限检查
 router.use(auth);
+router.use(dataPermissionMiddleware);
 
 // 获取销售订单列表
 router.get('/', 

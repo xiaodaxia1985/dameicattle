@@ -21,7 +21,7 @@ declare global {
 export const dataPermissionMiddleware = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
   try {
     const user = req.user as any;
-    
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -54,7 +54,7 @@ export const dataPermissionMiddleware = async (req: Request, res: Response, next
     // Check if user has admin privileges (can access all bases)
     const permissions = userWithRole.role?.permissions || [];
     const isAdmin = permissions.includes('system:admin') || permissions.includes('bases:all');
-    
+
     // Set data permission context
     req.dataPermission = {
       baseId: userWithRole.base_id,
@@ -73,7 +73,7 @@ export const dataPermissionMiddleware = async (req: Request, res: Response, next
  */
 export const applyBaseFilter = (whereClause: any, req: Request, filterField: string = 'base_id'): any => {
   const dataPermission = req.dataPermission;
-  
+
   if (!dataPermission || dataPermission.canAccessAllBases) {
     return whereClause;
   }
@@ -98,7 +98,7 @@ export const applyBaseFilter = (whereClause: any, req: Request, filterField: str
  */
 export const canAccessBase = (req: Request, baseId: number): boolean => {
   const dataPermission = req.dataPermission;
-  
+
   if (!dataPermission) {
     return false;
   }
@@ -117,7 +117,7 @@ export const canAccessBase = (req: Request, baseId: number): boolean => {
  */
 export const requireAdmin = (req: Request, res: Response, next: NextFunction): Response | void => {
   const dataPermission = req.dataPermission;
-  
+
   if (!dataPermission || !dataPermission.isAdmin) {
     return res.status(403).json({
       success: false,
@@ -139,7 +139,7 @@ export const requireAdmin = (req: Request, res: Response, next: NextFunction): R
 export const requireBaseAccess = (baseIdParam: string = 'baseId') => {
   return (req: Request, res: Response, next: NextFunction): Response | void => {
     const baseId = parseInt(req.params[baseIdParam] || req.body[baseIdParam] || req.query[baseIdParam] as string);
-    
+
     if (!baseId) {
       return res.status(400).json({
         success: false,
