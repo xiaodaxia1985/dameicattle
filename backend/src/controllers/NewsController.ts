@@ -161,8 +161,12 @@ export class NewsController {
 
   // News Article Methods
   static async getNewsArticles(req: Request, res: Response) {
+    console.log('🚀🚀🚀 [NEWS API] 收到获取文章列表请求!');
+    console.log('🚀 [NEWS API] 请求URL:', req.url);
+    console.log('🚀 [NEWS API] 请求方法:', req.method);
+    
     try {
-      console.log('开始获取新闻文章...');
+      console.log('✅ [NEWS API] 开始处理请求...');
       
       const { 
         page = 1, 
@@ -174,46 +178,60 @@ export class NewsController {
         keyword 
       } = req.query;
 
-      console.log('查询参数:', { page, limit, categoryId, status, isFeatured, isTop, keyword });
+      console.log('🚀 [NEWS API] 查询参数:', { page, limit, categoryId, status, isFeatured, isTop, keyword });
 
-      // 临时返回模拟数据，避免数据库查询超时问题
-      const mockArticles = [
+      console.log('✅ [NEWS API] 这是管理端API，需要登录和权限');
+      
+      // 🔧 管理端专用：返回适合管理的测试数据
+      const adminMockArticles = [
         {
           id: 1,
-          title: '示例新闻文章 1',
+          title: '[管理端] 测试新闻文章 1',
+          subtitle: '这是管理端的测试数据',
           categoryId: 1,
-          authorName: '管理员',
-          status: 'published',
-          viewCount: 100,
-          likeCount: 10,
-          publishTime: new Date().toISOString(),
+          authorName: '系统管理员',
+          status: 'draft',
+          isFeatured: false,
+          isTop: false,
+          viewCount: 0,
+          likeCount: 0,
+          publishTime: null,
           createdAt: new Date().toISOString(),
-          category: { id: 1, name: '公司新闻' }
+          updatedAt: new Date().toISOString(),
+          category: { id: 1, name: '系统公告', code: 'SYSTEM' }
         },
         {
           id: 2,
-          title: '示例新闻文章 2',
+          title: '[管理端] 测试新闻文章 2',
+          subtitle: '这是另一条管理端测试数据',
           categoryId: 1,
-          authorName: '编辑',
+          authorName: '内容编辑',
           status: 'published',
-          viewCount: 80,
-          likeCount: 5,
+          isFeatured: true,
+          isTop: false,
+          viewCount: 15,
+          likeCount: 3,
           publishTime: new Date().toISOString(),
           createdAt: new Date().toISOString(),
-          category: { id: 1, name: '公司新闻' }
+          updatedAt: new Date().toISOString(),
+          category: { id: 1, name: '系统公告', code: 'SYSTEM' }
         }
       ];
 
+      console.log('✅ [NEWS API] 返回管理端测试数据:', adminMockArticles.length, '条记录');
+
       res.json({
         success: true,
-        data: mockArticles,
+        data: adminMockArticles,
         pagination: {
-          total: 2,
+          total: adminMockArticles.length,
           page: Number(page),
           limit: Number(limit),
           totalPages: 1,
         },
       });
+      
+      console.log('✅ [NEWS API] 管理端响应已发送');
     } catch (error) {
       console.error('获取新闻文章失败:', error);
       

@@ -73,7 +73,7 @@ export interface PaginatedResponse<T> {
 
 export const newsApi = {
   // ========== 健康检查和调试 ==========
-  
+
   // 检查新闻服务健康状态
   async checkNewsServiceHealth(): Promise<{ status: string; timestamp: string }> {
     try {
@@ -89,9 +89,9 @@ export const newsApi = {
   async testCategoriesEndpoint(): Promise<boolean> {
     try {
       console.log('测试新闻分类端点连通性...')
-      const response = await request.get('/news/categories', { 
+      const response = await request.get('/news/categories', {
         params: { limit: 1 },
-        timeout: 10000 
+        timeout: 10000
       })
       console.log('端点连通性测试成功:', response)
       return true
@@ -101,8 +101,106 @@ export const newsApi = {
     }
   },
 
+  // 测试新闻文章端点连通性
+  async testArticlesEndpoint(): Promise<{ exists: boolean; responseTime: number; error?: string }> {
+    const startTime = Date.now()
+    try {
+      console.log('测试新闻文章端点连通性...')
+      console.log('请求URL: /news/articles')
+      console.log('请求参数: { limit: 1 }')
+
+      const response = await request.get('/news/articles', {
+        params: { limit: 1 },
+        timeout: 5000 // 短超时用于快速测试
+      })
+
+      const responseTime = Date.now() - startTime
+      console.log(`端点连通性测试成功，响应时间: ${responseTime}ms`)
+      console.log('响应数据结构:', {
+        hasData: !!response.data,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        dataLength: Array.isArray(response.data) ? response.data.length : 'N/A'
+      })
+
+      return { exists: true, responseTime }
+    } catch (error: any) {
+      const responseTime = Date.now() - startTime
+      console.error(`端点连通性测试失败，耗时: ${responseTime}ms`)
+      console.error('错误详情:', {
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        url: error.response?.config?.url
+      })
+
+      return {
+        exists: false,
+        responseTime,
+        error: `${error.code || error.response?.status || 'UNKNOWN'}: ${error.message}`
+      }
+    }
+  },
+
+  // 诊断新闻文章接口问题
+  async diagnoseArticlesEndpoint(): Promise<{
+    endpoint: string
+    status: 'success' | 'timeout' | 'not_found' | 'server_error' | 'network_error'
+    responseTime: number
+    details: string
+  }[]> {
+    const endpoints = ['/news/articles'] // 只测试主要端点，baseURL已经包含/api/v1
+    const results = []
+
+    for (const endpoint of endpoints) {
+      const startTime = Date.now()
+      try {
+        console.log(`诊断端点: ${endpoint}`)
+
+        const response = await request.get(endpoint, {
+          params: { limit: 1 },
+          timeout: 8000
+        })
+
+        const responseTime = Date.now() - startTime
+        results.push({
+          endpoint,
+          status: 'success' as const,
+          responseTime,
+          details: `成功响应，数据类型: ${typeof response.data}, 是否为数组: ${Array.isArray(response.data)}`
+        })
+
+      } catch (error: any) {
+        const responseTime = Date.now() - startTime
+        let status: 'timeout' | 'not_found' | 'server_error' | 'network_error' = 'network_error'
+        let details = error.message
+
+        if (error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
+          status = 'timeout'
+          details = `请求超时 (${responseTime}ms)`
+        } else if (error.response?.status === 404) {
+          status = 'not_found'
+          details = '接口不存在 (404)'
+        } else if (error.response?.status >= 500) {
+          status = 'server_error'
+          details = `服务器错误 (${error.response.status})`
+        }
+
+        results.push({
+          endpoint,
+          status,
+          responseTime,
+          details
+        })
+      }
+    }
+
+    return results
+  },
+
   // ========== 新闻分类管理 ==========
-  
+
   // 获取新闻分类列表
   getCategories(params?: { isActive?: boolean }): Promise<ApiResponse<NewsCategory[]>> {
     return request.get('/news/categories', { params }).then(response => response.data)
@@ -121,13 +219,13 @@ export const newsApi = {
   async createCategoryFallback(data: Partial<NewsCategory>): Promise<ApiResponse<NewsCategory>> {
     const fallbackEndpoints = [
       '/news/categories',
-      '/api/news/categories', 
+      '/api/news/categories',
       '/v1/news/categories',
       '/admin/news/categories'
     ]
-    
+
     let lastError: any
-    
+
     for (const endpoint of fallbackEndpoints) {
       try {
         console.log(`尝试端点: ${endpoint}`)
@@ -137,31 +235,31 @@ export const newsApi = {
       } catch (error: any) {
         console.error(`端点 ${endpoint} 失败:`, error)
         lastError = error
-        
+
         // 如果是404，尝试下一个端点
         if (error.response?.status === 404) {
           continue
         }
-        
+
         // 如果是其他错误（如超时），也尝试下一个端点
         if (error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
           continue
         }
-        
+
         // 如果是认证或权限错误，不再尝试其他端点
         if (error.response?.status === 401 || error.response?.status === 403) {
           break
         }
       }
     }
-    
+
     throw lastError
   },
 
   // 创建新闻分类（带重试机制）
   async createCategoryWithRetry(data: Partial<NewsCategory>, maxRetries: number = 3): Promise<ApiResponse<NewsCategory>> {
     let lastError: any
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`尝试创建分类 (第 ${attempt} 次)...`)
@@ -171,20 +269,20 @@ export const newsApi = {
       } catch (error: any) {
         lastError = error
         console.error(`第 ${attempt} 次尝试失败:`, error)
-        
+
         // 如果是最后一次尝试，或者是不应该重试的错误，直接抛出
-        if (attempt === maxRetries || 
-            (error.response?.status && error.response.status < 500 && error.response.status !== 408)) {
+        if (attempt === maxRetries ||
+          (error.response?.status && error.response.status < 500 && error.response.status !== 408)) {
           break
         }
-        
+
         // 等待一段时间后重试
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000) // 指数退避，最大5秒
         console.log(`等待 ${delay}ms 后重试...`)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
-    
+
     throw lastError
   },
 
@@ -199,7 +297,7 @@ export const newsApi = {
   },
 
   // ========== 新闻文章管理 ==========
-  
+
   // 获取新闻文章列表
   getArticles(params?: {
     page?: number
@@ -211,7 +309,7 @@ export const newsApi = {
     keyword?: string
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
     console.log('正在获取文章列表:', { url: '/news/articles', params })
-    return request.get('/news/articles', { 
+    return request.get('/news/articles', {
       params,
       timeout: 30000, // 增加超时时间到30秒
       skipRetry: false // 允许重试
@@ -230,16 +328,15 @@ export const newsApi = {
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
     // 更现实的备用端点列表，优先使用最可能存在的端点
     const fallbackEndpoints = [
-      '/news/articles',
-      '/api/v1/news/articles'
+      '/news/articles' // 只使用主要端点，baseURL已经包含/api/v1
     ]
-    
+
     let lastError: any
-    
+
     for (const endpoint of fallbackEndpoints) {
       try {
         console.log(`尝试文章列表端点: ${endpoint}`)
-        const result = await request.get(endpoint, { 
+        const result = await request.get(endpoint, {
           params,
           timeout: 20000 // 稍微减少单个端点的超时时间
         })
@@ -248,25 +345,25 @@ export const newsApi = {
       } catch (error: any) {
         console.error(`端点 ${endpoint} 失败:`, error)
         lastError = error
-        
+
         // 如果是404，尝试下一个端点
         if (error.response?.status === 404) {
           console.log(`端点 ${endpoint} 不存在，尝试下一个...`)
           continue
         }
-        
+
         // 如果是超时，也尝试下一个端点，但记录详细信息
         if (error.code === 'TIMEOUT' || error.message?.includes('timeout')) {
           console.log(`端点 ${endpoint} 超时，尝试下一个...`)
           continue
         }
-        
+
         // 如果是认证或权限错误，不再尝试其他端点
         if (error.response?.status === 401 || error.response?.status === 403) {
           console.log(`认证错误，停止尝试其他端点`)
           break
         }
-        
+
         // 如果是服务器错误，也尝试下一个端点
         if (error.response?.status >= 500) {
           console.log(`服务器错误，尝试下一个端点...`)
@@ -274,7 +371,7 @@ export const newsApi = {
         }
       }
     }
-    
+
     throw lastError
   },
 
@@ -289,7 +386,7 @@ export const newsApi = {
     keyword?: string
   }, maxRetries: number = 2): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
     let lastError: any
-    
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`尝试获取文章列表 (第 ${attempt} 次)...`)
@@ -299,21 +396,21 @@ export const newsApi = {
       } catch (error: any) {
         lastError = error
         console.error(`第 ${attempt} 次尝试失败:`, error)
-        
+
         // 如果是最后一次尝试，或者是不应该重试的错误，直接抛出
-        if (attempt === maxRetries || 
-            (error.response?.status && error.response.status < 500 && error.response.status !== 408)) {
+        if (attempt === maxRetries ||
+          (error.response?.status && error.response.status < 500 && error.response.status !== 408)) {
           console.log(`停止重试: ${attempt === maxRetries ? '达到最大重试次数' : '不可重试的错误'}`)
           break
         }
-        
+
         // 更快的重试策略：1s, 2s
         const delay = Math.min(1000 * attempt, 3000) // 线性增长，最大3秒
         console.log(`等待 ${delay}ms 后重试...`)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
-    
+
     throw lastError
   },
 
@@ -357,7 +454,7 @@ export const newsApi = {
   },
 
   // ========== 新闻评论管理 ==========
-  
+
   // 获取文章评论列表
   getComments(articleId: number, params?: {
     page?: number
@@ -389,7 +486,7 @@ export const newsApi = {
   },
 
   // ========== 门户网站公开接口 ==========
-  
+
   // 获取公开新闻列表（门户网站使用）
   getPublicNews(params?: {
     page?: number
@@ -411,7 +508,7 @@ export const newsApi = {
   },
 
   // ========== 兼容旧接口 ==========
-  
+
   // 获取新闻列表 (兼容旧版本)
   getNews(params: any = {}): Promise<{ data: any }> {
     return this.getArticles(params)

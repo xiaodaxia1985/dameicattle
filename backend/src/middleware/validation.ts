@@ -2,33 +2,62 @@ import { Request, Response, NextFunction } from 'express';
 const { validationResult } = require('express-validator');
 import Joi from 'joi';
 
-// Express-validator middleware
-export const validate = (validationRules: any[]) => {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    const errors = validationResult(req);
-    
-    if (!errors.isEmpty()) {
-      const details = errors.array().map((error: any) => ({
-        field: error.type === 'field' ? error.path : error.type,
-        message: error.msg,
-        value: error.value,
-      }));
+// Express-validator middleware - supports both direct use and with parameters
+export const validate = (validationRulesOrReq?: any[] | Request, res?: Response, next?: NextFunction): any => {
+  // If called with validation rules (old way), return a middleware function
+  if (Array.isArray(validationRulesOrReq)) {
+    return (req: Request, res: Response, next: NextFunction): void => {
+      const errors = validationResult(req);
+      
+      if (!errors.isEmpty()) {
+        const details = errors.array().map((error: any) => ({
+          field: error.type === 'field' ? error.path : error.type,
+          message: error.msg,
+          value: error.value,
+        }));
 
-      res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: '请求数据验证失败',
-          details,
-          timestamp: new Date().toISOString(),
-          path: req.path,
-        },
-      });
-      return;
-    }
+        res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: '请求数据验证失败',
+            details,
+            timestamp: new Date().toISOString(),
+            path: req.path,
+          },
+        });
+        return;
+      }
 
-    next();
-  };
+      next();
+    };
+  }
+  
+  // If called directly as middleware (new way)
+  const req = validationRulesOrReq as Request;
+  const errors = validationResult(req);
+  
+  if (!errors.isEmpty()) {
+    const details = errors.array().map((error: any) => ({
+      field: error.type === 'field' ? error.path : error.type,
+      message: error.msg,
+      value: error.value,
+    }));
+
+    res!.status(400).json({
+      success: false,
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: '请求数据验证失败',
+        details,
+        timestamp: new Date().toISOString(),
+        path: req.path,
+      },
+    });
+    return;
+  }
+
+  next!();
 };
 
 // Joi validation middleware (legacy)

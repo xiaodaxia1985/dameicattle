@@ -36,7 +36,7 @@ router.post('/categories',
   authenticate,
   authorize(['news:create']),
   dataPermissionMiddleware,
-  createNewsCategoryValidator,
+  ...createNewsCategoryValidator,
   validate,
   NewsController.createNewsCategory
 );
@@ -45,7 +45,7 @@ router.put('/categories/:id',
   authenticate,
   authorize(['news:update']),
   dataPermissionMiddleware,
-  updateNewsCategoryValidator,
+  ...updateNewsCategoryValidator,
   validate,
   NewsController.updateNewsCategory
 );
@@ -54,26 +54,38 @@ router.delete('/categories/:id',
   authenticate,
   authorize(['news:delete']),
   dataPermissionMiddleware,
-  idParamValidator,
+  ...idParamValidator,
   validate,
   NewsController.deleteNewsCategory
 );
 
+// 添加一个简单的测试端点来验证路由
+router.get('/articles/test', (req, res) => {
+  console.log('🧪 [NEWS ROUTE TEST] 测试端点被访问');
+  res.json({
+    success: true,
+    message: '新闻文章路由测试成功',
+    timestamp: new Date().toISOString(),
+    path: req.path,
+    method: req.method
+  });
+});
+
 // News Articles Routes
 router.get('/articles',
-  getNewsArticlesValidator,
+  ...getNewsArticlesValidator,
   validate,
   NewsController.getNewsArticles
 );
 
 router.get('/articles/search',
-  getNewsArticlesValidator,
+  ...getNewsArticlesValidator,
   validate,
   NewsController.searchNewsArticles
 );
 
 router.get('/articles/:id',
-  idParamValidator,
+  ...idParamValidator,
   validate,
   NewsController.getNewsArticleById
 );
@@ -82,7 +94,7 @@ router.post('/articles',
   authenticate,
   authorize(['news:create']),
   dataPermissionMiddleware,
-  createNewsArticleValidator,
+  ...createNewsArticleValidator,
   validate,
   NewsController.createNewsArticle
 );
@@ -91,7 +103,7 @@ router.put('/articles/:id',
   authenticate,
   authorize(['news:update']),
   dataPermissionMiddleware,
-  updateNewsArticleValidator,
+  ...updateNewsArticleValidator,
   validate,
   NewsController.updateNewsArticle
 );
@@ -100,7 +112,7 @@ router.delete('/articles/:id',
   authenticate,
   authorize(['news:delete']),
   dataPermissionMiddleware,
-  idParamValidator,
+  ...idParamValidator,
   validate,
   NewsController.deleteNewsArticle
 );
@@ -109,26 +121,26 @@ router.post('/articles/:id/publish',
   authenticate,
   authorize(['news:update']),
   dataPermissionMiddleware,
-  publishNewsArticleValidator,
+  ...publishNewsArticleValidator,
   validate,
   NewsController.publishNewsArticle
 );
 
 router.post('/articles/:id/like',
-  likeNewsArticleValidator,
+  ...likeNewsArticleValidator,
   validate,
   NewsController.likeNewsArticle
 );
 
 // News Comments Routes
 router.get('/articles/:articleId/comments',
-  getNewsCommentsValidator,
+  ...getNewsCommentsValidator,
   validate,
   NewsController.getNewsComments
 );
 
 router.post('/articles/:articleId/comments',
-  createNewsCommentValidator,
+  ...createNewsCommentValidator,
   validate,
   NewsController.createNewsComment
 );
@@ -136,7 +148,7 @@ router.post('/articles/:articleId/comments',
 router.put('/comments/:id/status',
   authenticate,
   authorize(['news:update']),
-  updateCommentStatusValidator,
+  ...updateCommentStatusValidator,
   validate,
   NewsController.updateCommentStatus
 );
@@ -144,7 +156,7 @@ router.put('/comments/:id/status',
 router.delete('/comments/:id',
   authenticate,
   authorize(['news:delete']),
-  idParamValidator,
+  ...idParamValidator,
   validate,
   NewsController.deleteNewsComment
 );

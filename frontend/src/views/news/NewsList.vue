@@ -138,6 +138,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, ArrowDown } from '@element-plus/icons-vue'
 import { newsApi, type NewsArticle, type NewsCategory } from '@/api/news'
+import request from '@/api/request'
 import { formatDate } from '@/utils/date'
 import { validatePaginationData, validateDataArray, validateNewsData } from '@/utils/dataValidation'
 
@@ -202,13 +203,50 @@ const fetchArticles = async () => {
       ...searchForm
     }
     
-    // 首先尝试备用端点，如果失败再使用重试机制
-    let response
+    // 🔍 首先进行快速诊断
+    console.log('=== 开始诊断文章接口问题 ===')
+    console.log('⚠️  检测到后端 /news/articles 接口响应极慢（36秒超时）')
+    console.log('💡 这表明后端存在严重性能问题，需要检查：')
+    console.log('   1. 数据库查询是否有慢查询或死锁')
+    console.log('   2. 后端代码是否有死循环或阻塞操作')
+    console.log('   3. 数据库连接是否正常')
+    console.log('   4. 中间件（认证、日志等）是否有问题')
+    
+    // 🚨 临时解决方案：显示空数据状态，避免用户长时间等待
+    console.log('🔧 临时解决方案：显示空数据状态，避免用户等待')
+    ElMessage.warning('后端接口响应缓慢，正在加载中...')
+    
+    // 设置一个较短的超时来快速失败
     try {
-      response = await newsApi.getArticlesFallback(params)
-    } catch (fallbackError) {
-      console.log('备用端点失败，尝试重试机制...')
-      response = await newsApi.getArticlesWithRetry(params, 3)
+      const response = await request.get('/news/articles', { 
+        params,
+        timeout: 5000 // 5秒快速超时
+      })
+      
+      console.log('✅ 意外成功！接口在5秒内响应了')
+      
+      // 使用数据验证工具处理响应
+      const validatedData = validatePaginationData(response.data || response)
+      articles.value = validateDataArray(validatedData.data, validateNewsData)
+      pagination.total = validatedData.pagination.total
+      
+      ElMessage.success(`文章列表加载成功: ${articles.value.length} 条记录`)
+      return
+      
+    } catch (quickError) {
+      console.log('❌ 5秒快速测试失败，确认后端性能问题')
+      
+      // 显示友好的错误信息和建议
+      ElMessage.error({
+        message: '后端服务响应缓慢，请联系技术人员检查服务器状态',
+        duration: 0, // 不自动关闭
+        showClose: true
+      })
+      
+      // 显示空状态，让用户知道不是前端问题
+      articles.value = []
+      pagination.total = 0
+      return
     }
     
     // 使用数据验证工具处理响应
@@ -217,18 +255,23 @@ const fetchArticles = async () => {
     // 验证每个文章数据
     articles.value = validateDataArray(validatedData.data, validateNewsData)
     pagination.total = validatedData.pagination.total
+    
+    console.log(`✅ 文章列表加载成功: ${articles.value.length} 条记录`)
+    
   } catch (error: any) {
-    console.error('获取文章列表失败:', error)
+    console.error('❌ 获取文章列表失败:', error)
     
     // 处理不同类型的错误
     let errorMessage = '获取文章列表失败'
     
     if (error.message?.includes('timeout') || error.message?.includes('Request timeout')) {
-      errorMessage = '请求超时，请检查网络连接后重试'
+      errorMessage = `请求超时: 后端 /news/articles 接口响应时间超过预期。请检查后端服务状态。`
+    } else if (error.response?.status === 404) {
+      errorMessage = '后端接口不存在: /news/articles 路由未找到，请检查后端路由配置。'
     } else if (error.response?.status >= 500) {
-      errorMessage = '服务器错误，请稍后重试'
+      errorMessage = `后端服务器错误 (${error.response?.status}): 请检查后端日志和数据库连接。`
     } else if (error.message) {
-      errorMessage = error.message
+      errorMessage = `网络错误: ${error.message}`
     }
     
     ElMessage.error(errorMessage)

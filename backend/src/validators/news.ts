@@ -216,12 +216,22 @@ export const getNewsArticlesValidator = [
     .withMessage('状态必须是draft、published或archived'),
   query('isFeatured')
     .optional()
-    .isBoolean()
-    .withMessage('推荐状态必须是布尔值'),
+    .custom((value: any) => {
+      if (value === undefined || value === null || value === '') {
+        return true; // 允许空值
+      }
+      return ['true', 'false', true, false].includes(value);
+    })
+    .withMessage('推荐状态必须是true或false'),
   query('isTop')
     .optional()
-    .isBoolean()
-    .withMessage('置顶状态必须是布尔值'),
+    .custom((value: any) => {
+      if (value === undefined || value === null || value === '') {
+        return true; // 允许空值
+      }
+      return ['true', 'false', true, false].includes(value);
+    })
+    .withMessage('置顶状态必须是true或false'),
   query('keyword')
     .optional()
     .isLength({ max: 100 })
