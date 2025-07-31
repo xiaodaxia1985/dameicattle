@@ -24,7 +24,7 @@ router.get(
   '/formulas',
   requirePermission('feeding:read'),
   ...getFeedFormulasValidator,
-  validate(getFeedFormulasValidator),
+  validate,
   FeedingController.getFeedFormulas
 );
 
@@ -32,7 +32,7 @@ router.get(
   '/formulas/:id',
   requirePermission('feeding:read'),
   ...getFeedFormulaValidator,
-  validate(getFeedFormulaValidator),
+  validate,
   FeedingController.getFeedFormula
 );
 
@@ -40,7 +40,7 @@ router.post(
   '/formulas',
   requirePermission('feeding:create'),
   ...createFeedFormulaValidator,
-  validate(createFeedFormulaValidator),
+  validate,
   operationLogMiddleware('create', 'feed_formula'),
   FeedingController.createFeedFormula
 );
@@ -49,7 +49,7 @@ router.put(
   '/formulas/:id',
   requirePermission('feeding:update'),
   ...updateFeedFormulaValidator,
-  validate(updateFeedFormulaValidator),
+  validate,
   operationLogMiddleware('update', 'feed_formula'),
   FeedingController.updateFeedFormula
 );
@@ -58,7 +58,7 @@ router.delete(
   '/formulas/:id',
   requirePermission('feeding:delete'),
   ...getFeedFormulaValidator,
-  validate(getFeedFormulaValidator),
+  validate,
   operationLogMiddleware('delete', 'feed_formula'),
   FeedingController.deleteFeedFormula
 );
@@ -69,7 +69,7 @@ router.get(
   requirePermission('feeding:read'),
   dataPermissionMiddleware,
   ...getFeedingRecordsValidator,
-  validate(getFeedingRecordsValidator),
+  validate,
   FeedingController.getFeedingRecords
 );
 
@@ -77,7 +77,7 @@ router.get(
   '/records/:id',
   requirePermission('feeding:read'),
   ...getFeedingRecordValidator,
-  validate(getFeedingRecordValidator),
+  validate,
   FeedingController.getFeedingRecord
 );
 
@@ -86,7 +86,7 @@ router.post(
   requirePermission('feeding:create'),
   dataPermissionMiddleware,
   ...createFeedingRecordValidator,
-  validate(createFeedingRecordValidator),
+  validate,
   operationLogMiddleware('create', 'feeding_record'),
   FeedingController.createFeedingRecord
 );
@@ -95,7 +95,7 @@ router.put(
   '/records/:id',
   requirePermission('feeding:update'),
   ...updateFeedingRecordValidator,
-  validate(updateFeedingRecordValidator),
+  validate,
   operationLogMiddleware('update', 'feeding_record'),
   FeedingController.updateFeedingRecord
 );
@@ -104,7 +104,7 @@ router.delete(
   '/records/:id',
   requirePermission('feeding:delete'),
   ...getFeedingRecordValidator,
-  validate(getFeedingRecordValidator),
+  validate,
   operationLogMiddleware('delete', 'feeding_record'),
   FeedingController.deleteFeedingRecord
 );
@@ -114,7 +114,7 @@ router.post(
   '/records/batch',
   requirePermission('feeding:create'),
   ...batchCreateFeedingRecordsValidator,
-  validate(batchCreateFeedingRecordsValidator),
+  validate,
   operationLogMiddleware('create', 'feeding_records_batch'),
   FeedingController.batchCreateFeedingRecords
 );
@@ -125,7 +125,7 @@ router.get(
   requirePermission('feeding:read'),
   dataPermissionMiddleware,
   ...getFeedingStatisticsValidator,
-  validate(getFeedingStatisticsValidator),
+  validate,
   FeedingController.getFeedingStatistics
 );
 
@@ -142,7 +142,7 @@ router.get(
   '/formulas/:id/efficiency',
   requirePermission('feeding:read'),
   ...getFeedFormulaValidator,
-  validate(getFeedFormulaValidator),
+  validate,
   FeedingController.getFormulaEfficiency
 );
 

@@ -14,8 +14,8 @@ router.use(dataPermissionMiddleware);
 
 // 获取采购订单列表
 router.get('/',
-  purchaseOrderValidators.list,
-  validate(purchaseOrderValidators.list),
+  ...purchaseOrderValidators.list,
+  validate,
   permission('purchase_order:read'),
   PurchaseOrderController.getPurchaseOrders
 );
@@ -28,56 +28,56 @@ router.get('/pending',
 
 // 获取采购统计
 router.get('/statistics',
-  purchaseOrderValidators.statistics,
-  validate(purchaseOrderValidators.statistics),
+  ...purchaseOrderValidators.statistics,
+  validate,
   permission('purchase_order:read'),
   PurchaseOrderController.getPurchaseStatistics
 );
 
 // 获取采购订单详情
 router.get('/:id',
-  purchaseOrderValidators.detail,
-  validate(purchaseOrderValidators.detail),
+  ...purchaseOrderValidators.detail,
+  validate,
   permission('purchase_order:read'),
   PurchaseOrderController.getPurchaseOrder
 );
 
 // 创建采购订单
 router.post('/',
-  purchaseOrderValidators.create,
-  validate(purchaseOrderValidators.create),
+  ...purchaseOrderValidators.create,
+  validate,
   permission('purchase_order:create'),
   PurchaseOrderController.createPurchaseOrder
 );
 
 // 更新采购订单
 router.put('/:id',
-  purchaseOrderValidators.update,
-  validate(purchaseOrderValidators.update),
+  ...purchaseOrderValidators.update,
+  validate,
   permission('purchase_order:update'),
   PurchaseOrderController.updatePurchaseOrder
 );
 
 // 删除采购订单
 router.delete('/:id',
-  purchaseOrderValidators.delete,
-  validate(purchaseOrderValidators.delete),
+  ...purchaseOrderValidators.delete,
+  validate,
   permission('purchase_order:delete'),
   PurchaseOrderController.deletePurchaseOrder
 );
 
 // 审批采购订单
 router.post('/:id/approve',
-  purchaseOrderValidators.approve,
-  validate(purchaseOrderValidators.approve),
+  ...purchaseOrderValidators.approve,
+  validate,
   permission('purchase_order:approve'),
   PurchaseOrderController.approvePurchaseOrder
 );
 
 // 确认收货
 router.post('/:id/receipt',
-  purchaseOrderValidators.confirmReceipt,
-  validate(purchaseOrderValidators.confirmReceipt),
+  ...purchaseOrderValidators.confirmReceipt,
+  validate,
   permission('purchase_order:receipt'),
   PurchaseOrderController.confirmReceipt
 );

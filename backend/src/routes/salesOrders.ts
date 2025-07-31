@@ -14,72 +14,72 @@ router.use(dataPermissionMiddleware);
 
 // 获取销售订单列表
 router.get('/', 
-  salesOrderValidators.list,
-  validate(salesOrderValidators.list),
+  ...salesOrderValidators.list,
+  validate,
   permission('sales:read'),
   SalesOrderController.getSalesOrders
 );
 
 // 获取销售统计数据
 router.get('/statistics',
-  salesOrderValidators.statistics,
-  validate(salesOrderValidators.statistics),
+  ...salesOrderValidators.statistics,
+  validate,
   permission('sales:read'),
   SalesOrderController.getSalesStatistics
 );
 
 // 获取销售订单详情
 router.get('/:id',
-  salesOrderValidators.detail,
-  validate(salesOrderValidators.detail),
+  ...salesOrderValidators.detail,
+  validate,
   permission('sales:read'),
   SalesOrderController.getSalesOrder
 );
 
 // 创建销售订单
 router.post('/',
-  salesOrderValidators.create,
-  validate(salesOrderValidators.create),
+  ...salesOrderValidators.create,
+  validate,
   permission('sales:create'),
   SalesOrderController.createSalesOrder
 );
 
 // 更新销售订单
 router.put('/:id',
-  salesOrderValidators.update,
-  validate(salesOrderValidators.update),
+  ...salesOrderValidators.update,
+  validate,
   permission('sales:update'),
   SalesOrderController.updateSalesOrder
 );
 
 // 审批销售订单
 router.post('/:id/approve',
-  salesOrderValidators.approve,
-  validate(salesOrderValidators.approve),
+  ...salesOrderValidators.approve,
+  validate,
   permission('sales:approve'),
   SalesOrderController.approveSalesOrder
 );
 
 // 取消销售订单
 router.post('/:id/cancel',
-  salesOrderValidators.cancel,
-  validate(salesOrderValidators.cancel),
+  ...salesOrderValidators.cancel,
+  validate,
   permission('sales:update'),
   SalesOrderController.cancelSalesOrder
 );
 
 // 更新订单交付状态
 router.post('/:id/delivery',
-  salesOrderValidators.updateDelivery,
-  validate(salesOrderValidators.updateDelivery),
+  ...salesOrderValidators.updateDelivery,
+  validate,
   permission('sales:update'),
   SalesOrderController.updateDeliveryStatus
 );
 
 // 更新订单付款状态
 router.post('/:id/payment',
-  salesOrderValidators.updatePayment,
-  validate(salesOrderValidators.updatePayment),
+  ...salesOrderValidators.updatePayment,
+  validate,
   permission('sales:update'),
   SalesOrderController.updatePaymentStatus
 );

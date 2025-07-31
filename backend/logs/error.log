@@ -7659,3 +7659,4 @@
 {"environment":"test","level":"error","message":"  - JWT secret (JWT_SECRET) is required","service":"cattle-management-api","timestamp":"2025-07-31 09:09:40.049","version":"1.0.0"}
 {"environment":"test","level":"error","message":"Please fix the configuration errors before starting the application.","service":"cattle-management-api","timestamp":"2025-07-31 09:09:40.061","version":"1.0.0"}
 {"environment":"development","level":"error","message":"日志警报触发: 安全事件警报 - 在1分钟内检测到1次匹配（阈值: 1）","service":"cattle-management-api","timestamp":"2025-07-31 09:18:42.181","version":"1.0.0"}
+{"environment":"development","level":"error","message":"日志警报触发: 安全事件警报 - 在1分钟内检测到1次匹配（阈值: 1）","service":"cattle-management-api","timestamp":"2025-07-31 09:26:15.313","version":"1.0.0"}
