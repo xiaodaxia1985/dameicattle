@@ -184,12 +184,7 @@
             </view>
             <text class="more-text">转群</text>
           </view>
-          <view class="more-item" @tap="shareCattle">
-            <view class="more-icon">
-              <ModernIcon name="upload" />
-            </view>
-            <text class="more-text">分享</text>
-          </view>
+
         </view>
         <view class="more-cancel" @tap="hideMoreActions">
           <text>取消</text>
@@ -434,13 +429,7 @@ const transferCattle = () => {
   })
 }
 
-const shareCattle = () => {
-  hideMoreActions()
-  uni.showToast({
-    title: '分享功能开发中',
-    icon: 'none'
-  })
-}
+
 
 const getHealthStatusText = (status) => {
   switch (status) {

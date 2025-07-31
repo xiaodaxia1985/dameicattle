@@ -35,11 +35,7 @@
                   </div>
                   <div class="meta-item">
                     <el-icon><View /></el-icon>
-                    <span>{{ article.viewCount }} 浏览</span>
-                  </div>
-                  <div class="meta-item">
-                    <el-icon><Star /></el-icon>
-                    <span>{{ article.likeCount }} 点赞</span>
+                    <span>{{ article.viewCount || 0 }} 浏览</span>
                   </div>
                 </div>
 
@@ -74,21 +70,6 @@
 
               <!-- 文章底部 -->
               <footer class="article-footer">
-                <div class="article-actions">
-                  <el-button
-                    :type="isLiked ? 'primary' : 'default'"
-                    @click="handleLike"
-                    :loading="liking"
-                  >
-                    <el-icon><Star /></el-icon>
-                    点赞 ({{ article.likeCount }})
-                  </el-button>
-                  <el-button @click="handleShare">
-                    <el-icon><Share /></el-icon>
-                    分享
-                  </el-button>
-                </div>
-
                 <div class="article-info">
                   <p>发布时间：{{ formatDate(article.publishTime || article.createdAt) }}</p>
                   <p>最后更新：{{ formatDate(article.updatedAt) }}</p>
@@ -128,101 +109,7 @@
             </div>
           </div>
 
-          <!-- 评论区 -->
-          <div class="comments-section">
-            <h3>评论 ({{ comments.length }})</h3>
-            
-            <!-- 评论表单 -->
-            <div class="comment-form">
-              <el-form :model="commentForm" @submit.prevent="handleSubmitComment">
-                <el-row :gutter="20">
-                  <el-col :span="8">
-                    <el-input
-                      v-model="commentForm.userName"
-                      placeholder="您的姓名"
-                      required
-                    />
-                  </el-col>
-                  <el-col :span="8">
-                    <el-input
-                      v-model="commentForm.userEmail"
-                      placeholder="邮箱（可选）"
-                      type="email"
-                    />
-                  </el-col>
-                  <el-col :span="8">
-                    <el-input
-                      v-model="commentForm.userPhone"
-                      placeholder="手机号（可选）"
-                    />
-                  </el-col>
-                </el-row>
-                <el-input
-                  v-model="commentForm.content"
-                  type="textarea"
-                  :rows="4"
-                  placeholder="写下您的评论..."
-                  class="comment-textarea"
-                  required
-                />
-                <div class="form-actions">
-                  <el-button
-                    type="primary"
-                    @click="handleSubmitComment"
-                    :loading="submittingComment"
-                  >
-                    发表评论
-                  </el-button>
-                </div>
-              </el-form>
-            </div>
 
-            <!-- 评论列表 -->
-            <div class="comments-list">
-              <div
-                v-for="comment in comments"
-                :key="comment.id"
-                class="comment-item"
-              >
-                <div class="comment-avatar">
-                  <el-icon><User /></el-icon>
-                </div>
-                <div class="comment-content">
-                  <div class="comment-header">
-                    <span class="comment-author">{{ comment.userName }}</span>
-                    <span class="comment-time">{{ formatDate(comment.createdAt) }}</span>
-                  </div>
-                  <div class="comment-text">{{ comment.content }}</div>
-                  
-                  <!-- 回复列表 -->
-                  <div v-if="comment.replies && comment.replies.length > 0" class="replies">
-                    <div
-                      v-for="reply in comment.replies"
-                      :key="reply.id"
-                      class="reply-item"
-                    >
-                      <div class="reply-avatar">
-                        <el-icon><User /></el-icon>
-                      </div>
-                      <div class="reply-content">
-                        <div class="reply-header">
-                          <span class="reply-author">{{ reply.userName }}</span>
-                          <span class="reply-time">{{ formatDate(reply.createdAt) }}</span>
-                        </div>
-                        <div class="reply-text">{{ reply.content }}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 空状态 -->
-              <div v-if="comments.length === 0" class="empty-comments">
-                <el-icon class="empty-icon"><ChatDotRound /></el-icon>
-                <p>暂无评论，快来发表第一条评论吧！</p>
-              </div>
-            </div>
-          </div>
         </main>
 
         <!-- 侧边栏 -->
@@ -270,10 +157,9 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
-  User, Calendar, View, Star, Share, Document,
-  ChatDotRound
+  User, Calendar, View, Document
 } from '@element-plus/icons-vue'
-import { newsApi, type NewsArticle, type NewsComment } from '@/api/news'
+import { newsApi, type NewsArticle } from '@/api/news'
 import { formatDate } from '@/utils/date'
 
 const route = useRoute()
@@ -281,22 +167,11 @@ const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
-const liking = ref(false)
-const submittingComment = ref(false)
-const isLiked = ref(false)
 
 const article = ref<NewsArticle | null>(null)
-const comments = ref<NewsComment[]>([])
 const relatedArticles = ref<NewsArticle[]>([])
 const latestArticles = ref<NewsArticle[]>([])
 const tocItems = ref<Array<{ id: string; text: string; level: number }>>([])
-
-const commentForm = reactive({
-  userName: '',
-  userEmail: '',
-  userPhone: '',
-  content: ''
-})
 
 // 获取文章详情
 const fetchArticle = async (id: number) => {
@@ -316,16 +191,7 @@ const fetchArticle = async (id: number) => {
   }
 }
 
-// 获取评论列表
-const fetchComments = async (articleId: number) => {
-  try {
-    const response = await newsApi.getComments(articleId, { status: 'approved' })
-    // 根据API实现，response.data 应该是 { data: [...], pagination: {...} }
-    comments.value = response.data.data || []
-  } catch (error) {
-    console.error('获取评论失败:', error)
-  }
-}
+
 
 // 获取相关文章
 const fetchRelatedArticles = async (categoryId: number, currentId: number) => {
@@ -385,83 +251,13 @@ const scrollToHeading = (id: string) => {
   }
 }
 
-// 点赞处理
-const handleLike = async () => {
-  if (!article.value || liking.value) return
-  
-  liking.value = true
-  try {
-    await newsApi.likeArticle(article.value.id)
-    article.value.likeCount++
-    isLiked.value = true
-    ElMessage.success('点赞成功')
-  } catch (error) {
-    console.error('点赞失败:', error)
-    ElMessage.error('点赞失败')
-  } finally {
-    liking.value = false
-  }
-}
 
-// 分享处理
-const handleShare = () => {
-  if (navigator.share) {
-    navigator.share({
-      title: article.value?.title,
-      text: article.value?.summary,
-      url: window.location.href
-    })
-  } else {
-    // 复制链接到剪贴板
-    navigator.clipboard.writeText(window.location.href)
-    ElMessage.success('链接已复制到剪贴板')
-  }
-}
-
-// 提交评论
-const handleSubmitComment = async () => {
-  if (!article.value || submittingComment.value) return
-  
-  if (!commentForm.userName.trim() || !commentForm.content.trim()) {
-    ElMessage.warning('请填写姓名和评论内容')
-    return
-  }
-  
-  submittingComment.value = true
-  try {
-    await newsApi.createComment(article.value.id, {
-      userName: commentForm.userName,
-      userEmail: commentForm.userEmail,
-      userPhone: commentForm.userPhone,
-      content: commentForm.content
-    })
-    
-    ElMessage.success('评论提交成功，等待审核')
-    
-    // 重置表单
-    Object.assign(commentForm, {
-      userName: '',
-      userEmail: '',
-      userPhone: '',
-      content: ''
-    })
-    
-    // 重新获取评论
-    fetchComments(article.value.id)
-  } catch (error) {
-    console.error('提交评论失败:', error)
-    ElMessage.error('提交评论失败')
-  } finally {
-    submittingComment.value = false
-  }
-}
 
 // 相关文章点击
 const handleRelatedClick = (articleId: number) => {
   router.push(`/portal/news/${articleId}`)
   // 重新加载页面数据
   fetchArticle(articleId)
-  fetchComments(articleId)
   window.scrollTo(0, 0)
 }
 
@@ -470,7 +266,6 @@ onMounted(() => {
   const id = Number(route.params.id)
   if (id) {
     fetchArticle(id)
-    fetchComments(id)
     fetchLatestArticles()
     
     // 获取相关文章需要等文章加载完成

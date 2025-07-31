@@ -70,11 +70,7 @@
             </div>
             <div class="info-item">
               <span class="label">浏览量：</span>
-              <span>{{ article.viewCount }}</span>
-            </div>
-            <div class="info-item">
-              <span class="label">点赞数：</span>
-              <span>{{ article.likeCount }}</span>
+              <span>{{ article.viewCount || 0 }}</span>
             </div>
           </div>
 
@@ -172,12 +168,12 @@ const fetchArticle = async (id: number) => {
 
 // 返回列表
 const handleBack = () => {
-  router.push('/news')
+  router.push('/admin/news/list')
 }
 
 // 编辑文章
 const handleEdit = () => {
-  router.push(`/news/edit/${article.value?.id}`)
+  router.push(`/admin/news/edit/${article.value?.id}`)
 }
 
 // 操作处理
@@ -254,7 +250,7 @@ const handleDelete = async () => {
     
     await newsApi.deleteArticle(article.value.id)
     ElMessage.success('文章删除成功')
-    router.push('/news')
+    router.push('/admin/news/list')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除文章失败:', error)

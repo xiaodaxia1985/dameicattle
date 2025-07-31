@@ -9,13 +9,9 @@ import {
   updateNewsCategoryValidator,
   createNewsArticleValidator,
   updateNewsArticleValidator,
-  createNewsCommentValidator,
   getNewsArticlesValidator,
-  getNewsCommentsValidator,
   idParamValidator,
   publishNewsArticleValidator,
-  likeNewsArticleValidator,
-  updateCommentStatusValidator,
 } from '@/validators/news';
 
 const router = Router();
@@ -126,39 +122,6 @@ router.post('/articles/:id/publish',
   NewsController.publishNewsArticle
 );
 
-router.post('/articles/:id/like',
-  ...likeNewsArticleValidator,
-  validate,
-  NewsController.likeNewsArticle
-);
 
-// News Comments Routes
-router.get('/articles/:articleId/comments',
-  ...getNewsCommentsValidator,
-  validate,
-  NewsController.getNewsComments
-);
-
-router.post('/articles/:articleId/comments',
-  ...createNewsCommentValidator,
-  validate,
-  NewsController.createNewsComment
-);
-
-router.put('/comments/:id/status',
-  authenticate,
-  authorize(['news:update']),
-  ...updateCommentStatusValidator,
-  validate,
-  NewsController.updateCommentStatus
-);
-
-router.delete('/comments/:id',
-  authenticate,
-  authorize(['news:delete']),
-  ...idParamValidator,
-  validate,
-  NewsController.deleteNewsComment
-);
 
 export default router;

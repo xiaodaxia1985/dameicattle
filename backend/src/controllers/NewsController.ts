@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { Op } from 'sequelize';
-import { NewsCategory, NewsArticle, NewsComment, User } from '../models';
+import { NewsCategory, NewsArticle, User } from '../models';
 import { AppError } from '../utils/errors';
 
 export class NewsController {
@@ -161,13 +161,7 @@ export class NewsController {
 
   // News Article Methods
   static async getNewsArticles(req: Request, res: Response) {
-    console.log('🚀🚀🚀 [NEWS API] 收到获取文章列表请求!');
-    console.log('🚀 [NEWS API] 请求URL:', req.url);
-    console.log('🚀 [NEWS API] 请求方法:', req.method);
-    
     try {
-      console.log('✅ [NEWS API] 开始处理请求...');
-      
       const { 
         page = 1, 
         limit = 20, 
@@ -178,67 +172,68 @@ export class NewsController {
         keyword 
       } = req.query;
 
-      console.log('🚀 [NEWS API] 查询参数:', { page, limit, categoryId, status, isFeatured, isTop, keyword });
+      const offset = (Number(page) - 1) * Number(limit);
+      const whereClause: any = {};
 
-      console.log('✅ [NEWS API] 这是管理端API，需要登录和权限');
-      
-      // 🔧 管理端专用：返回适合管理的测试数据
-      const adminMockArticles = [
-        {
-          id: 1,
-          title: '[管理端] 测试新闻文章 1',
-          subtitle: '这是管理端的测试数据',
-          categoryId: 1,
-          authorName: '系统管理员',
-          status: 'draft',
-          isFeatured: false,
-          isTop: false,
-          viewCount: 0,
-          likeCount: 0,
-          publishTime: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          category: { id: 1, name: '系统公告', code: 'SYSTEM' }
-        },
-        {
-          id: 2,
-          title: '[管理端] 测试新闻文章 2',
-          subtitle: '这是另一条管理端测试数据',
-          categoryId: 1,
-          authorName: '内容编辑',
-          status: 'published',
-          isFeatured: true,
-          isTop: false,
-          viewCount: 15,
-          likeCount: 3,
-          publishTime: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          category: { id: 1, name: '系统公告', code: 'SYSTEM' }
-        }
-      ];
+      // 构建查询条件
+      if (categoryId) {
+        whereClause.categoryId = categoryId;
+      }
+      if (status) {
+        whereClause.status = status;
+      }
+      if (isFeatured !== undefined) {
+        whereClause.isFeatured = isFeatured === 'true';
+      }
+      if (isTop !== undefined) {
+        whereClause.isTop = isTop === 'true';
+      }
+      if (keyword) {
+        whereClause[Op.or] = [
+          { title: { [Op.iLike]: `%${keyword}%` } },
+          { content: { [Op.iLike]: `%${keyword}%` } },
+          { tags: { [Op.iLike]: `%${keyword}%` } },
+        ];
+      }
 
-      console.log('✅ [NEWS API] 返回管理端测试数据:', adminMockArticles.length, '条记录');
+      const { count, rows: articles } = await NewsArticle.findAndCountAll({
+        where: whereClause,
+        include: [
+          {
+            model: NewsCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'code'],
+          },
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'real_name'],
+          },
+        ],
+        order: [
+          ['isTop', 'DESC'],
+          ['isFeatured', 'DESC'],
+          ['createdAt', 'DESC'],
+        ],
+        limit: Number(limit),
+        offset,
+      });
 
       res.json({
         success: true,
-        data: adminMockArticles,
+        data: articles,
         pagination: {
-          total: adminMockArticles.length,
+          total: count,
           page: Number(page),
           limit: Number(limit),
-          totalPages: 1,
+          totalPages: Math.ceil(count / Number(limit)),
         },
       });
-      
-      console.log('✅ [NEWS API] 管理端响应已发送');
     } catch (error) {
       console.error('获取新闻文章失败:', error);
-      
       res.status(500).json({
         success: false,
         message: '获取新闻文章失败',
-        error: error instanceof Error ? error.message : String(error)
       });
     }
   }
@@ -470,205 +465,7 @@ export class NewsController {
     }
   }
 
-  static async likeNewsArticle(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const ipAddress = req.ip || req.connection.remoteAddress;
-      const userAgent = req.get('User-Agent');
 
-      const article = await NewsArticle.findByPk(id);
-      if (!article) {
-        throw new AppError('新闻文章不存在', 404);
-      }
-
-      // This would typically be handled by a trigger in the database
-      // For now, we'll just increment the like count
-      await article.increment('likeCount');
-
-      res.json({
-        success: true,
-        message: '点赞成功',
-      });
-    } catch (error) {
-      console.error('点赞新闻文章失败:', error);
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          success: false,
-          message: error.message,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: '点赞新闻文章失败',
-        });
-      }
-    }
-  }
-
-  // News Comment Methods
-  static async getNewsComments(req: Request, res: Response) {
-    try {
-      const { articleId } = req.params;
-      const { page = 1, limit = 20, status } = req.query;
-
-      const offset = (Number(page) - 1) * Number(limit);
-      const whereClause: any = { articleId };
-
-      if (status) {
-        whereClause.status = status;
-      }
-
-      const { count, rows: comments } = await NewsComment.findAndCountAll({
-        where: whereClause,
-        include: [
-          {
-            model: NewsComment,
-            as: 'replies',
-            where: { status: 'approved' },
-            required: false,
-          },
-        ],
-        order: [['createdAt', 'DESC']],
-        limit: Number(limit),
-        offset,
-      });
-
-      res.json({
-        success: true,
-        data: comments,
-        pagination: {
-          total: count,
-          page: Number(page),
-          limit: Number(limit),
-          totalPages: Math.ceil(count / Number(limit)),
-        },
-      });
-    } catch (error) {
-      console.error('获取新闻评论失败:', error);
-      res.status(500).json({
-        success: false,
-        message: '获取新闻评论失败',
-      });
-    }
-  }
-
-  static async createNewsComment(req: Request, res: Response) {
-    try {
-      const { articleId } = req.params;
-      const { userName, userEmail, userPhone, content, parentId } = req.body;
-      const ipAddress = req.ip || req.connection.remoteAddress;
-      const userAgent = req.get('User-Agent');
-
-      // Verify article exists
-      const article = await NewsArticle.findByPk(articleId);
-      if (!article) {
-        throw new AppError('新闻文章不存在', 404);
-      }
-
-      // Verify parent comment exists if parentId is provided
-      if (parentId) {
-        const parentComment = await NewsComment.findByPk(parentId);
-        if (!parentComment || parentComment.articleId !== Number(articleId)) {
-          throw new AppError('父评论不存在', 400);
-        }
-      }
-
-      const comment = await NewsComment.create({
-        articleId: Number(articleId),
-        parentId,
-        userName,
-        userEmail,
-        userPhone,
-        content,
-        ipAddress,
-        userAgent,
-        status: 'pending', // Default to pending for moderation
-      });
-
-      res.status(201).json({
-        success: true,
-        data: comment,
-        message: '评论提交成功，等待审核',
-      });
-    } catch (error) {
-      console.error('创建新闻评论失败:', error);
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          success: false,
-          message: error.message,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: '创建新闻评论失败',
-        });
-      }
-    }
-  }
-
-  static async updateCommentStatus(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-
-      const comment = await NewsComment.findByPk(id);
-      if (!comment) {
-        throw new AppError('评论不存在', 404);
-      }
-
-      await comment.update({ status });
-
-      res.json({
-        success: true,
-        data: comment,
-        message: '评论状态更新成功',
-      });
-    } catch (error) {
-      console.error('更新评论状态失败:', error);
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          success: false,
-          message: error.message,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: '更新评论状态失败',
-        });
-      }
-    }
-  }
-
-  static async deleteNewsComment(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-
-      const comment = await NewsComment.findByPk(id);
-      if (!comment) {
-        throw new AppError('评论不存在', 404);
-      }
-
-      await comment.destroy();
-
-      res.json({
-        success: true,
-        message: '评论删除成功',
-      });
-    } catch (error) {
-      console.error('删除新闻评论失败:', error);
-      if (error instanceof AppError) {
-        res.status(error.statusCode).json({
-          success: false,
-          message: error.message,
-        });
-      } else {
-        res.status(500).json({
-          success: false,
-          message: '删除新闻评论失败',
-        });
-      }
-    }
-  }
 
   // Search functionality
   static async searchNewsArticles(req: Request, res: Response) {

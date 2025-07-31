@@ -73,12 +73,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="统计" width="120">
+        <el-table-column label="浏览量" width="100">
           <template #default="{ row }">
-            <div class="stats">
-              <span>浏览: {{ row.viewCount }}</span>
-              <span>点赞: {{ row.likeCount }}</span>
-            </div>
+            {{ row.viewCount || 0 }}
           </template>
         </el-table-column>
         <el-table-column prop="publishTime" label="发布时间" width="180">
@@ -313,15 +310,15 @@ const handleCurrentChange = (page: number) => {
 
 // 操作处理
 const handleCreate = () => {
-  router.push('/news/create')
+  router.push('/admin/news/create')
 }
 
 const handleView = (row: NewsArticle) => {
-  router.push(`/news/view/${row.id}`)
+  router.push(`/admin/news/view/${row.id}`)
 }
 
 const handleEdit = (row: NewsArticle) => {
-  router.push(`/news/edit/${row.id}`)
+  router.push(`/admin/news/edit/${row.id}`)
 }
 
 const handleCommand = async (command: string, row: NewsArticle) => {
