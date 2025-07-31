@@ -257,7 +257,7 @@ export class NewsController {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'realName'],
+            attributes: ['id', 'real_name'],
           },
         ],
       });
@@ -306,12 +306,14 @@ export class NewsController {
       } = req.body;
 
       const userId = (req as any).user?.id;
-      const userName = (req as any).user?.realName;
+      const userName = (req as any).user?.real_name;
 
-      // Verify category exists
-      const category = await NewsCategory.findByPk(categoryId);
-      if (!category) {
-        throw new AppError('新闻分类不存在', 400);
+      // Verify category exists (only if categoryId is provided)
+      if (categoryId) {
+        const category = await NewsCategory.findByPk(categoryId);
+        if (!category) {
+          throw new AppError('新闻分类不存在', 400);
+        }
       }
 
       const article = await NewsArticle.create({
@@ -765,14 +767,12 @@ export class NewsController {
 
       res.json({
         success: true,
-        data: {
-          data: articles,
-          pagination: {
-            total: count,
-            page: Number(page),
-            limit: Number(limit),
-            totalPages: Math.ceil(count / Number(limit)),
-          }
+        data: articles,
+        pagination: {
+          total: count,
+          page: Number(page),
+          limit: Number(limit),
+          totalPages: Math.ceil(count / Number(limit)),
         }
       });
     } catch (error) {

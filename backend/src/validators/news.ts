@@ -57,8 +57,7 @@ export const updateNewsCategoryValidator = [
 // News article validators
 export const createNewsArticleValidator = [
   body('title')
-    .notEmpty()
-    .withMessage('文章标题不能为空')
+    .optional()
     .isLength({ max: 200 })
     .withMessage('文章标题不能超过200个字符'),
   body('subtitle')
@@ -66,18 +65,24 @@ export const createNewsArticleValidator = [
     .isLength({ max: 300 })
     .withMessage('副标题不能超过300个字符'),
   body('categoryId')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('分类ID必须是正整数'),
   body('content')
-    .notEmpty()
-    .withMessage('文章内容不能为空'),
+    .optional(),
   body('summary')
     .optional()
     .isLength({ max: 1000 })
     .withMessage('摘要不能超过1000个字符'),
   body('coverImage')
     .optional()
-    .isURL()
+    .custom((value: any) => {
+      if (!value || value === '' || value === null || value === undefined) {
+        return true; // 允许空值
+      }
+      // 简单的URL格式检查
+      return typeof value === 'string' && /^https?:\/\/.+/.test(value);
+    })
     .withMessage('封面图片必须是有效的URL'),
   body('tags')
     .optional()
@@ -89,11 +94,21 @@ export const createNewsArticleValidator = [
     .withMessage('状态必须是draft、published或archived'),
   body('isFeatured')
     .optional()
-    .isBoolean()
+    .custom((value: any) => {
+      if (value === undefined || value === null || value === '') {
+        return true; // 允许空值
+      }
+      return typeof value === 'boolean' || value === 'true' || value === 'false';
+    })
     .withMessage('推荐状态必须是布尔值'),
   body('isTop')
     .optional()
-    .isBoolean()
+    .custom((value: any) => {
+      if (value === undefined || value === null || value === '') {
+        return true; // 允许空值
+      }
+      return typeof value === 'boolean' || value === 'true' || value === 'false';
+    })
     .withMessage('置顶状态必须是布尔值'),
   body('seoTitle')
     .optional()
