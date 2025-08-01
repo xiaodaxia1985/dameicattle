@@ -158,7 +158,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { Setting, CircleCheck, Tools, Warning } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { equipmentApi } from '@/api/equipment'
@@ -404,6 +404,12 @@ const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString()
 }
 
+// 窗口大小变化处理函数
+const handleResize = () => {
+  statusChart?.resize()
+  categoryChart?.resize()
+}
+
 // 初始化
 onMounted(async () => {
   await loadBases()
@@ -415,10 +421,22 @@ onMounted(async () => {
   })
   
   // 监听窗口大小变化
-  window.addEventListener('resize', () => {
-    statusChart?.resize()
-    categoryChart?.resize()
-  })
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  // 清理图表实例，防止内存泄漏和DOM操作错误
+  if (statusChart) {
+    statusChart.dispose()
+    statusChart = null
+  }
+  if (categoryChart) {
+    categoryChart.dispose()
+    categoryChart = null
+  }
+  
+  // 移除窗口大小变化监听器
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 

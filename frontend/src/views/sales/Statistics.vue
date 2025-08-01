@@ -254,7 +254,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, Sell, Money, User, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
@@ -631,13 +631,39 @@ onMounted(() => {
   initCharts()
 })
 
-// 窗口大小变化时重新调整图表
-window.addEventListener('resize', () => {
+onUnmounted(() => {
+  // 清理图表实例，防止内存泄漏和DOM操作错误
+  if (trendChart) {
+    trendChart.dispose()
+    trendChart = null
+  }
+  if (statusChart) {
+    statusChart.dispose()
+    statusChart = null
+  }
+  if (customerChart) {
+    customerChart.dispose()
+    customerChart = null
+  }
+  if (baseChart) {
+    baseChart.dispose()
+    baseChart = null
+  }
+  
+  // 移除窗口大小变化监听器
+  window.removeEventListener('resize', handleResize)
+})
+
+// 窗口大小变化处理函数
+const handleResize = () => {
   trendChart?.resize()
   statusChart?.resize()
   customerChart?.resize()
   baseChart?.resize()
-})
+}
+
+// 窗口大小变化时重新调整图表
+window.addEventListener('resize', handleResize)
 </script>
 
 <style scoped>

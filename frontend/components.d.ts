@@ -7,8 +7,9 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AMapComponent: typeof import('./src/components/AMapComponent.vue')['default']
+    AMapLocationPicker: typeof import('./src/components/AMapLocationPicker.vue')['default']
     ArticleDialog: typeof import('./src/components/help/ArticleDialog.vue')['default']
-    BaiduMap: typeof import('./src/components/BaiduMap.vue')['default']
     BarChart: typeof import('./src/components/dashboard/BarChart.vue')['default']
     BarnVisualization: typeof import('./src/components/BarnVisualization.vue')['default']
     BatchImportDialog: typeof import('./src/components/cattle/BatchImportDialog.vue')['default']

@@ -23,7 +23,7 @@
         />
         <el-select v-model="selectedFormula" placeholder="选择配方" clearable @change="handleFormulaChange">
           <el-option
-            v-for="formula in formulas"
+            v-for="formula in validFormulas"
             :key="formula.id"
             :label="formula.name"
             :value="formula.id"
@@ -46,7 +46,7 @@
                 <el-icon><DataLine /></el-icon>
               </div>
               <div class="stat-info">
-                <div class="stat-value">{{ totalRecords }}</div>
+                <div class="stat-value">{{ validRecords.length }}</div>
                 <div class="stat-label">总记录数</div>
               </div>
             </div>
@@ -336,6 +336,7 @@ import { baseApi } from '@/api/base'
 import { barnApi } from '@/api/barn'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import type { FeedingRecord, FeedFormula, CreateFeedingRecordRequest, UpdateFeedingRecordRequest } from '@/api/feeding'
+import { validateData } from '@/utils/dataValidation'
 
 // 响应式数据
 const records = ref<FeedingRecord[]>([])
@@ -346,6 +347,29 @@ const loading = ref(false)
 const submitting = ref(false)
 const importing = ref(false)
 const selectedRows = ref<FeedingRecord[]>([])
+
+// 计算属性：过滤有效的记录数据
+const validRecords = computed(() => {
+  return records.value.filter(record => 
+    record && 
+    typeof record === 'object' && 
+    record.id !== undefined && 
+    record.id !== null &&
+    record.feedingDate &&
+    typeof record.feedingDate === 'string'
+  )
+})
+
+const validFormulas = computed(() => {
+  return formulas.value.filter(formula => 
+    formula && 
+    typeof formula === 'object' && 
+    formula.id !== undefined && 
+    formula.id !== null &&
+    formula.name &&
+    typeof formula.name === 'string'
+  )
+})
 
 // 筛选条件
 const dateRange = ref<[string, string]>(['', ''])

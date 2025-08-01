@@ -5,48 +5,53 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>肉牛全生命周期管理系统</title>
-    <!-- 百度地图API -->
+    <!-- 高德地图API -->
     <script>
-      // 百度地图API加载完成回调
-      window.initBaiduMap = function() {
+      // 高德地图API加载完成回调
+      window.initAMap = function() {
         try {
-          console.log('百度地图API加载完成');
-          window.baiduMapReady = true;
+          console.log('高德地图API加载完成');
+          window.amapReady = true;
           // 触发自定义事件通知地图组件
           if (typeof window.dispatchEvent === 'function') {
-            window.dispatchEvent(new Event('baiduMapReady'));
+            window.dispatchEvent(new Event('amapReady'));
           }
         } catch (error) {
-          console.error('百度地图初始化失败:', error);
-          window.baiduMapReady = false;
+          console.error('高德地图初始化失败:', error);
+          window.amapReady = false;
         }
       }
       
       // 处理地图API加载错误
       window.addEventListener('error', function(e) {
-        if (e.target && e.target.src && e.target.src.includes('api.map.baidu.com')) {
-          console.error('百度地图API加载失败:', e);
-          window.baiduMapReady = false;
+        if (e.target && e.target.src && e.target.src.includes('webapi.amap.com')) {
+          console.error('高德地图API加载失败:', e);
+          window.amapReady = false;
         }
       }, true);
 
-      // 延迟加载百度地图API，确保DOM准备就绪
-      function loadBaiduMapAPI() {
+      // 设置安全密钥
+      window._AMapSecurityConfig = {
+        securityJsCode: '0b5b427ca146d3d0ff80bcd6c471d882'
+      }
+
+      // 延迟加载高德地图API，确保DOM准备就绪
+      function loadAMapAPI() {
         const script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = 'https://api.map.baidu.com/api?v=3.0&ak=f3l382LaL7pfs8RRHKO7Blr4zbW67nec&callback=initBaiduMap';
+        script.src = 'https://webapi.amap.com/maps?v=2.0&key=17f2d4a3a120bbc52d1b38e71e9351fa&callback=initAMap';
         script.onerror = function() {
-          console.error('百度地图API脚本加载失败');
-          window.baiduMapReady = false;
+          console.error('高德地图API脚本加载失败');
+          window.amapReady = false;
         };
         document.head.appendChild(script);
       }
 
       // 等待DOM加载完成后再加载地图API
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadBaiduMapAPI);
+        document.addEventListener('DOMContentLoaded', loadAMapAPI);
       } else {
-        loadBaiduMapAPI();
+        loadAMapAPI();
       }
     </script>
   </head>

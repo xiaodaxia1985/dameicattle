@@ -43,7 +43,7 @@
     <!-- 客户列表 -->
     <el-card class="table-card">
       <el-table 
-        :data="customers" 
+        :data="validCustomers" 
         v-loading="loading"
         stripe
       >
@@ -395,12 +395,25 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { salesApi, type Customer } from '@/api/sales'
+import { validateData } from '@/utils/dataValidation'
 
 // 响应式数据
 const loading = ref(false)
 const submitting = ref(false)
 const customers = ref<Customer[]>([])
 const customerTypes = ref<any[]>([])
+
+// 计算属性：过滤有效的客户数据
+const validCustomers = computed(() => {
+  return customers.value.filter(customer => 
+    customer && 
+    typeof customer === 'object' && 
+    customer.id !== undefined && 
+    customer.id !== null &&
+    customer.name &&
+    typeof customer.name === 'string'
+  )
+})
 
 // 搜索表单
 const searchForm = reactive({

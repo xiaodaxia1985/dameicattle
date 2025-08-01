@@ -439,10 +439,7 @@ export const newsApi = {
     return request.post(`/news/articles/${id}/publish`, { publishTime }).then(response => response.data)
   },
 
-  // 点赞新闻文章
-  likeArticle(id: number): Promise<ApiResponse<void>> {
-    return request.post(`/news/articles/${id}/like`).then(response => response.data)
-  },
+
 
   // 搜索新闻文章
   searchArticles(params: {
@@ -453,37 +450,7 @@ export const newsApi = {
     return request.get('/news/articles/search', { params }).then(response => response.data)
   },
 
-  // ========== 新闻评论管理 ==========
 
-  // 获取文章评论列表
-  getComments(articleId: number, params?: {
-    page?: number
-    limit?: number
-    status?: string
-  }): Promise<ApiResponse<PaginatedResponse<NewsComment>>> {
-    return request.get(`/news/articles/${articleId}/comments`, { params })
-  },
-
-  // 创建评论
-  createComment(articleId: number, data: {
-    userName: string
-    userEmail?: string
-    userPhone?: string
-    content: string
-    parentId?: number
-  }): Promise<ApiResponse<NewsComment>> {
-    return request.post(`/news/articles/${articleId}/comments`, data)
-  },
-
-  // 更新评论状态
-  updateCommentStatus(id: number, status: string): Promise<ApiResponse<NewsComment>> {
-    return request.put(`/news/comments/${id}/status`, { status })
-  },
-
-  // 删除评论
-  deleteComment(id: number): Promise<ApiResponse<void>> {
-    return request.delete(`/news/comments/${id}`)
-  },
 
   // ========== 门户网站公开接口 ==========
 

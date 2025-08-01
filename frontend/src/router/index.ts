@@ -266,6 +266,26 @@ const routes: RouteRecordRaw[] = [
             name: 'OperationLogs',
             component: () => import('@/views/system/OperationLogs.vue'),
             meta: { title: '操作日志' }
+          },
+          {
+            path: 'test',
+            name: 'Test',
+            redirect: '/admin/system/test/map',
+            meta: { title: '功能测试' },
+            children: [
+              {
+                path: 'map',
+                name: 'MapTest',
+                component: () => import('@/views/test/MapTest.vue'),
+                meta: { title: '地图测试' }
+              },
+              {
+                path: 'geocode',
+                name: 'GeocodeTest',
+                component: () => import('@/views/test/GeocodeTest.vue'),
+                meta: { title: '地理编码测试' }
+              }
+            ]
           }
         ]
       }

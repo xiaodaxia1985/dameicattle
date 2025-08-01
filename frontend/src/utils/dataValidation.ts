@@ -445,3 +445,97 @@ export function cleanEmptyValues(obj: any): any {
 
   return cleaned
 }
+
+// 数据验证工具
+export const validateData = {
+  // 验证文章数据
+  validateArticle: (article: any): boolean => {
+    return article && 
+           typeof article.id === 'number' && 
+           typeof article.title === 'string' && 
+           article.title.length > 0
+  },
+
+  // 验证分类数据
+  validateCategory: (category: any): boolean => {
+    return category && 
+           typeof category.id === 'number' && 
+           typeof category.name === 'string' && 
+           category.name.length > 0
+  },
+
+  // 验证物资数据
+  validateMaterial: (material: any): boolean => {
+    return material && 
+           typeof material.id === 'number' && 
+           typeof material.name === 'string' && 
+           material.name.length > 0
+  },
+
+  // 验证库存数据
+  validateInventory: (inventory: any): boolean => {
+    return inventory && 
+           typeof inventory.id === 'number' && 
+           typeof inventory.current_stock === 'number'
+  },
+
+  // 验证销售订单数据
+  validateSalesOrder: (order: any): boolean => {
+    return order && 
+           typeof order.id === 'number' && 
+           typeof order.order_number === 'string'
+  },
+
+  // 验证客户数据
+  validateCustomer: (customer: any): boolean => {
+    return customer && 
+           typeof customer.id === 'number' && 
+           typeof customer.name === 'string' && 
+           customer.name.length > 0
+  },
+
+  // 验证饲喂配方数据
+  validateFeedFormula: (formula: any): boolean => {
+    return formula && 
+           typeof formula.id === 'number' && 
+           typeof formula.name === 'string' && 
+           formula.name.length > 0
+  },
+
+  // 验证饲喂记录数据
+  validateFeedRecord: (record: any): boolean => {
+    return record && 
+           typeof record.id === 'number' && 
+           typeof record.feed_date === 'string'
+  },
+
+  // 安全获取数组
+  safeArray: (data: any): any[] => {
+    return Array.isArray(data) ? data : []
+  },
+
+  // 安全获取对象
+  safeObject: (data: any): object => {
+    return data && typeof data === 'object' && !Array.isArray(data) ? data : {}
+  },
+
+  // 安全获取字符串
+  safeString: (data: any): string => {
+    return typeof data === 'string' ? data : ''
+  },
+
+  // 安全获取数字
+  safeNumber: (data: any): number => {
+    return typeof data === 'number' && !isNaN(data) ? data : 0
+  },
+
+  // 安全获取布尔值
+  safeBoolean: (data: any): boolean => {
+    return typeof data === 'boolean' ? data : false
+  },
+
+  // 过滤有效数据
+  filterValidData: (data: any[], validator: (item: any) => boolean): any[] => {
+    return Array.isArray(data) ? data.filter(validator) : []
+  }
+}

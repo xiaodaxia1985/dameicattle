@@ -349,7 +349,7 @@
               <el-tab-pane label="地图定位" name="map">
                 <div class="map-section">
                   <div v-if="selectedBase.latitude && selectedBase.longitude" class="map-container">
-                    <BaiduMap
+                    <AMapComponent
                       :center="{ lng: selectedBase.longitude, lat: selectedBase.latitude }"
                       :zoom="15"
                       :markers="[{
@@ -410,7 +410,19 @@
             type="textarea"
             :rows="3"
             placeholder="请输入详细地址"
+            @blur="handleAddressChange"
           />
+          <div class="address-actions">
+            <el-button 
+              type="text" 
+              size="small" 
+              @click="handleGeocodeAddress"
+              :loading="geocodingLoading"
+            >
+              <el-icon><Location /></el-icon>
+              根据地址定位
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="占地面积">
           <el-input-number
@@ -434,26 +446,36 @@
         <el-form-item label="地理位置">
           <el-row :gutter="10">
             <el-col :span="12">
-              <el-input-number
-                v-model="baseForm.latitude"
-                :precision="6"
-                placeholder="纬度"
+              <el-input
+                :value="baseForm.latitude ? baseForm.latitude.toFixed(6) : ''"
+                placeholder="纬度（自动获取）"
+                readonly
                 style="width: 100%"
               />
             </el-col>
             <el-col :span="12">
-              <el-input-number
-                v-model="baseForm.longitude"
-                :precision="6"
-                placeholder="经度"
+              <el-input
+                :value="baseForm.longitude ? baseForm.longitude.toFixed(6) : ''"
+                placeholder="经度（自动获取）"
+                readonly
                 style="width: 100%"
               />
             </el-col>
           </el-row>
-          <el-button type="text" @click="handleSelectLocation">
-            <el-icon><Location /></el-icon>
-            地图选择
-          </el-button>
+          <div class="location-actions">
+            <el-button type="text" @click="handleSelectLocation">
+              <el-icon><Location /></el-icon>
+              地图选择位置
+            </el-button>
+            <el-button 
+              type="text" 
+              @click="handleClearLocation"
+              v-if="baseForm.latitude && baseForm.longitude"
+            >
+              <el-icon><Delete /></el-icon>
+              清除位置
+            </el-button>
+          </div>
         </el-form-item>
       </el-form>
       
@@ -555,9 +577,11 @@
 
     <!-- 地图选择对话框 -->
     <el-dialog v-model="mapDialogVisible" title="选择位置" width="800px">
-      <MapLocationPicker
+      <AMapLocationPicker
         v-model="selectedLocation"
         :center="{ lng: baseForm.longitude || 116.404, lat: baseForm.latitude || 39.915 }"
+        :show-search="true"
+        :show-map-type-switch="true"
         height="400px"
         @location-change="handleLocationChange"
       />
@@ -592,8 +616,9 @@ import { useBaseStore } from '@/stores/base'
 import { baseApi } from '@/api/base'
 import type { Base, Barn } from '@/api/base'
 import BarnVisualization from '@/components/BarnVisualization.vue'
-import BaiduMap from '@/components/BaiduMap.vue'
-import MapLocationPicker from '@/components/MapLocationPicker.vue'
+import AMapComponent from '@/components/AMapComponent.vue'
+import AMapLocationPicker from '@/components/AMapLocationPicker.vue'
+import { searchAccurateLocation } from '@/utils/amap'
 import dayjs from 'dayjs'
 
 // Store
@@ -698,6 +723,9 @@ const uploadRef = ref()
 // 地图相关
 const mapDialogVisible = ref(false)
 const selectedLocation = ref<{ lng: number; lat: number } | null>(null)
+
+// 地理编码相关
+const geocodingLoading = ref(false)
 
 // 基地收藏功能
 const favoriteBaseIds = ref<Set<number>>(new Set())
@@ -1126,7 +1154,7 @@ const handleSaveBase = async () => {
       code: baseForm.code,
       address: baseForm.address,
       area: baseForm.area,
-      managerId: baseForm.managerId,
+      manager_id: baseForm.managerId,
       latitude: baseForm.latitude,
       longitude: baseForm.longitude
     }
@@ -1490,16 +1518,16 @@ const validateImportData = (data: any[]): { valid: boolean; message?: string } =
 const handleUpdateLocation = () => {
   if (!selectedBase.value) return
   
-  // 填充表单数据
+  // 填充表单数据，确保数值类型正确
   Object.assign(baseForm, {
     id: selectedBase.value.id,
     name: selectedBase.value.name,
     code: selectedBase.value.code,
     address: selectedBase.value.address,
-    area: selectedBase.value.area,
+    area: selectedBase.value.area ? parseFloat(selectedBase.value.area.toString()) : undefined,
     managerId: selectedBase.value.managerId,
-    latitude: selectedBase.value.latitude,
-    longitude: selectedBase.value.longitude
+    latitude: selectedBase.value.latitude ? parseFloat(selectedBase.value.latitude.toString()) : undefined,
+    longitude: selectedBase.value.longitude ? parseFloat(selectedBase.value.longitude.toString()) : undefined
   })
   
   baseDialogTitle.value = '更新基地位置'
@@ -1525,6 +1553,47 @@ const handleConfirmLocation = () => {
     baseForm.longitude = selectedLocation.value.lng
   }
   mapDialogVisible.value = false
+}
+
+// 处理地址变化，自动进行地理编码
+const handleAddressChange = async () => {
+  if (baseForm.address && baseForm.address.trim()) {
+    await handleGeocodeAddress()
+  }
+}
+
+// 根据地址进行地理编码
+const handleGeocodeAddress = async () => {
+  if (!baseForm.address || !baseForm.address.trim()) {
+    ElMessage.warning('请先输入详细地址')
+    return
+  }
+
+  geocodingLoading.value = true
+  
+  try {
+    console.log('开始地理编码:', baseForm.address)
+    const result = await searchAccurateLocation(baseForm.address)
+    
+    baseForm.latitude = result.lat
+    baseForm.longitude = result.lng
+    
+    ElMessage.success(`定位成功：${result.name}`)
+    console.log('地理编码成功:', result)
+  } catch (error: any) {
+    console.error('地理编码失败:', error)
+    ElMessage.error(`定位失败：${error.message || '无法解析该地址'}`)
+  } finally {
+    geocodingLoading.value = false
+  }
+}
+
+// 清除位置信息
+const handleClearLocation = () => {
+  baseForm.latitude = undefined
+  baseForm.longitude = undefined
+  selectedLocation.value = null
+  ElMessage.success('已清除位置信息')
 }
 
 // 处理位置变化
@@ -1854,6 +1923,22 @@ onMounted(() => {
   height: 400px;
   border-radius: 4px;
   overflow: hidden;
+}
+
+// 地址和位置操作按钮样式
+.address-actions, .location-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+  
+  .el-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    
+    .el-icon {
+      margin-right: 4px;
+    }
+  }
 }
 
 @media (max-width: 768px) {

@@ -11,7 +11,7 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.materials.length }}</div>
+              <div class="stat-number">{{ validMaterials.length }}</div>
               <div class="stat-label">物资总数</div>
             </div>
             <el-icon class="stat-icon"><Box /></el-icon>
@@ -20,7 +20,7 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.categories.length }}</div>
+              <div class="stat-number">{{ validCategories.length }}</div>
               <div class="stat-label">分类数量</div>
             </div>
             <el-icon class="stat-icon"><Menu /></el-icon>
@@ -29,7 +29,7 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.suppliers.length }}</div>
+              <div class="stat-number">{{ validSuppliers.length }}</div>
               <div class="stat-label">供应商数量</div>
             </div>
             <el-icon class="stat-icon"><OfficeBuilding /></el-icon>
@@ -38,7 +38,7 @@
         <el-col :span="6">
           <el-card class="stat-card warning">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.lowStockCount }}</div>
+              <div class="stat-number">{{ lowStockCount }}</div>
               <div class="stat-label">低库存物资</div>
             </div>
             <el-icon class="stat-icon"><Warning /></el-icon>
@@ -73,7 +73,7 @@
                 @change="handleSearch"
               >
                 <el-option
-                  v-for="category in materialStore.categories"
+                  v-for="category in validCategories"
                   :key="category.id"
                   :label="category.name"
                   :value="category.id"
@@ -88,7 +88,7 @@
                 @change="handleSearch"
               >
                 <el-option
-                  v-for="supplier in materialStore.suppliers"
+                  v-for="supplier in validSuppliers"
                   :key="supplier.id"
                   :label="supplier.name"
                   :value="supplier.id"
@@ -125,7 +125,7 @@
 
           <el-card>
             <el-table
-              :data="materialStore.materials"
+              :data="validMaterials"
               v-loading="materialStore.loading"
               @selection-change="handleSelectionChange"
             >
@@ -531,15 +531,57 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
 import type { FormInstance } from 'element-plus'
 import type { ProductionMaterial, MaterialCategory, Supplier } from '@/types/material'
-import { validatePaginationData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { validatePaginationData, validateDataArray, ensureArray, ensureNumber, validateMaterialData } from '@/utils/dataValidation'
 
 // Store
 const materialStore = useMaterialStore()
+
+// 计算属性：过滤有效的数据
+const validMaterials = computed(() => {
+  return materialStore.materials.filter(material => 
+    material && 
+    typeof material === 'object' && 
+    material.id !== undefined && 
+    material.id !== null &&
+    material.name &&
+    typeof material.name === 'string'
+  )
+})
+
+const validCategories = computed(() => {
+  return materialStore.categories.filter(category => 
+    category && 
+    typeof category === 'object' && 
+    category.id !== undefined && 
+    category.id !== null &&
+    category.name &&
+    typeof category.name === 'string'
+  )
+})
+
+const validSuppliers = computed(() => {
+  return materialStore.suppliers.filter(supplier => 
+    supplier && 
+    typeof supplier === 'object' && 
+    supplier.id !== undefined && 
+    supplier.id !== null &&
+    supplier.name &&
+    typeof supplier.name === 'string'
+  )
+})
+
+const lowStockCount = computed(() => {
+  return validMaterials.value.filter(material => 
+    typeof material.current_stock === 'number' && 
+    typeof material.safety_stock === 'number' &&
+    material.current_stock <= material.safety_stock
+  ).length
+})
 
 // Reactive data
 const activeTab = ref('materials')

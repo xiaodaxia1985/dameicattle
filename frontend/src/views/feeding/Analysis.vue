@@ -270,7 +270,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, TrendCharts, Money, Dish, Warning, ArrowUp, ArrowDown, Download } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
@@ -672,6 +672,13 @@ const exportAnalysis = () => {
   ElMessage.info('导出功能开发中...')
 }
 
+// 窗口大小变化处理函数
+const handleResize = () => {
+  trendChart?.resize()
+  formulaChart?.resize()
+  baseComparisonChart?.resize()
+}
+
 // 组件挂载
 onMounted(() => {
   initDateRange()
@@ -679,11 +686,26 @@ onMounted(() => {
   initCharts()
   
   // 监听窗口大小变化
-  window.addEventListener('resize', () => {
-    trendChart?.resize()
-    formulaChart?.resize()
-    baseComparisonChart?.resize()
-  })
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  // 清理图表实例，防止内存泄漏和DOM操作错误
+  if (trendChart) {
+    trendChart.dispose()
+    trendChart = null
+  }
+  if (formulaChart) {
+    formulaChart.dispose()
+    formulaChart = null
+  }
+  if (baseComparisonChart) {
+    baseComparisonChart.dispose()
+    baseComparisonChart = null
+  }
+  
+  // 移除窗口大小变化监听器
+  window.removeEventListener('resize', handleResize)
 })
 
 // 监听基地变化

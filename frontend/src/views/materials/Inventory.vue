@@ -11,7 +11,7 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.inventory.length }}</div>
+              <div class="stat-number">{{ validInventory.length }}</div>
               <div class="stat-label">库存物资种类</div>
             </div>
             <el-icon class="stat-icon"><Box /></el-icon>
@@ -20,7 +20,7 @@
         <el-col :span="6">
           <el-card class="stat-card">
             <div class="stat-content">
-              <div class="stat-number">¥{{ formatCurrency(materialStore.totalInventoryValue) }}</div>
+              <div class="stat-number">¥{{ formatCurrency(totalInventoryValue) }}</div>
               <div class="stat-label">库存总价值</div>
             </div>
             <el-icon class="stat-icon"><Money /></el-icon>
@@ -29,7 +29,7 @@
         <el-col :span="6">
           <el-card class="stat-card warning">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.lowStockCount }}</div>
+              <div class="stat-number">{{ lowStockCount }}</div>
               <div class="stat-label">低库存预警</div>
             </div>
             <el-icon class="stat-icon"><Warning /></el-icon>
@@ -38,7 +38,7 @@
         <el-col :span="6">
           <el-card class="stat-card danger">
             <div class="stat-content">
-              <div class="stat-number">{{ materialStore.activeAlertsCount }}</div>
+              <div class="stat-number">{{ activeAlertsCount }}</div>
               <div class="stat-label">待处理预警</div>
             </div>
             <el-icon class="stat-icon"><Bell /></el-icon>
@@ -118,7 +118,7 @@
 
           <el-card>
             <el-table
-              :data="materialStore.inventory"
+              :data="validInventory"
               v-loading="materialStore.loading"
               @selection-change="handleSelectionChange"
             >
@@ -204,7 +204,7 @@
                 @change="handleTransactionSearch"
               >
                 <el-option
-                  v-for="material in materialStore.materials"
+                  v-for="material in validMaterials"
                   :key="material.id"
                   :label="material.name"
                   :value="material.id"
@@ -584,6 +584,55 @@ import type { Inventory, InventoryTransaction, InventoryAlert } from '@/types/ma
 // Stores
 const materialStore = useMaterialStore()
 const baseStore = useBaseStore()
+
+// 计算属性：过滤有效的库存数据
+const validInventory = computed(() => {
+  return materialStore.inventory.filter(item => 
+    item && 
+    typeof item === 'object' && 
+    item.id !== undefined && 
+    item.id !== null &&
+    typeof item.current_stock === 'number' &&
+    !isNaN(item.current_stock)
+  )
+})
+
+const totalInventoryValue = computed(() => {
+  return validInventory.value.reduce((sum, item) => {
+    if (item.material && 
+        typeof item.material.purchase_price === 'number' && 
+        !isNaN(item.material.purchase_price)) {
+      return sum + (item.current_stock * item.material.purchase_price)
+    }
+    return sum
+  }, 0)
+})
+
+const lowStockCount = computed(() => {
+  return validInventory.value.filter(item => 
+    typeof item.safety_stock === 'number' && 
+    !isNaN(item.safety_stock) &&
+    item.current_stock <= item.safety_stock
+  ).length
+})
+
+const activeAlertsCount = computed(() => {
+  return validInventory.value.filter(item => 
+    item.current_stock <= (item.safety_stock || 0) &&
+    item.status === 'active'
+  ).length
+})
+
+const validMaterials = computed(() => {
+  return materialStore.materials.filter(material => 
+    material && 
+    typeof material === 'object' && 
+    material.id !== undefined && 
+    material.id !== null &&
+    material.name &&
+    typeof material.name === 'string'
+  )
+})
 
 // Reactive data
 const activeTab = ref('inventory')

@@ -23,7 +23,7 @@
 
     <!-- 配方列表 -->
     <el-card>
-      <el-table :data="formulas" v-loading="loading" @selection-change="handleSelectionChange">
+      <el-table :data="validFormulas" v-loading="loading" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="配方名称" min-width="150" />
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
@@ -151,6 +151,7 @@ import { feedingApi } from '@/api/feeding'
 import type { FeedFormula, CreateFormulaRequest, UpdateFormulaRequest, IngredientItem } from '@/api/feeding'
 import IngredientEditor from '@/components/feeding/IngredientEditor.vue'
 import IngredientTable from '@/components/feeding/IngredientTable.vue'
+import { validateData } from '@/utils/dataValidation'
 
 // 响应式数据
 const formulas = ref<FeedFormula[]>([])
@@ -158,6 +159,18 @@ const loading = ref(false)
 const submitting = ref(false)
 const searchKeyword = ref('')
 const selectedRows = ref<FeedFormula[]>([])
+
+// 计算属性：过滤有效的配方数据
+const validFormulas = computed(() => {
+  return formulas.value.filter(formula => 
+    formula && 
+    typeof formula === 'object' && 
+    formula.id !== undefined && 
+    formula.id !== null &&
+    formula.name &&
+    typeof formula.name === 'string'
+  )
+})
 
 // 分页
 const pagination = ref({

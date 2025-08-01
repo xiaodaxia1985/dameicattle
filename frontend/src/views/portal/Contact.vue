@@ -318,11 +318,11 @@
               <p>距离首都机场约45分钟车程</p>
             </div>
             <div class="navigation-buttons">
-              <button class="btn btn-outline" @click="openNavigation('baidu')">
-                百度地图导航
-              </button>
               <button class="btn btn-outline" @click="openNavigation('gaode')">
                 高德地图导航
+              </button>
+              <button class="btn btn-outline" @click="openNavigation('baidu')">
+                百度地图导航
               </button>
             </div>
           </div>

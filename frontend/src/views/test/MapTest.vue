@@ -1,13 +1,15 @@
 <template>
   <div class="map-test-container">
-    <el-card header="百度地图测试页面">
+    <el-card header="高德地图测试页面">
       <el-row :gutter="20">
         <el-col :span="12">
-          <h3>基础地图组件</h3>
-          <BaiduMap
+          <h3>完整功能地图（搜索+卫星地图）</h3>
+          <AMapComponent
             :center="mapCenter"
             :zoom="11"
             :markers="markers"
+            :show-search="true"
+            :show-map-type-switch="true"
             height="300px"
             @map-ready="handleMapReady"
           />
@@ -19,10 +21,12 @@
         </el-col>
         
         <el-col :span="12">
-          <h3>位置选择组件</h3>
+          <h3>位置选择组件（可拖拽标记）</h3>
           <MapLocationPicker
             v-model="selectedLocation"
             :center="mapCenter"
+            :show-search="true"
+            :show-map-type-switch="true"
             height="300px"
             @location-change="handleLocationChange"
           />
@@ -32,6 +36,9 @@
             <p>经度: {{ selectedLocation.lng.toFixed(6) }}</p>
             <p>纬度: {{ selectedLocation.lat.toFixed(6) }}</p>
             <p v-if="selectedAddress">地址: {{ selectedAddress }}</p>
+            <p style="color: #666; font-size: 12px; margin-top: 8px;">
+              💡 提示：可以搜索地点或拖拽标记调整位置
+            </p>
           </div>
         </el-col>
       </el-row>
@@ -43,6 +50,10 @@
             <el-button @click="testGeocode">地址解析测试</el-button>
             <el-button @click="testReverseGeocode">逆地理编码测试</el-button>
             <el-button @click="testCurrentPosition">获取当前位置</el-button>
+            <el-button @click="testSearch">搜索功能测试</el-button>
+            <el-button @click="testSearchSuggestions">搜索建议测试</el-button>
+            <el-button @click="testDirectSearch">直接搜索测试</el-button>
+            <el-button @click="testSearchAccuracy">搜索准确性测试</el-button>
           </el-space>
           
           <div class="test-results" v-if="testResults">
@@ -57,14 +68,16 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import BaiduMap from '@/components/BaiduMap.vue'
+import AMapComponent from '@/components/AMapComponent.vue'
 import MapLocationPicker from '@/components/MapLocationPicker.vue'
 import { 
   geocodeAddress, 
   reverseGeocode, 
   getCurrentPosition,
+  searchPOI,
+  getSearchSuggestions,
   CITY_COORDINATES 
-} from '@/utils/baiduMap'
+} from '@/utils/amap'
 import { ElMessage } from 'element-plus'
 
 // 地图中心
@@ -158,6 +171,132 @@ const testCurrentPosition = async () => {
     ElMessage.success('获取当前位置成功')
   } catch (error) {
     ElMessage.error('获取当前位置失败: ' + (error as Error).message)
+  }
+}
+
+// 测试搜索功能
+const testSearch = async () => {
+  try {
+    const result = await searchPOI('北京大学', '北京')
+    testResults.value = {
+      type: 'POI搜索',
+      input: { keyword: '北京大学', city: '北京' },
+      result: result.slice(0, 3) // 只显示前3个结果
+    }
+    ElMessage.success('搜索功能测试成功')
+  } catch (error) {
+    ElMessage.error('搜索功能测试失败: ' + (error as Error).message)
+  }
+}
+
+// 测试搜索建议
+const testSearchSuggestions = async () => {
+  try {
+    const result = await getSearchSuggestions('北京', '北京')
+    testResults.value = {
+      type: '搜索建议',
+      input: { keyword: '北京', city: '北京' },
+      result: result.slice(0, 5) // 只显示前5个建议
+    }
+    ElMessage.success('搜索建议测试成功')
+  } catch (error) {
+    ElMessage.error('搜索建议测试失败: ' + (error as Error).message)
+  }
+}
+
+// 测试直接搜索
+const testDirectSearch = async () => {
+  try {
+    const testAddresses = [
+      '天安门广场',
+      '北京大学',
+      '上海外滩',
+      '广州塔',
+      '深圳市民中心',
+      '西湖',
+      '故宫博物院',
+      '东方明珠塔'
+    ]
+    
+    const randomAddress = testAddresses[Math.floor(Math.random() * testAddresses.length)]
+    
+    // 使用新的精确搜索功能
+    const { searchAccurateLocation } = await import('@/utils/amap')
+    const result = await searchAccurateLocation(randomAddress)
+    
+    testResults.value = {
+      type: '精确搜索测试',
+      input: randomAddress,
+      result: {
+        坐标: `${result.lng.toFixed(6)}, ${result.lat.toFixed(6)}`,
+        地址: result.address,
+        名称: result.name,
+        搜索类型: result.type === 'poi' ? 'POI精确匹配' : '地理编码',
+        原始数据: result
+      }
+    }
+    
+    // 如果搜索成功，更新地图中心
+    if (result && result.lng && result.lat) {
+      mapCenter.value = { lng: result.lng, lat: result.lat }
+      ElMessage.success(`精确搜索"${randomAddress}"成功，地图已定位到准确位置`)
+    } else {
+      ElMessage.warning(`搜索"${randomAddress}"无结果`)
+    }
+  } catch (error) {
+    ElMessage.error('精确搜索测试失败: ' + (error as Error).message)
+    testResults.value = {
+      type: '精确搜索测试',
+      input: '测试失败',
+      result: { error: (error as Error).message }
+    }
+  }
+}
+
+// 测试多个地址的搜索准确性
+const testSearchAccuracy = async () => {
+  try {
+    const testCases = [
+      { name: '北京天安门', expectedArea: '北京市东城区' },
+      { name: '上海外滩', expectedArea: '上海市黄浦区' },
+      { name: '广州塔', expectedArea: '广州市海珠区' },
+      { name: '深圳平安金融中心', expectedArea: '深圳市福田区' }
+    ]
+    
+    const results = []
+    const { searchAccurateLocation } = await import('@/utils/amap')
+    
+    for (const testCase of testCases) {
+      try {
+        const result = await searchAccurateLocation(testCase.name)
+        results.push({
+          搜索词: testCase.name,
+          找到位置: result.name,
+          坐标: `${result.lng.toFixed(6)}, ${result.lat.toFixed(6)}`,
+          地址: result.address,
+          搜索类型: result.type === 'poi' ? 'POI精确匹配' : '地理编码',
+          状态: '成功'
+        })
+      } catch (error) {
+        results.push({
+          搜索词: testCase.name,
+          状态: '失败',
+          错误: (error as Error).message
+        })
+      }
+    }
+    
+    testResults.value = {
+      type: '搜索准确性测试',
+      input: '多个知名地标',
+      result: results
+    }
+    
+    const successCount = results.filter(r => r.状态 === '成功').length
+    ElMessage.success(`搜索准确性测试完成：${successCount}/${testCases.length} 个地址搜索成功`)
+    
+  } catch (error) {
+    ElMessage.error('搜索准确性测试失败: ' + (error as Error).message)
   }
 }
 </script>

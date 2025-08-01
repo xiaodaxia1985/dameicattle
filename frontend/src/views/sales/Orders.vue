@@ -89,7 +89,7 @@
       </div>
 
       <el-table 
-        :data="orders" 
+        :data="validOrders" 
         v-loading="loading"
         stripe
         @selection-change="handleSelectionChange"
@@ -188,7 +188,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { salesApi, type SalesOrder } from '@/api/sales'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
-import { validatePaginationData, validateDataArray, validateOrderData } from '@/utils/dataValidation'
+import { validateData } from '@/utils/dataValidation'
 
 // 响应式数据
 const loading = ref(false)
@@ -198,6 +198,18 @@ const selectedOrders = ref<SalesOrder[]>([])
 const customerOptions = ref<any[]>([])
 const baseOptions = ref<any[]>([])
 const cattleOptions = ref<any[]>([])
+
+// 计算属性：过滤有效的订单数据
+const validOrders = computed(() => {
+  return orders.value.filter(order => 
+    order && 
+    typeof order === 'object' && 
+    order.id !== undefined && 
+    order.id !== null &&
+    order.order_number &&
+    typeof order.order_number === 'string'
+  )
+})
 
 // 搜索表单
 const searchForm = reactive({
@@ -238,11 +250,12 @@ const fetchOrders = async () => {
     const response = await salesApi.getOrders(params)
     
     // 使用数据验证工具处理响应
-    const validatedData = validatePaginationData(response.data || response)
+    const responseData = response.data || response
+    const ordersArray = validateData.safeArray(responseData.data || responseData)
     
     // 验证每个订单数据
-    orders.value = validateDataArray(validatedData.data, validateOrderData)
-    pagination.total = validatedData.pagination.total
+    orders.value = validateData.filterValidData(ordersArray, validateData.validateSalesOrder)
+    pagination.total = validateData.safeNumber(responseData.pagination?.total || responseData.total, 0)
   } catch (error) {
     console.error('获取订单列表失败:', error)
     ElMessage.error('获取订单列表失败')

@@ -197,7 +197,7 @@
             filterable
           >
             <el-option
-              v-for="material in materialStore.materials"
+              v-for="material in validateData.safeArray(materialStore.materials)"
               :key="material.id"
               :label="material.name"
               :value="material.id"
@@ -255,10 +255,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
 import { useBaseStore } from '@/stores/base'
+import { validateData } from '@/utils/dataValidation'
 import * as echarts from 'echarts'
 import type { FormInstance } from 'element-plus'
 import type { InventoryStatistics, InventoryAlert, InventoryTransaction } from '@/types/material'
@@ -341,7 +342,8 @@ const loadStatistics = async () => {
 const loadAlerts = async () => {
   try {
     await materialStore.fetchAlerts()
-    lowStockAlerts.value = materialStore.alerts
+    const alertsArray = validateData.safeArray(materialStore.alerts)
+    lowStockAlerts.value = alertsArray
       .filter(alert => !alert.is_resolved && alert.alert_type === 'low_stock')
       .slice(0, 5)
   } catch (error) {
@@ -352,7 +354,8 @@ const loadAlerts = async () => {
 const loadRecentTransactions = async () => {
   try {
     await materialStore.fetchTransactions({ limit: 5 })
-    recentTransactions.value = materialStore.transactions
+    const transactionsArray = validateData.safeArray(materialStore.transactions)
+    recentTransactions.value = transactionsArray.slice(0, 5)
   } catch (error) {
     ElMessage.error('加载交易记录失败')
   }
@@ -371,87 +374,142 @@ const loadChartData = async () => {
 }
 
 const initCharts = () => {
-  if (inventoryChartRef.value) {
-    inventoryChart = echarts.init(inventoryChartRef.value)
-  }
-  if (categoryChartRef.value) {
-    categoryChart = echarts.init(categoryChartRef.value)
-  }
-  updateCharts()
+  // 确保DOM元素存在且已挂载
+  nextTick(() => {
+    if (inventoryChartRef.value && !inventoryChart) {
+      try {
+        inventoryChart = echarts.init(inventoryChartRef.value)
+      } catch (error) {
+        console.error('初始化库存图表失败:', error)
+      }
+    }
+    if (categoryChartRef.value && !categoryChart) {
+      try {
+        categoryChart = echarts.init(categoryChartRef.value)
+      } catch (error) {
+        console.error('初始化分类图表失败:', error)
+      }
+    }
+    updateCharts()
+  })
 }
 
 const updateCharts = () => {
-  // 库存分布图表
-  if (inventoryChart) {
-    const inventoryData = materialStore.inventory.map(item => ({
-      name: item.material?.name || '',
-      value: item.current_stock,
-      unit: item.material?.unit || ''
-    })).slice(0, 10)
+  try {
+    // 库存分布图表
+    if (inventoryChart && inventoryChart.getDom()) {
+      // 使用验证工具确保数据安全
+      const inventoryArray = validateData.safeArray(materialStore.inventory)
+      const validInventory = validateData.filterValidData(inventoryArray, validateData.validateInventory)
+      const inventoryData = validInventory
+        .filter(item => item.current_stock > 0)
+        .map(item => ({
+          name: validateData.safeString(item.material?.name) || '未知物资',
+          value: validateData.safeNumber(item.current_stock),
+          unit: validateData.safeString(item.material?.unit)
+        }))
+        .slice(0, 10)
 
-    inventoryChart.setOption({
-      title: {
-        text: '库存数量分布',
-        left: 'center',
-        textStyle: { fontSize: 14 }
-      },
-      tooltip: {
-        trigger: 'item',
-        formatter: '{a} <br/>{b}: {c} ({d}%)'
-      },
-      series: [{
-        name: '库存数量',
-        type: 'pie',
-        radius: '60%',
-        data: inventoryData,
-        emphasis: {
-          itemStyle: {
-            shadowBlur: 10,
-            shadowOffsetX: 0,
-            shadowColor: 'rgba(0, 0, 0, 0.5)'
-          }
-        }
-      }]
-    })
-  }
-
-  // 物资分类统计图表
-  if (categoryChart) {
-    const categoryData = materialStore.categories.map(category => {
-      const count = materialStore.materials.filter(m => m.category_id === category.id).length
-      return {
-        name: category.name,
-        value: count
+      if (inventoryData.length > 0) {
+        inventoryChart.setOption({
+          title: {
+            text: '库存数量分布',
+            left: 'center',
+            textStyle: { fontSize: 14 }
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{a} <br/>{b}: {c} ({d}%)'
+          },
+          series: [{
+            name: '库存数量',
+            type: 'pie',
+            radius: '60%',
+            data: inventoryData,
+            emphasis: {
+              itemStyle: {
+                shadowBlur: 10,
+                shadowOffsetX: 0,
+                shadowColor: 'rgba(0, 0, 0, 0.5)'
+              }
+            }
+          }]
+        })
+      } else {
+        // 显示空数据状态
+        inventoryChart.setOption({
+          title: {
+            text: '暂无库存数据',
+            left: 'center',
+            textStyle: { fontSize: 14, color: '#909399' }
+          },
+          series: []
+        })
       }
-    })
+    }
 
-    categoryChart.setOption({
-      title: {
-        text: '物资分类统计',
-        left: 'center',
-        textStyle: { fontSize: 14 }
-      },
-      tooltip: {
-        trigger: 'axis',
-        axisPointer: { type: 'shadow' }
-      },
-      xAxis: {
-        type: 'category',
-        data: categoryData.map(item => item.name),
-        axisLabel: { rotate: 45 }
-      },
-      yAxis: {
-        type: 'value'
-      },
-      series: [{
-        name: '物资数量',
-        type: 'bar',
-        data: categoryData.map(item => item.value),
-        itemStyle: {
-          color: '#409EFF'
-        }
-      }]
-    })
+    // 物资分类统计图表
+    if (categoryChart && categoryChart.getDom()) {
+      // 使用验证工具确保数据安全
+      const categoriesArray = validateData.safeArray(materialStore.categories)
+      const materialsArray = validateData.safeArray(materialStore.materials)
+      const validCategories = validateData.filterValidData(categoriesArray, validateData.validateCategory)
+      const validMaterials = validateData.filterValidData(materialsArray, validateData.validateMaterial)
+      
+      const categoryData = validCategories
+        .map(category => {
+          const count = validMaterials.filter(m => m.category_id === category.id).length
+          return {
+            name: validateData.safeString(category.name),
+            value: count
+          }
+        })
+        .filter(item => item.value > 0)
+
+      if (categoryData.length > 0) {
+        categoryChart.setOption({
+          title: {
+            text: '物资分类统计',
+            left: 'center',
+            textStyle: { fontSize: 14 }
+          },
+          tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' }
+          },
+          xAxis: {
+            type: 'category',
+            data: categoryData.map(item => item.name),
+            axisLabel: { rotate: 45 }
+          },
+          yAxis: {
+            type: 'value'
+          },
+          series: [{
+            name: '物资数量',
+            type: 'bar',
+            data: categoryData.map(item => item.value),
+            itemStyle: {
+              color: '#409EFF'
+            }
+          }]
+        })
+      } else {
+        // 显示空数据状态
+        categoryChart.setOption({
+          title: {
+            text: '暂无分类数据',
+            left: 'center',
+            textStyle: { fontSize: 14, color: '#909399' }
+          },
+          xAxis: { type: 'category', data: [] },
+          yAxis: { type: 'value' },
+          series: []
+        })
+      }
+    }
+  } catch (error) {
+    console.error('更新图表失败:', error)
   }
 }
 
@@ -522,6 +580,18 @@ onMounted(async () => {
     })
   } catch (error) {
     ElMessage.error('初始化数据失败')
+  }
+})
+
+onUnmounted(() => {
+  // 清理图表实例，防止内存泄漏和DOM操作错误
+  if (inventoryChart) {
+    inventoryChart.dispose()
+    inventoryChart = null
+  }
+  if (categoryChart) {
+    categoryChart.dispose()
+    categoryChart = null
   }
 })
 </script>

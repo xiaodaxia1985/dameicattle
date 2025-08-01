@@ -1,6 +1,6 @@
 <template>
   <div class="map-location-picker">
-    <BaiduMap
+    <AMapComponent
       :width="width"
       :height="height"
       :center="center"
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import BaiduMap from './BaiduMap.vue'
+import AMapComponent from './AMapComponent.vue'
 
 interface Props {
   width?: string
@@ -65,7 +65,7 @@ const handleMapClick = (event: { lng: number; lat: number }) => {
   
   // 清除之前的标记
   if (currentMarker.value && mapRef.value?.map) {
-    mapRef.value.map.removeOverlay(currentMarker.value)
+    mapRef.value.map.remove(currentMarker.value)
   }
   
   // 添加新标记
@@ -95,22 +95,23 @@ const handleMapReady = (map: any) => {
 // 根据坐标获取地址
 const getAddressByLocation = async (lng: number, lat: number) => {
   try {
-    const { waitForBaiduMap } = await import('@/utils/baiduMap')
-    await waitForBaiduMap()
-    const BMap = (window as any).BMap
+    const { waitForAMap } = await import('@/utils/amap')
+    await waitForAMap()
+    const AMap = (window as any).AMap
     
-    if (!BMap || !BMap.Geocoder) {
-      console.error('百度地图Geocoder未加载')
+    if (!AMap) {
+      console.error('高德地图API未加载')
       return
     }
     
-    const geocoder = new BMap.Geocoder()
-    const point = new BMap.Point(lng, lat)
-    
-    geocoder.getLocation(point, (result: any) => {
-      if (result) {
-        address.value = result.address || ''
-      }
+    AMap.plugin('AMap.Geocoder', () => {
+      const geocoder = new AMap.Geocoder()
+      
+      geocoder.getAddress([lng, lat], (status: string, result: any) => {
+        if (status === 'complete' && result.regeocode) {
+          address.value = result.regeocode.formattedAddress || ''
+        }
+      })
     })
   } catch (error) {
     console.error('获取地址失败:', error)
@@ -128,7 +129,7 @@ watch(() => props.modelValue, (newValue) => {
       
       // 清除之前的标记
       if (currentMarker.value) {
-        mapRef.value.map.removeOverlay(currentMarker.value)
+        mapRef.value.map.remove(currentMarker.value)
       }
       
       // 添加新标记

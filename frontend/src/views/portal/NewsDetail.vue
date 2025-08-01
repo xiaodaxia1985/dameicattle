@@ -436,10 +436,7 @@ onMounted(() => {
   align-items: center;
 }
 
-.article-actions {
-  display: flex;
-  gap: 12px;
-}
+
 
 .article-info {
   font-size: 12px;
@@ -450,8 +447,7 @@ onMounted(() => {
   margin: 4px 0;
 }
 
-.related-articles,
-.comments-section {
+.related-articles {
   background: white;
   border-radius: 8px;
   padding: 30px;
@@ -459,8 +455,7 @@ onMounted(() => {
   margin-bottom: 30px;
 }
 
-.related-articles h3,
-.comments-section h3 {
+.related-articles h3 {
   margin: 0 0 20px 0;
   font-size: 20px;
   color: #303133;
@@ -522,131 +517,7 @@ onMounted(() => {
   color: #909399;
 }
 
-.comment-form {
-  margin-bottom: 30px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-}
 
-.comment-textarea {
-  margin-top: 15px;
-}
-
-.form-actions {
-  margin-top: 15px;
-  text-align: right;
-}
-
-.comments-list {
-  margin-top: 20px;
-}
-
-.comment-item {
-  display: flex;
-  gap: 15px;
-  padding: 20px 0;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.comment-item:last-child {
-  border-bottom: none;
-}
-
-.comment-avatar,
-.reply-avatar {
-  width: 40px;
-  height: 40px;
-  background-color: #409eff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-
-.reply-avatar {
-  width: 32px;
-  height: 32px;
-}
-
-.comment-content {
-  flex: 1;
-}
-
-.comment-header {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 8px;
-}
-
-.comment-author {
-  font-weight: 600;
-  color: #303133;
-}
-
-.comment-time {
-  font-size: 12px;
-  color: #909399;
-}
-
-.comment-text {
-  color: #606266;
-  line-height: 1.6;
-}
-
-.replies {
-  margin-top: 15px;
-  padding-left: 20px;
-  border-left: 2px solid #f0f0f0;
-}
-
-.reply-item {
-  display: flex;
-  gap: 12px;
-  margin-top: 15px;
-}
-
-.reply-content {
-  flex: 1;
-}
-
-.reply-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
-}
-
-.reply-author {
-  font-weight: 600;
-  color: #303133;
-  font-size: 14px;
-}
-
-.reply-time {
-  font-size: 11px;
-  color: #909399;
-}
-
-.reply-text {
-  color: #606266;
-  line-height: 1.6;
-  font-size: 14px;
-}
-
-.empty-comments {
-  text-align: center;
-  padding: 40px 20px;
-  color: #909399;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
 
 .sidebar {
   width: 280px;
