@@ -81,7 +81,7 @@ const setupMiddleware = (app: express.Application, config: any, middleware: any)
 
   // Basic middleware
   app.use(compression());
-  
+
   // Custom middleware to handle text/plain content type as JSON
   app.use((req, res, next) => {
     const contentType = req.get('Content-Type');
@@ -91,7 +91,7 @@ const setupMiddleware = (app: express.Application, config: any, middleware: any)
     }
     next();
   });
-  
+
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -127,7 +127,7 @@ const setupRoutes = (app: express.Application, routes: any, middleware: any, sta
     baseRoutes, barnRoutes, cattleRoutes, healthRoutes, redisHealthRoutes,
     feedingRoutes, materialRoutes, equipmentRoutes, supplierRoutes,
     purchaseOrderRoutes, purchaseRoutes, customerRoutes, salesOrderRoutes,
-    newsRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
+    newsRoutes, patrolRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
     dashboardRoutes, dataIntegrationRoutes, performanceRoutes, monitoringRoutes,
     securityRoutes, routeHealthRoutes, errorRecoveryRoutes, serveUploads
   } = routes;
@@ -195,6 +195,7 @@ const setupRoutes = (app: express.Application, routes: any, middleware: any, sta
   app.use('/api/v1/customers', authMiddleware, customerRoutes);
   app.use('/api/v1/sales-orders', authMiddleware, salesOrderRoutes);
   app.use('/api/v1/news', newsRoutes);
+  app.use('/api/v1/patrol', authMiddleware, patrolRoutes);
   app.use('/api/v1/portal', authMiddleware, portalRoutes);
   app.use('/api/v1/help', helpRoutes);
   app.use('/api/v1/upload', authMiddleware, uploadRoutes);
@@ -225,21 +226,21 @@ const startServer = async () => {
     const { responseWrapper } = await import('@/middleware/responseWrapper');
     const { authMiddleware } = await import('@/middleware/auth');
     const { performanceMonitoring } = await import('@/middleware/performanceMonitoring');
-    const { 
-      requestLoggingMiddleware, 
-      errorLoggingMiddleware, 
+    const {
+      requestLoggingMiddleware,
+      errorLoggingMiddleware,
       slowQueryLoggingMiddleware,
-      securityLoggingMiddleware 
+      securityLoggingMiddleware
     } = await import('@/middleware/requestLogging');
     const { sequelize } = await import('@/config/database');
     const { redisManager } = await import('@/config/redis');
     const { routeRegistry } = await import('@/config/RouteRegistry');
-    const { 
-      initializeRecoveryContext, 
-      requestRecovery, 
-      errorRecoveryHandler 
+    const {
+      initializeRecoveryContext,
+      requestRecovery,
+      errorRecoveryHandler
     } = await import('@/middleware/errorRecoveryMiddleware');
-    
+
     // Import all routes
     const authRoutes = (await import('@/routes/auth')).default;
     const userRoutes = (await import('@/routes/users')).default;
@@ -260,6 +261,7 @@ const startServer = async () => {
     const customerRoutes = (await import('@/routes/customers')).default;
     const salesOrderRoutes = (await import('@/routes/salesOrders')).default;
     const newsRoutes = (await import('@/routes/news')).default;
+    const patrolRoutes = (await import('@/routes/patrol')).default;
     const portalRoutes = (await import('@/routes/portal')).default;
     const publicRoutes = (await import('@/routes/public')).default;
     const helpRoutes = (await import('@/routes/help')).default;
@@ -272,7 +274,7 @@ const startServer = async () => {
     const routeHealthRoutes = (await import('@/routes/route-health')).default;
     const errorRecoveryRoutes = (await import('@/routes/error-recovery')).default;
     const { serveUploads } = await import('@/middleware/staticFileServer');
-    
+
     logger.info('🚀 Starting application...');
 
     // 0. Setup global error handlers
@@ -280,7 +282,7 @@ const startServer = async () => {
 
     // 1. Perform comprehensive startup checks
     const startupResult = await startupChecker.performStartupChecks();
-    
+
     if (!startupResult.success) {
       logger.error('💥 Startup checks failed. Exiting...');
       process.exit(1);
@@ -306,7 +308,7 @@ const startServer = async () => {
     logger.info('Initializing route registry...');
     await routeRegistry.scanRouteFiles();
     const routeValidation = routeRegistry.validateRoutes();
-    
+
     if (!routeValidation.success) {
       logger.warn('Route validation issues found:', {
         conflicts: routeValidation.conflicts,
@@ -323,16 +325,16 @@ const startServer = async () => {
       baseRoutes, barnRoutes, cattleRoutes, healthRoutes, redisHealthRoutes,
       feedingRoutes, materialRoutes, equipmentRoutes, supplierRoutes,
       purchaseOrderRoutes, purchaseRoutes, customerRoutes, salesOrderRoutes,
-      newsRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
+      newsRoutes, patrolRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
       dashboardRoutes, dataIntegrationRoutes, performanceRoutes, monitoringRoutes,
       securityRoutes, routeHealthRoutes, errorRecoveryRoutes, serveUploads
     };
-    
+
     const routeMiddleware = {
       authMiddleware, notFoundHandler, errorLoggingMiddleware,
       errorRecoveryHandler, errorHandler
     };
-    
+
     setupRoutes(app, routes, routeMiddleware, startupChecker);
 
     // 6. Sync database models (in development)
@@ -368,7 +370,7 @@ const startServer = async () => {
       const { SystemMonitoringService } = await import('@/services/SystemMonitoringService');
       const { LogAnalysisService } = await import('@/services/LogAnalysisService');
       const { SecurityService } = await import('@/services/SecurityService');
-      
+
       SystemMonitoringService.initializeDefaultRules();
       LogAnalysisService.initialize();
       SecurityService.initialize();
@@ -380,12 +382,12 @@ const startServer = async () => {
       const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
       const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
       const { selfHealingService } = await import('@/services/SelfHealingService');
-      
+
       // Start monitoring for automatic recovery
       errorRecoveryService.startMonitoring(30000); // Check every 30 seconds
       serviceDegradationManager.startMonitoring(30000);
       selfHealingService.startMonitoring(60000); // Check every minute
-      
+
       logger.info('Error recovery services initialized and monitoring started');
     }
 
@@ -401,7 +403,7 @@ const startServer = async () => {
       logger.info(`🎉 Server is running on port ${PORT}`);
       logger.info(`Environment: ${config.environment}`);
       logger.info(`Frontend URL: ${config.frontendUrl}`);
-      
+
       if (config.logLevel === 'debug') {
         logger.debug('Configuration Report:');
         logger.debug(configManager.generateReport());
@@ -419,27 +421,27 @@ process.on('SIGTERM', async () => {
     const { logger } = await import('@/utils/logger');
     const { sequelize } = await import('@/config/database');
     const { redisManager } = await import('@/config/redis');
-    
+
     logger.info('SIGTERM received, shutting down gracefully');
-    
+
     // Stop scheduled tasks
     if (process.env.NODE_ENV !== 'test') {
       const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
       ScheduledTaskService.stopAllTasks();
     }
-    
+
     // Stop error recovery services
     if (process.env.NODE_ENV !== 'test') {
       const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
       const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
       const { selfHealingService } = await import('@/services/SelfHealingService');
-      
+
       errorRecoveryService.shutdown();
       serviceDegradationManager.shutdown();
       selfHealingService.shutdown();
       logger.info('Error recovery services shutdown complete');
     }
-    
+
     await sequelize.close();
     await redisManager.shutdown();
     process.exit(0);
@@ -454,27 +456,27 @@ process.on('SIGINT', async () => {
     const { logger } = await import('@/utils/logger');
     const { sequelize } = await import('@/config/database');
     const { redisManager } = await import('@/config/redis');
-    
+
     logger.info('SIGINT received, shutting down gracefully');
-    
+
     // Stop scheduled tasks
     if (process.env.NODE_ENV !== 'test') {
       const { ScheduledTaskService } = await import('@/services/ScheduledTaskService');
       ScheduledTaskService.stopAllTasks();
     }
-    
+
     // Stop error recovery services
     if (process.env.NODE_ENV !== 'test') {
       const { errorRecoveryService } = await import('@/services/ErrorRecoveryService');
       const { serviceDegradationManager } = await import('@/services/ServiceDegradationManager');
       const { selfHealingService } = await import('@/services/SelfHealingService');
-      
+
       errorRecoveryService.shutdown();
       serviceDegradationManager.shutdown();
       selfHealingService.shutdown();
       logger.info('Error recovery services shutdown complete');
     }
-    
+
     await sequelize.close();
     await redisManager.shutdown();
     process.exit(0);
@@ -497,31 +499,31 @@ let routesInitialized = false;
 
 export const initializeAppForTesting = async () => {
   if (routesInitialized) return app;
-  
+
   try {
     // Import all modules that depend on environment variables
     const { configManager } = await import('@/config/ConfigManager');
     const { startupChecker } = await import('@/config/StartupChecker');
-    
+
     // Initialize configuration
     await configManager.initialize();
     const { errorHandler } = await import('@/middleware/errorHandler');
     const { notFoundHandler } = await import('@/middleware/notFoundHandler');
     const { responseWrapper } = await import('@/middleware/responseWrapper');
     const { authMiddleware } = await import('@/middleware/auth');
-    const { 
-      requestLoggingMiddleware, 
-      errorLoggingMiddleware, 
+    const {
+      requestLoggingMiddleware,
+      errorLoggingMiddleware,
       slowQueryLoggingMiddleware,
-      securityLoggingMiddleware 
+      securityLoggingMiddleware
     } = await import('@/middleware/requestLogging');
     const { performanceMonitoring } = await import('@/middleware/performanceMonitoring');
-    const { 
-      initializeRecoveryContext, 
-      requestRecovery, 
-      errorRecoveryHandler 
+    const {
+      initializeRecoveryContext,
+      requestRecovery,
+      errorRecoveryHandler
     } = await import('@/middleware/errorRecoveryMiddleware');
-    
+
     // Import all route modules individually
     const authRoutes = (await import('@/routes/auth')).default;
     const userRoutes = (await import('@/routes/users')).default;
@@ -542,6 +544,7 @@ export const initializeAppForTesting = async () => {
     const customerRoutes = (await import('@/routes/customers')).default;
     const salesOrderRoutes = (await import('@/routes/salesOrders')).default;
     const newsRoutes = (await import('@/routes/news')).default;
+    const patrolRoutes = (await import('@/routes/patrol')).default;
     const portalRoutes = (await import('@/routes/portal')).default;
     const publicRoutes = (await import('@/routes/public')).default;
     const helpRoutes = (await import('@/routes/help')).default;
@@ -554,10 +557,10 @@ export const initializeAppForTesting = async () => {
     const routeHealthRoutes = (await import('@/routes/route-health')).default;
     const errorRecoveryRoutes = (await import('@/routes/error-recovery')).default;
     const { serveUploads } = await import('@/middleware/staticFileServer');
-    
+
     // Get validated configuration
     config = configManager.getConfig();
-    
+
     // Setup middleware
     const middlewareConfig = {
       requestLoggingMiddleware,
@@ -569,18 +572,18 @@ export const initializeAppForTesting = async () => {
       requestRecovery
     };
     setupMiddleware(app, config, middlewareConfig);
-    
+
     // Setup routes
     const routes = {
       authRoutes, userRoutes, roleRoutes, permissionRoutes, operationLogRoutes,
       baseRoutes, barnRoutes, cattleRoutes, healthRoutes, redisHealthRoutes,
       feedingRoutes, materialRoutes, equipmentRoutes, supplierRoutes,
       purchaseOrderRoutes, purchaseRoutes, customerRoutes, salesOrderRoutes,
-      newsRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
+      newsRoutes, patrolRoutes, portalRoutes, publicRoutes, helpRoutes, uploadRoutes,
       dashboardRoutes, dataIntegrationRoutes, performanceRoutes, monitoringRoutes,
       securityRoutes, routeHealthRoutes, errorRecoveryRoutes, serveUploads
     };
-    
+
     const routeMiddleware = {
       authMiddleware,
       notFoundHandler,
@@ -588,10 +591,10 @@ export const initializeAppForTesting = async () => {
       errorRecoveryHandler,
       errorHandler
     };
-    
+
     setupRoutes(app, routes, routeMiddleware, startupChecker);
     routesInitialized = true;
-    
+
     return app;
   } catch (error) {
     console.error('Failed to initialize app for testing:', error);

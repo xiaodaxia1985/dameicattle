@@ -112,13 +112,13 @@
         </template>
         <el-row :gutter="20">
           <el-col :span="6">
-            <el-button type="primary" size="large" @click="$router.push('/feeding/records/create')">
+            <el-button type="primary" size="large" @click="$router.push('/admin/feeding/records')">
               <el-icon><Plus /></el-icon>
               添加饲喂记录
             </el-button>
           </el-col>
           <el-col :span="6">
-            <el-button type="success" size="large" @click="$router.push('/feeding/formulas/create')">
+            <el-button type="success" size="large" @click="$router.push('/admin/feeding/formulas')">
               <el-icon><DocumentAdd /></el-icon>
               创建配方
             </el-button>
@@ -130,7 +130,7 @@
             </el-button>
           </el-col>
           <el-col :span="6">
-            <el-button type="warning" size="large" @click="$router.push('/feeding/analysis')">
+            <el-button type="warning" size="large" @click="$router.push('/admin/feeding/analysis')">
               <el-icon><DataAnalysis /></el-icon>
               效率分析
             </el-button>
@@ -145,20 +145,126 @@
         <template #header>
           <div class="card-header">
             <span>最近饲喂记录</span>
-            <el-button type="text" @click="$router.push('/feeding/records')">查看全部</el-button>
+            <el-button type="text" @click="$router.push('/admin/feeding/records')">查看全部</el-button>
           </div>
         </template>
         <el-table :data="recentRecords" v-loading="loading">
-          <el-table-column prop="feedingDate" label="日期" width="120" />
-          <el-table-column prop="formulaName" label="配方" />
-          <el-table-column prop="baseName" label="基地" />
-          <el-table-column prop="barnName" label="牛棚" />
-          <el-table-column prop="amount" label="用量(kg)" width="100" />
-          <el-table-column prop="cost" label="成本(¥)" width="100" />
-          <el-table-column prop="operatorName" label="操作员" width="100" />
+          <el-table-column label="日期" width="120">
+            <template #default="{ row }">
+              {{ row.feeding_date }}
+            </template>
+          </el-table-column>
+          <el-table-column label="配方">
+            <template #default="{ row }">
+              {{ row.formula?.name || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="基地">
+            <template #default="{ row }">
+              {{ row.base?.name || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="牛棚">
+            <template #default="{ row }">
+              {{ row.barn?.name || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column label="用量(kg)" width="100">
+            <template #default="{ row }">
+              {{ parseFloat(row.amount || 0).toFixed(1) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="成本(¥)" width="100">
+            <template #default="{ row }">
+              ¥{{ (parseFloat(row.amount || 0) * parseFloat(row.formula?.cost_per_kg || 0)).toFixed(2) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="操作员" width="100">
+            <template #default="{ row }">
+              {{ row.operator?.real_name || row.operator?.username || '-' }}
+            </template>
+          </el-table-column>
         </el-table>
       </el-card>
     </div>
+
+    <!-- 饲喂计划对话框 -->
+    <el-dialog v-model="planDialogVisible" title="7天饲喂计划" width="80%" top="5vh">
+      <div v-if="generatedPlan" class="feeding-plan">
+        <!-- 计划汇总 -->
+        <div class="plan-summary">
+          <el-row :gutter="20">
+            <el-col :span="6">
+              <el-statistic title="计划天数" :value="generatedPlan.summary?.total_days || 0" suffix="天" />
+            </el-col>
+            <el-col :span="6">
+              <el-statistic title="牛只数量" :value="generatedPlan.summary?.cattle_count || 0" suffix="头" />
+            </el-col>
+            <el-col :span="6">
+              <el-statistic title="总用量" :value="generatedPlan.summary?.total_amount || 0" suffix="kg" />
+            </el-col>
+            <el-col :span="6">
+              <el-statistic title="总成本" :value="generatedPlan.summary?.total_cost || 0" prefix="¥" :precision="2" />
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 每日计划 -->
+        <div class="daily-plans">
+          <h3>每日饲喂计划</h3>
+          <el-timeline>
+            <el-timeline-item
+              v-for="(dayPlan, index) in generatedPlan.plan"
+              :key="index"
+              :timestamp="dayPlan.date"
+              placement="top"
+            >
+              <el-card>
+                <template #header>
+                  <div class="day-header">
+                    <span>{{ dayPlan.day_of_week }}</span>
+                    <span class="date">{{ dayPlan.date }}</span>
+                  </div>
+                </template>
+                
+                <div class="day-feedings">
+                  <el-table :data="dayPlan.feedings" size="small">
+                    <el-table-column prop="formula.name" label="配方" width="150" />
+                    <el-table-column label="推荐用量" width="120">
+                      <template #default="{ row }">
+                        {{ row.recommended_amount }}kg
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="预估成本" width="120">
+                      <template #default="{ row }">
+                        ¥{{ row.estimated_cost }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="饲喂次数" width="100">
+                      <template #default="{ row }">
+                        {{ row.feeding_times }}次
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="单价" width="100">
+                      <template #default="{ row }">
+                        ¥{{ row.formula?.cost_per_kg }}/kg
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </div>
+              </el-card>
+            </el-timeline-item>
+          </el-timeline>
+        </div>
+      </div>
+      
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="planDialogVisible = false">关闭</el-button>
+          <el-button type="primary" @click="exportPlan">导出计划</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -193,11 +299,10 @@ const formulaChartRef = ref<HTMLElement>()
 let trendChart: echarts.ECharts | null = null
 let formulaChart: echarts.ECharts | null = null
 
-// 初始化日期范围（最近30天）
+// 初始化日期范围（扩大范围以包含所有数据）
 const initDateRange = () => {
-  const end = new Date()
-  const start = new Date()
-  start.setDate(start.getDate() - 30)
+  const end = new Date('2025-12-31') // 设置到2025年底
+  const start = new Date('2025-01-01') // 从2025年初开始
   dateRange.value = [
     start.toISOString().split('T')[0],
     end.toISOString().split('T')[0]
@@ -226,13 +331,39 @@ const fetchStatistics = async () => {
   
   loading.value = true
   try {
-    const response = await feedingApi.getFeedingStatistics({
-      baseId: selectedBase.value,
-      startDate: dateRange.value[0],
-      endDate: dateRange.value[1]
-    })
-    statistics.value = response.data
-    activeFormulas.value = response.data.formulaUsage?.length || 0
+    // 确保参数类型正确
+    const params = {
+      base_id: Number(selectedBase.value),  // 确保是数字类型
+      start_date: dateRange.value[0],
+      end_date: dateRange.value[1]
+    }
+    
+    console.log('获取统计数据参数:', params)
+    
+    // 验证参数有效性
+    if (!params.base_id || !params.start_date || !params.end_date) {
+      console.error('参数无效:', params)
+      ElMessage.error('参数无效，请检查基地选择和日期范围')
+      return
+    }
+    
+    const response = await feedingApi.getFeedingStatistics(params)
+    
+    console.log('统计数据API响应:', response)
+    
+    // 处理后端返回的数据，确保格式正确
+    const data = response.data
+    statistics.value = {
+      totalAmount: data.totalAmount || data.basic_stats?.total_amount || 0,
+      totalCost: data.totalCost || data.efficiency?.totalCost || 0,
+      avgDailyCost: data.avgDailyCost || data.efficiency?.averageCostPerKg || 0,
+      formulaUsage: data.formulaUsage || [],
+      trend: data.trend || []
+    }
+    
+    activeFormulas.value = data.formulaUsage?.length || data.formula_stats?.length || 0
+    
+    console.log('处理后的统计数据:', statistics.value)
     
     // 更新图表
     updateCharts()
@@ -250,12 +381,23 @@ const fetchRecentRecords = async () => {
   
   try {
     const response = await feedingApi.getFeedingRecords({
-      baseId: selectedBase.value,
+      base_id: selectedBase.value,  // 使用下划线命名
       page: 1,
       limit: 10
     })
-    // 根据API实现，response.data 应该是 { data: [...], total: number, page: number, limit: number }
-    recentRecords.value = response.data.data || []
+    
+    console.log('最近记录API响应:', response)
+    
+    // 根据实际API返回结构处理数据
+    if (response.data.records) {
+      recentRecords.value = response.data.records || []
+    } else if (response.data.data) {
+      recentRecords.value = response.data.data || []
+    } else {
+      recentRecords.value = []
+    }
+    
+    console.log('处理后的最近记录数据:', recentRecords.value)
   } catch (error) {
     console.error('获取最近记录失败:', error)
   }
@@ -377,6 +519,10 @@ const handleBaseChange = () => {
   fetchRecentRecords()
 }
 
+// 饲喂计划相关
+const planDialogVisible = ref(false)
+const generatedPlan = ref<any>(null)
+
 // 生成饲喂计划
 const generatePlan = async () => {
   if (!selectedBase.value) {
@@ -385,10 +531,14 @@ const generatePlan = async () => {
   }
   
   try {
-    await feedingApi.generateFeedingPlan({
-      baseId: selectedBase.value,
+    const response = await feedingApi.generateFeedingPlan({
+      base_id: selectedBase.value,  // 使用下划线命名
       days: 7
     })
+    
+    console.log('生成的饲喂计划:', response.data)
+    generatedPlan.value = response.data
+    planDialogVisible.value = true
     ElMessage.success('饲喂计划生成成功')
   } catch (error) {
     console.error('生成饲喂计划失败:', error)
@@ -408,6 +558,42 @@ onMounted(() => {
     formulaChart?.resize()
   })
 })
+
+// 导出饲喂计划
+const exportPlan = () => {
+  if (!generatedPlan.value) {
+    ElMessage.warning('没有可导出的计划')
+    return
+  }
+
+  try {
+    // 创建导出数据
+    const exportData = {
+      title: '7天饲喂计划',
+      generated_at: generatedPlan.value.generated_at,
+      summary: generatedPlan.value.summary,
+      plan: generatedPlan.value.plan
+    }
+
+    // 转换为JSON字符串并下载
+    const dataStr = JSON.stringify(exportData, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `饲喂计划_${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    
+    ElMessage.success('计划导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
+}
 
 // 监听基地变化
 watch(() => selectedBase.value, () => {

@@ -30,6 +30,8 @@ import { SalesOrderItem } from './SalesOrderItem';
 import { NewsCategory } from './NewsCategory';
 import { NewsArticle } from './NewsArticle';
 import { NewsComment } from './NewsComment';
+import { PatrolRecord } from './PatrolRecord';
+import { IoTDevice } from './IoTDevice';
 
 // Define associations
 User.belongsTo(Role, { foreignKey: 'role_id', as: 'role' });
@@ -225,6 +227,23 @@ NewsComment.belongsTo(NewsArticle, { foreignKey: 'article_id', as: 'article' });
 NewsComment.belongsTo(NewsComment, { foreignKey: 'parent_id', as: 'parent' });
 NewsComment.hasMany(NewsComment, { foreignKey: 'parent_id', as: 'replies' });
 
+// Patrol record associations
+PatrolRecord.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+Base.hasMany(PatrolRecord, { foreignKey: 'base_id', as: 'patrol_records' });
+
+PatrolRecord.belongsTo(Barn, { foreignKey: 'barn_id', as: 'barn' });
+Barn.hasMany(PatrolRecord, { foreignKey: 'barn_id', as: 'patrol_records' });
+
+PatrolRecord.belongsTo(User, { foreignKey: 'patrol_person_id', as: 'patrol_person' });
+User.hasMany(PatrolRecord, { foreignKey: 'patrol_person_id', as: 'patrol_records' });
+
+// IoT device associations
+IoTDevice.belongsTo(Base, { foreignKey: 'base_id', as: 'base' });
+Base.hasMany(IoTDevice, { foreignKey: 'base_id', as: 'iot_devices' });
+
+IoTDevice.belongsTo(Barn, { foreignKey: 'barn_id', as: 'barn' });
+Barn.hasMany(IoTDevice, { foreignKey: 'barn_id', as: 'iot_devices' });
+
 // Export models
 export {
   sequelize,
@@ -259,6 +278,8 @@ export {
   NewsCategory,
   NewsArticle,
   NewsComment,
+  PatrolRecord,
+  IoTDevice,
 };
 
 // Export database instance

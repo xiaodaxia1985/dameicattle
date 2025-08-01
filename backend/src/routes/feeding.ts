@@ -167,4 +167,24 @@ router.post(
   FeedingController.generateFeedingPlan
 );
 
+// Feeding efficiency analysis
+router.get(
+  '/efficiency',
+  requirePermission('feeding:read'),
+  dataPermissionMiddleware,
+  ...getFeedingStatisticsValidator,
+  validate,
+  FeedingController.getFeedingEfficiency
+);
+
+// Feeding trend analysis
+router.get(
+  '/trend',
+  requirePermission('feeding:read'),
+  dataPermissionMiddleware,
+  ...getFeedingStatisticsValidator,
+  validate,
+  FeedingController.getFeedingTrend
+);
+
 export default router;

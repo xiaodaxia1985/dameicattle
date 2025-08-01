@@ -344,12 +344,12 @@ const loadBarns = async (baseId?: string) => {
   }
   
   try {
-    const response = await barnApi.getList({ 
+    const response = await barnApi.getBarns({ 
       page: 1, 
       limit: 100, 
-      baseId: parseInt(baseId)
+      base_id: parseInt(baseId)
     })
-    barns.value = response.data
+    barns.value = response.data.barns || []
   } catch (error) {
     console.error('加载牛棚列表失败:', error)
   }

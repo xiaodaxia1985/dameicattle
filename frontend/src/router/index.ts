@@ -124,6 +124,32 @@ const routes: RouteRecordRaw[] = [
             name: 'FeedingAnalysis',
             component: () => import('@/views/feeding/Analysis.vue'),
             meta: { title: '效率分析' }
+          },
+          {
+            path: 'patrol',
+            name: 'PatrolManagement',
+            redirect: '/admin/feeding/patrol/records',
+            meta: { title: '巡圈管理' },
+            children: [
+              {
+                path: 'records',
+                name: 'PatrolRecords',
+                component: () => import('@/views/feeding/patrol/Records.vue'),
+                meta: { title: '巡圈记录' }
+              },
+              {
+                path: 'dashboard',
+                name: 'PatrolDashboard',
+                component: () => import('@/views/feeding/patrol/Dashboard.vue'),
+                meta: { title: '巡圈总览' }
+              },
+              {
+                path: 'tasks',
+                name: 'PatrolTasks',
+                component: () => import('@/views/feeding/patrol/Tasks.vue'),
+                meta: { title: '今日任务' }
+              }
+            ]
           }
         ]
       },

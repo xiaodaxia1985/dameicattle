@@ -5,6 +5,9 @@
 
 import { safeGet, ensureArray, ensureNumber, ensureString, ensureBoolean } from './safeAccess'
 
+// 重新导出常用的工具函数，保持API一致性
+export { safeGet, ensureArray, ensureNumber, ensureString, ensureBoolean }
+
 /**
  * 验证并标准化API响应数据
  */

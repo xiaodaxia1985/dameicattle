@@ -158,8 +158,12 @@ export const feedingApi = {
 
   // 获取饲喂记录列表
   getFeedingRecords(params: FeedingListParams = {}): Promise<{ data: FeedingListResponse }> {
+    console.log('饲喂记录API调用参数:', params)
     return request.get<ApiResponse<FeedingListResponse>>('/feeding/records', { params })
-      .then(response => ({ data: response.data.data }))
+      .then(response => {
+        console.log('饲喂记录API原始响应:', response)
+        return { data: response.data.data }
+      })
   },
 
   // 获取饲喂记录详情
@@ -195,20 +199,53 @@ export const feedingApi = {
   },
 
   // 获取饲喂统计数据
-  getFeedingStatistics(params: { baseId?: number; startDate?: string; endDate?: string } = {}): Promise<{ data: FeedingStatistics }> {
+  getFeedingStatistics(params: { base_id?: number; start_date?: string; end_date?: string } = {}): Promise<{ data: FeedingStatistics }> {
+    console.log('饲喂统计API调用参数:', params)
     return request.get<ApiResponse<FeedingStatistics>>('/feeding/statistics', { params })
-      .then(response => ({ data: response.data.data }))
+      .then(response => {
+        console.log('饲喂统计API原始响应:', response)
+        return { data: response.data.data }
+      })
   },
 
   // 生成饲喂计划
-  generateFeedingPlan(params: { baseId: number; barnId?: number; days: number }): Promise<{ data: any[] }> {
-    return request.post<ApiResponse<any[]>>('/feeding/generate-plan', params)
-      .then(response => ({ data: response.data.data }))
+  generateFeedingPlan(params: { base_id: number; barn_id?: number; days: number }): Promise<{ data: any[] }> {
+    console.log('生成饲喂计划API调用参数:', params)
+    return request.post<ApiResponse<any[]>>('/feeding/plans/generate', params)
+      .then(response => {
+        console.log('生成饲喂计划API响应:', response)
+        return { data: response.data.data }
+      })
   },
 
-  // 获取饲喂效率分析
-  getFeedingEfficiency(params: { baseId?: number; startDate?: string; endDate?: string } = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/feeding/efficiency', { params })
-      .then(response => ({ data: response.data.data }))
+  // 获取饲喂效率分析（使用统计数据计算效率）
+  getFeedingEfficiency(params: { base_id?: number; start_date?: string; end_date?: string } = {}): Promise<{ data: any }> {
+    console.log('饲喂效率分析API调用参数:', params)
+    // 使用统计API获取数据，然后在前端计算效率指标
+    return request.get<ApiResponse<any>>('/feeding/statistics', { params })
+      .then(response => {
+        console.log('饲喂统计API响应:', response)
+        const statsData = response.data.data
+        
+        // 从统计数据中提取效率指标
+        const efficiency = statsData.efficiency || {
+          totalAmount: 0,
+          totalCost: 0,
+          averageCostPerKg: 0,
+          recordCount: 0
+        }
+        
+        return { data: efficiency }
+      })
+  },
+
+  // 获取饲喂趋势数据
+  getFeedingTrend(params: { base_id?: number; start_date?: string; end_date?: string; period?: string } = {}): Promise<{ data: any[] }> {
+    console.log('饲喂趋势数据API调用参数:', params)
+    return request.get<ApiResponse<any[]>>('/feeding/trend', { params })
+      .then(response => {
+        console.log('饲喂趋势数据API响应:', response)
+        return { data: response.data.data }
+      })
   }
 }
