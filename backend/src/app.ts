@@ -184,8 +184,8 @@ const setupRoutes = (app: express.Application, routes: any, middleware: any, sta
   app.use('/api/v1/bases', authMiddleware, baseRoutes);
   app.use('/api/v1/barns', authMiddleware, barnRoutes);
   app.use('/api/v1/cattle', authMiddleware, cattleRoutes);
-  app.use('/api/v1/health-records', authMiddleware, healthRoutes);
-  app.use('/api/v1/health', redisHealthRoutes);
+  app.use('/api/v1/health', authMiddleware, healthRoutes);
+  app.use('/api/v1/redis-health', redisHealthRoutes);
   app.use('/api/v1/feeding', authMiddleware, feedingRoutes);
   app.use('/api/v1/materials', authMiddleware, materialRoutes);
   app.use('/api/v1/equipment', authMiddleware, equipmentRoutes);

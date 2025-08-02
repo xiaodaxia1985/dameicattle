@@ -190,7 +190,7 @@ export const apiEndpoints = {
   health: {
     system: '/health',
     database: '/health/database',
-    redis: '/health/redis',
+    redis: '/redis-health/redis',
     services: '/health/services'
   },
   
