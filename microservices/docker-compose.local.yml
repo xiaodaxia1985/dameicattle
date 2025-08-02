@@ -1,0 +1,277 @@
+services:
+  # API网关
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://host.docker.internal:6379
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 用户认证服务
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=auth_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - JWT_SECRET=your-jwt-secret-key
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 基地管理服务
+  base-service:
+    build:
+      context: .
+      dockerfile: base-service/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=base_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 牛只管理服务
+  cattle-service:
+    build:
+      context: .
+      dockerfile: cattle-service/Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=cattle_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BASE_SERVICE_URL=http://base-service:3002
+    depends_on:
+      - auth-service
+      - base-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 健康管理服务
+  health-service:
+    build:
+      context: .
+      dockerfile: health-service/Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=health_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - CATTLE_SERVICE_URL=http://cattle-service:3003
+    depends_on:
+      - auth-service
+      - cattle-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 饲养管理服务
+  feeding-service:
+    build:
+      context: .
+      dockerfile: feeding-service/Dockerfile
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=feeding_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - CATTLE_SERVICE_URL=http://cattle-service:3003
+    depends_on:
+      - auth-service
+      - cattle-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 设备管理服务
+  equipment-service:
+    build:
+      context: .
+      dockerfile: equipment-service/Dockerfile
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=equipment_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BASE_SERVICE_URL=http://base-service:3002
+    depends_on:
+      - auth-service
+      - base-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 采购管理服务
+  procurement-service:
+    build:
+      context: .
+      dockerfile: procurement-service/Dockerfile
+    ports:
+      - "3007:3007"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=procurement_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 销售管理服务
+  sales-service:
+    build:
+      context: .
+      dockerfile: sales-service/Dockerfile
+    ports:
+      - "3008:3008"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=sales_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 物料管理服务
+  material-service:
+    build:
+      context: .
+      dockerfile: material-service/Dockerfile
+    ports:
+      - "3009:3009"
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=material_db
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 通知服务
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 文件服务
+  file-service:
+    build:
+      context: .
+      dockerfile: file-service/Dockerfile
+    ports:
+      - "3011:3011"
+    environment:
+      - NODE_ENV=production
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    volumes:
+      - file_uploads:/app/uploads
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  # 监控服务
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: monitoring-service/Dockerfile
+    ports:
+      - "3012:3012"
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://host.docker.internal:6379
+      - AUTH_SERVICE_URL=http://auth-service:3001
+    depends_on:
+      - auth-service
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+volumes:
+  file_uploads:
+
+networks:
+  microservices-network:
+    driver: bridge

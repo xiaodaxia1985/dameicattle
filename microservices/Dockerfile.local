@@ -1,0 +1,33 @@
+# 使用本地Node.js环境的Dockerfile
+FROM node:18-alpine
+
+# 如果上面的镜像拉取失败，可以尝试使用以下镜像源：
+# FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine
+# FROM dockerproxy.com/library/node:18-alpine
+
+WORKDIR /app
+
+# 设置npm镜像源
+RUN npm config set registry https://registry.npmmirror.com
+
+# 复制共享库
+COPY shared/ ../shared/
+WORKDIR /shared
+RUN npm install && npm run build
+
+# 返回应用目录
+WORKDIR /app
+
+# 复制package文件
+COPY package*.json ./
+RUN npm install
+
+# 复制应用代码
+COPY . ./
+RUN npm run build
+
+# 暴露端口
+EXPOSE 3000
+
+# 启动命令
+CMD ["npm", "start"]
