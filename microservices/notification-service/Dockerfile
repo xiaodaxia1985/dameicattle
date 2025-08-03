@@ -1,4 +1,7 @@
-FROM dockerproxy.com/library/node:18-alpine
+FROM alpine:latest
+
+# 安装Node.js和npm
+RUN apk add --no-cache nodejs npm
 
 WORKDIR /app
 

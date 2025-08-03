@@ -33,7 +33,7 @@ export class AuthController {
 
       res.success(result, 'Login successful');
     } catch (error) {
-      logger.error('Login error', { error: error.message });
+      logger.error('Login error', { error: (error as Error).message });
       res.error('Login failed', 401, 'LOGIN_FAILED');
     }
   }
@@ -48,9 +48,9 @@ export class AuthController {
       const user = await authService.register(value);
       res.success(user, 'User registered successfully');
     } catch (error) {
-      logger.error('Registration error', { error: error.message });
+      logger.error('Registration error', { error: (error as Error).message });
       
-      if (error.message === 'User already exists') {
+      if ((error as Error).message === 'User already exists') {
         res.error('User already exists', 409, 'USER_EXISTS');
       } else {
         res.error('Registration failed', 500, 'REGISTRATION_FAILED');
@@ -68,7 +68,7 @@ export class AuthController {
       const user = await authService.verifyToken(token);
       res.success({ user }, 'Token verified');
     } catch (error) {
-      logger.error('Token verification error', { error: error.message });
+      logger.error('Token verification error', { error: (error as Error).message });
       res.error('Invalid token', 401, 'INVALID_TOKEN');
     }
   }
@@ -83,7 +83,7 @@ export class AuthController {
       const result = await authService.refreshToken(refreshToken);
       res.success(result, 'Token refreshed');
     } catch (error) {
-      logger.error('Token refresh error', { error: error.message });
+      logger.error('Token refresh error', { error: (error as Error).message });
       res.error('Token refresh failed', 401, 'REFRESH_FAILED');
     }
   }
@@ -93,7 +93,7 @@ export class AuthController {
       // 在实际应用中，这里可以将token加入黑名单
       res.success(null, 'Logout successful');
     } catch (error) {
-      logger.error('Logout error', { error: error.message });
+      logger.error('Logout error', { error: (error as Error).message });
       res.error('Logout failed', 500, 'LOGOUT_FAILED');
     }
   }

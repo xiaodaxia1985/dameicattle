@@ -1,4 +1,4 @@
-import Redis from 'redis';
+import { createClient } from 'redis';
 import { createLogger } from './logger';
 
 const logger = createLogger('EventBus');
@@ -12,8 +12,8 @@ export class EventBus {
 
   async connect() {
     try {
-      this.publisher = Redis.createClient({ url: this.redisUrl });
-      this.subscriber = Redis.createClient({ url: this.redisUrl });
+      this.publisher = createClient({ url: this.redisUrl });
+      this.subscriber = createClient({ url: this.redisUrl });
 
       await this.publisher.connect();
       await this.subscriber.connect();

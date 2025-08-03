@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { Op } from 'sequelize';
 import { User } from '../models/User';
 import { createLogger } from '@cattle-management/shared';
 
@@ -59,7 +60,7 @@ export class AuthService {
         }
       };
     } catch (error) {
-      logger.error('Login failed', { username, error: error.message });
+      logger.error('Login failed', { username, error: (error as Error).message });
       throw error;
     }
   }
@@ -75,7 +76,7 @@ export class AuthService {
       // 检查用户是否已存在
       const existingUser = await User.findOne({
         where: {
-          $or: [
+          [Op.or]: [
             { username: userData.username },
             { email: userData.email }
           ]
@@ -91,10 +92,13 @@ export class AuthService {
 
       // 创建用户
       const user = await User.create({
-        ...userData,
+        username: userData.username,
+        email: userData.email,
         password: hashedPassword,
-        role: userData.role || 'viewer'
-      });
+        role: userData.role || 'viewer',
+        baseId: userData.baseId,
+        isActive: true
+      } as any);
 
       logger.info('User registered successfully', {
         userId: user.id,
@@ -114,7 +118,7 @@ export class AuthService {
     } catch (error) {
       logger.error('Registration failed', { 
         username: userData.username, 
-        error: error.message 
+        error: (error as Error).message 
       });
       throw error;
     }
@@ -134,7 +138,7 @@ export class AuthService {
 
       return user;
     } catch (error) {
-      logger.error('Token verification failed', { error: error.message });
+      logger.error('Token verification failed', { error: (error as Error).message });
       throw new Error('Invalid token');
     }
   }
@@ -157,7 +161,7 @@ export class AuthService {
         expiresIn: this.jwtExpiresIn
       };
     } catch (error) {
-      logger.error('Token refresh failed', { error: error.message });
+      logger.error('Token refresh failed', { error: (error as Error).message });
       throw new Error('Invalid refresh token');
     }
   }
@@ -171,7 +175,7 @@ export class AuthService {
         baseId: user.baseId
       },
       this.jwtSecret,
-      { expiresIn: this.jwtExpiresIn }
+      { expiresIn: this.jwtExpiresIn } as jwt.SignOptions
     );
   }
 

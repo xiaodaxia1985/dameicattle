@@ -51,9 +51,12 @@ export const initUserModel = (sequelize: Sequelize) => {
       allowNull: false
     },
     role: {
-      type: DataTypes.ENUM('admin', 'manager', 'operator', 'viewer'),
+      type: DataTypes.STRING(20),
       allowNull: false,
-      defaultValue: 'viewer'
+      defaultValue: 'viewer',
+      validate: {
+        isIn: [['admin', 'manager', 'operator', 'viewer']]
+      }
     },
     baseId: {
       type: DataTypes.INTEGER,
