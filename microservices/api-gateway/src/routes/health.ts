@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { HttpClient } from '@cattle-management/shared';
+import { createHttpClient } from '@cattle-management/shared';
 import { services } from '../config/services';
 
 const router = Router();
@@ -10,7 +10,7 @@ router.get('/health', async (req, res) => {
   // 检查所有服务的健康状态
   const checkPromises = Object.entries(services).map(async ([key, service]) => {
     try {
-      const client = new HttpClient(service.url, 3000);
+      const client = createHttpClient(service.url, 3000);
       const health = await client.get(service.healthPath);
       healthChecks[key] = {
         status: 'healthy',
@@ -21,7 +21,7 @@ router.get('/health', async (req, res) => {
       healthChecks[key] = {
         status: 'unhealthy',
         url: service.url,
-        error: error.message
+        error: (error as Error).message
       };
     }
   });

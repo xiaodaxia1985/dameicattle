@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import Redis from 'redis';
+import { createClient } from 'redis';
 
-const redis = Redis.createClient({
+const redis = createClient({
   url: process.env.REDIS_URL || 'redis://redis:6379'
 });
 
@@ -43,7 +43,7 @@ export const rateLimiter = async (req: Request, res: Response, next: NextFunctio
     // 添加速率限制头
     res.setHeader('X-RateLimit-Limit', defaultConfig.maxRequests);
     res.setHeader('X-RateLimit-Remaining', Math.max(0, defaultConfig.maxRequests - current));
-    res.setHeader('X-RateLimit-Reset', new Date(now + defaultConfig.windowMs));
+    res.setHeader('X-RateLimit-Reset', new Date(now + defaultConfig.windowMs).toISOString());
 
     next();
   } catch (error) {
