@@ -9,11 +9,13 @@ const app = express();
 const logger = createLogger('procurement-service');
 const PORT = process.env.PORT || 3007;
 
-// 鍩虹涓棿浠?app.use(express.json());
+// 基础中间件
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(responseWrapper);
 
-// 鍋ュ悍妫€鏌?app.get('/health', async (req, res) => {
+// 健康检查
+app.get('/health', async (req, res) => {
   try {
     const dbHealthy = await connectDatabase();
     
@@ -31,18 +33,18 @@ app.use(responseWrapper);
   }
 });
 
-// TODO: 娣诲姞API璺敱
+// TODO: 添加API路由
 // app.use('/api/v1', routes);
 
-// 404澶勭悊
+// 404处理
 app.use('*', (req, res) => {
   res.error('Route not found', 404, 'ROUTE_NOT_FOUND');
 });
 
-// 閿欒澶勭悊
+// 错误处理
 app.use(errorHandler);
 
-// 鍚姩鏈嶅姟
+// 启动服务
 const startServer = async () => {
   try {
     const dbConnected = await connectDatabase();
