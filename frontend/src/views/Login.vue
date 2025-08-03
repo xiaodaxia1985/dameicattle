@@ -13,7 +13,7 @@
           <p>后端连接状态: <span :class="backendStatus.connected ? 'success' : 'error'">
             {{ backendStatus.connected ? '已连接' : '未连接' }}
           </span></p>
-          <p>默认账户: admin / Admin123</p>
+          <p>默认账户: test / 123456</p>
         </div>
       </div>
       
@@ -60,7 +60,7 @@
       </el-form>
       
       <div class="login-footer">
-        <p>默认账号：admin / Admin123</p>
+        <p>默认账号：test / 123456</p>
       </div>
     </div>
   </div>
@@ -83,8 +83,8 @@ const showDebugInfo = ref(import.meta.env.MODE === 'development')
 const backendStatus = ref({ connected: false })
 
 const loginForm = reactive<LoginRequest>({
-  username: 'admin',
-  password: 'Admin123'
+  username: 'test',
+  password: '123456'
 })
 
 const loginRules: FormRules = {

@@ -24,7 +24,7 @@ export const setupRoutes = (app: Express) => {
     target: services.auth,
     changeOrigin: true,
     pathRewrite: {
-      '^/api/v1/auth': '/api/v1'
+      '^/api/v1/auth': '/api/v1/auth'
     }
   }));
 
@@ -45,11 +45,11 @@ export const setupRoutes = (app: Express) => {
     }
   }));
 
-  app.use('/api/v1/health', authMiddleware, createProxyMiddleware({
+  app.use('/api/v1/health-service', authMiddleware, createProxyMiddleware({
     target: services.health,
     changeOrigin: true,
     pathRewrite: {
-      '^/api/v1/health': '/api/v1'
+      '^/api/v1/health-service': '/api/v1'
     }
   }));
 

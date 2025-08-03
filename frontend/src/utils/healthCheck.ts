@@ -1,7 +1,8 @@
 // 健康检查工具
 export const healthCheck = async (): Promise<boolean> => {
   try {
-    const response = await fetch('/api/v1/health', {
+    // 使用API网关的根健康检查端点，不需要认证
+    const response = await fetch('/health', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'

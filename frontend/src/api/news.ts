@@ -1,11 +1,5 @@
-import { request } from 'http'
-import { request } from 'http'
-import { request } from 'http'
-import { request } from 'http'
-import { request } from 'http'
-import { request } from 'http'
-import { request } from 'http'
 import { newsServiceApi } from './microservices'
+import request from './request'
 import type { ApiResponse } from './request'
 
 // 新闻分类接口
@@ -461,12 +455,12 @@ export const newsApi = {
     categoryId?: number
     status?: string
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
-    return request.get('/public/news', { params })
+    return request.get('/api/v1/public/news', { params })
   },
 
   // 获取公开新闻详情（门户网站使用）
   getPublicNewsById(id: number): Promise<ApiResponse<NewsArticle>> {
-    return request.get(`/public/news/${id}`)
+    return request.get(`/api/v1/public/news/${id}`)
   },
 
   // 增加新闻浏览量

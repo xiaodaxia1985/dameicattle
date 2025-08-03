@@ -28,6 +28,17 @@ app.get('/health', (req, res) => {
   }, 'API Gateway is healthy');
 });
 
+// API健康检查（不需要认证）
+app.get('/api/v1/health', (req, res) => {
+  res.success({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: '1.0.0',
+    service: 'API Gateway'
+  }, 'API health check completed');
+});
+
 // 设置路由
 setupRoutes(app);
 

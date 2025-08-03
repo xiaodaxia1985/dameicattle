@@ -5,35 +5,45 @@
 
 import apiClient from './request'
 import type { ApiResponse } from './request'
+import { UnifiedApiClient } from '@/utils/apiClient'
 
-// 微服务路由映射
+// 创建一个专用的认证API客户端，不使用baseURL前缀
+const authApiClient = new UnifiedApiClient({
+  baseURL: '', // 空的baseURL，避免路径重复
+  timeout: 10000,
+  retryAttempts: 3,
+  retryDelay: 1000,
+  enableLogging: true
+})
+
+// 微服务路由映射 - 直接通过API网关访问
 export const MICROSERVICE_ROUTES = {
   // 认证服务
-  AUTH: '/auth',
+  AUTH: '/api/v1/auth',
   // 基地服务  
-  BASE: '/base',
+  BASE: '/api/v1/base',
   // 牛只服务
-  CATTLE: '/cattle', 
+  CATTLE: '/api/v1/cattle',
   // 健康服务
-  HEALTH: '/health',
+  HEALTH: '/api/v1/health',
   // 饲养服务
-  FEEDING: '/feeding',
+  FEEDING: '/api/v1/feeding',
   // 设备服务
-  EQUIPMENT: '/equipment',
+  EQUIPMENT: '/api/v1/equipment',
   // 采购服务
-  PROCUREMENT: '/procurement',
+  PROCUREMENT: '/api/v1/procurement',
   // 销售服务
-  SALES: '/sales',
+  SALES: '/api/v1/sales',
   // 物料服务
-  MATERIAL: '/material',
+  MATERIAL: '/api/v1/material',
   // 通知服务
-  NOTIFICATION: '/notification',
+  NOTIFICATION: '/api/v1/notification',
   // 文件服务
-  FILE: '/file',
+  FILE: '/api/v1/file',
   // 监控服务
-  MONITORING: '/monitoring',
+  MONITORING: '/api/v1/monitoring',
   // 新闻服务
-  NEWS: '/news'
+  NEWS: '/api/v1/news'
 } as const
 
 // 微服务API基类
@@ -135,27 +145,28 @@ export class AuthServiceApi extends MicroserviceApi {
 
   // 用户登录
   async login(credentials: { username: string; password: string }): Promise<ApiResponse<{ token: string; user: any }>> {
-    return this.post('/login', credentials)
+    // 使用专用的认证API客户端，避免baseURL重复
+    return authApiClient.post<{ token: string; user: any }>('/api/v1/auth/login', credentials)
   }
 
   // 用户登出
   async logout(): Promise<ApiResponse<void>> {
-    return this.post('/logout')
+    return authApiClient.post<void>('/api/v1/auth/logout')
   }
 
   // 刷新token
   async refreshToken(): Promise<ApiResponse<{ token: string }>> {
-    return this.post('/refresh')
+    return authApiClient.post<{ token: string }>('/api/v1/auth/refresh')
   }
 
   // 获取用户信息
   async getProfile(): Promise<ApiResponse<{ user: any; permissions: string[] }>> {
-    return this.get('/profile')
+    return authApiClient.get<{ user: any; permissions: string[] }>('/api/v1/auth/verify')
   }
 
   // 更新用户信息
   async updateProfile(data: any): Promise<ApiResponse<any>> {
-    return this.put('/profile', data)
+    return authApiClient.put<any>('/api/v1/auth/profile', data)
   }
 }
 
