@@ -1,34 +1,34 @@
-import request from './request'
+import { authServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 import type { LoginRequest, LoginResponse, User } from '@/types/auth'
 
 export const authApi = {
   // User login
-  login(data: LoginRequest): Promise<{ data: LoginResponse }> {
-    return request.post<ApiResponse<LoginResponse>>('/auth/login', data)
-      .then(response => ({ data: response.data.data }))
+  async login(data: LoginRequest): Promise<{ data: LoginResponse }> {
+    const response = await authServiceApi.login(data)
+    return { data: response.data }
   },
 
   // User logout
-  logout(): Promise<void> {
-    return request.post('/auth/logout')
+  async logout(): Promise<void> {
+    await authServiceApi.logout()
   },
 
   // Refresh token
-  refreshToken(): Promise<{ data: { token: string } }> {
-    return request.post<ApiResponse<{ token: string }>>('/auth/refresh')
-      .then(response => ({ data: response.data.data }))
+  async refreshToken(): Promise<{ data: { token: string } }> {
+    const response = await authServiceApi.refreshToken()
+    return { data: response.data }
   },
 
   // Get user profile
-  getProfile(): Promise<{ data: { user: User; permissions: string[] } }> {
-    return request.get<ApiResponse<{ user: User; permissions: string[] }>>('/users/profile/me')
-      .then(response => ({ data: response.data.data }))
+  async getProfile(): Promise<{ data: { user: User; permissions: string[] } }> {
+    const response = await authServiceApi.getProfile()
+    return { data: response.data }
   },
 
   // Update user profile
-  updateProfile(data: Partial<User>): Promise<{ data: { user: User } }> {
-    return request.put<ApiResponse<{ user: User }>>('/users/profile/me', data)
-      .then(response => ({ data: response.data.data }))
+  async updateProfile(data: Partial<User>): Promise<{ data: { user: User } }> {
+    const response = await authServiceApi.updateProfile(data)
+    return { data: response.data }
   }
 }

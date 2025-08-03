@@ -1,4 +1,4 @@
-import { apiService } from '@/utils/request'
+import { baseServiceApi } from './microservices'
 
 // 基地和牛棚相关类型定义
 export interface Base {
@@ -107,93 +107,89 @@ export interface UpdateBarnRequest {
 export const baseApi = {
   // 获取基地列表
   async getBases(params: BaseListParams = {}): Promise<{ data: { bases: Base[], pagination: any } }> {
-    const response = await apiService.get('/bases', params)
-    // 后端返回 { success: true, data: { bases: [], pagination: {} } }
-    // apiService现在返回完整响应，所以response就是完整的响应对象
+    const response = await baseServiceApi.getBases(params)
     return { data: response.data }
   },
 
   // 获取所有基地（不分页）
   async getAllBases(): Promise<{ data: Base[] }> {
-    const response = await apiService.get('/bases/all')
+    const response = await baseServiceApi.get('/bases/all')
     return { data: response.data }
   },
 
   // 获取基地详情
   async getBaseById(id: number): Promise<{ data: Base }> {
-    const response = await apiService.get(`/bases/${id}`)
-    // 后端返回 { success: true, data: { base: {} } }
-    return { data: response.data.base || response.data }
+    const response = await baseServiceApi.getBase(id)
+    return { data: response.data }
   },
 
   // 创建基地
   async createBase(data: CreateBaseRequest): Promise<{ data: Base }> {
-    const response = await apiService.post('/bases', data)
-    return { data: response.data.base || response.data }
+    const response = await baseServiceApi.createBase(data)
+    return { data: response.data }
   },
 
   // 更新基地信息
   async updateBase(id: number, data: UpdateBaseRequest): Promise<{ data: Base }> {
-    const response = await apiService.put(`/bases/${id}`, data)
-    return { data: response.data.base || response.data }
+    const response = await baseServiceApi.updateBase(id, data)
+    return { data: response.data }
   },
 
   // 删除基地
   async deleteBase(id: number): Promise<void> {
-    await apiService.delete(`/bases/${id}`)
+    await baseServiceApi.deleteBase(id)
   },
 
   // 获取基地统计信息
   async getBaseStatistics(id: number): Promise<{ data: any }> {
-    const response = await apiService.get(`/bases/${id}/statistics`)
+    const response = await baseServiceApi.get(`/bases/${id}/statistics`)
     return { data: response.data }
   },
 
   // 获取基地GPS位置
   async getBaseLocation(id: number): Promise<{ data: { latitude: number; longitude: number; address: string } }> {
-    const response = await apiService.get(`/bases/${id}/location`)
+    const response = await baseServiceApi.get(`/bases/${id}/location`)
     return { data: response.data }
   },
 
   // 获取牛棚列表
   async getBarns(params: BarnListParams = {}): Promise<{ data: BarnListResponse }> {
-    const response = await apiService.get('/barns', params)
+    const response = await baseServiceApi.getBarns(params?.baseId, params)
     return { data: response.data }
   },
 
   // 获取指定基地的牛棚列表
   async getBarnsByBaseId(baseId: number): Promise<{ data: { barns: Barn[], base_info: any } }> {
-    const response = await apiService.get(`/bases/${baseId}/barns`)
-    // 后端返回 { success: true, data: { barns: [], base_info: {} } }
+    const response = await baseServiceApi.get(`/bases/${baseId}/barns`)
     return { data: response.data }
   },
 
   // 获取牛棚详情
   async getBarnById(id: number): Promise<{ data: Barn }> {
-    const response = await apiService.get(`/barns/${id}`)
+    const response = await baseServiceApi.getBarn(id)
     return { data: response.data }
   },
 
   // 创建牛棚
   async createBarn(data: CreateBarnRequest): Promise<{ data: Barn }> {
-    const response = await apiService.post('/barns', data)
+    const response = await baseServiceApi.createBarn(data)
     return { data: response.data }
   },
 
   // 更新牛棚信息
   async updateBarn(id: number, data: UpdateBarnRequest): Promise<{ data: Barn }> {
-    const response = await apiService.put(`/barns/${id}`, data)
+    const response = await baseServiceApi.updateBarn(id, data)
     return { data: response.data }
   },
 
   // 删除牛棚
   async deleteBarn(id: number): Promise<void> {
-    await apiService.delete(`/barns/${id}`)
+    await baseServiceApi.deleteBarn(id)
   },
 
   // 获取牛棚统计信息
   async getBarnStatistics(id: number): Promise<{ data: any }> {
-    const response = await apiService.get(`/barns/${id}/statistics`)
+    const response = await baseServiceApi.get(`/barns/${id}/statistics`)
     return { data: response.data }
   }
 }

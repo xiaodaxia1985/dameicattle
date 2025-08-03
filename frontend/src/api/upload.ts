@@ -1,4 +1,4 @@
-import request from './request'
+import { fileServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 export interface UploadResponse {
@@ -10,34 +10,27 @@ export interface UploadResponse {
 
 export const uploadApi = {
   // Upload image
-  uploadImage: (formData: FormData): Promise<ApiResponse<UploadResponse>> => {
-    return request.post('/upload/image', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+  async uploadImage(formData: FormData): Promise<ApiResponse<UploadResponse>> {
+    return await fileServiceApi.uploadFile(formData.get('file') as File, 'image')
   },
 
   // Upload file
-  uploadFile: (formData: FormData): Promise<ApiResponse<UploadResponse>> => {
-    return request.post('/upload/file', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+  async uploadFile(formData: FormData): Promise<ApiResponse<UploadResponse>> {
+    return await fileServiceApi.uploadFile(formData.get('file') as File, 'file')
   },
 
   // Upload avatar
-  uploadAvatar: (formData: FormData): Promise<ApiResponse<UploadResponse>> => {
-    return request.post('/upload/avatar', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
+  async uploadAvatar(formData: FormData): Promise<ApiResponse<UploadResponse>> {
+    return await fileServiceApi.uploadFile(formData.get('file') as File, 'avatar')
   },
 
   // Delete file
-  deleteFile: (url: string): Promise<ApiResponse<void>> => {
-    return request.delete('/upload/file', { data: { url } })
+  async deleteFile(url: string): Promise<ApiResponse<void>> {
+    // 从URL中提取文件ID
+    const fileId = url.split('/').pop()?.split('.')[0]
+    if (fileId) {
+      return await fileServiceApi.deleteFile(parseInt(fileId))
+    }
+    throw new Error('Invalid file URL')
   }
 }

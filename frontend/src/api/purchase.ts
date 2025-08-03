@@ -1,4 +1,4 @@
-import request from './request'
+import { procurementServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 export interface PurchaseOrder {
@@ -49,85 +49,84 @@ export interface Supplier {
 
 export const purchaseApi = {
   // 获取采购订单列表
-  getOrders(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/purchase/orders', { params })
-      .then(response => ({ data: response.data.data }))
+  async getOrders(params: any = {}): Promise<{ data: any }> {
+    const response = await procurementServiceApi.getPurchaseOrders(params)
+    return { data: response.data }
   },
 
   // 获取供应商列表
-  getSuppliers(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/suppliers', { params })
-      .then(response => ({ data: response.data.data }))
+  async getSuppliers(params: any = {}): Promise<{ data: any }> {
+    const response = await procurementServiceApi.getSuppliers(params)
+    return { data: response.data }
   },
 
   // 创建采购订单
-  createOrder(data: any): Promise<{ data: PurchaseOrder }> {
-    return request.post<ApiResponse<PurchaseOrder>>('/purchase/orders', data)
-      .then(response => ({ data: response.data.data }))
+  async createOrder(data: any): Promise<{ data: PurchaseOrder }> {
+    const response = await procurementServiceApi.createPurchaseOrder(data)
+    return { data: response.data }
   },
 
   // 更新采购订单
-  updateOrder(id: string, data: any): Promise<{ data: PurchaseOrder }> {
-    return request.put<ApiResponse<PurchaseOrder>>(`/purchase/orders/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateOrder(id: string, data: any): Promise<{ data: PurchaseOrder }> {
+    const response = await procurementServiceApi.update('/orders', id, data)
+    return { data: response.data }
   },
 
   // 删除采购订单
-  deleteOrder(id: string): Promise<void> {
-    return request.delete(`/purchase/orders/${id}`)
+  async deleteOrder(id: string): Promise<void> {
+    await procurementServiceApi.remove('/orders', id)
   },
 
   // 审批采购订单
-  approveOrder(id: string, data?: any): Promise<{ data: PurchaseOrder }> {
-    return request.post<ApiResponse<PurchaseOrder>>(`/purchase/orders/${id}/approve`, data)
-      .then(response => ({ data: response.data.data }))
+  async approveOrder(id: string, data?: any): Promise<{ data: PurchaseOrder }> {
+    const response = await procurementServiceApi.post(`/orders/${id}/approve`, data)
+    return { data: response.data }
   },
 
   // 取消采购订单
-  cancelOrder(id: string, reason?: string): Promise<{ data: PurchaseOrder }> {
-    return request.post<ApiResponse<PurchaseOrder>>(`/purchase/orders/${id}/cancel`, { reason })
-      .then(response => ({ data: response.data.data }))
+  async cancelOrder(id: string, reason?: string): Promise<{ data: PurchaseOrder }> {
+    const response = await procurementServiceApi.post(`/orders/${id}/cancel`, { reason })
+    return { data: response.data }
   },
 
   // 批量审批订单
-  batchApproveOrders(orderIds: string[]): Promise<void> {
-    return request.post('/purchase/orders/batch-approve', { orderIds })
+  async batchApproveOrders(orderIds: string[]): Promise<void> {
+    await procurementServiceApi.post('/orders/batch-approve', { orderIds })
   },
 
   // 创建供应商
-  createSupplier(data: any): Promise<{ data: Supplier }> {
-    return request.post<ApiResponse<Supplier>>('/suppliers', data)
-      .then(response => ({ data: response.data.data }))
+  async createSupplier(data: any): Promise<{ data: Supplier }> {
+    const response = await procurementServiceApi.createSupplier(data)
+    return { data: response.data }
   },
 
   // 更新供应商
-  updateSupplier(id: number, data: any): Promise<{ data: Supplier }> {
-    return request.put<ApiResponse<Supplier>>(`/suppliers/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateSupplier(id: number, data: any): Promise<{ data: Supplier }> {
+    const response = await procurementServiceApi.update('/suppliers', id, data)
+    return { data: response.data }
   },
 
   // 删除供应商
-  deleteSupplier(id: number): Promise<void> {
-    return request.delete(`/suppliers/${id}`)
+  async deleteSupplier(id: number): Promise<void> {
+    await procurementServiceApi.remove('/suppliers', id)
   },
 
   // 获取采购统计数据
-  getStatistics(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/purchase/statistics', { params })
-      .then(response => ({ data: response.data.data }))
+  async getStatistics(params: any = {}): Promise<{ data: any }> {
+    const response = await procurementServiceApi.getProcurementStatistics(params.baseId)
+    return { data: response.data }
   },
 
   // 获取基地列表（用于下拉选择）
-  getBases(): Promise<{ data: any[] }> {
-    return request.get<ApiResponse<any[]>>('/bases')
-      .then(response => ({ data: response.data.data }))
+  async getBases(): Promise<{ data: any[] }> {
+    const response = await procurementServiceApi.get('/bases')
+    return { data: response.data }
   },
 
   // 导出采购报表
-  exportReport(params: any = {}): Promise<Blob> {
-    return request.get('/purchase/export', { 
-      params, 
-      responseType: 'blob' 
-    }).then(response => response.data)
+  async exportReport(params: any = {}): Promise<Blob> {
+    await procurementServiceApi.download('/export', 'purchase_report.xlsx')
+    // 返回一个空的Blob，实际下载由微服务API处理
+    return new Blob()
   }
 }

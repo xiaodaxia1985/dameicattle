@@ -1,109 +1,171 @@
-import request from './request'
+import { materialServiceApi } from './microservices'
 import type { ApiResponse, PaginatedResponse } from './request'
-import type {
-  MaterialCategory,
-  Supplier,
-  ProductionMaterial,
-  Inventory,
-  InventoryTransaction,
-  InventoryAlert,
-  MaterialListParams,
-  InventoryListParams,
-  TransactionListParams,
-  CreateMaterialCategoryRequest,
-  UpdateMaterialCategoryRequest,
-  CreateSupplierRequest,
-  UpdateSupplierRequest,
-  CreateProductionMaterialRequest,
-  UpdateProductionMaterialRequest,
-  CreateInventoryTransactionRequest,
-  InventoryStatistics
-} from '@/types/material'
+
+// 简化类型定义，避免复杂的导入
+interface MaterialCategory {
+  id: number
+  name: string
+  description?: string
+}
+
+interface Supplier {
+  id: number
+  name: string
+  contact?: string
+  phone?: string
+  address?: string
+}
+
+interface ProductionMaterial {
+  id: number
+  name: string
+  category_id: number
+  supplier_id?: number
+  unit: string
+  price?: number
+}
+
+interface Inventory {
+  id: number
+  material_id: number
+  base_id: number
+  quantity: number
+  unit: string
+  min_stock?: number
+  max_stock?: number
+}
+
+interface InventoryTransaction {
+  id: number
+  material_id: number
+  base_id: number
+  type: 'in' | 'out'
+  quantity: number
+  unit_price?: number
+  total_price?: number
+  reason?: string
+}
+
+interface InventoryAlert {
+  id: number
+  material_id: number
+  base_id: number
+  alert_type: string
+  message: string
+  status: string
+}
+
+interface InventoryStatistics {
+  total_materials: number
+  total_value: number
+  low_stock_count: number
+  out_of_stock_count: number
+}
 
 export const materialApi = {
   // 物资分类管理
-  getCategories(): Promise<ApiResponse<MaterialCategory[]>> {
-    return request.get('/materials/categories')
+  async getCategories(): Promise<ApiResponse<MaterialCategory[]>> {
+    const response = await materialServiceApi.get('/categories')
+    return response
   },
 
-  createCategory(data: CreateMaterialCategoryRequest): Promise<ApiResponse<MaterialCategory>> {
-    return request.post('/materials/categories', data)
+  async createCategory(data: any): Promise<ApiResponse<MaterialCategory>> {
+    const response = await materialServiceApi.post('/categories', data)
+    return response
   },
 
-  updateCategory(id: number, data: UpdateMaterialCategoryRequest): Promise<ApiResponse<MaterialCategory>> {
-    return request.put(`/materials/categories/${id}`, data)
+  async updateCategory(id: number, data: any): Promise<ApiResponse<MaterialCategory>> {
+    const response = await materialServiceApi.update('/categories', id, data)
+    return response
   },
 
-  deleteCategory(id: number): Promise<ApiResponse<void>> {
-    return request.delete(`/materials/categories/${id}`)
+  async deleteCategory(id: number): Promise<ApiResponse<void>> {
+    const response = await materialServiceApi.remove('/categories', id)
+    return response
   },
 
   // 供应商管理
-  getSuppliers(params: MaterialListParams = {}): Promise<PaginatedResponse<Supplier[]>> {
-    return request.get('/materials/suppliers', { params })
+  async getSuppliers(params: any = {}): Promise<PaginatedResponse<Supplier[]>> {
+    const response = await materialServiceApi.get('/suppliers', params)
+    return response
   },
 
-  createSupplier(data: CreateSupplierRequest): Promise<ApiResponse<Supplier>> {
-    return request.post('/materials/suppliers', data)
+  async createSupplier(data: any): Promise<ApiResponse<Supplier>> {
+    const response = await materialServiceApi.post('/suppliers', data)
+    return response
   },
 
-  updateSupplier(id: number, data: UpdateSupplierRequest): Promise<ApiResponse<Supplier>> {
-    return request.put(`/materials/suppliers/${id}`, data)
+  async updateSupplier(id: number, data: any): Promise<ApiResponse<Supplier>> {
+    const response = await materialServiceApi.update('/suppliers', id, data)
+    return response
   },
 
-  deleteSupplier(id: number): Promise<ApiResponse<void>> {
-    return request.delete(`/materials/suppliers/${id}`)
+  async deleteSupplier(id: number): Promise<ApiResponse<void>> {
+    const response = await materialServiceApi.remove('/suppliers', id)
+    return response
   },
 
   // 生产物资管理
-  getProductionMaterials(params: MaterialListParams = {}): Promise<PaginatedResponse<ProductionMaterial[]>> {
-    return request.get('/materials/production-materials', { params })
+  async getProductionMaterials(params: any = {}): Promise<PaginatedResponse<ProductionMaterial[]>> {
+    const response = await materialServiceApi.getMaterials(params)
+    return response
   },
 
-  getProductionMaterialById(id: number): Promise<ApiResponse<ProductionMaterial>> {
-    return request.get(`/materials/production-materials/${id}`)
+  async getProductionMaterialById(id: number): Promise<ApiResponse<ProductionMaterial>> {
+    const response = await materialServiceApi.getById('/materials', id)
+    return response
   },
 
-  createProductionMaterial(data: CreateProductionMaterialRequest): Promise<ApiResponse<ProductionMaterial>> {
-    return request.post('/materials/production-materials', data)
+  async createProductionMaterial(data: any): Promise<ApiResponse<ProductionMaterial>> {
+    const response = await materialServiceApi.createMaterial(data)
+    return response
   },
 
-  updateProductionMaterial(id: number, data: UpdateProductionMaterialRequest): Promise<ApiResponse<ProductionMaterial>> {
-    return request.put(`/materials/production-materials/${id}`, data)
+  async updateProductionMaterial(id: number, data: any): Promise<ApiResponse<ProductionMaterial>> {
+    const response = await materialServiceApi.update('/materials', id, data)
+    return response
   },
 
-  deleteProductionMaterial(id: number): Promise<ApiResponse<void>> {
-    return request.delete(`/materials/production-materials/${id}`)
+  async deleteProductionMaterial(id: number): Promise<ApiResponse<void>> {
+    const response = await materialServiceApi.remove('/materials', id)
+    return response
   },
 
   // 库存管理
-  getInventory(params: InventoryListParams = {}): Promise<PaginatedResponse<Inventory[]>> {
-    return request.get('/materials/inventory', { params })
+  async getInventory(params: any = {}): Promise<PaginatedResponse<Inventory[]>> {
+    const response = await materialServiceApi.getInventory(params)
+    return response
   },
 
-  getInventoryStatistics(): Promise<ApiResponse<InventoryStatistics>> {
-    return request.get('/materials/inventory/statistics')
+  async getInventoryStatistics(): Promise<ApiResponse<InventoryStatistics>> {
+    const response = await materialServiceApi.getMaterialStatistics()
+    return response
   },
 
-  getInventoryByMaterialAndBase(materialId: number, baseId: number): Promise<ApiResponse<Inventory>> {
-    return request.get(`/materials/inventory/${materialId}/${baseId}`)
+  async getInventoryByMaterialAndBase(materialId: number, baseId: number): Promise<ApiResponse<Inventory>> {
+    const response = await materialServiceApi.get(`/inventory/${materialId}/${baseId}`)
+    return response
   },
 
   // 库存交易记录
-  getInventoryTransactions(params: TransactionListParams = {}): Promise<PaginatedResponse<InventoryTransaction[]>> {
-    return request.get('/materials/inventory/transactions', { params })
+  async getInventoryTransactions(params: any = {}): Promise<PaginatedResponse<InventoryTransaction[]>> {
+    const response = await materialServiceApi.getTransactions(params)
+    return response
   },
 
-  createInventoryTransaction(data: CreateInventoryTransactionRequest): Promise<ApiResponse<InventoryTransaction>> {
-    return request.post('/materials/inventory/transactions', data)
+  async createInventoryTransaction(data: any): Promise<ApiResponse<InventoryTransaction>> {
+    const response = await materialServiceApi.createTransaction(data)
+    return response
   },
 
   // 库存预警
-  getInventoryAlerts(params: { base_id?: number } = {}): Promise<PaginatedResponse<InventoryAlert[]>> {
-    return request.get('/materials/inventory/alerts', { params })
+  async getInventoryAlerts(params: { base_id?: number } = {}): Promise<PaginatedResponse<InventoryAlert[]>> {
+    const response = await materialServiceApi.getAlerts(params)
+    return response
   },
 
-  resolveInventoryAlert(id: number): Promise<ApiResponse<void>> {
-    return request.put(`/materials/inventory/alerts/${id}/resolve`)
+  async resolveInventoryAlert(id: number): Promise<ApiResponse<void>> {
+    const response = await materialServiceApi.resolveAlert(id)
+    return response
   }
 }

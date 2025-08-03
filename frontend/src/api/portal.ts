@@ -1,3 +1,4 @@
+import { notificationServiceApi, fileServiceApi } from './microservices'
 import request from './request'
 import type { ApiResponse } from './request'
 
@@ -123,32 +124,32 @@ export const portalApi = {
   // ========== 门户网站配置管理 ==========
   
   // 获取门户配置列表
-  getConfigs(params?: {
+  async getConfigs(params?: {
     category?: string
     key?: string
   }): Promise<ApiResponse<PortalConfig[]>> {
-    return request.get('/portal/configs', { params })
+    return await notificationServiceApi.get('/portal/configs', params)
   },
 
   // 获取单个配置
-  getConfig(key: string): Promise<ApiResponse<PortalConfig>> {
-    return request.get(`/portal/configs/${key}`)
+  async getConfig(key: string): Promise<ApiResponse<PortalConfig>> {
+    return await notificationServiceApi.get(`/portal/configs/${key}`)
   },
 
   // 更新配置
-  updateConfig(key: string, data: {
+  async updateConfig(key: string, data: {
     value: any
     description?: string
   }): Promise<ApiResponse<PortalConfig>> {
-    return request.put(`/portal/configs/${key}`, data)
+    return await notificationServiceApi.put(`/portal/configs/${key}`, data)
   },
 
   // 批量更新配置
-  updateConfigs(configs: Array<{
+  async updateConfigs(configs: Array<{
     key: string
     value: any
   }>): Promise<ApiResponse<PortalConfig[]>> {
-    return request.put('/portal/configs/batch', { configs })
+    return await notificationServiceApi.put('/portal/configs/batch', { configs })
   },
 
   // ========== 轮播图管理 ==========

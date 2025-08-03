@@ -11,9 +11,9 @@ export class NewsController {
     try {
       const { isActive } = req.query;
       const filters = { isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined };
-      
+
       const categories = await newsService.getNewsCategories(filters);
-      
+
       res.success(categories, '获取新闻分类成功');
     } catch (error) {
       logger.error('获取新闻分类失败', { error: (error as Error).message });
@@ -72,14 +72,14 @@ export class NewsController {
   // 新闻文章相关方法
   static async getNewsArticles(req: Request, res: Response) {
     try {
-      const { 
-        page = 1, 
-        limit = 20, 
-        categoryId, 
-        status, 
-        isFeatured, 
-        isTop, 
-        keyword 
+      const {
+        page = 1,
+        limit = 20,
+        categoryId,
+        status,
+        isFeatured,
+        isTop,
+        keyword
       } = req.query;
 
       const filters = {
@@ -198,7 +198,7 @@ export class NewsController {
   static async searchNewsArticles(req: Request, res: Response) {
     try {
       const { keyword, page = 1, limit = 20 } = req.query;
-      
+
       if (!keyword) {
         return res.error('搜索关键词不能为空', 400, 'KEYWORD_REQUIRED');
       }

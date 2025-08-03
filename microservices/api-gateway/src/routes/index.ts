@@ -14,7 +14,8 @@ const services = {
   material: process.env.MATERIAL_SERVICE_URL || 'http://material-service:3009',
   notification: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3010',
   file: process.env.FILE_SERVICE_URL || 'http://file-service:3011',
-  monitoring: process.env.MONITORING_SERVICE_URL || 'http://monitoring-service:3012'
+  monitoring: process.env.MONITORING_SERVICE_URL || 'http://monitoring-service:3012',
+  news: process.env.NEWS_SERVICE_URL || 'http://news-service:3013'
 };
 
 export const setupRoutes = (app: Express) => {
@@ -113,6 +114,14 @@ export const setupRoutes = (app: Express) => {
     changeOrigin: true,
     pathRewrite: {
       '^/api/v1/monitoring': '/api/v1'
+    }
+  }));
+
+  app.use('/api/v1/news', authMiddleware, createProxyMiddleware({
+    target: services.news,
+    changeOrigin: true,
+    pathRewrite: {
+      '^/api/v1/news': '/api/v1'
     }
   }));
 };

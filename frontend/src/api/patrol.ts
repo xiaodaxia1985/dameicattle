@@ -1,4 +1,4 @@
-import request from './request'
+import { monitoringServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 // 巡圈记录相关类型定义
@@ -180,69 +180,59 @@ export interface IoTDeviceData {
 
 export const patrolApi = {
   // 获取巡圈记录列表
-  getPatrolRecords(params: PatrolListParams = {}): Promise<{ data: PatrolListResponse }> {
+  async getPatrolRecords(params: PatrolListParams = {}): Promise<{ data: PatrolListResponse }> {
     console.log('巡圈记录API调用参数:', params)
-    return request.get<ApiResponse<PatrolListResponse>>('/patrol/records', { params })
-      .then(response => {
-        console.log('巡圈记录API响应:', response)
-        return { data: response.data.data }
-      })
+    const response = await monitoringServiceApi.get('/patrol/records', params)
+    console.log('巡圈记录API响应:', response)
+    return { data: response.data }
   },
 
   // 获取巡圈记录详情
-  getPatrolRecordById(id: number): Promise<{ data: PatrolRecord }> {
-    return request.get<ApiResponse<PatrolRecord>>(`/patrol/records/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getPatrolRecordById(id: number): Promise<{ data: PatrolRecord }> {
+    const response = await monitoringServiceApi.getById('/patrol/records', id)
+    return { data: response.data }
   },
 
   // 创建巡圈记录
-  createPatrolRecord(data: CreatePatrolRecordRequest): Promise<{ data: PatrolRecord }> {
+  async createPatrolRecord(data: CreatePatrolRecordRequest): Promise<{ data: PatrolRecord }> {
     console.log('创建巡圈记录API调用参数:', data)
-    return request.post<ApiResponse<PatrolRecord>>('/patrol/records', data)
-      .then(response => {
-        console.log('创建巡圈记录API响应:', response)
-        return { data: response.data.data }
-      })
+    const response = await monitoringServiceApi.post('/patrol/records', data)
+    console.log('创建巡圈记录API响应:', response)
+    return { data: response.data }
   },
 
   // 更新巡圈记录
-  updatePatrolRecord(id: number, data: UpdatePatrolRecordRequest): Promise<{ data: PatrolRecord }> {
-    return request.put<ApiResponse<PatrolRecord>>(`/patrol/records/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updatePatrolRecord(id: number, data: UpdatePatrolRecordRequest): Promise<{ data: PatrolRecord }> {
+    const response = await monitoringServiceApi.update('/patrol/records', id, data)
+    return { data: response.data }
   },
 
   // 删除巡圈记录
-  deletePatrolRecord(id: number): Promise<void> {
-    return request.delete(`/patrol/records/${id}`)
+  async deletePatrolRecord(id: number): Promise<void> {
+    await monitoringServiceApi.remove('/patrol/records', id)
   },
 
   // 获取巡圈统计数据
-  getPatrolStatistics(params: { base_id: number; start_date: string; end_date: string }): Promise<{ data: PatrolStatistics }> {
+  async getPatrolStatistics(params: { base_id: number; start_date: string; end_date: string }): Promise<{ data: PatrolStatistics }> {
     console.log('巡圈统计API调用参数:', params)
-    return request.get<ApiResponse<PatrolStatistics>>('/patrol/statistics', { params })
-      .then(response => {
-        console.log('巡圈统计API响应:', response)
-        return { data: response.data.data }
-      })
+    const response = await monitoringServiceApi.get('/patrol/statistics', params)
+    console.log('巡圈统计API响应:', response)
+    return { data: response.data }
   },
 
   // 获取今日巡圈任务
-  getTodayPatrolTasks(params: { base_id?: number } = {}): Promise<{ data: TodayPatrolTasks }> {
+  async getTodayPatrolTasks(params: { base_id?: number } = {}): Promise<{ data: TodayPatrolTasks }> {
     console.log('今日巡圈任务API调用参数:', params)
-    return request.get<ApiResponse<TodayPatrolTasks>>('/patrol/tasks/today', { params })
-      .then(response => {
-        console.log('今日巡圈任务API响应:', response)
-        return { data: response.data.data }
-      })
+    const response = await monitoringServiceApi.get('/patrol/tasks/today', params)
+    console.log('今日巡圈任务API响应:', response)
+    return { data: response.data }
   },
 
   // 获取物联网设备数据
-  getIoTDeviceData(params: { barn_id: number }): Promise<{ data: IoTDeviceData }> {
+  async getIoTDeviceData(params: { barn_id: number }): Promise<{ data: IoTDeviceData }> {
     console.log('物联网设备数据API调用参数:', params)
-    return request.get<ApiResponse<IoTDeviceData>>('/patrol/iot/device-data', { params })
-      .then(response => {
-        console.log('物联网设备数据API响应:', response)
-        return { data: response.data.data }
-      })
+    const response = await monitoringServiceApi.get('/patrol/iot/device-data', params)
+    console.log('物联网设备数据API响应:', response)
+    return { data: response.data }
   }
 }

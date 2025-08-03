@@ -2,13 +2,15 @@ services:
   # API网关
   api-gateway:
     build:
-      context: .
-      dockerfile: api-gateway/Dockerfile
+      context: ./api-gateway
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - REDIS_URL=redis://host.docker.internal:6379
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - microservices-network
     restart: unless-stopped
@@ -16,12 +18,12 @@ services:
   # 用户认证服务
   auth-service:
     build:
-      context: .
-      dockerfile: auth-service/Dockerfile
+      context: ./auth-service
+      dockerfile: Dockerfile
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=auth_db
@@ -29,6 +31,8 @@ services:
       - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://host.docker.internal:6379
       - JWT_SECRET=your-jwt-secret-key
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - microservices-network
     restart: unless-stopped
@@ -36,12 +40,12 @@ services:
   # 基地管理服务
   base-service:
     build:
-      context: .
-      dockerfile: base-service/Dockerfile
+      context: ./base-service
+      dockerfile: Dockerfile
     ports:
       - "3002:3002"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=base_db
@@ -49,6 +53,8 @@ services:
       - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:
@@ -58,12 +64,12 @@ services:
   # 牛只管理服务
   cattle-service:
     build:
-      context: .
-      dockerfile: cattle-service/Dockerfile
+      context: ./cattle-service
+      dockerfile: Dockerfile
     ports:
       - "3003:3003"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=cattle_db
@@ -72,6 +78,8 @@ services:
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - BASE_SERVICE_URL=http://base-service:3002
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
       - base-service
@@ -82,12 +90,12 @@ services:
   # 健康管理服务
   health-service:
     build:
-      context: .
-      dockerfile: health-service/Dockerfile
+      context: ./health-service
+      dockerfile: Dockerfile
     ports:
       - "3004:3004"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=health_db
@@ -96,6 +104,8 @@ services:
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - CATTLE_SERVICE_URL=http://cattle-service:3003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
       - cattle-service
@@ -106,12 +116,12 @@ services:
   # 饲养管理服务
   feeding-service:
     build:
-      context: .
-      dockerfile: feeding-service/Dockerfile
+      context: ./feeding-service
+      dockerfile: Dockerfile
     ports:
       - "3005:3005"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=feeding_db
@@ -120,6 +130,8 @@ services:
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - CATTLE_SERVICE_URL=http://cattle-service:3003
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
       - cattle-service
@@ -130,12 +142,12 @@ services:
   # 设备管理服务
   equipment-service:
     build:
-      context: .
-      dockerfile: equipment-service/Dockerfile
+      context: ./equipment-service
+      dockerfile: Dockerfile
     ports:
       - "3006:3006"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=equipment_db
@@ -144,6 +156,8 @@ services:
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
       - BASE_SERVICE_URL=http://base-service:3002
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
       - base-service
@@ -154,12 +168,12 @@ services:
   # 采购管理服务
   procurement-service:
     build:
-      context: .
-      dockerfile: procurement-service/Dockerfile
+      context: ./procurement-service
+      dockerfile: Dockerfile
     ports:
       - "3007:3007"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=procurement_db
@@ -167,6 +181,8 @@ services:
       - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:
@@ -176,12 +192,12 @@ services:
   # 销售管理服务
   sales-service:
     build:
-      context: .
-      dockerfile: sales-service/Dockerfile
+      context: ./sales-service
+      dockerfile: Dockerfile
     ports:
       - "3008:3008"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=sales_db
@@ -189,6 +205,8 @@ services:
       - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:
@@ -198,12 +216,12 @@ services:
   # 物料管理服务
   material-service:
     build:
-      context: .
-      dockerfile: material-service/Dockerfile
+      context: ./material-service
+      dockerfile: Dockerfile
     ports:
       - "3009:3009"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=material_db
@@ -211,6 +229,8 @@ services:
       - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:
@@ -220,14 +240,16 @@ services:
   # 通知服务
   notification-service:
     build:
-      context: .
-      dockerfile: notification-service/Dockerfile
+      context: ./notification-service
+      dockerfile: Dockerfile
     ports:
       - "3010:3010"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:
@@ -237,12 +259,12 @@ services:
   # 文件服务
   file-service:
     build:
-      context: .
-      dockerfile: file-service/Dockerfile
+      context: ./file-service
+      dockerfile: Dockerfile
     ports:
       - "3011:3011"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - AUTH_SERVICE_URL=http://auth-service:3001
     volumes:
       - file_uploads:/app/uploads
@@ -255,14 +277,16 @@ services:
   # 监控服务
   monitoring-service:
     build:
-      context: .
-      dockerfile: monitoring-service/Dockerfile
+      context: ./monitoring-service
+      dockerfile: Dockerfile
     ports:
       - "3012:3012"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:
@@ -272,12 +296,12 @@ services:
   # 新闻服务
   news-service:
     build:
-      context: .
-      dockerfile: news-service/Dockerfile
+      context: ./news-service
+      dockerfile: Dockerfile
     ports:
       - "3013:3013"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=development
       - DB_HOST=host.docker.internal
       - DB_PORT=5432
       - DB_NAME=news_db
@@ -285,6 +309,8 @@ services:
       - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://host.docker.internal:6379
       - AUTH_SERVICE_URL=http://auth-service:3001
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - auth-service
     networks:

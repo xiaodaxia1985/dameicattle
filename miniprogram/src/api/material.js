@@ -1,10 +1,10 @@
-import { api } from '@/utils/apiClient'
+import { materialServiceApi } from './microservices'
 
 export const materialApi = {
   // 获取统计数据
   async getStatistics() {
     try {
-      const response = await api.get('/materials/statistics')
+      const response = await materialServiceApi.getMaterialStatistics()
       return response.success ? response.data : {}
     } catch (error) {
       console.error('获取统计数据失败:', error)
@@ -15,7 +15,7 @@ export const materialApi = {
   // 获取物资列表
   async getMaterials(params = {}) {
     try {
-      const response = await api.get('/materials', params)
+      const response = await materialServiceApi.getMaterials(params)
       return response.success ? {
         data: response.data || [],
         pagination: response.pagination
@@ -29,7 +29,7 @@ export const materialApi = {
   // 获取库存信息
   async getInventory(params = {}) {
     try {
-      const response = await api.get('/materials/inventory', params)
+      const response = await materialServiceApi.getInventory(params)
       return response.success ? {
         data: response.data || [],
         pagination: response.pagination
@@ -43,7 +43,7 @@ export const materialApi = {
   // 获取交易记录
   async getTransactions(params = {}) {
     try {
-      const response = await api.get('/materials/transactions', params)
+      const response = await materialServiceApi.getTransactions(params)
       return response.success ? {
         data: response.data || [],
         pagination: response.pagination
@@ -57,7 +57,7 @@ export const materialApi = {
   // 创建交易记录
   async createTransaction(data) {
     try {
-      const response = await api.post('/materials/transactions', data)
+      const response = await materialServiceApi.createTransaction(data)
       if (response.success) {
         uni.showToast({
           title: '交易记录创建成功',
@@ -76,7 +76,7 @@ export const materialApi = {
   // 获取预警信息
   async getAlerts(params = {}) {
     try {
-      const response = await api.get('/materials/alerts', params)
+      const response = await materialServiceApi.getAlerts(params)
       return response.success ? {
         data: response.data || [],
         pagination: response.pagination
@@ -90,7 +90,7 @@ export const materialApi = {
   // 解决预警
   async resolveAlert(alertId) {
     try {
-      const response = await api.post(`/materials/alerts/${alertId}/resolve`)
+      const response = await materialServiceApi.resolveAlert(alertId)
       if (response.success) {
         uni.showToast({
           title: '预警已解决',
@@ -113,7 +113,7 @@ export const materialApi = {
         title: '同步中...'
       })
       
-      const response = await api.post('/materials/sync')
+      const response = await materialServiceApi.syncOfflineData()
       
       uni.hideLoading()
       

@@ -1,120 +1,120 @@
-import request from './request'
+import { equipmentServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 export const equipmentApi = {
   // 设备分类
-  getCategories(): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/equipment/categories')
-      .then(response => ({ data: response.data.data }))
+  async getCategories(): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.get('/categories')
+    return { data: response.data }
   },
 
-  createCategory(data: any): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/equipment/categories', data)
-      .then(response => ({ data: response.data.data }))
+  async createCategory(data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.post('/categories', data)
+    return { data: response.data }
   },
 
-  updateCategory(id: number, data: any): Promise<{ data: any }> {
-    return request.put<ApiResponse<any>>(`/equipment/categories/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateCategory(id: number, data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.update('/categories', id, data)
+    return { data: response.data }
   },
 
-  deleteCategory(id: number): Promise<{ data: any }> {
-    return request.delete<ApiResponse<any>>(`/equipment/categories/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async deleteCategory(id: number): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.remove('/categories', id)
+    return { data: response.data }
   },
 
   // 生产设备
-  getEquipment(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/equipment', { params })
-      .then(response => ({ data: response.data }))
+  async getEquipment(params: any = {}): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.getEquipment(params)
+    return { data: response.data }
   },
 
-  getEquipmentById(id: number): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/equipment/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getEquipmentById(id: number): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.getById('/equipment', id)
+    return { data: response.data }
   },
 
-  createEquipment(data: any): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/equipment', data)
-      .then(response => ({ data: response.data.data }))
+  async createEquipment(data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.createEquipment(data)
+    return { data: response.data }
   },
 
-  updateEquipment(id: number, data: any): Promise<{ data: any }> {
-    return request.put<ApiResponse<any>>(`/equipment/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateEquipment(id: number, data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.update('/equipment', id, data)
+    return { data: response.data }
   },
 
-  deleteEquipment(id: number): Promise<{ data: any }> {
-    return request.delete<ApiResponse<any>>(`/equipment/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async deleteEquipment(id: number): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.remove('/equipment', id)
+    return { data: response.data }
   },
 
-  updateEquipmentStatus(id: number, status: string): Promise<{ data: any }> {
-    return request.patch<ApiResponse<any>>(`/equipment/${id}/status`, { status })
-      .then(response => ({ data: response.data.data }))
+  async updateEquipmentStatus(id: number, status: string): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.patch(`/equipment/${id}/status`, { status })
+    return { data: response.data }
   },
 
-  getEquipmentStatistics(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/equipment/statistics', { params })
-      .then(response => ({ data: response.data.data }))
+  async getEquipmentStatistics(params: any = {}): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.getEquipmentStatistics(params.baseId)
+    return { data: response.data }
   },
 
   // 维护计划
-  getMaintenancePlans(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/equipment/maintenance-plans', { params })
-      .then(response => ({ data: response.data.data }))
+  async getMaintenancePlans(params: any = {}): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.get('/maintenance-plans', params)
+    return { data: response.data }
   },
 
-  createMaintenancePlan(data: any): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/equipment/maintenance-plans', data)
-      .then(response => ({ data: response.data.data }))
+  async createMaintenancePlan(data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.post('/maintenance-plans', data)
+    return { data: response.data }
   },
 
-  updateMaintenancePlan(id: number, data: any): Promise<{ data: any }> {
-    return request.put<ApiResponse<any>>(`/equipment/maintenance-plans/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateMaintenancePlan(id: number, data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.update('/maintenance-plans', id, data)
+    return { data: response.data }
   },
 
-  deleteMaintenancePlan(id: number): Promise<{ data: any }> {
-    return request.delete<ApiResponse<any>>(`/equipment/maintenance-plans/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async deleteMaintenancePlan(id: number): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.remove('/maintenance-plans', id)
+    return { data: response.data }
   },
 
   // 维护记录
-  getMaintenanceRecords(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/equipment/maintenance-records', { params })
-      .then(response => ({ data: response.data.data }))
+  async getMaintenanceRecords(params: any = {}): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.getMaintenanceRecords(params)
+    return { data: response.data }
   },
 
-  createMaintenanceRecord(data: any): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/equipment/maintenance-records', data)
-      .then(response => ({ data: response.data.data }))
+  async createMaintenanceRecord(data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.createMaintenanceRecord(data)
+    return { data: response.data }
   },
 
-  updateMaintenanceRecord(id: number, data: any): Promise<{ data: any }> {
-    return request.put<ApiResponse<any>>(`/equipment/maintenance-records/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateMaintenanceRecord(id: number, data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.update('/maintenance', id, data)
+    return { data: response.data }
   },
 
   // 设备故障
-  getFailures(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/equipment/failures', { params })
-      .then(response => ({ data: response.data.data }))
+  async getFailures(params: any = {}): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.get('/failures', params)
+    return { data: response.data }
   },
 
-  reportFailure(data: any): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/equipment/failures', data)
-      .then(response => ({ data: response.data.data }))
+  async reportFailure(data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.post('/failures', data)
+    return { data: response.data }
   },
 
-  updateFailureStatus(id: number, data: any): Promise<{ data: any }> {
-    return request.patch<ApiResponse<any>>(`/equipment/failures/${id}/status`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateFailureStatus(id: number, data: any): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.patch(`/failures/${id}/status`, data)
+    return { data: response.data }
   },
 
   // 设备效率分析
-  getEquipmentEfficiency(id: number, params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/equipment/${id}/efficiency`, { params })
-      .then(response => ({ data: response.data.data }))
+  async getEquipmentEfficiency(id: number, params: any = {}): Promise<{ data: any }> {
+    const response = await equipmentServiceApi.get(`/equipment/${id}/efficiency`, params)
+    return { data: response.data }
   },
 }

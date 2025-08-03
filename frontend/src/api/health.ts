@@ -1,4 +1,4 @@
-import request from './request'
+import { healthServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 // 健康管理相关类型定义
@@ -103,84 +103,84 @@ export interface VaccinationListResponse {
 
 export const healthApi = {
   // 获取诊疗记录列表
-  getHealthRecords(params: HealthListParams = {}): Promise<{ data: HealthListResponse }> {
-    return request.get<ApiResponse<HealthListResponse>>('/health/records', { params })
-      .then(response => ({ data: response.data.data }))
+  async getHealthRecords(params: HealthListParams = {}): Promise<{ data: HealthListResponse }> {
+    const response = await healthServiceApi.getHealthRecords(params)
+    return { data: response.data }
   },
 
   // 获取诊疗记录详情
-  getHealthRecordById(id: string): Promise<{ data: HealthRecord }> {
-    return request.get<ApiResponse<HealthRecord>>(`/health/records/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getHealthRecordById(id: string): Promise<{ data: HealthRecord }> {
+    const response = await healthServiceApi.getById('/records', id)
+    return { data: response.data }
   },
 
   // 创建诊疗记录
-  createHealthRecord(data: CreateHealthRecordRequest): Promise<{ data: HealthRecord }> {
-    return request.post<ApiResponse<HealthRecord>>('/health/records', data)
-      .then(response => ({ data: response.data.data }))
+  async createHealthRecord(data: CreateHealthRecordRequest): Promise<{ data: HealthRecord }> {
+    const response = await healthServiceApi.createHealthRecord(data)
+    return { data: response.data }
   },
 
   // 更新诊疗记录
-  updateHealthRecord(id: string, data: UpdateHealthRecordRequest): Promise<{ data: HealthRecord }> {
-    return request.put<ApiResponse<HealthRecord>>(`/health/records/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateHealthRecord(id: string, data: UpdateHealthRecordRequest): Promise<{ data: HealthRecord }> {
+    const response = await healthServiceApi.update('/records', id, data)
+    return { data: response.data }
   },
 
   // 删除诊疗记录
-  deleteHealthRecord(id: string): Promise<void> {
-    return request.delete(`/health/records/${id}`)
+  async deleteHealthRecord(id: string): Promise<void> {
+    await healthServiceApi.remove('/records', id)
   },
 
   // 获取疫苗接种记录列表
-  getVaccinationRecords(params: VaccinationListParams = {}): Promise<{ data: VaccinationListResponse }> {
-    return request.get<ApiResponse<VaccinationListResponse>>('/health/vaccinations', { params })
-      .then(response => ({ data: response.data.data }))
+  async getVaccinationRecords(params: VaccinationListParams = {}): Promise<{ data: VaccinationListResponse }> {
+    const response = await healthServiceApi.getVaccineRecords(params)
+    return { data: response.data }
   },
 
   // 创建疫苗接种记录
-  createVaccinationRecord(data: CreateVaccinationRequest): Promise<{ data: VaccinationRecord }> {
-    return request.post<ApiResponse<VaccinationRecord>>('/health/vaccinations', data)
-      .then(response => ({ data: response.data.data }))
+  async createVaccinationRecord(data: CreateVaccinationRequest): Promise<{ data: VaccinationRecord }> {
+    const response = await healthServiceApi.createVaccineRecord(data)
+    return { data: response.data }
   },
 
   // 更新疫苗接种记录
-  updateVaccinationRecord(id: string, data: Partial<CreateVaccinationRequest>): Promise<{ data: VaccinationRecord }> {
-    return request.put<ApiResponse<VaccinationRecord>>(`/health/vaccinations/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateVaccinationRecord(id: string, data: Partial<CreateVaccinationRequest>): Promise<{ data: VaccinationRecord }> {
+    const response = await healthServiceApi.update('/vaccines', id, data)
+    return { data: response.data }
   },
 
   // 删除疫苗接种记录
-  deleteVaccinationRecord(id: string): Promise<void> {
-    return request.delete(`/health/vaccinations/${id}`)
+  async deleteVaccinationRecord(id: string): Promise<void> {
+    await healthServiceApi.remove('/vaccines', id)
   },
 
   // 获取健康统计数据
-  getHealthStatistics(params: { baseId?: number; startDate?: string; endDate?: string } = {}): Promise<{ data: HealthStatistics }> {
-    return request.get<ApiResponse<HealthStatistics>>('/health/statistics', { params })
-      .then(response => ({ data: response.data.data }))
+  async getHealthStatistics(params: { baseId?: number; startDate?: string; endDate?: string } = {}): Promise<{ data: HealthStatistics }> {
+    const response = await healthServiceApi.getHealthStatistics(params.baseId)
+    return { data: response.data }
   },
 
   // 获取健康预警
-  getHealthAlerts(params: { base_id?: number } = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/health/alerts', { params })
-      .then(response => ({ data: response.data.data }))
+  async getHealthAlerts(params: { base_id?: number } = {}): Promise<{ data: any }> {
+    const response = await healthServiceApi.get('/alerts', params)
+    return { data: response.data }
   },
 
   // 获取健康趋势分析
-  getHealthTrend(params: { base_id?: number; days?: number } = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/health/trend', { params })
-      .then(response => ({ data: response.data.data }))
+  async getHealthTrend(params: { base_id?: number; days?: number } = {}): Promise<{ data: any }> {
+    const response = await healthServiceApi.get('/trend', params)
+    return { data: response.data }
   },
 
   // 发送健康预警通知
-  sendHealthAlertNotifications(data: { base_id?: number; alert_types?: string[] }): Promise<{ data: any }> {
-    return request.post<ApiResponse<any>>('/health/alerts/notify', data)
-      .then(response => ({ data: response.data.data }))
+  async sendHealthAlertNotifications(data: { base_id?: number; alert_types?: string[] }): Promise<{ data: any }> {
+    const response = await healthServiceApi.post('/alerts/notify', data)
+    return { data: response.data }
   },
 
   // 获取牛只健康档案
-  getCattleHealthProfile(cattleId: string): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/health/cattle/${cattleId}/profile`)
-      .then(response => ({ data: response.data.data }))
+  async getCattleHealthProfile(cattleId: string): Promise<{ data: any }> {
+    const response = await healthServiceApi.get(`/cattle/${cattleId}/profile`)
+    return { data: response.data }
   }
 }

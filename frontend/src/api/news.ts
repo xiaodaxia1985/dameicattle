@@ -1,4 +1,11 @@
-import request from './request'
+import { request } from 'http'
+import { request } from 'http'
+import { request } from 'http'
+import { request } from 'http'
+import { request } from 'http'
+import { request } from 'http'
+import { request } from 'http'
+import { newsServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 // 新闻分类接口
@@ -77,7 +84,7 @@ export const newsApi = {
   // 检查新闻服务健康状态
   async checkNewsServiceHealth(): Promise<{ status: string; timestamp: string }> {
     try {
-      const response = await request.get('/news/health', { timeout: 5000 })
+      const response = await newsServiceApi.healthCheck()
       return response.data || { status: 'unknown', timestamp: new Date().toISOString() }
     } catch (error) {
       console.error('新闻服务健康检查失败:', error)
@@ -202,17 +209,14 @@ export const newsApi = {
   // ========== 新闻分类管理 ==========
 
   // 获取新闻分类列表
-  getCategories(params?: { isActive?: boolean }): Promise<ApiResponse<NewsCategory[]>> {
-    return request.get('/news/categories', { params }).then(response => response.data)
+  async getCategories(params?: { isActive?: boolean }): Promise<ApiResponse<NewsCategory[]>> {
+    return await newsServiceApi.getNewsCategories(params)
   },
 
   // 创建新闻分类
-  createCategory(data: Partial<NewsCategory>): Promise<ApiResponse<NewsCategory>> {
+  async createCategory(data: Partial<NewsCategory>): Promise<ApiResponse<NewsCategory>> {
     console.log('正在发送创建分类请求:', { url: '/news/categories', data })
-    return request.post('/news/categories', data, {
-      timeout: 30000, // 增加超时时间到30秒
-      skipRetry: false // 允许重试
-    }).then(response => response.data)
+    return await newsServiceApi.createNewsCategory(data)
   },
 
   // 创建新闻分类（使用备用端点）
@@ -287,19 +291,19 @@ export const newsApi = {
   },
 
   // 更新新闻分类
-  updateCategory(id: number, data: Partial<NewsCategory>): Promise<ApiResponse<NewsCategory>> {
-    return request.put(`/news/categories/${id}`, data).then(response => response.data)
+  async updateCategory(id: number, data: Partial<NewsCategory>): Promise<ApiResponse<NewsCategory>> {
+    return await newsServiceApi.updateNewsCategory(id, data)
   },
 
   // 删除新闻分类
-  deleteCategory(id: number): Promise<ApiResponse<void>> {
-    return request.delete(`/news/categories/${id}`).then(response => response.data)
+  async deleteCategory(id: number): Promise<ApiResponse<void>> {
+    return await newsServiceApi.deleteNewsCategory(id)
   },
 
   // ========== 新闻文章管理 ==========
 
   // 获取新闻文章列表
-  getArticles(params?: {
+  async getArticles(params?: {
     page?: number
     limit?: number
     categoryId?: number
@@ -309,11 +313,7 @@ export const newsApi = {
     keyword?: string
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
     console.log('正在获取文章列表:', { url: '/news/articles', params })
-    return request.get('/news/articles', {
-      params,
-      timeout: 30000, // 增加超时时间到30秒
-      skipRetry: false // 允许重试
-    }).then(response => response.data)
+    return await newsServiceApi.getNewsArticles(params)
   },
 
   // 获取新闻文章列表（使用备用端点）
@@ -415,39 +415,39 @@ export const newsApi = {
   },
 
   // 获取新闻文章详情
-  getArticleById(id: number): Promise<ApiResponse<NewsArticle>> {
-    return request.get(`/news/articles/${id}`).then(response => response.data)
+  async getArticleById(id: number): Promise<ApiResponse<NewsArticle>> {
+    return await newsServiceApi.getNewsArticleById(id)
   },
 
   // 创建新闻文章
-  createArticle(data: Partial<NewsArticle>): Promise<ApiResponse<NewsArticle>> {
-    return request.post('/news/articles', data).then(response => response.data)
+  async createArticle(data: Partial<NewsArticle>): Promise<ApiResponse<NewsArticle>> {
+    return await newsServiceApi.createNewsArticle(data)
   },
 
   // 更新新闻文章
-  updateArticle(id: number, data: Partial<NewsArticle>): Promise<ApiResponse<NewsArticle>> {
-    return request.put(`/news/articles/${id}`, data).then(response => response.data)
+  async updateArticle(id: number, data: Partial<NewsArticle>): Promise<ApiResponse<NewsArticle>> {
+    return await newsServiceApi.updateNewsArticle(id, data)
   },
 
   // 删除新闻文章
-  deleteArticle(id: number): Promise<ApiResponse<void>> {
-    return request.delete(`/news/articles/${id}`).then(response => response.data)
+  async deleteArticle(id: number): Promise<ApiResponse<void>> {
+    return await newsServiceApi.deleteNewsArticle(id)
   },
 
   // 发布新闻文章
-  publishArticle(id: number, publishTime?: string): Promise<ApiResponse<NewsArticle>> {
-    return request.post(`/news/articles/${id}/publish`, { publishTime }).then(response => response.data)
+  async publishArticle(id: number, publishTime?: string): Promise<ApiResponse<NewsArticle>> {
+    return await newsServiceApi.publishNewsArticle(id, publishTime)
   },
 
 
 
   // 搜索新闻文章
-  searchArticles(params: {
+  async searchArticles(params: {
     keyword: string
     page?: number
     limit?: number
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
-    return request.get('/news/articles/search', { params }).then(response => response.data)
+    return await newsServiceApi.searchNewsArticles(params)
   },
 
 
@@ -470,8 +470,8 @@ export const newsApi = {
   },
 
   // 增加新闻浏览量
-  incrementViewCount(id: number): Promise<ApiResponse<void>> {
-    return request.post(`/public/news/${id}/view`)
+  async incrementViewCount(id: number): Promise<ApiResponse<void>> {
+    return await newsServiceApi.incrementViewCount(id)
   },
 
   // ========== 兼容旧接口 ==========

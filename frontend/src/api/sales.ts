@@ -1,4 +1,4 @@
-import request from './request'
+import { salesServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 export interface Customer {
@@ -87,139 +87,139 @@ export interface SalesOrderItem {
 
 export const salesApi = {
   // 获取销售订单列表
-  getOrders(params: any = {}): Promise<{ data: { items: SalesOrder[], total: number, page: number, limit: number } }> {
-    return request.get<ApiResponse<any>>('/sales-orders', { params })
-      .then(response => ({ data: response.data.data }))
+  async getOrders(params: any = {}): Promise<{ data: { items: SalesOrder[], total: number, page: number, limit: number } }> {
+    const response = await salesServiceApi.getSalesOrders(params)
+    return { data: response.data }
   },
 
   // 获取销售订单详情
-  getOrder(id: number): Promise<{ data: SalesOrder }> {
-    return request.get<ApiResponse<SalesOrder>>(`/sales-orders/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getOrder(id: number): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.getById('/orders', id)
+    return { data: response.data }
   },
 
   // 创建销售订单
-  createOrder(data: any): Promise<{ data: SalesOrder }> {
-    return request.post<ApiResponse<SalesOrder>>('/sales-orders', data)
-      .then(response => ({ data: response.data.data }))
+  async createOrder(data: any): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.createSalesOrder(data)
+    return { data: response.data }
   },
 
   // 更新销售订单
-  updateOrder(id: number, data: any): Promise<{ data: SalesOrder }> {
-    return request.put<ApiResponse<SalesOrder>>(`/sales-orders/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateOrder(id: number, data: any): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.update('/orders', id, data)
+    return { data: response.data }
   },
 
   // 审批销售订单
-  approveOrder(id: number): Promise<{ data: SalesOrder }> {
-    return request.post<ApiResponse<SalesOrder>>(`/sales-orders/${id}/approve`)
-      .then(response => ({ data: response.data.data }))
+  async approveOrder(id: number): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.post(`/orders/${id}/approve`)
+    return { data: response.data }
   },
 
   // 取消销售订单
-  cancelOrder(id: number, reason: string): Promise<{ data: SalesOrder }> {
-    return request.post<ApiResponse<SalesOrder>>(`/sales-orders/${id}/cancel`, { reason })
-      .then(response => ({ data: response.data.data }))
+  async cancelOrder(id: number, reason: string): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.post(`/orders/${id}/cancel`, { reason })
+    return { data: response.data }
   },
 
   // 更新订单交付状态
-  updateDeliveryStatus(id: number, data: any): Promise<{ data: SalesOrder }> {
-    return request.post<ApiResponse<SalesOrder>>(`/sales-orders/${id}/delivery`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateDeliveryStatus(id: number, data: any): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.post(`/orders/${id}/delivery`, data)
+    return { data: response.data }
   },
 
   // 更新订单付款状态
-  updatePaymentStatus(id: number, data: any): Promise<{ data: SalesOrder }> {
-    return request.post<ApiResponse<SalesOrder>>(`/sales-orders/${id}/payment`, data)
-      .then(response => ({ data: response.data.data }))
+  async updatePaymentStatus(id: number, data: any): Promise<{ data: SalesOrder }> {
+    const response = await salesServiceApi.post(`/orders/${id}/payment`, data)
+    return { data: response.data }
   },
 
   // 获取销售统计数据
-  getStatistics(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/sales-orders/statistics', { params })
-      .then(response => ({ data: response.data.data }))
+  async getStatistics(params: any = {}): Promise<{ data: any }> {
+    const response = await salesServiceApi.getSalesStatistics(params.baseId)
+    return { data: response.data }
   },
 
   // 获取客户列表
-  getCustomers(params: any = {}): Promise<{ data: { items: Customer[], total: number, page: number, limit: number } }> {
-    return request.get<ApiResponse<any>>('/customers', { params })
-      .then(response => ({ data: response.data.data }))
+  async getCustomers(params: any = {}): Promise<{ data: { items: Customer[], total: number, page: number, limit: number } }> {
+    const response = await salesServiceApi.getCustomers(params)
+    return { data: response.data }
   },
 
   // 获取客户详情
-  getCustomer(id: number): Promise<{ data: Customer }> {
-    return request.get<ApiResponse<Customer>>(`/customers/${id}`)
-      .then(response => ({ data: response.data.data }))
+  async getCustomer(id: number): Promise<{ data: Customer }> {
+    const response = await salesServiceApi.getById('/customers', id)
+    return { data: response.data }
   },
 
   // 创建客户
-  createCustomer(data: any): Promise<{ data: Customer }> {
-    return request.post<ApiResponse<Customer>>('/customers', data)
-      .then(response => ({ data: response.data.data }))
+  async createCustomer(data: any): Promise<{ data: Customer }> {
+    const response = await salesServiceApi.createCustomer(data)
+    return { data: response.data }
   },
 
   // 更新客户
-  updateCustomer(id: number, data: any): Promise<{ data: Customer }> {
-    return request.put<ApiResponse<Customer>>(`/customers/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateCustomer(id: number, data: any): Promise<{ data: Customer }> {
+    const response = await salesServiceApi.update('/customers', id, data)
+    return { data: response.data }
   },
 
   // 删除客户
-  deleteCustomer(id: number): Promise<void> {
-    return request.delete(`/customers/${id}`)
+  async deleteCustomer(id: number): Promise<void> {
+    await salesServiceApi.remove('/customers', id)
   },
 
   // 更新客户信用评级
-  updateCustomerRating(id: number, data: { credit_rating: number, comment?: string }): Promise<{ data: any }> {
-    return request.put<ApiResponse<any>>(`/customers/${id}/rating`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateCustomerRating(id: number, data: { credit_rating: number, comment?: string }): Promise<{ data: any }> {
+    const response = await salesServiceApi.put(`/customers/${id}/rating`, data)
+    return { data: response.data }
   },
 
   // 获取客户统计信息
-  getCustomerStatistics(id: number, params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/customers/${id}/statistics`, { params })
-      .then(response => ({ data: response.data.data }))
+  async getCustomerStatistics(id: number, params: any = {}): Promise<{ data: any }> {
+    const response = await salesServiceApi.get(`/customers/${id}/statistics`, params)
+    return { data: response.data }
   },
 
   // 获取客户回访记录
-  getCustomerVisits(customerId: number, params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>(`/customers/${customerId}/visits`, { params })
-      .then(response => ({ data: response.data.data }))
+  async getCustomerVisits(customerId: number, params: any = {}): Promise<{ data: any }> {
+    const response = await salesServiceApi.get(`/customers/${customerId}/visits`, params)
+    return { data: response.data }
   },
 
   // 创建客户回访记录
-  createCustomerVisit(customerId: number, data: any): Promise<{ data: CustomerVisitRecord }> {
-    return request.post<ApiResponse<CustomerVisitRecord>>(`/customers/${customerId}/visits`, data)
-      .then(response => ({ data: response.data.data }))
+  async createCustomerVisit(customerId: number, data: any): Promise<{ data: CustomerVisitRecord }> {
+    const response = await salesServiceApi.post(`/customers/${customerId}/visits`, data)
+    return { data: response.data }
   },
 
   // 更新客户回访记录
-  updateCustomerVisit(id: number, data: any): Promise<{ data: CustomerVisitRecord }> {
-    return request.put<ApiResponse<CustomerVisitRecord>>(`/customers/visits/${id}`, data)
-      .then(response => ({ data: response.data.data }))
+  async updateCustomerVisit(id: number, data: any): Promise<{ data: CustomerVisitRecord }> {
+    const response = await salesServiceApi.put(`/customers/visits/${id}`, data)
+    return { data: response.data }
   },
 
   // 获取客户类型列表
-  getCustomerTypes(): Promise<{ data: any[] }> {
-    return request.get<ApiResponse<any[]>>('/customers/types')
-      .then(response => ({ data: response.data.data }))
+  async getCustomerTypes(): Promise<{ data: any[] }> {
+    const response = await salesServiceApi.get('/customers/types')
+    return { data: response.data }
   },
 
   // 获取客户价值分析
-  getCustomerValueAnalysis(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/customers/value-analysis', { params })
-      .then(response => ({ data: response.data.data }))
+  async getCustomerValueAnalysis(params: any = {}): Promise<{ data: any }> {
+    const response = await salesServiceApi.get('/customers/value-analysis', params)
+    return { data: response.data }
   },
 
   // 获取基地列表（用于下拉选择）
-  getBases(): Promise<{ data: any[] }> {
-    return request.get<ApiResponse<any[]>>('/bases')
-      .then(response => ({ data: response.data.data }))
+  async getBases(): Promise<{ data: any[] }> {
+    const response = await salesServiceApi.get('/bases')
+    return { data: response.data }
   },
 
   // 获取牛只列表（用于销售订单选择）
-  getCattle(params: any = {}): Promise<{ data: any }> {
-    return request.get<ApiResponse<any>>('/cattle', { params })
-      .then(response => ({ data: response.data.data }))
+  async getCattle(params: any = {}): Promise<{ data: any }> {
+    const response = await salesServiceApi.get('/cattle', params)
+    return { data: response.data }
   }
 }
