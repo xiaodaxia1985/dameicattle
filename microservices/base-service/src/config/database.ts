@@ -1,37 +1,45 @@
 import { Sequelize } from 'sequelize';
-import { createLogger } from '@cattle-management/shared';
+import { logger } from '../utils/logger';
 
-const logger = createLogger('base-service-database');
+const {
+  DB_HOST = 'localhost',
+  DB_PORT = '5432',
+  DB_NAME = 'cattle_management',
+  DB_USER = 'postgres',
+  DB_PASSWORD = 'dianxin99',
+  NODE_ENV = 'development',
+} = process.env;
 
-const sequelize = new Sequelize({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'base_db',
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
+export const sequelize = new Sequelize({
+  host: DB_HOST,
+  port: parseInt(DB_PORT, 10),
+  database: DB_NAME,
+  username: DB_USER,
+  password: DB_PASSWORD,
   dialect: 'postgres',
-  logging: (msg) => logger.debug(msg),
+  logging: NODE_ENV === 'development' ? (msg: string) => logger.debug(msg) : false,
   pool: {
     max: 10,
     min: 0,
     acquire: 30000,
-    idle: 10000
-  }
+    idle: 10000,
+  },
+  define: {
+    timestamps: true,
+    underscored: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
+  timezone: '+08:00',
 });
 
-export { sequelize };
-
-export const connectDatabase = async () => {
+export const testConnection = async (): Promise<boolean> => {
   try {
     await sequelize.authenticate();
-    logger.info('Database connection established successfully');
-    
-    await sequelize.sync({ alter: true });
-    logger.info('Database models synchronized');
-    
+    logger.info('Database connection has been established successfully.');
     return true;
   } catch (error) {
-    logger.error('Unable to connect to database', { error: (error as Error).message });
+    logger.error('Unable to connect to the database:', error);
     return false;
   }
 };

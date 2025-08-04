@@ -1,4 +1,4 @@
-import request from './request'
+import { notificationServiceApi, newsServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 export interface ChatSession {
@@ -57,49 +57,58 @@ export interface Tutorial {
 }
 
 export const helpApi = {
-  // Chat related APIs
-  initChatSession: (data: { subject: string; initialMessage?: string }): Promise<ApiResponse<ChatSession>> => {
-    return request.post('/help/chat/init', data)
+  // Chat related APIs - 使用通知服务处理聊天功能
+  initChatSession: async (data: { subject: string; initialMessage?: string }): Promise<ApiResponse<ChatSession>> => {
+    const response = await notificationServiceApi.post('/chat/init', data)
+    return response
   },
 
-  getChatMessages: (sessionId: string): Promise<ApiResponse<{ messages: ChatMessage[] }>> => {
-    return request.get(`/help/chat/${sessionId}/messages`)
+  getChatMessages: async (sessionId: string): Promise<ApiResponse<{ messages: ChatMessage[] }>> => {
+    const response = await notificationServiceApi.get(`/chat/${sessionId}/messages`)
+    return response
   },
 
-  sendChatMessage: (sessionId: string, data: { message: string; type: string }): Promise<ApiResponse<ChatMessage>> => {
-    return request.post(`/help/chat/${sessionId}/messages`, data)
+  sendChatMessage: async (sessionId: string, data: { message: string; type: string }): Promise<ApiResponse<ChatMessage>> => {
+    const response = await notificationServiceApi.post(`/chat/${sessionId}/messages`, data)
+    return response
   },
 
-  // Search API
-  searchHelp: (query: string): Promise<ApiResponse<{
+  // Search API - 使用新闻服务的搜索功能
+  searchHelp: async (query: string): Promise<ApiResponse<{
     articles: HelpArticle[]
     faqs: FAQ[]
     tutorials: Tutorial[]
   }>> => {
-    return request.get('/help/search', { params: { q: query } })
+    const response = await newsServiceApi.get('/help/search', { q: query })
+    return response
   },
 
-  // FAQ APIs
-  getFAQ: (category?: string): Promise<ApiResponse<{ [key: string]: FAQ[] }>> => {
-    return request.get('/help/faq', { params: { category } })
+  // FAQ APIs - 使用新闻服务处理FAQ
+  getFAQ: async (category?: string): Promise<ApiResponse<{ [key: string]: FAQ[] }>> => {
+    const response = await newsServiceApi.get('/help/faq', { category })
+    return response
   },
 
-  // Tutorial APIs
-  getTutorials: (params?: { category?: string; level?: string }): Promise<ApiResponse<Tutorial[]>> => {
-    return request.get('/help/tutorials', { params })
+  // Tutorial APIs - 使用新闻服务处理教程
+  getTutorials: async (params?: { category?: string; level?: string }): Promise<ApiResponse<Tutorial[]>> => {
+    const response = await newsServiceApi.get('/help/tutorials', params)
+    return response
   },
 
-  // Article APIs
-  getHelpArticles: (params?: { featured?: boolean; limit?: number }): Promise<ApiResponse<{ items: HelpArticle[] }>> => {
-    return request.get('/help/articles', { params })
+  // Article APIs - 使用新闻服务处理帮助文章
+  getHelpArticles: async (params?: { featured?: boolean; limit?: number }): Promise<ApiResponse<{ items: HelpArticle[] }>> => {
+    const response = await newsServiceApi.get('/help/articles', params)
+    return response
   },
 
-  getArticle: (id: number): Promise<ApiResponse<HelpArticle>> => {
-    return request.get(`/help/articles/${id}`)
+  getArticle: async (id: number): Promise<ApiResponse<HelpArticle>> => {
+    const response = await newsServiceApi.get(`/help/articles/${id}`)
+    return response
   },
 
-  // Manual APIs
-  getManualSection: (section: string): Promise<ApiResponse<{ content: string }>> => {
-    return request.get(`/help/manual/${section}`)
+  // Manual APIs - 使用新闻服务处理手册
+  getManualSection: async (section: string): Promise<ApiResponse<{ content: string }>> => {
+    const response = await newsServiceApi.get(`/help/manual/${section}`)
+    return response
   }
 }

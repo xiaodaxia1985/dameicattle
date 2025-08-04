@@ -1,4 +1,4 @@
-import { apiService } from '@/utils/request'
+import { baseServiceApi } from './microservices'
 
 export interface Barn {
   id: number
@@ -95,43 +95,43 @@ export interface BarnOptionsResponse {
 export const barnApi = {
   // 获取牛棚列表
   async getBarns(params: BarnListParams = {}): Promise<BarnListResponse> {
-    const response = await apiService.get('/barns', params)
+    const response = await baseServiceApi.getBarns(params.base_id, params)
     return { success: true, data: response.data }
   },
 
   // 获取牛棚详情
   async getBarn(id: number): Promise<BarnDetailResponse> {
-    const response = await apiService.get(`/barns/${id}`)
+    const response = await baseServiceApi.getBarn(id)
     return { success: true, data: response.data }
   },
 
   // 创建牛棚
   async createBarn(data: BarnCreateData): Promise<BarnDetailResponse> {
-    const response = await apiService.post('/barns', data)
+    const response = await baseServiceApi.createBarn(data)
     return { success: true, data: response.data }
   },
 
   // 更新牛棚
   async updateBarn(id: number, data: BarnUpdateData): Promise<BarnDetailResponse> {
-    const response = await apiService.put(`/barns/${id}`, data)
+    const response = await baseServiceApi.updateBarn(id, data)
     return { success: true, data: response.data }
   },
 
   // 删除牛棚
   async deleteBarn(id: number): Promise<{ success: boolean; message: string }> {
-    await apiService.delete(`/barns/${id}`)
+    await baseServiceApi.deleteBarn(id)
     return { success: true, message: '删除成功' }
   },
 
   // 获取牛棚统计信息
   async getStatistics(params: { base_id?: number } = {}): Promise<BarnStatisticsResponse> {
-    const response = await apiService.get('/barns/statistics', params)
+    const response = await baseServiceApi.get('/barns/statistics', params)
     return { success: true, data: response.data }
   },
 
   // 获取牛棚选项（用于下拉选择）
   async getBarnOptions(params: { base_id?: number } = {}): Promise<BarnOptionsResponse> {
-    const response = await apiService.get('/barns/options', params)
+    const response = await baseServiceApi.get('/barns/options', params)
     return { success: true, data: response.data }
   }
 }

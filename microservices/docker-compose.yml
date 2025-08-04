@@ -24,6 +24,31 @@ services:
     networks:
       - microservices-network
 
+  # 单体后端服务（共享数据库）
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    ports:
+      - "3100:3000"  # 内部端口3000，外部映射3100避免冲突
+    environment:
+      - NODE_ENV=production
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=cattle_management
+      - DB_USER=postgres
+      - DB_PASSWORD=dianxin99
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=your-jwt-secret-key
+      - PORT=3000
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
   # API网关
   api-gateway:
     build:
@@ -34,8 +59,10 @@ services:
     environment:
       - NODE_ENV=production
       - REDIS_URL=redis://redis:6379
+      - BACKEND_SERVICE_URL=http://backend:3000
     depends_on:
       - redis
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -72,17 +99,11 @@ services:
       - "3002:3002"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=base_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -96,19 +117,11 @@ services:
       - "3003:3003"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=cattle_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - BASE_SERVICE_URL=http://base-service:3002
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
-      - base-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -122,19 +135,11 @@ services:
       - "3004:3004"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=health_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - CATTLE_SERVICE_URL=http://cattle-service:3003
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
-      - cattle-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -148,19 +153,11 @@ services:
       - "3005:3005"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=feeding_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - CATTLE_SERVICE_URL=http://cattle-service:3003
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
-      - cattle-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -174,19 +171,11 @@ services:
       - "3006:3006"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=equipment_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - BASE_SERVICE_URL=http://base-service:3002
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
-      - base-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -200,17 +189,11 @@ services:
       - "3007:3007"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=procurement_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -224,17 +207,11 @@ services:
       - "3008:3008"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=sales_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped
@@ -248,17 +225,11 @@ services:
       - "3009:3009"
     environment:
       - NODE_ENV=production
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=material_db
-      - DB_USER=postgres
-      - DB_PASSWORD=dianxin99
       - REDIS_URL=redis://redis:6379
-      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BACKEND_URL=http://backend:3000/api/v1
     depends_on:
-      - postgres
       - redis
-      - auth-service
+      - backend
     networks:
       - microservices-network
     restart: unless-stopped

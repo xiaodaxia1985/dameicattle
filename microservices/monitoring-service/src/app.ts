@@ -1,11 +1,13 @@
 ﻿import express from 'express';
 import dotenv from 'dotenv';
-import { createLogger, responseWrapper, errorHandler, EventBus } from '@cattle-management/shared';
+import { logger } from './utils/logger';
+import { responseWrapper } from './middleware/responseWrapper';
+import { errorHandler } from './middleware/errorHandler';
+import routes from './routes';
 
 dotenv.config();
 
 const app = express();
-const logger = createLogger('monitoring-service');
 const PORT = process.env.PORT || 3012;
 
 // 基础中间件
@@ -30,8 +32,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// TODO: 添加API路由
-// app.use('/api/v1', routes);
+// Mount routes
+app.use('/api/v1', routes);
 
 // 404处理
 app.use('*', (req, res) => {
@@ -44,11 +46,6 @@ app.use(errorHandler);
 // 启动服务
 const startServer = async () => {
   try {
-    if (process.env.REDIS_URL) {
-      const eventBus = new EventBus(process.env.REDIS_URL);
-      await eventBus.connect();
-      logger.info('Event bus connected');
-    }
 
     app.listen(PORT, () => {
       logger.info(`monitoring-service is running on port ${PORT}`);
