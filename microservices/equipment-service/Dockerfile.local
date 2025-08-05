@@ -12,6 +12,6 @@ COPY . .
 
 RUN if [ -f "package.json" ] && grep -q '"build"' package.json; then npm run build; fi
 
-EXPOSE 3002
+EXPOSE 3007
 
 CMD ["npm", "start"]

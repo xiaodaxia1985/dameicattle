@@ -1,0 +1,148 @@
+﻿version: '3.8'
+services:
+  api-gateway:
+    image: microservices_api-gateway
+    container_name: api-gateway-container
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  base-service:
+    image: microservices_base-service
+    container_name: base-service-container
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  cattle-service:
+    image: microservices_cattle-service
+    container_name: cattle-service-container
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  health-service:
+    image: microservices_health-service
+    container_name: health-service-container
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  feeding-service:
+    image: microservices_feeding-service
+    container_name: feeding-service-container
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - PORT=3006
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  equipment-service:
+    image: microservices_equipment-service
+    container_name: equipment-service-container
+    ports:
+      - "3007:3007"
+    environment:
+      - NODE_ENV=development
+      - PORT=3007
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  procurement-service:
+    image: microservices_procurement-service
+    container_name: procurement-service-container
+    ports:
+      - "3008:3008"
+    environment:
+      - NODE_ENV=development
+      - PORT=3008
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  sales-service:
+    image: microservices_sales-service
+    container_name: sales-service-container
+    ports:
+      - "3009:3009"
+    environment:
+      - NODE_ENV=development
+      - PORT=3009
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  material-service:
+    image: microservices_material-service
+    container_name: material-service-container
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=development
+      - PORT=3010
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  notification-service:
+    image: microservices_notification-service
+    container_name: notification-service-container
+    ports:
+      - "3011:3011"
+    environment:
+      - NODE_ENV=development
+      - PORT=3011
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  file-service:
+    image: microservices_file-service
+    container_name: file-service-container
+    ports:
+      - "3012:3012"
+    environment:
+      - NODE_ENV=development
+      - PORT=3012
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  monitoring-service:
+    image: microservices_monitoring-service
+    container_name: monitoring-service-container
+    ports:
+      - "3013:3013"
+    environment:
+      - NODE_ENV=development
+      - PORT=3013
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  news-service:
+    image: microservices_news-service
+    container_name: news-service-container
+    ports:
+      - "3014:3014"
+    environment:
+      - NODE_ENV=development
+      - PORT=3014
+    networks:
+      - microservices-network
+    restart: unless-stopped
+networks:
+  microservices-network:
+    driver: bridge

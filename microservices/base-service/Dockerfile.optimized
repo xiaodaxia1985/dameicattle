@@ -7,14 +7,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install only production dependencies
-RUN npm install --only=production
+# Install all dependencies (needed for compiled code)
+RUN npm install
 
-# Copy compiled code (dist directory)
+# Copy compiled application
 COPY dist ./dist
-
-# Copy any other necessary files
-COPY . .
 
 # Expose port
 EXPOSE 3002

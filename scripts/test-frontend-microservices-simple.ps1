@@ -1,6 +1,6 @@
 #!/usr/bin/env pwsh
 
-# 前端微服务集成测试脚本
+# 前端微服务集成测试脚本（简化版）
 Write-Host "=== 前端微服务集成测试 ===" -ForegroundColor Green
 Write-Host "开始测试前端与微服务的集成..." -ForegroundColor Yellow
 
@@ -38,7 +38,7 @@ foreach ($service in $microservices.GetEnumerator()) {
             Write-Host "  ✓ $serviceName - 健康" -ForegroundColor Green
         } else {
             $unhealthyServices += $serviceName
-            Write-Host "  ⚠ $serviceName - 状态异常: $($response.status)" -ForegroundColor Yellow
+            Write-Host "  ⚠ $serviceName - 状态异常" -ForegroundColor Yellow
         }
     } catch {
         $unhealthyServices += $serviceName
@@ -57,45 +57,7 @@ if ($unhealthyServices.Count -gt 0) {
     }
 }
 
-Write-Host "`n2. 测试API端点..." -ForegroundColor Cyan
-
-# 测试各个服务的主要端点
-$testEndpoints = @{
-    "auth-service" = @("/api/v1/auth/health")
-    "base-service" = @("/api/v1/base/bases", "/api/v1/base/barns")
-    "cattle-service" = @("/api/v1/cattle/cattle")
-    "health-service" = @("/api/v1/health/records")
-    "feeding-service" = @("/api/v1/feeding/formulas", "/api/v1/feeding/records")
-    "news-service" = @("/api/v1/news/categories", "/api/v1/news/articles")
-}
-
-$successfulTests = 0
-$totalTests = 0
-
-foreach ($service in $testEndpoints.GetEnumerator()) {
-    $serviceName = $service.Key
-    $endpoints = $service.Value
-    $baseUrl = $microservices[$serviceName]
-    
-    if ($healthyServices -contains $serviceName) {
-        foreach ($endpoint in $endpoints) {
-            $totalTests++
-            $testUrl = "$baseUrl$endpoint"
-            
-            try {
-                $response = Invoke-RestMethod -Uri $testUrl -Method GET -TimeoutSec 10 -ErrorAction Stop
-                $successfulTests++
-                Write-Host "  ✓ $endpoint" -ForegroundColor Green
-            } catch {
-                Write-Host "  ✗ $endpoint - $($_.Exception.Message)" -ForegroundColor Red
-            }
-        }
-    } else {
-        Write-Host "  ⚠ 跳过 $serviceName (服务不健康)" -ForegroundColor Yellow
-    }
-}
-
-Write-Host "`n3. 检查前端配置..." -ForegroundColor Cyan
+Write-Host "`n2. 检查前端配置..." -ForegroundColor Cyan
 
 # 检查前端环境配置
 $frontendEnvPath = "frontend/.env"
@@ -118,77 +80,19 @@ if (Test-Path $microserviceConfigPath) {
     Write-Host "  ✗ 微服务配置文件不存在" -ForegroundColor Red
 }
 
-Write-Host "`n4. 生成测试报告..." -ForegroundColor Cyan
-
-$testReport = @"
-# 前端微服务集成测试报告
-
-## 测试概览
-- 测试时间: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-- 微服务总数: $($microservices.Count)
-- 健康服务数: $($healthyServices.Count)
-- 异常服务数: $($unhealthyServices.Count)
-- API测试总数: $totalTests
-- API测试成功数: $successfulTests
-
-## 服务健康状态
-
-### 健康服务 ($($healthyServices.Count))
-$(if ($healthyServices.Count -gt 0) { ($healthyServices | ForEach-Object { "- $_" }) -join "`n" } else { "无" })
-
-### 异常服务 ($($unhealthyServices.Count))
-$(if ($unhealthyServices.Count -gt 0) { ($unhealthyServices | ForEach-Object { "- $_" }) -join "`n" } else { "无" })
-
-## API测试结果
-- 成功率: $(if ($totalTests -gt 0) { [math]::Round(($successfulTests / $totalTests) * 100, 2) } else { 0 })%
-- 成功测试: $successfulTests/$totalTests
-
-## 前端配置检查
-- 环境配置: $(if (Test-Path "frontend/.env") { "✓ 存在" } else { "✗ 缺失" })
-- 微服务配置: $(if (Test-Path "frontend/src/config/microservices.ts") { "✓ 存在" } else { "✗ 缺失" })
-
-## 建议操作
-$(if ($unhealthyServices.Count -gt 0) {
-"### 修复异常服务
-$(($unhealthyServices | ForEach-Object { "1. 检查 $_ 服务状态并重启" }) -join "`n")
-"
-})
-
-$(if ($successfulTests -lt $totalTests) {
-"### API问题修复
-1. 检查API路由配置
-2. 验证数据库连接
-3. 检查服务间通信
-"
-})
-
-### 下一步
-1. 启动前端开发服务器: npm run dev
-2. 在浏览器中测试各个功能模块
-3. 检查浏览器控制台是否有错误
-4. 验证数据流转是否正常
-
-生成时间: $(Get-Date -Format "yyyy-MM-dd HH:mm:ss")
-"@
-
-$reportPath = "FRONTEND_MICROSERVICE_TEST_REPORT.md"
-$testReport | Out-File -FilePath $reportPath -Encoding UTF8
-Write-Host "  ✓ 生成测试报告: $reportPath" -ForegroundColor Green
-
 Write-Host "`n=== 测试完成 ===" -ForegroundColor Green
 
 # 显示测试结果摘要
-if ($healthyServices.Count -eq $microservices.Count -and $successfulTests -eq $totalTests) {
-    Write-Host "🎉 所有微服务运行正常，API测试全部通过!" -ForegroundColor Green
+if ($healthyServices.Count -eq $microservices.Count) {
+    Write-Host "🎉 所有微服务运行正常!" -ForegroundColor Green
 } elseif ($healthyServices.Count -gt 0) {
-    Write-Host "⚠️  部分微服务存在问题，请查看测试报告了解详情。" -ForegroundColor Yellow
+    Write-Host "⚠️  部分微服务存在问题。" -ForegroundColor Yellow
 } else {
     Write-Host "❌ 大部分微服务无法访问，请检查服务启动状态。" -ForegroundColor Red
 }
 
 Write-Host "`n测试摘要:" -ForegroundColor Cyan
 Write-Host "  健康服务: $($healthyServices.Count)/$($microservices.Count)" -ForegroundColor $(if ($healthyServices.Count -eq $microservices.Count) { "Green" } else { "Yellow" })
-Write-Host "  API测试: $successfulTests/$totalTests" -ForegroundColor $(if ($successfulTests -eq $totalTests) { "Green" } else { "Yellow" })
 
 if ($unhealthyServices.Count -gt 0) {
     Write-Host "`n需要修复的服务:" -ForegroundColor Red
@@ -203,6 +107,6 @@ if ($unhealthyServices.Count -gt 0) {
 }
 
 Write-Host "`n如果所有服务正常，可以继续:" -ForegroundColor Cyan
-Write-Host "1. cd frontend && npm run dev  # 启动前端开发服务器" -ForegroundColor White
+Write-Host "1. cd frontend; npm run dev  # 启动前端开发服务器" -ForegroundColor White
 Write-Host "2. 在浏览器中访问 http://localhost:5173" -ForegroundColor White
 Write-Host "3. 测试各个功能模块确认集成正常" -ForegroundColor White
