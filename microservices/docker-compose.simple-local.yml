@@ -1,0 +1,148 @@
+﻿services:
+  base-service:
+    build:
+      context: ./base-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  cattle-service:
+    build:
+      context: ./cattle-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  health-service:
+    build:
+      context: ./health-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  feeding-service:
+    build:
+      context: ./feeding-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  equipment-service:
+    build:
+      context: ./equipment-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - PORT=3006
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  procurement-service:
+    build:
+      context: ./procurement-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3007:3007"
+    environment:
+      - NODE_ENV=development
+      - PORT=3007
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  sales-service:
+    build:
+      context: ./sales-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3008:3008"
+    environment:
+      - NODE_ENV=development
+      - PORT=3008
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  material-service:
+    build:
+      context: ./material-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3009:3009"
+    environment:
+      - NODE_ENV=development
+      - PORT=3009
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3010:3010"
+    environment:
+      - NODE_ENV=development
+      - PORT=3010
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  file-service:
+    build:
+      context: ./file-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3011:3011"
+    environment:
+      - NODE_ENV=development
+      - PORT=3011
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  monitoring-service:
+    build:
+      context: ./monitoring-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3012:3012"
+    environment:
+      - NODE_ENV=development
+      - PORT=3012
+    networks:
+      - microservices-network
+    restart: unless-stopped
+  news-service:
+    build:
+      context: ./news-service
+      dockerfile: Dockerfile.local
+    ports:
+      - "3013:3013"
+    environment:
+      - NODE_ENV=development
+      - PORT=3013
+    networks:
+      - microservices-network
+    restart: unless-stopped
+networks:
+  microservices-network:
+    driver: bridge

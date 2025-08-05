@@ -1,19 +1,44 @@
-﻿version: '3.8'
+﻿networks:
+  microservices-network:
+    driver: bridge
+
 services:
-  api-gateway:
-    image: microservices_api-gateway
-    container_name: api-gateway-container
+  # 认证服务
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=development
       - PORT=3001
+      - DB_HOST=localhost
+      - DB_PORT=5432
+      - DB_NAME=cattle_management_dev
+      - DB_USER=cattle_user
+      - DB_PASSWORD=dianxin99
+      - JWT_SECRET=your-development-jwt-secret-key
     networks:
       - microservices-network
     restart: unless-stopped
   base-service:
-    image: microservices_base-service
-    container_name: base-service-container
+    build:
+      context: ./base-service
+      dockerfile: Dockerfile.simple
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+    networks:
+      - microservices-network
+    restart: unless-stopped
+
+  cattle-service:
+    build:
+      context: ./cattle-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3003:3003"
     environment:
@@ -22,9 +47,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  cattle-service:
-    image: microservices_cattle-service
-    container_name: cattle-service-container
+
+  health-service:
+    build:
+      context: ./health-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3004:3004"
     environment:
@@ -33,9 +60,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  health-service:
-    image: microservices_health-service
-    container_name: health-service-container
+
+  feeding-service:
+    build:
+      context: ./feeding-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3005:3005"
     environment:
@@ -44,9 +73,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  feeding-service:
-    image: microservices_feeding-service
-    container_name: feeding-service-container
+
+  equipment-service:
+    build:
+      context: ./equipment-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3006:3006"
     environment:
@@ -55,9 +86,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  equipment-service:
-    image: microservices_equipment-service
-    container_name: equipment-service-container
+
+  procurement-service:
+    build:
+      context: ./procurement-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3007:3007"
     environment:
@@ -66,9 +99,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  procurement-service:
-    image: microservices_procurement-service
-    container_name: procurement-service-container
+
+  sales-service:
+    build:
+      context: ./sales-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3008:3008"
     environment:
@@ -77,9 +112,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  sales-service:
-    image: microservices_sales-service
-    container_name: sales-service-container
+
+  material-service:
+    build:
+      context: ./material-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3009:3009"
     environment:
@@ -88,9 +125,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  material-service:
-    image: microservices_material-service
-    container_name: material-service-container
+
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3010:3010"
     environment:
@@ -99,9 +138,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  notification-service:
-    image: microservices_notification-service
-    container_name: notification-service-container
+
+  file-service:
+    build:
+      context: ./file-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3011:3011"
     environment:
@@ -110,9 +151,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  file-service:
-    image: microservices_file-service
-    container_name: file-service-container
+
+  monitoring-service:
+    build:
+      context: ./monitoring-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3012:3012"
     environment:
@@ -121,9 +164,11 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  monitoring-service:
-    image: microservices_monitoring-service
-    container_name: monitoring-service-container
+
+  news-service:
+    build:
+      context: ./news-service
+      dockerfile: Dockerfile.simple
     ports:
       - "3013:3013"
     environment:
@@ -132,17 +177,3 @@ services:
     networks:
       - microservices-network
     restart: unless-stopped
-  news-service:
-    image: microservices_news-service
-    container_name: news-service-container
-    ports:
-      - "3014:3014"
-    environment:
-      - NODE_ENV=development
-      - PORT=3014
-    networks:
-      - microservices-network
-    restart: unless-stopped
-networks:
-  microservices-network:
-    driver: bridge

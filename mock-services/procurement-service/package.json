@@ -1,0 +1,9 @@
+﻿{
+  "name": "mock-procurement-service",
+  "version": "1.0.0",
+  "description": "Mock procurement-service",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  }
+}

@@ -1,0 +1,9 @@
+﻿{
+  "name": "mock-news-service",
+  "version": "1.0.0",
+  "description": "Mock news-service",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  }
+}

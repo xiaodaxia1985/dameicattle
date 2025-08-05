@@ -1,0 +1,9 @@
+﻿{
+  "name": "mock-feeding-service",
+  "version": "1.0.0",
+  "description": "Mock feeding-service",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  }
+}

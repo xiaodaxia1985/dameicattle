@@ -1,17 +1,52 @@
-﻿FROM alpine:latest
+﻿# 浣跨敤Alpine Linux浣滀负鍩虹闀滃儚
+FROM alpine:latest
 
-RUN apk add --no-cache nodejs npm
+# 瀹夎鍩虹渚濊禆
+RUN apk add --no-cache \
+    libstdc++ \
+    libgcc \
+    ca-certificates
 
+# 鍒涘缓node鐢ㄦ埛
+RUN addgroup -g 1000 node \
+    && adduser -u 1000 -G node -s /bin/sh -D node
+
+# 澶嶅埗鏈湴Node.js瀹夎鍖?
+COPY node-v22.17.0-linux-x64-musl.tar.xz /tmp/
+
+# 瑙ｅ帇Node.js鍒扮郴缁熺洰褰?
+RUN tar -xJf /tmp/node-v22.17.0-linux-x64-musl.tar.xz -C /usr/local --strip-components=1 \
+    && rm /tmp/node-v22.17.0-linux-x64-musl.tar.xz
+
+# 璁剧疆PATH鐜鍙橀噺
+ENV PATH=/usr/local/bin:
+
+# 楠岃瘉Node.js瀹夎
+RUN node --version && npm --version
+
+# 璁剧疆npm闀滃儚婧?
+RUN npm config set registry https://registry.npmmirror.com
+
+# 璁剧疆宸ヤ綔鐩綍
 WORKDIR /app
 
+# 澶嶅埗package鏂囦欢
 COPY package*.json ./
 
+# 瀹夎渚濊禆
 RUN npm install
 
-COPY . .
+# 澶嶅埗搴旂敤浠ｇ爜
+COPY . ./
 
-RUN if [ -f "package.json" ] && grep -q '"build"' package.json; then npm run build; fi
+# 濡傛灉鏈塨uild鑴氭湰锛屾瀯寤轰唬鐮?
+RUN if grep -q '"build"' package.json; then npm run build; fi
 
-EXPOSE 3003
+# 鍒囨崲鍒皀ode鐢ㄦ埛
+USER node
 
+# 鏆撮湶绔彛
+EXPOSE 3002
+
+# 鍚姩鍛戒护
 CMD ["npm", "start"]

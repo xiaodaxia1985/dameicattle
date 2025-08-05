@@ -1,15 +1,12 @@
-﻿FROM alpine:latest
-
-RUN apk add --no-cache nodejs npm
+﻿FROM node:20-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
+RUN npm install
 
-RUN npm install --production
+COPY . .
 
-COPY src ./src
+EXPOSE 3008
 
-EXPOSE 3009
-
-CMD ["node", "src/index.js"]
+CMD ["npm", "start"]

@@ -56,16 +56,24 @@ foreach ($service in $services) {
         
         # Install dependencies if needed
         if (-not (Test-Path "node_modules")) {
+            Write-Host "    Installing dependencies..." -ForegroundColor Yellow
             npm install 2>$null
+        }
+        
+        # Ensure dotenv is installed
+        $packageJson = Get-Content "package.json" -Raw | ConvertFrom-Json -ErrorAction SilentlyContinue
+        if ($packageJson -and $packageJson.dependencies -and -not $packageJson.dependencies.dotenv) {
+            Write-Host "    Installing dotenv..." -ForegroundColor Yellow
+            npm install dotenv 2>$null
         }
         
         # Try to compile TypeScript
         npx tsc --skipLibCheck 2>$null
         
         if (Test-Path "dist") {
-            Write-Host "    ✓ Compiled successfully" -ForegroundColor Green
+            Write-Host "  Compiled successfully" -ForegroundColor Green
         } else {
-            Write-Host "    ⚠ Compilation failed, creating simple JS version..." -ForegroundColor Yellow
+            Write-Host "  Compilation failed, creating simple JS version..." -ForegroundColor Yellow
             
             # Create simple JavaScript version
             if (-not (Test-Path "dist")) {
@@ -221,10 +229,10 @@ foreach ($service in $services) {
         $buildResult = docker build -f "$service/Dockerfile.optimized" -t "microservices_${service}_opt" "./$service" 2>&1
         
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "    ✓ SUCCESS" -ForegroundColor Green
+            Write-Host "    SUCCESS" -ForegroundColor Green
             $buildSuccess += $service
         } else {
-            Write-Host "    ✗ FAILED" -ForegroundColor Red
+            Write-Host "    FAILED" -ForegroundColor Red
             $buildFailed += $service
         }
     }
@@ -293,7 +301,7 @@ Set-Location $originalPath
 Write-Host "`n=== Smart Rebuild Complete ===" -ForegroundColor Green
 
 if ($buildSuccess.Count -gt 0) {
-    Write-Host "🎉 Successfully rebuilt $($buildSuccess.Count) microservices!" -ForegroundColor Green
+    Write-Host " Successfully rebuilt $($buildSuccess.Count) microservices!" -ForegroundColor Green
     Write-Host "`nTest with: .\scripts\test-microservices-health.ps1" -ForegroundColor Cyan
     
     Write-Host "`nService endpoints:" -ForegroundColor Cyan
@@ -306,5 +314,5 @@ if ($buildSuccess.Count -gt 0) {
         Write-Host "  $service -> http://localhost:$port" -ForegroundColor White
     }
 } else {
-    Write-Host "❌ No services were successfully built" -ForegroundColor Red
+    Write-Host " No services were successfully built" -ForegroundColor Red
 }
