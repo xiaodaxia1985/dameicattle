@@ -4,8 +4,19 @@ const port = process.env.PORT || 3009;
 
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint (direct access)
 app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'material-service',
+    name: 'Material Service',
+    port: port,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check endpoint for API Gateway
+app.get('/api/v1/material/health', (req, res) => {
   res.json({
     status: 'healthy',
     service: 'material-service',
@@ -21,11 +32,22 @@ app.get('/', (req, res) => {
     message: 'Material Service API',
     service: 'material-service',
     version: '1.0.0',
-    endpoints: ['/health', '/api/status']
+    endpoints: ['/health', '/api/v1/material/health', '/api/status']
   });
 });
 
 app.get('/api/status', (req, res) => {
+  res.json({
+    service: 'material-service',
+    status: 'running',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API v1 material routes
+app.get('/api/v1/material/status', (req, res) => {
   res.json({
     service: 'material-service',
     status: 'running',

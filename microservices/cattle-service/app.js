@@ -4,8 +4,19 @@ const port = process.env.PORT || 3003;
 
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint (direct access)
 app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'cattle-service',
+    name: 'Cattle Service',
+    port: port,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check endpoint for API Gateway
+app.get('/api/v1/cattle/health', (req, res) => {
   res.json({
     status: 'healthy',
     service: 'cattle-service',
@@ -21,11 +32,22 @@ app.get('/', (req, res) => {
     message: 'Cattle Service API',
     service: 'cattle-service',
     version: '1.0.0',
-    endpoints: ['/health', '/api/status']
+    endpoints: ['/health', '/api/v1/cattle/health', '/api/status']
   });
 });
 
 app.get('/api/status', (req, res) => {
+  res.json({
+    service: 'cattle-service',
+    status: 'running',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API v1 cattle routes
+app.get('/api/v1/cattle/status', (req, res) => {
   res.json({
     service: 'cattle-service',
     status: 'running',

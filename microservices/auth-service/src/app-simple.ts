@@ -8,8 +8,19 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 
-// 简单的健康检查
+// 简单的健康检查 - 支持两种路径
 app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: '1.0.0',
+    service: 'auth-service',
+    port: PORT
+  });
+});
+
+app.get('/api/v1/auth/health', (req, res) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),

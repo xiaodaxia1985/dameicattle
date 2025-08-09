@@ -4,8 +4,19 @@ const port = process.env.PORT || 3011;
 
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint (direct access)
 app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'file-service',
+    name: 'File Service',
+    port: port,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check endpoint for API Gateway
+app.get('/api/v1/file/health', (req, res) => {
   res.json({
     status: 'healthy',
     service: 'file-service',
@@ -21,11 +32,22 @@ app.get('/', (req, res) => {
     message: 'File Service API',
     service: 'file-service',
     version: '1.0.0',
-    endpoints: ['/health', '/api/status']
+    endpoints: ['/health', '/api/v1/file/health', '/api/status']
   });
 });
 
 app.get('/api/status', (req, res) => {
+  res.json({
+    service: 'file-service',
+    status: 'running',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API v1 file routes
+app.get('/api/v1/file/status', (req, res) => {
   res.json({
     service: 'file-service',
     status: 'running',

@@ -12,7 +12,7 @@ export const healthCheck = async (): Promise<boolean> => {
     if (response.ok) {
       const data = await response.json()
       console.log('Backend health check:', data)
-      return data.success === true
+      return data.status === 'healthy'
     } else {
       console.error('Backend health check failed:', response.status)
       return false

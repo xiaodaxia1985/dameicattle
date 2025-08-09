@@ -4,8 +4,19 @@ const port = process.env.PORT || 3005;
 
 app.use(express.json());
 
-// Health check endpoint
+// Health check endpoint (direct access)
 app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    service: 'feeding-service',
+    name: 'Feeding Service',
+    port: port,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Health check endpoint for API Gateway
+app.get('/api/v1/feeding/health', (req, res) => {
   res.json({
     status: 'healthy',
     service: 'feeding-service',
@@ -21,11 +32,22 @@ app.get('/', (req, res) => {
     message: 'Feeding Service API',
     service: 'feeding-service',
     version: '1.0.0',
-    endpoints: ['/health', '/api/status']
+    endpoints: ['/health', '/api/v1/feeding/health', '/api/status']
   });
 });
 
 app.get('/api/status', (req, res) => {
+  res.json({
+    service: 'feeding-service',
+    status: 'running',
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API v1 feeding routes
+app.get('/api/v1/feeding/status', (req, res) => {
   res.json({
     service: 'feeding-service',
     status: 'running',
