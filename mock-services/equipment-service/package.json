@@ -1,9 +1,0 @@
-﻿{
-  "name": "mock-equipment-service",
-  "version": "1.0.0",
-  "description": "Mock equipment-service",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  }
-}

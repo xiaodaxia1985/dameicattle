@@ -1,9 +1,0 @@
-﻿{
-  "name": "mock-monitoring-service",
-  "version": "1.0.0",
-  "description": "Mock monitoring-service",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  }
-}

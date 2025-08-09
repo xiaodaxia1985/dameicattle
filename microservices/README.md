@@ -48,19 +48,57 @@
 
 ## 部署方式
 
-```bash
-# 启动所有服务
-docker-compose up -d
+### 使用 npm 直接启动（推荐）
 
-# 启动特定服务
-docker-compose up -d api-gateway auth-service
+```powershell
+# 启动所有13个微服务
+.\start-services-npm.ps1
 
-# 查看服务状态
-docker-compose ps
+# 停止所有微服务
+.\stop-services.ps1
 
-# 查看服务日志
-docker-compose logs -f [service-name]
+# 或者手动启动单个服务
+cd auth-service
+npm start
 ```
+
+### 前置条件
+- Node.js 已安装
+- PostgreSQL 运行在 localhost:5432
+- Redis 运行在 localhost:6379（可选）
+
+### 服务端口分配
+- API Gateway: http://localhost:3000
+- Auth Service: http://localhost:3001
+- Base Service: http://localhost:3002
+- Cattle Service: http://localhost:3003
+- Health Service: http://localhost:3004
+- Feeding Service: http://localhost:3005
+- Equipment Service: http://localhost:3006
+- Procurement Service: http://localhost:3007
+- Sales Service: http://localhost:3008
+- Material Service: http://localhost:3009
+- Notification Service: http://localhost:3010
+- File Service: http://localhost:3011
+- Monitoring Service: http://localhost:3012
+- News Service: http://localhost:3013
+
+### 健康检查
+所有服务都提供健康检查端点：
+```
+GET http://localhost:{port}/health
+```
+
+### API 访问
+通过 API Gateway 访问所有服务：
+```
+http://localhost:3000/api/v1/{service-name}/...
+```
+
+例如：
+- 认证: http://localhost:3000/api/v1/auth/login
+- 基地管理: http://localhost:3000/api/v1/base/...
+- 牛只管理: http://localhost:3000/api/v1/cattle/...
 
 ## 开发指南
 

@@ -1,4 +1,4 @@
-import Redis from 'redis';
+import { createClient } from 'redis';
 import { logger } from '../utils/logger';
 
 const {
@@ -7,7 +7,7 @@ const {
   REDIS_URL = `redis://${REDIS_HOST}:${REDIS_PORT}`,
 } = process.env;
 
-export const redisClient = Redis.createClient({
+export const redisClient = createClient({
   url: REDIS_URL,
 });
 

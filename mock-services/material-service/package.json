@@ -1,9 +1,0 @@
-﻿{
-  "name": "mock-material-service",
-  "version": "1.0.0",
-  "description": "Mock material-service",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  }
-}

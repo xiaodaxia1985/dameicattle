@@ -1,9 +1,0 @@
-﻿{
-  "name": "mock-sales-service",
-  "version": "1.0.0",
-  "description": "Mock sales-service",
-  "main": "app.js",
-  "scripts": {
-    "start": "node app.js"
-  }
-}

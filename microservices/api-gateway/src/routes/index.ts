@@ -95,13 +95,6 @@ const MICROSERVICE_ROUTES = {
     target: process.env.NEWS_SERVICE_URL || 'http://news-service:3013',
     changeOrigin: true,
     timeout: 10000
-  },
-  
-  // 回退到单体应用（迁移期间）
-  '/api/v1': {
-    target: process.env.BACKEND_SERVICE_URL || 'http://backend:3000',
-    changeOrigin: true,
-    timeout: 15000
   }
 };
 

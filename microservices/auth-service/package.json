@@ -7,7 +7,7 @@
     "dev": "nodemon src/app-simple.ts",
     "dev-full": "nodemon src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js",
+    "start": "ts-node src/app-simple.ts",
     "test": "ts-node src/app-simple.ts"
   },
   "dependencies": {
