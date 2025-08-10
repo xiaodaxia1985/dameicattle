@@ -191,5 +191,11 @@ export const baseApi = {
   async getBarnStatistics(id: number): Promise<{ data: any }> {
     const response = await baseServiceApi.get(`/barns/${id}/statistics`)
     return { data: response.data }
+  },
+
+  // 获取牛棚内的牛只列表
+  async getBarnCattle(barnId: number): Promise<{ data: any[] }> {
+    const response = await baseServiceApi.get(`/barns/${barnId}/cattle`)
+    return { data: response.data }
   }
 }

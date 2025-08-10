@@ -288,6 +288,45 @@
       :cattle-ids="selectedCattle"
       @success="handleTransferSuccess"
     />
+
+    <!-- 生命周期事件对话框 -->
+    <el-dialog
+      v-model="showLifecycleDialog"
+      :title="`${currentCattle?.ear_tag} - 生命周期事件`"
+      width="80%"
+      top="5vh"
+    >
+      <LifecycleEvents
+        v-if="currentCattle && showLifecycleDialog"
+        :cattle-id="currentCattle.id"
+      />
+    </el-dialog>
+
+    <!-- 照片管理对话框 -->
+    <el-dialog
+      v-model="showPhotoDialog"
+      :title="`${currentCattle?.ear_tag} - 照片管理`"
+      width="80%"
+      top="5vh"
+    >
+      <PhotoManager
+        v-if="currentCattle && showPhotoDialog"
+        :cattle-id="currentCattle.id"
+      />
+    </el-dialog>
+
+    <!-- 转群管理对话框 -->
+    <el-dialog
+      v-model="showSingleTransferDialog"
+      :title="`${currentCattle?.ear_tag} - 转群管理`"
+      width="80%"
+      top="5vh"
+    >
+      <TransferManager
+        v-if="currentCattle && showSingleTransferDialog"
+        :cattle-id="currentCattle.id"
+      />
+    </el-dialog>
   </div>
 </template>
 
@@ -317,6 +356,9 @@ import { validatePaginationData, validateDataArray, validateCattleData, validate
 import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'
 import BatchImportDialog from '@/components/cattle/BatchImportDialog.vue'
 import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
+import LifecycleEvents from '@/components/cattle/LifecycleEvents.vue'
+import PhotoManager from '@/components/cattle/PhotoManager.vue'
+import TransferManager from '@/components/cattle/TransferManager.vue'
 import dayjs from 'dayjs'
 
 const cattleStore = useCattleStore()
@@ -369,6 +411,9 @@ const showFormDialog = ref(false)
 const showImportDialog = ref(false)
 const showTransferDialog = ref(false)
 const showDetailDialog = ref(false)
+const showLifecycleDialog = ref(false)
+const showPhotoDialog = ref(false)
+const showSingleTransferDialog = ref(false)
 
 // 当前操作的牛只
 const currentCattle = ref<Cattle | null>(null)
@@ -380,11 +425,27 @@ const pageSize = ref(20)
 
 onMounted(async () => {
   try {
-    // 并行加载牛只列表和基地数据
-    await Promise.all([
-      loadCattleList(),
-      baseStore.fetchAllBases()
-    ])
+    // 先加载基地数据
+    await baseStore.fetchAllBases()
+    
+    // 检查路由查询参数，如果有基地和牛棚参数则自动选择
+    const route = router.currentRoute.value
+    if (route.query.baseId) {
+      const baseId = Number(route.query.baseId)
+      searchForm.baseId = baseId
+      
+      // 加载对应基地的牛棚选项
+      await handleBaseChange(baseId)
+      
+      // 如果还有牛棚参数，也自动选择
+      if (route.query.barnId) {
+        const barnId = Number(route.query.barnId)
+        searchForm.barnId = barnId
+      }
+    }
+    
+    // 加载牛只列表
+    await loadCattleList()
   } catch (error) {
     console.error('初始化数据加载失败:', error)
   }
@@ -493,13 +554,13 @@ const confirmDelete = async (cattle: Cattle) => {
 const handleMoreAction = (command: string, cattle: Cattle) => {
   switch (command) {
     case 'events':
-      // 查看生命周期事件
+      showLifecycleEvents(cattle)
       break
     case 'photos':
-      // 照片管理
+      showPhotoManager(cattle)
       break
     case 'transfer':
-      // 单个转群
+      showTransferManager(cattle)
       break
     case 'delete':
       confirmDelete(cattle)
@@ -573,6 +634,24 @@ const getHealthStatusText = (status: string) => {
 
 const formatTime = (time: string) => {
   return dayjs(time).format('YYYY-MM-DD HH:mm')
+}
+
+// 显示生命周期事件
+const showLifecycleEvents = (cattle: Cattle) => {
+  currentCattle.value = cattle
+  showLifecycleDialog.value = true
+}
+
+// 显示照片管理
+const showPhotoManager = (cattle: Cattle) => {
+  currentCattle.value = cattle
+  showPhotoDialog.value = true
+}
+
+// 显示转群管理
+const showTransferManager = (cattle: Cattle) => {
+  currentCattle.value = cattle
+  showSingleTransferDialog.value = true
 }
 </script>
 

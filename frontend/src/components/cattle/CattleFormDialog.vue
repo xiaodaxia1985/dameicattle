@@ -255,10 +255,20 @@ const handleBaseChange = (baseId: number) => {
 const loadBarns = async (baseId: number) => {
   try {
     const response = await barnApi.getBarnOptions({ base_id: baseId })
-    availableBarns.value = response.data
+    console.log('Barn options response:', response.data)
+    
+    // 转换数据格式以匹配前端期望的结构
+    availableBarns.value = (response.data || []).map((barn: any) => ({
+      value: barn.id,
+      label: `${barn.name} (${barn.code}) - 容量:${barn.capacity} 可用:${barn.available_space || 0}`,
+      disabled: barn.available_space <= 0
+    }))
+    
+    console.log('Transformed barn options:', availableBarns.value)
   } catch (error) {
     console.error('加载牛棚选项失败:', error)
     ElMessage.error('加载牛棚选项失败')
+    availableBarns.value = []
   }
 }
 

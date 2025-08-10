@@ -777,6 +777,102 @@ app.get('/api/v1/base/bases/:id/barns', async (req, res) => {
   }
 });
 
+// GET /api/v1/base/barns/statistics - 获取牛棚统计信息
+app.get('/api/v1/base/barns/statistics', async (req, res) => {
+  try {
+    const { base_id } = req.query;
+
+    const whereClause = {};
+    if (base_id) {
+      whereClause.base_id = base_id;
+    }
+
+    // Get barn statistics
+    const [stats] = await sequelize.query(`
+      SELECT 
+        COUNT(*) as total_barns,
+        SUM(capacity) as total_capacity,
+        SUM(current_count) as total_current,
+        AVG(capacity) as avg_capacity,
+        COUNT(CASE WHEN status = 'active' THEN 1 END) as active_barns,
+        COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_barns,
+        COUNT(CASE WHEN current_count >= capacity THEN 1 END) as full_barns,
+        COUNT(CASE WHEN current_count = 0 THEN 1 END) as empty_barns
+      FROM barns 
+      ${base_id ? 'WHERE base_id = :baseId' : ''}
+    `, {
+      replacements: { baseId: base_id },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    // Get barn type distribution
+    const [typeStats] = await sequelize.query(`
+      SELECT 
+        barn_type,
+        COUNT(*) as count,
+        SUM(capacity) as total_capacity,
+        SUM(current_count) as current_count
+      FROM barns 
+      ${base_id ? 'WHERE base_id = :baseId' : ''}
+      GROUP BY barn_type
+      ORDER BY count DESC
+    `, {
+      replacements: { baseId: base_id },
+      type: sequelize.QueryTypes.SELECT,
+    });
+
+    res.success({
+      overview: stats,
+      by_type: typeStats,
+    }, '获取牛棚统计信息成功');
+  } catch (error) {
+    console.error('Error fetching barn statistics:', error);
+    res.error('获取牛棚统计信息失败', 500, 'FETCH_BARN_STATISTICS_ERROR');
+  }
+});
+
+// GET /api/v1/base/barns/options - 获取牛棚选项（用于下拉选择）
+app.get('/api/v1/base/barns/options', async (req, res) => {
+  try {
+    const { base_id } = req.query;
+
+    const whereClause = { status: 'active' };
+    if (base_id) {
+      whereClause.base_id = base_id;
+    }
+
+    const barns = await Barn.findAll({
+      where: whereClause,
+      attributes: ['id', 'name', 'code', 'base_id', 'capacity', 'current_count'],
+      include: [
+        {
+          model: Base,
+          as: 'base',
+          attributes: ['id', 'name', 'code'],
+          required: false,
+        }
+      ],
+      order: [['name', 'ASC']],
+    });
+
+    const options = barns.map(barn => ({
+      id: barn.id,
+      name: barn.name,
+      code: barn.code,
+      base_id: barn.base_id,
+      base_name: barn.base?.name,
+      capacity: barn.capacity,
+      current_count: barn.current_count,
+      available_space: barn.capacity ? barn.capacity - barn.current_count : null
+    }));
+
+    res.success(options, '获取牛棚选项成功');
+  } catch (error) {
+    console.error('Error fetching barn options:', error);
+    res.error('获取牛棚选项失败', 500, 'FETCH_BARN_OPTIONS_ERROR');
+  }
+});
+
 // GET /api/v1/base/barns/:id - 获取牛棚详情
 app.get('/api/v1/base/barns/:id', async (req, res) => {
   try {
@@ -982,125 +1078,7 @@ app.delete('/api/v1/base/barns/:id', async (req, res) => {
   }
 });
 
-// GET /api/v1/base/barns/statistics - 获取牛棚统计信息
-app.get('/api/v1/base/barns/statistics', async (req, res) => {
-  try {
-    const { base_id } = req.query;
 
-    const whereClause = {};
-    if (base_id) {
-      whereClause.base_id = base_id;
-    }
-
-    const barns = await Barn.findAll({
-      where: whereClause,
-      attributes: ['id', 'barn_type', 'status', 'capacity', 'current_count'],
-    });
-
-    // Calculate statistics
-    const totalBarns = barns.length;
-    const totalCapacity = barns.reduce((sum, barn) => sum + (barn.capacity || 0), 0);
-    const totalCurrentCount = barns.reduce((sum, barn) => sum + (barn.current_count || 0), 0);
-    const utilizationRate = totalCapacity > 0 ? (totalCurrentCount / totalCapacity * 100).toFixed(2) : 0;
-
-    // Status distribution
-    const statusDistribution = barns.reduce((acc, barn) => {
-      acc[barn.status] = (acc[barn.status] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Type distribution
-    const typeDistribution = barns.reduce((acc, barn) => {
-      acc[barn.barn_type] = (acc[barn.barn_type] || 0) + 1;
-      return acc;
-    }, {});
-
-    // Utilization levels
-    const utilizationLevels = {
-      low: 0,    // < 50%
-      medium: 0, // 50-80%
-      high: 0,   // > 80%
-    };
-
-    barns.forEach(barn => {
-      if (barn.capacity > 0) {
-        const utilization = barn.current_count / barn.capacity;
-        if (utilization < 0.5) {
-          utilizationLevels.low++;
-        } else if (utilization <= 0.8) {
-          utilizationLevels.medium++;
-        } else {
-          utilizationLevels.high++;
-        }
-      }
-    });
-
-    const statistics = {
-      overview: {
-        total_barns: totalBarns,
-        total_capacity: totalCapacity,
-        total_current_count: totalCurrentCount,
-        utilization_rate: parseFloat(utilizationRate)
-      },
-      status_distribution: statusDistribution,
-      type_distribution: typeDistribution,
-      utilization_levels: utilizationLevels,
-      barns: barns.map(barn => ({
-        id: barn.id,
-        capacity: barn.capacity,
-        current_count: barn.current_count,
-        utilization_rate: barn.capacity > 0 ? ((barn.current_count / barn.capacity) * 100).toFixed(2) : 0
-      }))
-    };
-
-    res.success(statistics, '获取牛棚统计信息成功');
-  } catch (error) {
-    console.error('Error fetching barn statistics:', error);
-    res.error('获取牛棚统计信息失败', 500, 'FETCH_BARN_STATISTICS_ERROR');
-  }
-});
-
-// GET /api/v1/base/barns/options - 获取牛棚选项（用于下拉选择）
-app.get('/api/v1/base/barns/options', async (req, res) => {
-  try {
-    const { base_id } = req.query;
-
-    const whereClause = { status: 'active' };
-    if (base_id) {
-      whereClause.base_id = base_id;
-    }
-
-    const barns = await Barn.findAll({
-      where: whereClause,
-      attributes: ['id', 'name', 'code', 'base_id', 'capacity', 'current_count'],
-      include: [
-        {
-          model: Base,
-          as: 'base',
-          attributes: ['id', 'name', 'code'],
-          required: false,
-        }
-      ],
-      order: [['name', 'ASC']],
-    });
-
-    const options = barns.map(barn => ({
-      id: barn.id,
-      name: barn.name,
-      code: barn.code,
-      base_id: barn.base_id,
-      base_name: barn.base?.name,
-      capacity: barn.capacity,
-      current_count: barn.current_count,
-      available_space: barn.capacity ? barn.capacity - barn.current_count : null
-    }));
-
-    res.success(options, '获取牛棚选项成功');
-  } catch (error) {
-    console.error('Error fetching barn options:', error);
-    res.error('获取牛棚选项失败', 500, 'FETCH_BARN_OPTIONS_ERROR');
-  }
-});
 
 // Catch all other routes
 app.use('*', (req, res) => {

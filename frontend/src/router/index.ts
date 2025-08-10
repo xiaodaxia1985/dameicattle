@@ -47,7 +47,7 @@ const routes: RouteRecordRaw[] = [
             path: 'detail/:id',
             name: 'CattleDetail',
             component: () => import('@/views/cattle/Detail.vue'),
-            meta: { title: '牛只详情', hidden: true }
+            meta: { title: '牛只详情', hidden: true, hideInMenu: true }
           },
           {
             path: 'bases',

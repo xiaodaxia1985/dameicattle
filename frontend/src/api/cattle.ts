@@ -168,8 +168,10 @@ export const cattleApi = {
       const response = await cattleServiceApi.getCattleList(params)
       console.log('cattleApi.getList 原始响应:', response)
       
-      const data = Array.isArray(response.data) ? response.data : []
-      const pagination = response.pagination || {}
+      // 后端返回的数据结构是 { data: { cattle: [...], pagination: {...} } }
+      const responseData = response.data || {}
+      const data = Array.isArray(responseData.cattle) ? responseData.cattle : []
+      const pagination = responseData.pagination || {}
       
       const result: CattleListResponse = {
         data,

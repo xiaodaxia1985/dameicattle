@@ -595,6 +595,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 import {
@@ -623,6 +624,7 @@ import dayjs from 'dayjs'
 
 // Store
 const baseStore = useBaseStore()
+const router = useRouter()
 
 // 响应式数据
 const bases = ref<Base[]>([])
@@ -845,25 +847,7 @@ const fetchBasesWithAdvancedSearch = async (params: any = {}) => {
     
     // 获取统计信息
     for (const base of bases.value) {
-      try {
-        const response = await baseApi.getBaseStatistics(base.id)
-        const stats = response.data?.statistics || response.data || {}
-        
-        // 将后端的 snake_case 字段映射为前端的 camelCase
-        baseStats.value[base.id] = {
-          barnCount: stats.barn_count || 0,
-          cattleCount: stats.cattle_count || 0,
-          userCount: stats.user_count || 0,
-          healthyCattleCount: stats.healthy_cattle_count || 0,
-          sickCattleCount: stats.sick_cattle_count || 0,
-          treatmentCattleCount: stats.treatment_cattle_count || 0,
-          feedingRecordsCount: stats.feeding_records_count || 0,
-          healthRecordsCount: stats.health_records_count || 0
-        }
-      } catch (error) {
-        console.warn(`获取基地 ${base.id} 统计信息失败:`, error)
-        baseStats.value[base.id] = { barnCount: 0, cattleCount: 0 }
-      }
+      await refreshBaseStats(base.id)
     }
   } catch (error) {
     ElMessage.error('搜索失败')
@@ -923,8 +907,8 @@ const handleToggleFavorite = (baseId: number) => {
   localStorage.setItem('favoriteBaseIds', JSON.stringify([...favoriteBaseIds.value]))
 }
 
-// 加载收藏列表
-const loadFavorites = () => {
+// 从本地存储加载收藏的基地
+const loadFavoriteBaseIds = () => {
   try {
     const saved = localStorage.getItem('favoriteBaseIds')
     if (saved) {
@@ -932,8 +916,62 @@ const loadFavorites = () => {
       favoriteBaseIds.value = new Set(ids)
     }
   } catch (error) {
-    console.error('加载收藏列表失败:', error)
+    console.error('加载收藏基地失败:', error)
   }
+}
+
+// 获取基地列表
+const fetchBases = async () => {
+  try {
+    console.log('开始获取基地列表...')
+    const response = await baseApi.getBases({
+      page: pagination.page,
+      limit: pagination.limit,
+      keyword: searchForm.keyword,
+      managerId: searchForm.managerId
+    })
+    
+    console.log('基地API响应:', response)
+    bases.value = response.data.bases || []
+    pagination.total = response.data.pagination?.total || 0
+    
+    console.log('基地列表:', bases.value)
+    console.log('分页信息:', pagination)
+    
+    // 获取统计信息
+    for (const base of bases.value) {
+      await refreshBaseStats(base.id)
+    }
+  } catch (error) {
+    console.error('获取基地列表失败:', error)
+    ElMessage.error('获取基地列表失败')
+  }
+}
+
+// 获取管理员列表
+const fetchManagers = async () => {
+  try {
+    // 这里应该调用用户API获取管理员列表
+    // const response = await userApi.getManagers()
+    // managers.value = response.data || []
+    managers.value = [] // 临时空数组
+  } catch (error) {
+    console.error('获取管理员列表失败:', error)
+  }
+}
+
+// 搜索
+const handleSearch = () => {
+  pagination.page = 1
+  fetchBases()
+}
+
+// 重置搜索
+const handleReset = () => {
+  searchForm.keyword = ''
+  searchForm.managerId = undefined
+  pagination.page = 1
+  fetchBases()
 }
 
 // 排序处理
@@ -970,110 +1008,7 @@ const sortBases = () => {
   })
 }
 
-// 获取基地列表
-const fetchBases = async () => {
-  try {
-    const response = await baseApi.getBases({
-      page: pagination.page,
-      limit: pagination.limit,
-      keyword: searchForm.keyword,
-      managerId: searchForm.managerId
-    })
-    
-    // 根据API实现，response.data 应该是 { bases: [...], pagination: {...} }
-    bases.value = response.data.bases || []
-    pagination.total = response.data.pagination?.total || 0
-    
-    // 获取每个基地的统计信息
-    for (const base of bases.value) {
-      try {
-        const response = await baseApi.getBaseStatistics(base.id)
-        const stats = response.data?.statistics || response.data || {}
-        
-        // 将后端的 snake_case 字段映射为前端的 camelCase
-        baseStats.value[base.id] = {
-          barnCount: stats.barn_count || 0,
-          cattleCount: stats.cattle_count || 0,
-          userCount: stats.user_count || 0,
-          healthyCattleCount: stats.healthy_cattle_count || 0,
-          sickCattleCount: stats.sick_cattle_count || 0,
-          treatmentCattleCount: stats.treatment_cattle_count || 0,
-          feedingRecordsCount: stats.feeding_records_count || 0,
-          healthRecordsCount: stats.health_records_count || 0
-        }
-      } catch (error) {
-        console.warn(`获取基地 ${base.id} 统计信息失败:`, error)
-        baseStats.value[base.id] = { barnCount: 0, cattleCount: 0 }
-      }
-    }
-  } catch (error) {
-    ElMessage.error('获取基地列表失败')
-    console.error(error)
-  }
-}
-
-// 获取负责人列表
-const fetchManagers = async () => {
-  try {
-    // 这里应该调用用户API获取负责人列表
-    // 暂时使用模拟数据
-    managers.value = [
-      { id: 1, name: '张三' },
-      { id: 2, name: '李四' },
-      { id: 3, name: '王五' }
-    ]
-  } catch (error) {
-    console.error('获取负责人列表失败:', error)
-  }
-}
-
-// 获取牛棚列表
-const fetchBarns = async (baseId: number) => {
-  try {
-    const response = await baseApi.getBarnsByBaseId(baseId)
-    console.log('API response:', response)
-    
-    // 后端返回的数据结构是 { success: true, data: { barns: [...], base_info: {...} } }
-    const barns = response.data?.barns || response.data || []
-    console.log('Extracted barns:', barns)
-    
-    // 处理数据：如果是单个对象，转换为数组；如果已经是数组，直接使用
-    let barnArray: Barn[] = []
-    if (Array.isArray(barns)) {
-      barnArray = barns
-    } else if (barns && typeof barns === 'object' && barns.id) {
-      // 如果是单个牛棚对象，转换为数组
-      barnArray = [barns]
-    }
-    
-    // 去重处理
-    const uniqueBarns = barnArray.filter((barn, index, self) => 
-      index === self.findIndex(b => b.id === barn.id)
-    )
-    
-    console.log('Final barns array:', uniqueBarns)
-    currentBarns.value = uniqueBarns
-  } catch (error) {
-    ElMessage.error('获取牛棚列表失败')
-    console.error(error)
-  }
-}
-
-// 搜索
-const handleSearch = () => {
-  pagination.page = 1
-  fetchBases()
-}
-
-// 重置搜索
-const handleReset = () => {
-  searchForm.keyword = ''
-  searchForm.managerId = undefined
-  pagination.page = 1
-  fetchBases()
-}
-
-// 分页处理
+// 分页
 const handleSizeChange = (size: number) => {
   pagination.limit = size
   pagination.page = 1
@@ -1086,16 +1021,33 @@ const handleCurrentChange = (page: number) => {
 }
 
 // 选择基地
-const handleSelectBase = (base: Base) => {
+const handleSelectBase = async (base: Base) => {
   selectedBase.value = base
   activeTab.value = 'detail'
-  fetchBarns(base.id)
+  
+  // 加载基地的牛棚列表
+  try {
+    const response = await baseApi.getBarnsByBaseId(base.id)
+    currentBarns.value = response.data.barns || []
+  } catch (error) {
+    console.error('加载牛棚列表失败:', error)
+    currentBarns.value = []
+  }
 }
 
-// 新增基地
+// 添加基地
 const handleAddBase = () => {
   baseDialogTitle.value = '新增基地'
-  resetBaseForm()
+  Object.assign(baseForm, {
+    id: undefined,
+    name: '',
+    code: '',
+    address: '',
+    area: undefined,
+    managerId: undefined,
+    latitude: undefined,
+    longitude: undefined
+  })
   baseDialogVisible.value = true
 }
 
@@ -1108,7 +1060,7 @@ const handleEditBase = (base: Base) => {
     code: base.code,
     address: base.address,
     area: base.area,
-    managerId: base.managerId,
+    managerId: base.manager_id,
     latitude: base.latitude,
     longitude: base.longitude
   })
@@ -1119,7 +1071,7 @@ const handleEditBase = (base: Base) => {
 const handleDeleteBase = async (base: Base) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除基地"${base.name}"吗？此操作不可恢复。`,
+      `确定要删除基地 "${base.name}" 吗？此操作不可恢复。`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -1130,11 +1082,6 @@ const handleDeleteBase = async (base: Base) => {
     
     await baseApi.deleteBase(base.id)
     ElMessage.success('删除成功')
-    
-    if (selectedBase.value?.id === base.id) {
-      selectedBase.value = null
-    }
-    
     fetchBases()
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -1146,32 +1093,32 @@ const handleDeleteBase = async (base: Base) => {
 
 // 查看位置
 const handleViewLocation = (base: Base) => {
+  if (!base.latitude || !base.longitude) {
+    ElMessage.warning('该基地暂无位置信息')
+    return
+  }
+  
   selectedBase.value = base
   activeTab.value = 'map'
-  nextTick(() => {
-    initBaseMap()
-  })
 }
 
 // 保存基地
 const handleSaveBase = async () => {
-  if (!baseFormRef.value) return
-  
   try {
-    await baseFormRef.value.validate()
+    await baseFormRef.value?.validate()
     
     const data = {
       name: baseForm.name,
       code: baseForm.code,
       address: baseForm.address,
       area: baseForm.area,
-      manager_id: baseForm.managerId,
+      managerId: baseForm.managerId,
       latitude: baseForm.latitude,
       longitude: baseForm.longitude
     }
     
-    if (isEditMode.value) {
-      await baseApi.updateBase(baseForm.id!, data)
+    if (baseForm.id) {
+      await baseApi.updateBase(baseForm.id, data)
       ElMessage.success('更新成功')
     } else {
       await baseApi.createBase(data)
@@ -1181,38 +1128,32 @@ const handleSaveBase = async () => {
     baseDialogVisible.value = false
     fetchBases()
   } catch (error) {
-    ElMessage.error(isEditMode.value ? '更新失败' : '创建失败')
-    console.error(error)
+    console.error('保存基地失败:', error)
+    ElMessage.error('保存失败')
   }
 }
 
 // 关闭基地对话框
 const handleCloseBaseDialog = () => {
-  resetBaseForm()
-  baseFormRef.value?.clearValidate()
+  baseFormRef.value?.resetFields()
 }
 
-// 重置基地表单
-const resetBaseForm = () => {
-  Object.assign(baseForm, {
+// 添加牛棚
+const handleAddBarn = () => {
+  if (!selectedBase.value) {
+    ElMessage.warning('请先选择基地')
+    return
+  }
+  
+  barnDialogTitle.value = '新增牛棚'
+  Object.assign(barnForm, {
     id: undefined,
     name: '',
     code: '',
-    address: '',
-    area: undefined,
-    managerId: undefined,
-    latitude: undefined,
-    longitude: undefined
+    baseId: selectedBase.value.id,
+    capacity: undefined,
+    barnType: ''
   })
-}
-
-// 新增牛棚
-const handleAddBarn = () => {
-  if (!selectedBase.value) return
-  
-  barnDialogTitle.value = '新增牛棚'
-  resetBarnForm()
-  barnForm.baseId = selectedBase.value.id
   barnDialogVisible.value = true
 }
 
@@ -1223,9 +1164,9 @@ const handleEditBarn = (barn: Barn) => {
     id: barn.id,
     name: barn.name,
     code: barn.code,
-    baseId: barn.baseId,
+    baseId: barn.base_id,
     capacity: barn.capacity,
-    barnType: barn.barnType
+    barnType: barn.barn_type
   })
   barnDialogVisible.value = true
 }
@@ -1234,7 +1175,7 @@ const handleEditBarn = (barn: Barn) => {
 const handleDeleteBarn = async (barn: Barn) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除牛棚"${barn.name}"吗？此操作不可恢复。`,
+      `确定要删除牛棚 "${barn.name}" 吗？此操作不可恢复。`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -1246,8 +1187,10 @@ const handleDeleteBarn = async (barn: Barn) => {
     await baseApi.deleteBarn(barn.id)
     ElMessage.success('删除成功')
     
+    // 重新加载牛棚列表
     if (selectedBase.value) {
-      fetchBarns(selectedBase.value.id)
+      const response = await baseApi.getBarnsByBaseId(selectedBase.value.id)
+      currentBarns.value = response.data.barns || []
     }
   } catch (error: any) {
     if (error !== 'cancel') {
@@ -1259,17 +1202,15 @@ const handleDeleteBarn = async (barn: Barn) => {
 
 // 保存牛棚
 const handleSaveBarn = async () => {
-  if (!barnFormRef.value) return
-  
   try {
-    await barnFormRef.value.validate()
+    await barnFormRef.value?.validate()
     
     const data = {
       name: barnForm.name,
       code: barnForm.code,
-      base_id: barnForm.baseId!,
-      capacity: barnForm.capacity!,
-      barn_type: barnForm.barnType
+      baseId: barnForm.baseId,
+      capacity: barnForm.capacity,
+      barnType: barnForm.barnType
     }
     
     if (barnForm.id) {
@@ -1282,39 +1223,143 @@ const handleSaveBarn = async () => {
     
     barnDialogVisible.value = false
     
+    // 重新加载牛棚列表
     if (selectedBase.value) {
-      // 刷新牛棚列表
-      fetchBarns(selectedBase.value.id)
-      // 刷新基地统计信息（更新牛棚数量显示）
-      refreshBaseStats(selectedBase.value.id)
+      const response = await baseApi.getBarnsByBaseId(selectedBase.value.id)
+      currentBarns.value = response.data.barns || []
     }
   } catch (error) {
-    ElMessage.error(barnForm.id ? '更新失败' : '创建失败')
-    console.error(error)
+    console.error('保存牛棚失败:', error)
+    ElMessage.error('保存失败')
   }
 }
 
 // 关闭牛棚对话框
 const handleCloseBarnDialog = () => {
-  resetBarnForm()
-  barnFormRef.value?.clearValidate()
-}
-
-// 重置牛棚表单
-const resetBarnForm = () => {
-  Object.assign(barnForm, {
-    id: undefined,
-    name: '',
-    code: '',
-    baseId: undefined,
-    capacity: undefined,
-    barnType: ''
-  })
+  barnFormRef.value?.resetFields()
 }
 
 // 选择牛棚
 const handleSelectBarn = (barn: Barn) => {
   console.log('选择牛棚:', barn)
+  // 跳转到牛只列表页面，并传递基地和牛棚参数
+  router.push({
+    path: '/admin/cattle/list',
+    query: {
+      baseId: selectedBase.value?.id,
+      barnId: barn.id
+    }
+  })
+}
+
+// 地址变更处理
+const handleAddressChange = () => {
+  // 可以在这里添加地址变更后的处理逻辑
+}
+
+// 地理编码
+const handleGeocodeAddress = async () => {
+  if (!baseForm.address) {
+    ElMessage.warning('请先输入地址')
+    return
+  }
+  
+  try {
+    geocodingLoading.value = true
+    const result = await searchAccurateLocation(baseForm.address)
+    
+    if (result && result.length > 0) {
+      const location = result[0]
+      baseForm.latitude = parseFloat(location.lat)
+      baseForm.longitude = parseFloat(location.lng)
+      ElMessage.success('地址定位成功')
+    } else {
+      ElMessage.warning('未找到该地址的位置信息')
+    }
+  } catch (error: any) {
+    console.error('地理编码失败:', error)
+    ElMessage.error('地址定位失败')
+  } finally {
+    geocodingLoading.value = false
+  }
+}
+
+// 选择位置
+const handleSelectLocation = () => {
+  selectedLocation.value = baseForm.latitude && baseForm.longitude 
+    ? { lng: baseForm.longitude, lat: baseForm.latitude }
+    : null
+  mapDialogVisible.value = true
+}
+
+// 清除位置
+const handleClearLocation = () => {
+  baseForm.latitude = undefined
+  baseForm.longitude = undefined
+}
+
+// 位置变更
+const handleLocationChange = (location: { lng: number; lat: number }) => {
+  selectedLocation.value = location
+}
+
+// 确认位置
+const handleConfirmLocation = () => {
+  if (selectedLocation.value) {
+    baseForm.latitude = selectedLocation.value.lat
+    baseForm.longitude = selectedLocation.value.lng
+    mapDialogVisible.value = false
+    ElMessage.success('位置设置成功')
+  }
+}
+
+// 更新位置
+const handleUpdateLocation = () => {
+  handleSelectLocation()
+}
+
+// 文件变更
+const handleFileChange = (file: UploadFile) => {
+  importFile.value = file.raw || null
+}
+
+// 下载模板
+const handleDownloadTemplate = () => {
+  // 创建模板数据
+  const templateData = [
+    ['基地名称', '基地编码', '详细地址', '占地面积(亩)', '负责人ID', '纬度', '经度'],
+    ['示例基地', 'BASE001', '示例地址', '100', '1', '39.915', '116.404']
+  ]
+  
+  // 转换为CSV格式
+  const csvContent = templateData.map(row => row.join(',')).join('\n')
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  
+  // 下载文件
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = '基地导入模板.csv'
+  link.click()
+  URL.revokeObjectURL(link.href)
+}
+
+// 确认导入
+const handleConfirmImport = async () => {
+  if (!importFile.value) {
+    ElMessage.warning('请选择要导入的文件')
+    return
+  }
+  
+  try {
+    // 这里应该调用导入API
+    ElMessage.success('导入成功')
+    importDialogVisible.value = false
+    importFile.value = null
+    fetchBases()
+  } catch (error) {
+    console.error('导入失败:', error)
+    ElMessage.error('导入失败')
+  }
 }
 
 // 导入数据
@@ -1334,7 +1379,7 @@ const handleExport = async () => {
     // 准备导出数据
     const csvData = [
       ['基地名称', '基地编码', '详细地址', '占地面积(亩)', '负责人', '纬度', '经度', '创建时间'],
-      ...exportData.data.data.map(base => [
+      ...exportData.data.bases.map((base: any) => [
         base.name,
         base.code,
         base.address,
@@ -1342,285 +1387,33 @@ const handleExport = async () => {
         base.managerName || '',
         base.latitude || '',
         base.longitude || '',
-        formatDate(base.createdAt)
+        formatDate(base.created_at)
       ])
     ]
     
-    // 创建CSV内容
-    const csvContent = csvData.map(row => 
-      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
-    ).join('\n')
+    // 转换为CSV格式
+    const csvContent = csvData.map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
     
-    // 创建并下载文件
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    // 下载文件
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.download = `基地数据_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.csv`
+    link.download = `基地数据_${dayjs().format('YYYY-MM-DD')}.csv`
     link.click()
+    URL.revokeObjectURL(link.href)
     
     ElMessage.success('导出成功')
   } catch (error) {
+    console.error('导出失败:', error)
     ElMessage.error('导出失败')
-    console.error(error)
   }
 }
 
-// 下载模板
-const handleDownloadTemplate = () => {
-  // 创建模板数据
-  const templateData = [
-    ['基地名称', '基地编码', '详细地址', '占地面积(亩)', '纬度', '经度'],
-    ['示例基地', 'BASE001', '示例地址', '100', '39.9042', '116.4074']
-  ]
-  
-  // 创建CSV内容
-  const csvContent = templateData.map(row => row.join(',')).join('\n')
-  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
-  
-  // 下载文件
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = '基地数据导入模板.csv'
-  link.click()
-}
-
-// 文件选择
-const handleFileChange = (file: UploadFile) => {
-  importFile.value = file.raw || null
-}
-
-// 确认导入
-const handleConfirmImport = async () => {
-  if (!importFile.value) {
-    ElMessage.warning('请选择要导入的文件')
-    return
-  }
-  
-  try {
-    const fileContent = await readFileContent(importFile.value)
-    const data = parseCSVContent(fileContent)
-    
-    // 验证数据
-    const validation = validateImportData(data)
-    if (!validation.valid) {
-      ElMessage.error(validation.message)
-      return
-    }
-    
-    // 批量创建基地
-    let successCount = 0
-    let errorCount = 0
-    
-    for (const row of data) {
-      try {
-        await baseApi.createBase({
-          name: row.name,
-          code: row.code,
-          address: row.address,
-          area: row.area ? parseFloat(row.area) : undefined,
-          latitude: row.latitude ? parseFloat(row.latitude) : undefined,
-          longitude: row.longitude ? parseFloat(row.longitude) : undefined
-        })
-        successCount++
-      } catch (error) {
-        errorCount++
-        console.error(`创建基地 ${row.name} 失败:`, error)
-      }
-    }
-    
-    if (errorCount === 0) {
-      ElMessage.success(`成功导入 ${successCount} 条记录`)
-    } else {
-      ElMessage.warning(`导入完成：成功 ${successCount} 条，失败 ${errorCount} 条`)
-    }
-    
-    importDialogVisible.value = false
-    importFile.value = null
-    fetchBases()
-  } catch (error) {
-    ElMessage.error('数据导入失败')
-    console.error(error)
-  }
-}
-
-// 读取文件内容
-const readFileContent = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = (e) => resolve(e.target?.result as string)
-    reader.onerror = reject
-    reader.readAsText(file, 'utf-8')
-  })
-}
-
-// 解析CSV内容
-const parseCSVContent = (content: string) => {
-  const lines = content.split('\n').filter(line => line.trim())
-  const data = []
-  
-  for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i])
-    if (values.length >= 3) {
-      data.push({
-        name: values[0]?.trim(),
-        code: values[1]?.trim(),
-        address: values[2]?.trim(),
-        area: values[3]?.trim(),
-        latitude: values[4]?.trim(),
-        longitude: values[5]?.trim()
-      })
-    }
-  }
-  
-  return data
-}
-
-// 解析CSV行
-const parseCSVLine = (line: string): string[] => {
-  const result: string[] = []
-  let current = ''
-  let inQuotes = false
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i]
-    
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"'
-        i++
-      } else {
-        inQuotes = !inQuotes
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current)
-      current = ''
-    } else {
-      current += char
-    }
-  }
-  
-  result.push(current)
-  return result
-}
-
-// 验证导入数据
-const validateImportData = (data: any[]): { valid: boolean; message?: string } => {
-  if (data.length === 0) {
-    return { valid: false, message: '没有有效的数据行' }
-  }
-  
-  for (let i = 0; i < data.length; i++) {
-    const row = data[i]
-    if (!row.name) {
-      return { valid: false, message: `第${i + 2}行：基地名称不能为空` }
-    }
-    if (!row.code) {
-      return { valid: false, message: `第${i + 2}行：基地编码不能为空` }
-    }
-    if (!row.address) {
-      return { valid: false, message: `第${i + 2}行：详细地址不能为空` }
-    }
-  }
-  
-  return { valid: true }
-}
-
-// 更新位置
-const handleUpdateLocation = () => {
-  if (!selectedBase.value) return
-  
-  // 填充表单数据，确保数值类型正确
-  Object.assign(baseForm, {
-    id: selectedBase.value.id,
-    name: selectedBase.value.name,
-    code: selectedBase.value.code,
-    address: selectedBase.value.address,
-    area: selectedBase.value.area ? parseFloat(selectedBase.value.area.toString()) : undefined,
-    managerId: selectedBase.value.managerId,
-    latitude: selectedBase.value.latitude ? parseFloat(selectedBase.value.latitude.toString()) : undefined,
-    longitude: selectedBase.value.longitude ? parseFloat(selectedBase.value.longitude.toString()) : undefined
-  })
-  
-  baseDialogTitle.value = '更新基地位置'
-  baseDialogVisible.value = true
-}
-
-// 选择位置
-const handleSelectLocation = () => {
-  mapDialogVisible.value = true
-  // 设置初始位置
-  if (baseForm.latitude && baseForm.longitude) {
-    selectedLocation.value = {
-      lng: baseForm.longitude,
-      lat: baseForm.latitude
-    }
-  }
-}
-
-// 确认位置
-const handleConfirmLocation = () => {
-  if (selectedLocation.value) {
-    baseForm.latitude = selectedLocation.value.lat
-    baseForm.longitude = selectedLocation.value.lng
-  }
-  mapDialogVisible.value = false
-}
-
-// 处理地址变化，自动进行地理编码
-const handleAddressChange = async () => {
-  if (baseForm.address && baseForm.address.trim()) {
-    await handleGeocodeAddress()
-  }
-}
-
-// 根据地址进行地理编码
-const handleGeocodeAddress = async () => {
-  if (!baseForm.address || !baseForm.address.trim()) {
-    ElMessage.warning('请先输入详细地址')
-    return
-  }
-
-  geocodingLoading.value = true
-  
-  try {
-    console.log('开始地理编码:', baseForm.address)
-    const result = await searchAccurateLocation(baseForm.address)
-    
-    baseForm.latitude = result.lat
-    baseForm.longitude = result.lng
-    
-    ElMessage.success(`定位成功：${result.name}`)
-    console.log('地理编码成功:', result)
-  } catch (error: any) {
-    console.error('地理编码失败:', error)
-    ElMessage.error(`定位失败：${error.message || '无法解析该地址'}`)
-  } finally {
-    geocodingLoading.value = false
-  }
-}
-
-// 清除位置信息
-const handleClearLocation = () => {
-  baseForm.latitude = undefined
-  baseForm.longitude = undefined
-  selectedLocation.value = null
-  ElMessage.success('已清除位置信息')
-}
-
-// 处理位置变化
-const handleLocationChange = (location: { lng: number; lat: number }, address?: string) => {
-  selectedLocation.value = location
-  // 如果有地址信息，可以更新表单中的地址字段
-  if (address && !baseForm.address) {
-    baseForm.address = address
-  }
-}
-
-// 生命周期
-onMounted(() => {
-  fetchBases()
-  fetchManagers()
-  loadFavorites()
+// 初始化数据
+onMounted(async () => {
+  loadFavoriteBaseIds()
+  await fetchBases()
+  await fetchManagers()
 })
 </script>
 
@@ -1634,28 +1427,28 @@ onMounted(() => {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  margin-bottom: 24px;
   padding: 20px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
+  
   .header-left {
     h2 {
       margin: 0 0 8px 0;
-      color: #303133;
       font-size: 24px;
       font-weight: 600;
+      color: #303133;
     }
-
+    
     p {
       margin: 0;
-      color: #909399;
+      color: #606266;
       font-size: 14px;
     }
   }
-
+  
   .header-right {
     display: flex;
     gap: 12px;
@@ -1663,158 +1456,126 @@ onMounted(() => {
 }
 
 .search-section {
-  margin-bottom: 20px;
-  padding: 20px;
   background: white;
+  padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
+  margin-bottom: 20px;
+  
   .toolbar {
-    margin-top: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid #ebeef5;
-
-    .toolbar-left {
-      display: flex;
-      gap: 12px;
-    }
-
-    .toolbar-right {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
   }
 }
 
 .content-section {
   .bases-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
     margin-bottom: 20px;
-
+    
     .base-card {
       cursor: pointer;
       transition: all 0.3s ease;
-      border: 2px solid transparent;
-
+      
       &:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
-
+      
       &.active {
         border-color: #409eff;
-        box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+        box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
       }
-
+      
       &.selected {
-        border-color: #67c23a;
-        box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
+        background-color: #f0f9ff;
       }
-
+      
       &.favorite {
-        position: relative;
-
-        &::before {
-          content: '';
-          position: absolute;
-          top: -2px;
-          right: -2px;
-          width: 0;
-          height: 0;
-          border-left: 20px solid transparent;
-          border-top: 20px solid #f56c6c;
-          z-index: 1;
+        .favorite-icon {
+          color: #f56c6c;
         }
       }
-
+      
       .card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-
+        
         .card-left {
           display: flex;
           align-items: center;
           gap: 12px;
-          flex: 1;
-
+          
           .base-info {
             h3 {
-              margin: 0 0 4px 0;
-              color: #303133;
-              font-size: 18px;
+              margin: 0;
+              font-size: 16px;
               font-weight: 600;
+              color: #303133;
               display: flex;
               align-items: center;
-              gap: 8px;
-
-              .favorite-icon {
-                color: #f56c6c;
-                font-size: 16px;
-              }
+              gap: 4px;
             }
-
+            
             .base-code {
-              color: #909399;
               font-size: 12px;
-              background: #f0f0f0;
-              padding: 2px 8px;
-              border-radius: 4px;
+              color: #909399;
             }
           }
         }
-
+        
         .card-actions {
           display: flex;
           gap: 4px;
-
+          
           .is-favorite {
             color: #f56c6c;
           }
         }
       }
-
+      
       .base-content {
         .base-detail {
           margin-bottom: 16px;
-
+          
           p {
             margin: 8px 0;
-            color: #606266;
             font-size: 14px;
+            color: #606266;
             display: flex;
             align-items: center;
             gap: 8px;
-
+            
             .el-icon {
               color: #909399;
             }
           }
         }
-
+        
         .base-stats {
           display: flex;
           justify-content: space-around;
           padding-top: 16px;
           border-top: 1px solid #ebeef5;
-
+          
           .stat-item {
             text-align: center;
-
+            
             .stat-value {
               display: block;
-              font-size: 24px;
+              font-size: 20px;
               font-weight: 600;
               color: #409eff;
               margin-bottom: 4px;
             }
-
+            
             .stat-label {
               font-size: 12px;
               color: #909399;
@@ -1824,152 +1585,107 @@ onMounted(() => {
       }
     }
   }
-
+  
   .pagination-wrapper {
     display: flex;
     justify-content: center;
     margin-top: 20px;
   }
+}
 
-  .detail-panel {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    min-height: 600px;
-
-    .detail-content {
-      padding: 20px;
-
-      .detail-item {
-        display: flex;
-        margin-bottom: 16px;
-        align-items: flex-start;
-
-        label {
-          min-width: 100px;
-          color: #606266;
-          font-weight: 500;
-        }
-
-        span {
-          color: #303133;
-          flex: 1;
-          word-break: break-all;
-        }
-      }
-    }
-
-    .barns-section {
-      padding: 20px;
-    }
-
-    .map-section {
-      padding: 20px;
-
-      .map-container {
-        margin-bottom: 16px;
-        height: 400px;
-        border: 1px solid var(--el-border-color-lighter);
-        border-radius: 4px;
-        overflow: hidden;
-      }
-
-      .no-location {
-        height: 400px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid var(--el-border-color-lighter);
-        border-radius: 4px;
-        margin-bottom: 16px;
-      }
-
-      .map-info {
-        padding: 12px;
-        background: var(--el-bg-color-page);
-        border-radius: 4px;
-        
-        p {
-          margin: 8px 0;
-          color: var(--el-text-color-regular);
-          font-size: 14px;
-          
-          strong {
-            color: var(--el-text-color-primary);
-          }
-        }
-      }
-    }
-
-    .empty-panel {
+.detail-panel {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  min-height: 600px;
+  
+  .el-tabs__content {
+    padding: 16px 0;
+  }
+  
+  .detail-content {
+    .detail-item {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 400px;
+      margin-bottom: 12px;
+      
+      label {
+        min-width: 80px;
+        font-weight: 500;
+        color: #606266;
+      }
+      
+      span {
+        color: #303133;
+        flex: 1;
+      }
     }
   }
+  
+  .barns-section {
+    min-height: 300px;
+  }
+  
+  .map-section {
+    .map-container {
+      margin-bottom: 16px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .no-location {
+      text-align: center;
+      padding: 40px 0;
+    }
+    
+    .map-info {
+      padding: 16px;
+      background: #f5f7fa;
+      border-radius: 4px;
+      
+      p {
+        margin: 8px 0;
+        font-size: 14px;
+        
+        strong {
+          color: #606266;
+        }
+      }
+    }
+  }
+  
+  .empty-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 400px;
+  }
+}
+
+.address-actions {
+  margin-top: 8px;
+}
+
+.location-actions {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .import-section {
   .template-download {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
   }
-
+  
   .file-info {
     margin-top: 16px;
     padding: 12px;
-    background: #f0f9ff;
-    border: 1px solid #b3d8ff;
+    background: #f5f7fa;
     border-radius: 4px;
-
+    
     p {
       margin: 0;
-      color: #409eff;
       font-size: 14px;
-    }
-  }
-}
-
-.location-map {
-  height: 400px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-// 地址和位置操作按钮样式
-.address-actions, .location-actions {
-  margin-top: 8px;
-  display: flex;
-  gap: 8px;
-  
-  .el-button {
-    padding: 4px 8px;
-    font-size: 12px;
-    
-    .el-icon {
-      margin-right: 4px;
-    }
-  }
-}
-
-@media (max-width: 768px) {
-  .bases-container {
-    padding: 10px;
-  }
-
-  .content-section {
-    .bases-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .page-header {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-
-    .header-right {
-      justify-content: center;
+      color: #606266;
     }
   }
 }
