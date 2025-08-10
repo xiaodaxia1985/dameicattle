@@ -482,12 +482,12 @@ export class ProcurementServiceApi extends MicroserviceApi {
   }
 
   // 获取采购订单
-  async getPurchaseOrders(params?: any): Promise<ApiResponse<any[]>> {
+  async getProcurementOrders(params?: any): Promise<ApiResponse<any[]>> {
     return this.get<any[]>('/orders', params)
   }
 
   // 创建采购订单
-  async createPurchaseOrder(data: any): Promise<ApiResponse<any>> {
+  async createProcurementOrder(data: any): Promise<ApiResponse<any>> {
     return this.post<any>('/orders', data)
   }
 
@@ -503,7 +503,7 @@ export class ProcurementServiceApi extends MicroserviceApi {
 
   // 获取采购统计
   async getProcurementStatistics(baseId?: number): Promise<ApiResponse<any>> {
-    const params = baseId ? { baseId } : undefined
+    const params = baseId ? { base_id: baseId } : undefined
     return this.get<any>('/statistics', params)
   }
 }

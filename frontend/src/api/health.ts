@@ -1,5 +1,6 @@
 import { healthServiceApi } from './microservices'
 import type { ApiResponse } from './request'
+import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 健康管理相关类型定义
 export interface HealthRecord {
@@ -105,7 +106,16 @@ export const healthApi = {
   // 获取诊疗记录列表
   async getHealthRecords(params: HealthListParams = {}): Promise<{ data: HealthListResponse }> {
     const response = await healthServiceApi.getHealthRecords(params)
-    return { data: response.data }
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<HealthRecord>(response, 'records')
+    return { 
+      data: {
+        data: adapted.data,
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit
+      }
+    }
   },
 
   // 获取诊疗记录详情

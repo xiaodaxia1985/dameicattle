@@ -1,5 +1,6 @@
 import { materialServiceApi } from './microservices'
 import type { ApiResponse, PaginatedResponse } from './request'
+import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 简化类型定义，避免复杂的导入
 interface MaterialCategory {
@@ -108,7 +109,17 @@ export const materialApi = {
   // 生产物资管理
   async getProductionMaterials(params: any = {}): Promise<PaginatedResponse<ProductionMaterial[]>> {
     const response = await materialServiceApi.getMaterials(params)
-    return response
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<ProductionMaterial>(response, 'materials')
+    return {
+      data: adapted.data,
+      pagination: {
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit,
+        totalPages: adapted.pagination.totalPages || adapted.pagination.pages
+      }
+    }
   },
 
   async getProductionMaterialById(id: number): Promise<ApiResponse<ProductionMaterial>> {
@@ -134,7 +145,17 @@ export const materialApi = {
   // 库存管理
   async getInventory(params: any = {}): Promise<PaginatedResponse<Inventory[]>> {
     const response = await materialServiceApi.getInventory(params)
-    return response
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<Inventory>(response, 'inventory')
+    return {
+      data: adapted.data,
+      pagination: {
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit,
+        totalPages: adapted.pagination.totalPages || adapted.pagination.pages
+      }
+    }
   },
 
   async getInventoryStatistics(): Promise<ApiResponse<InventoryStatistics>> {

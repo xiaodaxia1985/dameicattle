@@ -13,15 +13,6 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-interface DataPermission {
-  canAccessAllBases: boolean;
-  baseId?: number;
-}
-
-interface DataPermissionRequest extends AuthenticatedRequest {
-  dataPermission?: DataPermission;
-}
-
 export const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -53,38 +44,6 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
       success: false,
       message: '访问令牌无效',
       error: 'TOKEN_INVALID'
-    });
-  }
-};
-
-export const dataPermissionMiddleware = (req: DataPermissionRequest, res: Response, next: NextFunction) => {
-  try {
-    const user = req.user;
-    
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: '用户未认证',
-        error: 'USER_NOT_AUTHENTICATED'
-      });
-    }
-
-    // 检查用户是否有访问所有基地的权限（超级管理员）
-    const canAccessAllBases = user.role === 'super_admin' || 
-                             (user.permissions && user.permissions.includes('access_all_bases'));
-
-    req.dataPermission = {
-      canAccessAllBases,
-      baseId: user.base_id
-    };
-
-    next();
-  } catch (error) {
-    logger.error('数据权限检查失败:', error);
-    return res.status(500).json({
-      success: false,
-      message: '数据权限检查失败',
-      error: 'DATA_PERMISSION_ERROR'
     });
   }
 };

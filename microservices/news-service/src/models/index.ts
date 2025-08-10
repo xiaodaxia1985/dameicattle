@@ -1,11 +1,12 @@
-import { NewsCategory } from './NewsCategory';
 import { NewsArticle } from './NewsArticle';
+import { NewsCategory } from './NewsCategory';
+import { User } from './User';
 
-// 设置模型关联
-NewsCategory.hasMany(NewsArticle, { foreignKey: 'categoryId', as: 'articles' });
-NewsArticle.belongsTo(NewsCategory, { foreignKey: 'categoryId', as: 'category' });
+// Define associations
+NewsArticle.belongsTo(NewsCategory, { as: 'category', foreignKey: 'category_id' });
+NewsCategory.hasMany(NewsArticle, { as: 'articles', foreignKey: 'category_id' });
 
-export {
-  NewsCategory,
-  NewsArticle
-};
+NewsArticle.belongsTo(User, { as: 'author', foreignKey: 'author_id' });
+User.hasMany(NewsArticle, { as: 'articles', foreignKey: 'author_id' });
+
+export { NewsArticle, NewsCategory, User };

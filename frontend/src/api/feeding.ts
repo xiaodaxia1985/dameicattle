@@ -1,5 +1,6 @@
 import { feedingServiceApi } from './microservices'
 import type { ApiResponse } from './request'
+import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 饲喂管理相关类型定义
 export interface IngredientItem {
@@ -120,12 +121,14 @@ export const feedingApi = {
   // 获取饲料配方列表
   async getFormulas(params: FormulaListParams = {}): Promise<{ data: FormulaListResponse }> {
     const response = await feedingServiceApi.getFeedFormulas(params)
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<FeedFormula>(response, 'formulas')
     return {
       data: {
-        data: response.data || [],
-        total: response.pagination?.total || 0,
-        page: response.pagination?.page || 1,
-        limit: response.pagination?.limit || 20
+        data: adapted.data,
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit
       }
     }
   },
@@ -158,7 +161,16 @@ export const feedingApi = {
     console.log('饲喂记录API调用参数:', params)
     const response = await feedingServiceApi.getFeedingRecords(params)
     console.log('饲喂记录API原始响应:', response)
-    return { data: response.data }
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<FeedingRecord>(response, 'records')
+    return { 
+      data: {
+        data: adapted.data,
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit
+      }
+    }
   },
 
   // 获取饲喂记录详情

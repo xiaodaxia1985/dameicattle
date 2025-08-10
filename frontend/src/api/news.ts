@@ -1,6 +1,7 @@
 import { newsServiceApi } from './microservices'
 import request from './request'
 import type { ApiResponse } from './request'
+import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 新闻分类接口
 export interface NewsCategory {
@@ -204,7 +205,12 @@ export const newsApi = {
 
   // 获取新闻分类列表
   async getCategories(params?: { isActive?: boolean }): Promise<ApiResponse<NewsCategory[]>> {
-    return await newsServiceApi.getNewsCategories(params)
+    const response = await newsServiceApi.getNewsCategories(params)
+    // 适配微服务返回的数据结构
+    const categories = response.data?.categories || response.data || []
+    return {
+      data: categories
+    }
   },
 
   // 创建新闻分类
@@ -307,7 +313,20 @@ export const newsApi = {
     keyword?: string
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
     console.log('正在获取文章列表:', { url: '/news/articles', params })
-    return await newsServiceApi.getNewsArticles(params)
+    const response = await newsServiceApi.getNewsArticles(params)
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<NewsArticle>(response, 'articles')
+    return {
+      data: {
+        data: adapted.data,
+        pagination: {
+          total: adapted.pagination.total,
+          page: adapted.pagination.page,
+          limit: adapted.pagination.limit,
+          totalPages: adapted.pagination.totalPages || adapted.pagination.pages
+        }
+      }
+    }
   },
 
   // 获取新闻文章列表（使用备用端点）

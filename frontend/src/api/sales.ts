@@ -1,5 +1,6 @@
 import { salesServiceApi } from './microservices'
 import type { ApiResponse } from './request'
+import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 export interface Customer {
   id: number;
@@ -89,7 +90,16 @@ export const salesApi = {
   // 获取销售订单列表
   async getOrders(params: any = {}): Promise<{ data: { items: SalesOrder[], total: number, page: number, limit: number } }> {
     const response = await salesServiceApi.getSalesOrders(params)
-    return { data: response.data }
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<SalesOrder>(response, 'orders')
+    return { 
+      data: {
+        items: adapted.data,
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit
+      }
+    }
   },
 
   // 获取销售订单详情
@@ -143,7 +153,16 @@ export const salesApi = {
   // 获取客户列表
   async getCustomers(params: any = {}): Promise<{ data: { items: Customer[], total: number, page: number, limit: number } }> {
     const response = await salesServiceApi.getCustomers(params)
-    return { data: response.data }
+    // 使用数据适配器处理响应
+    const adapted = adaptPaginatedResponse<Customer>(response, 'customers')
+    return { 
+      data: {
+        items: adapted.data,
+        total: adapted.pagination.total,
+        page: adapted.pagination.page,
+        limit: adapted.pagination.limit
+      }
+    }
   },
 
   // 获取客户详情

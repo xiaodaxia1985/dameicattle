@@ -7,14 +7,19 @@ const router = Router();
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
 
-// Material routes
-router.get('/', MaterialController.getMaterials);
-router.post('/', MaterialController.createMaterial);
+// 物资档案路由
+router.get('/materials', MaterialController.getMaterials);
+router.post('/materials', MaterialController.createMaterial);
+router.put('/materials/:id', MaterialController.updateMaterial);
+router.delete('/materials/:id', MaterialController.deleteMaterial);
 
-// Category routes
-router.get('/categories', MaterialController.getCategories);
+// 库存管理路由
+router.get('/inventory', dataPermissionMiddleware, MaterialController.getInventory);
+router.post('/inventory/in', dataPermissionMiddleware, MaterialController.stockIn);
+router.post('/inventory/out', dataPermissionMiddleware, MaterialController.stockOut);
+router.get('/inventory/records', dataPermissionMiddleware, MaterialController.getInventoryRecords);
 
-// Inventory routes
-router.get('/inventory/statistics', dataPermissionMiddleware, MaterialController.getInventoryStatistics);
+// 统计路由
+router.get('/statistics', dataPermissionMiddleware, MaterialController.getMaterialStatistics);
 
 export default router;
