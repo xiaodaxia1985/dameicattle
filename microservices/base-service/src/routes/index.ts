@@ -24,7 +24,7 @@ router.get('/base/health', async (req, res) => {
 });
 
 // Mount routes
-router.use('/base', basesRouter);
-router.use('/base', barnsRouter);
+router.use('/base/bases', basesRouter);
+router.use('/base/barns', barnsRouter);
 
 export default router;
