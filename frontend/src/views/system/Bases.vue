@@ -1031,16 +1031,27 @@ const fetchManagers = async () => {
 const fetchBarns = async (baseId: number) => {
   try {
     const response = await baseApi.getBarnsByBaseId(baseId)
+    console.log('API response:', response)
     
     // 后端返回的数据结构是 { success: true, data: { barns: [...], base_info: {...} } }
     const barns = response.data?.barns || response.data || []
+    console.log('Extracted barns:', barns)
     
-    // 确保数据是数组且去重
-    const barnArray = Array.isArray(barns) ? barns : []
+    // 处理数据：如果是单个对象，转换为数组；如果已经是数组，直接使用
+    let barnArray: Barn[] = []
+    if (Array.isArray(barns)) {
+      barnArray = barns
+    } else if (barns && typeof barns === 'object' && barns.id) {
+      // 如果是单个牛棚对象，转换为数组
+      barnArray = [barns]
+    }
+    
+    // 去重处理
     const uniqueBarns = barnArray.filter((barn, index, self) => 
       index === self.findIndex(b => b.id === barn.id)
     )
     
+    console.log('Final barns array:', uniqueBarns)
     currentBarns.value = uniqueBarns
   } catch (error) {
     ElMessage.error('获取牛棚列表失败')
@@ -1256,9 +1267,9 @@ const handleSaveBarn = async () => {
     const data = {
       name: barnForm.name,
       code: barnForm.code,
-      baseId: barnForm.baseId!,
+      base_id: barnForm.baseId!,
       capacity: barnForm.capacity!,
-      barnType: barnForm.barnType
+      barn_type: barnForm.barnType
     }
     
     if (barnForm.id) {

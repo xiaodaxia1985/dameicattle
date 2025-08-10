@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS barns (
     capacity INTEGER NOT NULL CHECK (capacity > 0 AND capacity <= 1000),
     current_count INTEGER NOT NULL DEFAULT 0 CHECK (current_count >= 0),
     barn_type VARCHAR(50) CHECK (barn_type IN ('fattening', 'breeding', 'isolation', 'treatment', 'other')),
+    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'maintenance')),
     description TEXT,
     facilities JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

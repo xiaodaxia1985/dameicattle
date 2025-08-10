@@ -284,7 +284,7 @@ app.get('/api/v1/base/bases', async (req, res) => {
     const offset = (Number(page) - 1) * Number(limit);
 
     const whereClause = {};
-    
+
     if (search) {
       whereClause[Op.or] = [
         { name: { [Op.iLike]: `%${search}%` } },
@@ -300,8 +300,8 @@ app.get('/api/v1/base/bases', async (req, res) => {
     const { count, rows } = await Base.findAndCountAll({
       where: whereClause,
       include: [
-        { 
-          model: User, 
+        {
+          model: User,
           as: 'manager',
           attributes: ['id', 'real_name', 'username', 'phone', 'email'],
           required: false,
@@ -332,8 +332,8 @@ app.get('/api/v1/base/bases/all', async (req, res) => {
   try {
     const bases = await Base.findAll({
       include: [
-        { 
-          model: User, 
+        {
+          model: User,
           as: 'manager',
           attributes: ['id', 'real_name', 'username', 'phone', 'email'],
           required: false,
@@ -367,8 +367,8 @@ app.get('/api/v1/base/bases/:id', async (req, res) => {
 
     const base = await Base.findByPk(baseId, {
       include: [
-        { 
-          model: User, 
+        {
+          model: User,
           as: 'manager',
           attributes: ['id', 'real_name', 'username', 'phone', 'email'],
           required: false,
@@ -454,11 +454,11 @@ app.put('/api/v1/base/bases/:id', async (req, res) => {
 
     // Check if code already exists (excluding current base)
     if (code && code !== base.code) {
-      const existingBase = await Base.findOne({ 
-        where: { 
+      const existingBase = await Base.findOne({
+        where: {
           code,
           id: { [Op.ne]: id }
-        } 
+        }
       });
       if (existingBase) {
         return res.error('基地编码已存在', 409, 'BASE_CODE_EXISTS');
@@ -472,11 +472,11 @@ app.put('/api/v1/base/bases/:id', async (req, res) => {
         return res.error('指定的管理员不存在', 400, 'MANAGER_NOT_FOUND');
       }
 
-      const existingManagedBase = await Base.findOne({ 
-        where: { 
+      const existingManagedBase = await Base.findOne({
+        where: {
           manager_id,
           id: { [Op.ne]: id }
-        } 
+        }
       });
       if (existingManagedBase) {
         return res.error('该管理员已经管理其他基地', 400, 'MANAGER_ALREADY_ASSIGNED');
@@ -533,7 +533,7 @@ app.delete('/api/v1/base/bases/:id', async (req, res) => {
           type: sequelize.QueryTypes.SELECT,
         }
       );
-      
+
       if (barnCount && barnCount.count > 0) {
         return res.error('基地下还有牛棚，无法删除', 400, 'BASE_HAS_BARNS', { barnCount: barnCount.count });
       }
@@ -604,7 +604,7 @@ app.get('/api/v1/base/bases/:id/statistics', async (req, res) => {
           type: sequelize.QueryTypes.SELECT,
         }
       );
-      
+
       if (cattleResult) {
         statistics.cattle_count = cattleResult.total_count || 0;
         statistics.healthy_cattle_count = cattleResult.healthy_count || 0;
@@ -685,7 +685,7 @@ app.get('/api/v1/base/barns', async (req, res) => {
     const offset = (Number(page) - 1) * Number(limit);
 
     const whereClause = {};
-    
+
     if (base_id) {
       whereClause.base_id = base_id;
     }
@@ -709,8 +709,8 @@ app.get('/api/v1/base/barns', async (req, res) => {
     const { count, rows } = await Barn.findAndCountAll({
       where: whereClause,
       include: [
-        { 
-          model: Base, 
+        {
+          model: Base,
           as: 'base',
           attributes: ['id', 'name', 'code'],
           required: false,
@@ -748,13 +748,18 @@ app.get('/api/v1/base/bases/:id/barns', async (req, res) => {
     }
 
     // Use raw query to get barns
-    const [barns] = await sequelize.query(
+    const barns = await sequelize.query(
       'SELECT * FROM barns WHERE base_id = :baseId ORDER BY created_at DESC',
       {
         replacements: { baseId: id },
         type: sequelize.QueryTypes.SELECT,
       }
     );
+
+    console.log('Raw barns query result:', barns);
+    console.log('Barns type:', typeof barns);
+    console.log('Barns is array:', Array.isArray(barns));
+    console.log('Barns length:', barns ? barns.length : 'null');
 
     res.success({
       barns: barns || [],
@@ -779,8 +784,8 @@ app.get('/api/v1/base/barns/:id', async (req, res) => {
 
     const barn = await Barn.findByPk(id, {
       include: [
-        { 
-          model: Base, 
+        {
+          model: Base,
           as: 'base',
           attributes: ['id', 'name', 'code', 'address'],
           required: false,
@@ -816,11 +821,11 @@ app.post('/api/v1/base/barns', async (req, res) => {
     }
 
     // Check if code already exists within the same base
-    const existingBarn = await Barn.findOne({ 
-      where: { 
-        code, 
-        base_id 
-      } 
+    const existingBarn = await Barn.findOne({
+      where: {
+        code,
+        base_id
+      }
     });
     if (existingBarn) {
       return res.error('该基地下牛棚编码已存在', 409, 'BARN_CODE_EXISTS');
@@ -841,8 +846,8 @@ app.post('/api/v1/base/barns', async (req, res) => {
     // Fetch the created barn with associations
     const createdBarn = await Barn.findByPk(barn.id, {
       include: [
-        { 
-          model: Base, 
+        {
+          model: Base,
           as: 'base',
           attributes: ['id', 'name', 'code'],
           required: false,
@@ -884,12 +889,12 @@ app.put('/api/v1/base/barns/:id', async (req, res) => {
 
     // Check if code already exists within the same base (excluding current barn)
     if (code && (code !== barn.code || base_id !== barn.base_id)) {
-      const existingBarn = await Barn.findOne({ 
-        where: { 
+      const existingBarn = await Barn.findOne({
+        where: {
           code,
           base_id: base_id || barn.base_id,
           id: { [Op.ne]: id }
-        } 
+        }
       });
       if (existingBarn) {
         return res.error('该基地下牛棚编码已存在', 409, 'BARN_CODE_EXISTS');
@@ -911,8 +916,8 @@ app.put('/api/v1/base/barns/:id', async (req, res) => {
     // Fetch updated barn with associations
     const updatedBarn = await Barn.findByPk(barn.id, {
       include: [
-        { 
-          model: Base, 
+        {
+          model: Base,
           as: 'base',
           attributes: ['id', 'name', 'code'],
           required: false,
@@ -957,7 +962,7 @@ app.delete('/api/v1/base/barns/:id', async (req, res) => {
           type: sequelize.QueryTypes.SELECT,
         }
       );
-      
+
       if (cattleResult && cattleResult.count > 0) {
         return res.error('牛棚内还有牛只，无法删除', 400, 'BARN_HAS_CATTLE', { cattleCount: cattleResult.count });
       }
@@ -1069,8 +1074,8 @@ app.get('/api/v1/base/barns/options', async (req, res) => {
       where: whereClause,
       attributes: ['id', 'name', 'code', 'base_id', 'capacity', 'current_count'],
       include: [
-        { 
-          model: Base, 
+        {
+          model: Base,
           as: 'base',
           attributes: ['id', 'name', 'code'],
           required: false,
