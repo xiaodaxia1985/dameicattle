@@ -17,7 +17,7 @@ router.get('/material/health', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: 'unhealthy',
-      error: error.message
+      error: (error as Error).message
     });
   }
 });

@@ -94,7 +94,11 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="cattleEarTag" label="牛只耳标" width="120" />
+        <el-table-column label="牛只耳标" width="120">
+          <template #default="{ row }">
+            {{ row.cattle?.ear_tag || '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="symptoms" label="症状" min-width="150">
           <template #default="{ row }">
             <el-tooltip :content="row.symptoms" placement="top">
@@ -116,10 +120,14 @@
             </el-tooltip>
           </template>
         </el-table-column>
-        <el-table-column prop="veterinarianName" label="兽医" width="100" />
-        <el-table-column prop="diagnosisDate" label="诊断日期" width="120">
+        <el-table-column label="兽医" width="100">
           <template #default="{ row }">
-            {{ formatDate(row.diagnosisDate) }}
+            {{ row.veterinarian?.real_name || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="诊断日期" width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.diagnosis_date) }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">

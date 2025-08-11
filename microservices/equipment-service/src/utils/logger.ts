@@ -10,7 +10,7 @@ if (!fs.existsSync(logsDir)) {
 }
 
 const consoleFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
-  let log = `${timestamp} [${level.toUpperCase()}] [BASE-SERVICE]: ${message}`;
+  let log = `${timestamp} [${level.toUpperCase()}] [EQUIPMENT-SERVICE]: ${message}`;
   
   if (stack) {
     log += `\n${stack}`;
@@ -31,18 +31,18 @@ export const logger = winston.createLogger({
     json()
   ),
   defaultMeta: {
-    service: 'base-service',
+    service: 'equipment-service',
     environment: process.env.NODE_ENV || 'development'
   },
   transports: [
     new winston.transports.File({
-      filename: path.join(logsDir, 'base-error.log'),
+      filename: path.join(logsDir, 'equipment-error.log'),
       level: 'error',
       maxsize: 5242880,
       maxFiles: 5
     }),
     new winston.transports.File({
-      filename: path.join(logsDir, 'base-combined.log'),
+      filename: path.join(logsDir, 'equipment-combined.log'),
       maxsize: 10485760,
       maxFiles: 10
     })

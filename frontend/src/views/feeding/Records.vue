@@ -179,7 +179,7 @@
             {{ row.barn?.name || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="amount" label="用量(kg)" width="100" sortable>
+        <el-table-column label="用量(kg)" width="100" sortable>
           <template #default="{ row }">
             {{ parseFloat(row.amount || 0).toFixed(1) }}
           </template>
@@ -236,9 +236,9 @@
         :rules="formRules"
         label-width="100px"
       >
-        <el-form-item label="饲喂日期" prop="feedingDate">
+        <el-form-item label="饲喂日期" prop="feeding_date">
           <el-date-picker
-            v-model="formData.feedingDate"
+            v-model="formData.feeding_date"
             type="date"
             placeholder="选择饲喂日期"
             format="YYYY-MM-DD"
@@ -246,19 +246,19 @@
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="配方" prop="formulaId">
-          <el-select v-model="formData.formulaId" placeholder="选择配方" style="width: 100%">
+        <el-form-item label="配方" prop="formula_id">
+          <el-select v-model="formData.formula_id" placeholder="选择配方" style="width: 100%">
             <el-option
               v-for="formula in formulas"
               :key="formula.id"
-              :label="`${formula.name} (¥${formula.costPerKg?.toFixed(2)}/kg)`"
+              :label="`${formula.name} (¥${formula.cost_per_kg?.toFixed(2) || 0}/kg)`"
               :value="formula.id"
             />
           </el-select>
         </el-form-item>
         <!-- 基地牛棚选择 -->
-        <el-form-item label="目标基地" prop="baseId">
-          <el-select v-model="formData.baseId" placeholder="请选择基地" style="width: 100%" @change="handleBaseChange">
+        <el-form-item label="目标基地" prop="base_id">
+          <el-select v-model="formData.base_id" placeholder="请选择基地" style="width: 100%" @change="handleBaseChange">
             <el-option
               v-for="base in bases"
               :key="base.id"
@@ -267,12 +267,12 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="目标牛棚" prop="barnId">
+        <el-form-item label="目标牛棚" prop="barn_id">
           <el-select 
-            v-model="formData.barnId" 
+            v-model="formData.barn_id" 
             placeholder="请选择牛棚" 
             style="width: 100%" 
-            :disabled="!formData.baseId"
+            :disabled="!formData.base_id"
             @change="handleBarnChange"
           >
             <el-option
@@ -285,14 +285,14 @@
         </el-form-item>
         <el-form-item label="饲喂说明">
           <el-alert
-            v-if="formData.barnId && selectedBarnInfo"
+            v-if="formData.barn_id && selectedBarnInfo"
             :title="`将为牛棚「${selectedBarnInfo.name}」中的所有牛只（共${selectedBarnInfo.cattleCount}头）进行饲喂`"
             type="info"
             :closable="false"
             show-icon
           />
           <el-alert
-            v-else-if="formData.baseId && !formData.barnId"
+            v-else-if="formData.base_id && !formData.barn_id"
             title="请选择具体的牛棚进行饲喂"
             type="warning"
             :closable="false"
@@ -628,12 +628,12 @@ const selectedRecord = ref<FeedingRecord | null>(null)
 const formRef = ref()
 const uploadRef = ref()
 const uploadFile = ref<File | null>(null)
-const formData = ref<CreateFeedingRecordRequest & { cascade?: { baseId?: number; barnId?: number; cattleId?: number } }>({
-  formulaId: '',
-  baseId: 0,
-  barnId: 0,
+const formData = ref({
+  formula_id: '',
+  base_id: 0,
+  barn_id: 0,
   amount: 0,
-  feedingDate: '',
+  feeding_date: '',
   remark: '',
   cascade: {
     baseId: undefined,
@@ -643,13 +643,13 @@ const formData = ref<CreateFeedingRecordRequest & { cascade?: { baseId?: number;
 })
 
 const formRules: Record<string, any> = {
-  feedingDate: [
+  feeding_date: [
     { required: true, message: '请选择饲喂日期', trigger: 'change' }
   ],
-  formulaId: [
+  formula_id: [
     { required: true, message: '请选择配方', trigger: 'change' }
   ],
-  baseId: [
+  base_id: [
     { required: true, message: '请选择基地', trigger: 'change' },
     { 
       validator: (rule: any, value: any, callback: Function) => {
@@ -662,7 +662,7 @@ const formRules: Record<string, any> = {
       trigger: 'change' 
     }
   ],
-  barnId: [
+  barn_id: [
     { required: true, message: '请选择牛棚', trigger: 'change' },
     { 
       validator: (rule: any, value: any, callback: Function) => {
@@ -711,14 +711,14 @@ const avgDailyCost = computed(() => {
 const availableBarns = computed(() => {
   console.log('计算可用牛棚:', {
     allBarns: barns.value,
-    selectedBaseId: formData.value.baseId,
+    selectedBaseId: formData.value.base_id,
     barnsCount: barns.value.length
   })
   
   const filtered = barns.value.filter(barn => {
     const barnBaseId = barn.baseId || barn.base_id
-    console.log(`牛棚 ${barn.name} 的基地ID: ${barnBaseId}, 选中基地ID: ${formData.value.baseId}`)
-    return barnBaseId === formData.value.baseId
+    console.log(`牛棚 ${barn.name} 的基地ID: ${barnBaseId}, 选中基地ID: ${formData.value.base_id}`)
+    return barnBaseId === formData.value.base_id
   })
   
   console.log('过滤后的牛棚:', filtered)
@@ -730,8 +730,8 @@ const availableBarns = computed(() => {
 })
 
 const selectedBarnInfo = computed(() => {
-  if (!formData.value.barnId) return null
-  const barn = barns.value.find(b => b.id === formData.value.barnId)
+  if (!formData.value.barn_id) return null
+  const barn = barns.value.find(b => b.id === formData.value.barn_id)
   return barn ? {
     name: barn.name,
     cattleCount: barn.current_count || 0
@@ -739,9 +739,9 @@ const selectedBarnInfo = computed(() => {
 })
 
 const estimatedCost = computed(() => {
-  const formula = formulas.value.find(f => f.id === formData.value.formulaId)
+  const formula = formulas.value.find(f => f.id === formData.value.formula_id)
   if (!formula || !formData.value.amount) return 0
-  return (formula.costPerKg || 0) * formData.value.amount
+  return (formula.cost_per_kg || 0) * formData.value.amount
 })
 
 // 初始化日期范围（最近30天）
@@ -843,8 +843,8 @@ const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId
 // 表单级联选择变更处理
 const handleFormCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
   console.log('级联选择变更:', value)
-  formData.value.baseId = value.baseId || 0
-  formData.value.barnId = value.barnId || 0
+  formData.value.base_id = value.baseId || 0
+  formData.value.barn_id = value.barnId || 0
   console.log('更新后的formData:', formData.value)
 }
 
@@ -877,7 +877,7 @@ const handleSelectionChange = (selection: FeedingRecord[]) => {
 const showCreateDialog = () => {
   dialogMode.value = 'create'
   resetForm()
-  formData.value.feedingDate = new Date().toISOString().split('T')[0]
+  formData.value.feeding_date = new Date().toISOString().split('T')[0]
   dialogVisible.value = true
 }
 
@@ -894,12 +894,17 @@ const editRecord = (record: FeedingRecord) => {
   
   // 根据实际数据结构设置表单数据
   formData.value = {
-    formulaId: record.formula_id || record.formula?.id,
-    baseId: record.base_id || record.base?.id,
-    barnId: record.barn_id || record.barn?.id,
+    formula_id: record.formula_id || record.formula?.id,
+    base_id: record.base_id || record.base?.id,
+    barn_id: record.barn_id || record.barn?.id,
     amount: parseFloat(record.amount || 0),
-    feedingDate: record.feeding_date,
-    remark: record.remark || ''
+    feeding_date: record.feeding_date,
+    remark: record.remark || '',
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    }
   }
   
   console.log('编辑记录数据:', {
@@ -936,13 +941,13 @@ const deleteRecord = async (record: FeedingRecord) => {
 
 // 处理表单基地变化
 const handleBaseChange = () => {
-  console.log('基地变更:', formData.value.baseId)
-  formData.value.barnId = 0
+  console.log('基地变更:', formData.value.base_id)
+  formData.value.barn_id = 0
 }
 
 // 处理表单牛棚变化
 const handleBarnChange = () => {
-  console.log('牛棚变更:', formData.value.barnId)
+  console.log('牛棚变更:', formData.value.barn_id)
 }
 
 // 计算预估成本
@@ -971,11 +976,11 @@ const submitForm = async () => {
     
     // 准备提交的数据，移除cascade属性
     const submitData = {
-      formulaId: formData.value.formulaId,
-      baseId: formData.value.baseId,
-      barnId: formData.value.barnId,
+      formulaId: formData.value.formula_id,
+      baseId: formData.value.base_id,
+      barnId: formData.value.barn_id,
       amount: formData.value.amount,
-      feedingDate: formData.value.feedingDate,
+      feedingDate: formData.value.feeding_date,
       remark: formData.value.remark
     }
     
@@ -1009,11 +1014,11 @@ const submitForm = async () => {
 // 重置表单
 const resetForm = () => {
   formData.value = {
-    formulaId: '',
-    baseId: 0,
-    barnId: 0,
+    formula_id: '',
+    base_id: 0,
+    barn_id: 0,
     amount: 0,
-    feedingDate: '',
+    feeding_date: '',
     remark: '',
     cascade: {
       baseId: undefined,

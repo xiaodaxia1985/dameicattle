@@ -51,8 +51,14 @@
 ### 使用 npm 直接启动（推荐）
 
 ```powershell
-# 启动所有13个微服务
+# 启动所有13个微服务（带健康检查）
 .\start-services-npm.ps1
+
+# 检查所有服务健康状态
+.\check-services-health.ps1
+
+# 快速健康检查
+.\quick-health-check.ps1
 
 # 停止所有微服务
 .\stop-services.ps1
@@ -84,9 +90,38 @@ npm start
 - News Service: http://localhost:3013
 
 ### 健康检查
+
 所有服务都提供健康检查端点：
 ```
 GET http://localhost:{port}/health
+```
+
+#### 健康检查工具
+
+1. **启动时自动检查** - `start-services-npm.ps1`
+   - 启动每个服务后自动检查健康状态
+   - 显示详细的启动结果和状态汇总
+   - 提供失败服务的日志文件位置
+
+2. **完整健康检查** - `check-services-health.ps1`
+   - 检查所有服务的健康状态
+   - 显示服务运行时间
+   - 提供详细的状态报告和建议
+
+3. **快速健康检查** - `quick-health-check.ps1`
+   - 简化版本的健康检查
+   - 快速显示所有服务的运行状态
+
+#### 健康检查响应格式
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-01T12:00:00.000Z",
+  "uptime": 123.45,
+  "version": "1.0.0",
+  "service": "auth-service",
+  "port": 3001
+}
 ```
 
 ### API 访问

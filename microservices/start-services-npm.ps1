@@ -23,108 +23,169 @@ if (!(Test-Path "logs")) {
     New-Item -ItemType Directory -Path "logs" | Out-Null
 }
 
-# Start auth service
-Write-Host "Starting auth service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'auth-service'; npm start > ../logs/auth-service.log 2>&1" -WindowStyle Hidden
+# Function to check service health
+function Test-ServiceHealth {
+    param(
+        [string]$ServiceName,
+        [int]$Port,
+        [int]$MaxRetries = 10,
+        [int]$RetryInterval = 2
+    )
+    
+    $retries = 0
+    while ($retries -lt $MaxRetries) {
+        try {
+            $response = Invoke-RestMethod -Uri "http://localhost:$Port/health" -Method Get -TimeoutSec 5 -ErrorAction Stop
+            # Check both possible response formats
+            $isHealthy = ($response.status -eq "healthy") -or ($response.data.status -eq "healthy")
+            if ($isHealthy) {
+                Write-Host "OK $ServiceName (port $Port) - Started successfully" -ForegroundColor Green
+                return $true
+            }
+        } catch {
+            # Service not ready yet, continue retrying
+        }
+        
+        $retries++
+        if ($retries -lt $MaxRetries) {
+            Write-Host "WAIT $ServiceName (port $Port) - Starting... ($retries/$MaxRetries)" -ForegroundColor Yellow
+            Start-Sleep -Seconds $RetryInterval
+        }
+    }
+    
+    Write-Host "FAIL $ServiceName (port $Port) - Startup failed or timeout" -ForegroundColor Red
+    return $false
+}
 
-Start-Sleep -Seconds 3
+# Array to track service status
+$serviceStatus = @()
+
+# Function to start service and check health
+function Start-ServiceWithHealthCheck {
+    param(
+        [string]$ServiceName,
+        [string]$ServiceDir,
+        [int]$Port,
+        [int]$StartupDelay = 3
+    )
+    
+    Write-Host "Starting $ServiceName..." -ForegroundColor Yellow
+    Start-Process powershell -ArgumentList "-Command", "cd '$ServiceDir'; npm start > ../logs/$ServiceName.log 2>&1" -WindowStyle Hidden
+    
+    Start-Sleep -Seconds $StartupDelay
+    
+    $isHealthy = Test-ServiceHealth -ServiceName $ServiceName -Port $Port
+    $script:serviceStatus += @{
+        Name = $ServiceName
+        Port = $Port
+        Status = if ($isHealthy) { "OK - Running" } else { "FAIL - Startup failed" }
+        Healthy = $isHealthy
+    }
+}
+
+# Start services with health checks
+Write-Host ""
+Write-Host "Starting microservices with health checks..." -ForegroundColor Cyan
+Write-Host ""
+
+# Start auth service
+Start-ServiceWithHealthCheck -ServiceName "auth-service" -ServiceDir "auth-service" -Port 3001 -StartupDelay 3
 
 # Start base service
-Write-Host "Starting base service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'base-service'; npm start > ../logs/base-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 2
+Start-ServiceWithHealthCheck -ServiceName "base-service" -ServiceDir "base-service" -Port 3002 -StartupDelay 2
 
 # Start cattle service
-Write-Host "Starting cattle service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'cattle-service'; npm start > ../logs/cattle-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 2
+Start-ServiceWithHealthCheck -ServiceName "cattle-service" -ServiceDir "cattle-service" -Port 3003 -StartupDelay 2
 
 # Start health service
-Write-Host "Starting health service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'health-service'; npm start > ../logs/health-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 2
+Start-ServiceWithHealthCheck -ServiceName "health-service" -ServiceDir "health-service" -Port 3004 -StartupDelay 2
 
 # Start feeding service
-Write-Host "Starting feeding service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'feeding-service'; npm start > ../logs/feeding-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 2
+Start-ServiceWithHealthCheck -ServiceName "feeding-service" -ServiceDir "feeding-service" -Port 3005 -StartupDelay 2
 
 # Start equipment service
-Write-Host "Starting equipment service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'equipment-service'; npm start > ../logs/equipment-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "equipment-service" -ServiceDir "equipment-service" -Port 3006 -StartupDelay 1
 
 # Start procurement service
-Write-Host "Starting procurement service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'procurement-service'; npm start > ../logs/procurement-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "procurement-service" -ServiceDir "procurement-service" -Port 3007 -StartupDelay 1
 
 # Start sales service
-Write-Host "Starting sales service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'sales-service'; npm start > ../logs/sales-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "sales-service" -ServiceDir "sales-service" -Port 3008 -StartupDelay 1
 
 # Start material service
-Write-Host "Starting material service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'material-service'; npm start > ../logs/material-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "material-service" -ServiceDir "material-service" -Port 3009 -StartupDelay 1
 
 # Start notification service
-Write-Host "Starting notification service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'notification-service'; npm start > ../logs/notification-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "notification-service" -ServiceDir "notification-service" -Port 3010 -StartupDelay 1
 
 # Start file service
-Write-Host "Starting file service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'file-service'; npm start > ../logs/file-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "file-service" -ServiceDir "file-service" -Port 3011 -StartupDelay 1
 
 # Start monitoring service
-Write-Host "Starting monitoring service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'monitoring-service'; npm start > ../logs/monitoring-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 1
+Start-ServiceWithHealthCheck -ServiceName "monitoring-service" -ServiceDir "monitoring-service" -Port 3012 -StartupDelay 1
 
 # Start news service
-Write-Host "Starting news service..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'news-service'; npm start > ../logs/news-service.log 2>&1" -WindowStyle Hidden
-
-Start-Sleep -Seconds 2
+Start-ServiceWithHealthCheck -ServiceName "news-service" -ServiceDir "news-service" -Port 3013 -StartupDelay 2
 
 # Start API gateway
-Write-Host "Starting API gateway..." -ForegroundColor Yellow
-Start-Process powershell -ArgumentList "-Command", "cd 'api-gateway'; npm start > ../logs/api-gateway.log 2>&1" -WindowStyle Hidden
+Start-ServiceWithHealthCheck -ServiceName "api-gateway" -ServiceDir "api-gateway" -Port 3000 -StartupDelay 2
 
+# Display service status summary
 Write-Host ""
-Write-Host "All 13 microservices started in background!" -ForegroundColor Green
+Write-Host "Microservices Startup Status Summary:" -ForegroundColor Cyan
+Write-Host "=" * 60 -ForegroundColor Gray
+
+$healthyCount = 0
+$failedCount = 0
+
+foreach ($service in $serviceStatus) {
+    $statusColor = if ($service.Healthy) { "Green" } else { "Red" }
+    Write-Host "  $($service.Name.PadRight(20)) (port $($service.Port.ToString().PadLeft(4))) - $($service.Status)" -ForegroundColor $statusColor
+    
+    if ($service.Healthy) {
+        $healthyCount++
+    } else {
+        $failedCount++
+    }
+}
+
+Write-Host "=" * 60 -ForegroundColor Gray
+Write-Host "Successfully started: $healthyCount services" -ForegroundColor Green
+Write-Host "Failed to start: $failedCount services" -ForegroundColor Red
 Write-Host ""
-Write-Host "Service URLs:" -ForegroundColor White
-Write-Host "API Gateway: http://localhost:3000" -ForegroundColor Cyan
-Write-Host "Auth Service: http://localhost:3001" -ForegroundColor Cyan
-Write-Host "Base Service: http://localhost:3002" -ForegroundColor Cyan
-Write-Host "Cattle Service: http://localhost:3003" -ForegroundColor Cyan
-Write-Host "Health Service: http://localhost:3004" -ForegroundColor Cyan
-Write-Host "Feeding Service: http://localhost:3005" -ForegroundColor Cyan
-Write-Host "Equipment Service: http://localhost:3006" -ForegroundColor Cyan
-Write-Host "Procurement Service: http://localhost:3007" -ForegroundColor Cyan
-Write-Host "Sales Service: http://localhost:3008" -ForegroundColor Cyan
-Write-Host "Material Service: http://localhost:3009" -ForegroundColor Cyan
-Write-Host "Notification Service: http://localhost:3010" -ForegroundColor Cyan
-Write-Host "File Service: http://localhost:3011" -ForegroundColor Cyan
-Write-Host "Monitoring Service: http://localhost:3012" -ForegroundColor Cyan
-Write-Host "News Service: http://localhost:3013" -ForegroundColor Cyan
+
+if ($failedCount -gt 0) {
+    Write-Host "Some services failed to start, please check log files:" -ForegroundColor Yellow
+    foreach ($service in $serviceStatus) {
+        if (-not $service.Healthy) {
+            Write-Host "   - logs/$($service.Name).log" -ForegroundColor Red
+        }
+    }
+    Write-Host ""
+}
+
+if ($healthyCount -gt 0) {
+    Write-Host "Running service URLs:" -ForegroundColor White
+    foreach ($service in $serviceStatus) {
+        if ($service.Healthy) {
+            $displayName = $service.Name -replace "-service", "" -replace "-", " "
+            $displayName = (Get-Culture).TextInfo.ToTitleCase($displayName)
+            Write-Host "  $($displayName): http://localhost:$($service.Port)" -ForegroundColor Cyan
+        }
+    }
+    Write-Host ""
+}
+
+Write-Host "Log files location: logs/ directory" -ForegroundColor Yellow
+Write-Host "   - View all logs: Get-ChildItem logs/*.log" -ForegroundColor Gray
+Write-Host "   - View specific service log: Get-Content logs/[service-name].log -Wait" -ForegroundColor Gray
+Write-Host "   - Stop all services: .\stop-services.ps1" -ForegroundColor Gray
 Write-Host ""
-Write-Host "Logs are saved in the 'logs' directory:" -ForegroundColor Yellow
-Write-Host "- To view all logs: Get-ChildItem logs/*.log" -ForegroundColor Gray
-Write-Host "- To view specific service log: Get-Content logs/[service-name].log -Wait" -ForegroundColor Gray
-Write-Host "- To stop all services: .\stop-services.ps1" -ForegroundColor Gray
+
+if ($healthyCount -eq $serviceStatus.Count) {
+    Write-Host "All microservices started successfully! System is ready." -ForegroundColor Green
+} elseif ($healthyCount -gt 0) {
+    Write-Host "Some microservices started successfully, please check failed services." -ForegroundColor Yellow
+} else {
+    Write-Host "All microservices failed to start, please check system configuration and dependencies." -ForegroundColor Red
+}

@@ -175,8 +175,8 @@ export const feedingApi = {
 
   // 获取饲喂记录详情
   async getFeedingRecordById(id: string): Promise<{ data: FeedingRecord }> {
-    const response = await feedingServiceApi.getById('/records', id)
-    return { data: response.data }
+    const response = await feedingServiceApi.get(`/records/${id}`)
+    return { data: adaptSingleResponse<FeedingRecord>(response) }
   },
 
   // 创建饲喂记录
@@ -196,13 +196,13 @@ export const feedingApi = {
 
   // 更新饲喂记录
   async updateFeedingRecord(id: string, data: UpdateFeedingRecordRequest): Promise<{ data: FeedingRecord }> {
-    const response = await feedingServiceApi.update('/records', id, data)
-    return { data: response.data }
+    const response = await feedingServiceApi.put(`/records/${id}`, data)
+    return { data: adaptSingleResponse<FeedingRecord>(response) }
   },
 
   // 删除饲喂记录
   async deleteFeedingRecord(id: string): Promise<void> {
-    await feedingServiceApi.remove('/records', id)
+    await feedingServiceApi.delete(`/records/${id}`)
   },
 
   // 获取饲喂统计数据

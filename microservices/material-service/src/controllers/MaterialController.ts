@@ -201,7 +201,7 @@ export class MaterialController {
         whereClause.material_id = material_id;
       }
 
-      const include = [
+      const include: any[] = [
         {
           model: Material,
           as: 'material',
