@@ -66,8 +66,22 @@ interface InventoryStatistics {
 export const materialApi = {
   // 物资分类管理
   async getCategories(): Promise<ApiResponse<MaterialCategory[]>> {
-    const response = await materialServiceApi.get('/categories')
-    return response
+    try {
+      const response = await materialServiceApi.get('/categories')
+      console.log('物资分类API响应:', response)
+      
+      // 使用 quickFix 工具进行数据处理
+      const { ensureArray, safeGet } = await import('@/utils/quickFix')
+      
+      // 确保返回正确的数据结构
+      const categories = ensureArray(safeGet(response, 'data', []))
+      return { ...response, data: categories }
+    } catch (error) {
+      console.error('获取物资分类失败:', error)
+      // 使用 quickFix 工具处理错误
+      const { handleApiError } = await import('@/utils/quickFix')
+      throw new Error(handleApiError(error, '获取物资分类失败'))
+    }
   },
 
   async createCategory(data: any): Promise<ApiResponse<MaterialCategory>> {
@@ -108,18 +122,64 @@ export const materialApi = {
 
   // 生产物资管理
   async getProductionMaterials(params: any = {}): Promise<PaginatedResponse<ProductionMaterial[]>> {
+    console.log('🔍 materialApi.getProductionMaterials 调用参数:', params)
+    
     const response = await materialServiceApi.getMaterials(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<ProductionMaterial>(response, 'materials')
-    return {
-      data: adapted.data,
+    console.log('📥 materialServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let materials = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      materials = responseData
+      total = materials.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      materials = responseData.data
+      total = responseData.total || responseData.pagination?.total || materials.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.materials && Array.isArray(responseData.materials)) {
+      // 有materials字段且是数组
+      materials = responseData.materials
+      total = responseData.total || responseData.pagination?.total || materials.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      materials = responseData.items
+      total = responseData.total || responseData.pagination?.total || materials.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = {
+      data: materials,
       pagination: {
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit,
-        totalPages: adapted.pagination.totalPages || adapted.pagination.pages
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
     }
+    
+    console.log('✅ materialApi.getProductionMaterials 解析结果:', { 
+      materialsCount: materials.length, 
+      total, 
+      page, 
+      limit,
+      sampleMaterial: materials[0] || null
+    })
+    
+    return result
   },
 
   async getProductionMaterialById(id: number): Promise<ApiResponse<ProductionMaterial>> {

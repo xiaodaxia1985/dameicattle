@@ -49,38 +49,42 @@
         <el-table-column prop="title" label="标题" min-width="200">
           <template #default="{ row }">
             <div class="article-title">
-              <span>{{ row.title }}</span>
+              <span>{{ safeGet(row, 'title', '-') }}</span>
               <div class="article-tags">
-                <el-tag v-if="row.isTop" type="danger" size="small">置顶</el-tag>
-                <el-tag v-if="row.isFeatured" type="warning" size="small">推荐</el-tag>
+                <el-tag v-if="safeGet(row, 'isTop', safeGet(row, 'is_top', false))" type="danger" size="small">置顶</el-tag>
+                <el-tag v-if="safeGet(row, 'isFeatured', safeGet(row, 'is_featured', false))" type="warning" size="small">推荐</el-tag>
               </div>
             </div>
           </template>
         </el-table-column>
         <el-table-column label="分类" width="120">
           <template #default="{ row }">
-            {{ row.category?.name || '-' }}
+            {{ safeGet(row, 'category.name', '-') }}
           </template>
         </el-table-column>
-        <el-table-column prop="authorName" label="作者" width="100" />
+        <el-table-column prop="authorName" label="作者" width="100">
+          <template #default="{ row }">
+            {{ safeGet(row, 'authorName', safeGet(row, 'author_name', safeGet(row, 'author.real_name', '-'))) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag
-              :type="getStatusType(row.status)"
+              :type="getStatusType(safeGet(row, 'status', 'draft'))"
               size="small"
             >
-              {{ getStatusText(row.status) }}
+              {{ getStatusText(safeGet(row, 'status', 'draft')) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="浏览量" width="100">
           <template #default="{ row }">
-            {{ row.viewCount || 0 }}
+            {{ ensureNumber(safeGet(row, 'viewCount', safeGet(row, 'view_count', 0)), 0) }}
           </template>
         </el-table-column>
         <el-table-column prop="publishTime" label="发布时间" width="180">
           <template #default="{ row }">
-            {{ row.publishTime ? formatDate(row.publishTime) : '-' }}
+            {{ safeGet(row, 'publishTime', safeGet(row, 'publish_time', '')) ? formatDate(safeGet(row, 'publishTime', safeGet(row, 'publish_time', ''))) : '-' }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -138,6 +142,8 @@ import { newsApi, type NewsArticle, type NewsCategory } from '@/api/news'
 import request from '@/api/request'
 import { formatDate } from '@/utils/date'
 import { validatePaginationData, validateDataArray, validateNewsData } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet, ensureArray, ensureNumber } from '@/utils/safeAccess'
 
 const router = useRouter()
 
@@ -172,22 +178,22 @@ const validCategories = computed(() => {
 
 // 获取分类列表
 const fetchCategories = async () => {
-  try {
-    const response = await newsApi.getCategories({ isActive: true })
-    // 确保返回的数据是数组，并过滤掉无效的分类
-    const categoriesData = Array.isArray(response.data) ? response.data : []
-    categories.value = categoriesData.filter(category => 
-      category && 
-      typeof category === 'object' && 
-      category.id !== undefined && 
-      category.id !== null &&
-      category.name
-    )
-  } catch (error) {
-    console.error('获取分类失败:', error)
-    ElMessage.error('获取分类失败')
-    categories.value = []
-  }
+  const result = await safeApiCall(
+    () => newsApi.getCategories({ isActive: true }),
+    {
+      showMessage: false,
+      fallbackValue: { data: [] }
+    }
+  )
+  
+  const categoriesData = ensureArray(safeGet(result, 'data', []))
+  categories.value = categoriesData.filter(category => 
+    category && 
+    typeof category === 'object' && 
+    ensureNumber(category.id, 0) > 0 &&
+    category.name &&
+    typeof category.name === 'string'
+  )
 }
 
 // 获取文章列表
@@ -200,80 +206,27 @@ const fetchArticles = async () => {
       ...searchForm
     }
     
-    // 🔍 首先进行快速诊断
-    console.log('=== 开始诊断文章接口问题 ===')
-    console.log('⚠️  检测到后端 /news/articles 接口响应极慢（36秒超时）')
-    console.log('💡 这表明后端存在严重性能问题，需要检查：')
-    console.log('   1. 数据库查询是否有慢查询或死锁')
-    console.log('   2. 后端代码是否有死循环或阻塞操作')
-    console.log('   3. 数据库连接是否正常')
-    console.log('   4. 中间件（认证、日志等）是否有问题')
+    const result = await safeApiCall(
+      () => newsApi.getArticles(params),
+      {
+        showMessage: false,
+        fallbackValue: { data: { data: [], pagination: { total: 0 } } },
+        retryCount: 1,
+        retryDelay: 2000
+      }
+    )
     
-    // 🚨 临时解决方案：显示空数据状态，避免用户长时间等待
-    console.log('🔧 临时解决方案：显示空数据状态，避免用户等待')
-    ElMessage.warning('后端接口响应缓慢，正在加载中...')
-    
-    // 设置一个较短的超时来快速失败
-    try {
-      const response = await request.get('/news/articles', { 
-        params,
-        timeout: 5000 // 5秒快速超时
-      })
+    if (result && result.data) {
+      const articlesData = ensureArray(safeGet(result, 'data.data', []))
+      articles.value = validateDataArray(articlesData, validateNewsData)
+      pagination.total = ensureNumber(safeGet(result, 'data.pagination.total', 0))
       
-      console.log('✅ 意外成功！接口在5秒内响应了')
-      
-      // 使用数据验证工具处理响应
-      const validatedData = validatePaginationData(response.data || response)
-      articles.value = validateDataArray(validatedData.data, validateNewsData)
-      pagination.total = validatedData.pagination.total
-      
-      ElMessage.success(`文章列表加载成功: ${articles.value.length} 条记录`)
-      return
-      
-    } catch (quickError) {
-      console.log('❌ 5秒快速测试失败，确认后端性能问题')
-      
-      // 显示友好的错误信息和建议
-      ElMessage.error({
-        message: '后端服务响应缓慢，请联系技术人员检查服务器状态',
-        duration: 0, // 不自动关闭
-        showClose: true
-      })
-      
-      // 显示空状态，让用户知道不是前端问题
+      console.log(`✅ 文章列表加载成功: ${articles.value.length} 条记录`)
+    } else {
       articles.value = []
       pagination.total = 0
-      return
+      ElMessage.warning('暂无文章数据')
     }
-    
-    // 使用数据验证工具处理响应
-    const validatedData = validatePaginationData(response.data || response)
-    
-    // 验证每个文章数据
-    articles.value = validateDataArray(validatedData.data, validateNewsData)
-    pagination.total = validatedData.pagination.total
-    
-    console.log(`✅ 文章列表加载成功: ${articles.value.length} 条记录`)
-    
-  } catch (error: any) {
-    console.error('❌ 获取文章列表失败:', error)
-    
-    // 处理不同类型的错误
-    let errorMessage = '获取文章列表失败'
-    
-    if (error.message?.includes('timeout') || error.message?.includes('Request timeout')) {
-      errorMessage = `请求超时: 后端 /news/articles 接口响应时间超过预期。请检查后端服务状态。`
-    } else if (error.response?.status === 404) {
-      errorMessage = '后端接口不存在: /news/articles 路由未找到，请检查后端路由配置。'
-    } else if (error.response?.status >= 500) {
-      errorMessage = `后端服务器错误 (${error.response?.status}): 请检查后端日志和数据库连接。`
-    } else if (error.message) {
-      errorMessage = `网络错误: ${error.message}`
-    }
-    
-    ElMessage.error(errorMessage)
-    articles.value = []
-    pagination.total = 0
   } finally {
     loading.value = false
   }
@@ -344,12 +297,20 @@ const handlePublish = async (row: NewsArticle) => {
       type: 'warning'
     })
     
-    await newsApi.publishArticle(row.id)
-    ElMessage.success('文章发布成功')
-    fetchArticles()
+    const result = await safeApiCall(
+      () => newsApi.publishArticle(ensureNumber(row.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('文章发布成功')
+      fetchArticles()
+    }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('发布文章失败:', error)
       ElMessage.error('发布文章失败')
     }
   }
@@ -364,12 +325,20 @@ const handleArchive = async (row: NewsArticle) => {
       type: 'warning'
     })
     
-    await newsApi.updateArticle(row.id, { status: 'archived' })
-    ElMessage.success('文章归档成功')
-    fetchArticles()
+    const result = await safeApiCall(
+      () => newsApi.updateArticle(ensureNumber(row.id, 0), { status: 'archived' }),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('文章归档成功')
+      fetchArticles()
+    }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('归档文章失败:', error)
       ElMessage.error('归档文章失败')
     }
   }
@@ -384,12 +353,20 @@ const handleDelete = async (row: NewsArticle) => {
       type: 'error'
     })
     
-    await newsApi.deleteArticle(row.id)
-    ElMessage.success('文章删除成功')
-    fetchArticles()
+    const result = await safeApiCall(
+      () => newsApi.deleteArticle(ensureNumber(row.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('文章删除成功')
+      fetchArticles()
+    }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除文章失败:', error)
       ElMessage.error('删除文章失败')
     }
   }

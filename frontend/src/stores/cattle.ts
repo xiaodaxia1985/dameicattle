@@ -48,7 +48,7 @@ export const useCattleStore = defineStore('cattle', () => {
     ).length
   )
 
-  // 获取牛只列表 - 使用安全数据访问
+  // 获取牛只列表 - 使用安全数据访问和统一响应处理
   const fetchCattleList = async (params?: CattleListParams) => {
     loading.value = true
     try {
@@ -60,14 +60,27 @@ export const useCattleStore = defineStore('cattle', () => {
       const response = await cattleApi.getList(searchParams.value)
       console.log('API响应数据:', response)
       
-      // 使用安全访问获取数据
+      // 使用安全访问获取数据，增强错误处理
+      if (!response || typeof response !== 'object') {
+        throw new Error('Invalid API response')
+      }
+      
       const data = ensureArray(safeGet(response, 'data', []))
       const paginationData = safeGet(response, 'pagination', {})
+      
+      // 验证数据完整性
+      const validatedData = data.filter(item => {
+        return item && typeof item === 'object' && item.id && item.ear_tag
+      })
+      
+      if (validatedData.length !== data.length) {
+        console.warn(`过滤了 ${data.length - validatedData.length} 条无效数据`)
+      }
       
       // 创建安全的分页信息
       const safePagination = createSafePagination(paginationData)
       
-      cattleList.value = data
+      cattleList.value = validatedData
       total.value = safePagination.total
       
       console.log('处理后的数据 - 列表长度:', cattleList.value.length, '总数:', total.value)
@@ -75,7 +88,10 @@ export const useCattleStore = defineStore('cattle', () => {
       console.error('获取牛只列表失败:', error)
       cattleList.value = []
       total.value = 0
-      throw error
+      
+      // 提供用户友好的错误信息
+      const errorMessage = error instanceof Error ? error.message : '获取牛只列表失败'
+      throw new Error(errorMessage)
     } finally {
       loading.value = false
     }

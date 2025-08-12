@@ -31,7 +31,7 @@ app.get('/api/v1/auth/health', (req, res) => {
   });
 });
 
-// 简单的认证端点
+// 简单的认证端点 - 生成真正的JWT令牌
 app.post('/api/v1/auth/login', (req, res) => {
   const { username, password } = req.body;
   
@@ -45,15 +45,32 @@ app.post('/api/v1/auth/login', (req, res) => {
   
   // 简单的测试认证
   if (username === 'admin' && password === 'admin123') {
+    // 生成真正的JWT令牌
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'cattle-management-secret-key-2024';
+    
+    const token = jwt.sign(
+      {
+        id: 1,
+        username: 'admin',
+        role_id: 1,
+        base_id: null // admin can access all bases
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
     return res.json({
       success: true,
       message: '登录成功',
       data: {
-        token: 'test-jwt-token',
+        token,
         user: {
           id: 1,
           username: 'admin',
-          role: 'admin'
+          role: 'admin',
+          role_id: 1,
+          base_id: null
         }
       }
     });

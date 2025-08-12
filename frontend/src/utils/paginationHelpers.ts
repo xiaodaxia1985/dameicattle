@@ -1,91 +1,82 @@
 /**
- * Pagination handling utilities
- * Provides consistent pagination data structure handling across components
+ * 分页辅助工具
+ * 用于标准化分页参数和分页信息处理
  */
 
-import type { PaginationInfo, BaseListParams } from '@/types/api'
-import { ensureNumber, safeGet } from './safeAccess'
+import { ensureNumber } from './safeAccess'
 
-/**
- * Default pagination configuration
- */
-export const DEFAULT_PAGINATION_CONFIG = {
-  page: 1,
-  limit: 20,
-  maxLimit: 100,
-  pageSizes: [10, 20, 50, 100]
+export interface PaginationParams {
+  page?: number
+  limit?: number
+  offset?: number
+  [key: string]: any
+}
+
+export interface SafePagination {
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+  offset: number
 }
 
 /**
- * Create safe pagination info from raw data
- * @param data - Raw pagination data
- * @returns Safe pagination info
+ * 规范化分页参数
+ * @param params 原始分页参数
+ * @returns 规范化后的分页参数
  */
-export function createSafePagination(data: any): PaginationInfo {
-  const total = ensureNumber(safeGet(data, 'total', 0), 0)
-  const page = Math.max(1, ensureNumber(safeGet(data, 'page', 1), 1))
-  const limit = Math.max(1, Math.min(
-    ensureNumber(safeGet(data, 'limit', DEFAULT_PAGINATION_CONFIG.limit), DEFAULT_PAGINATION_CONFIG.limit),
-    DEFAULT_PAGINATION_CONFIG.maxLimit
-  ))
-  
-  const totalPages = Math.max(1, Math.ceil(total / limit))
-  const safePage = Math.min(page, totalPages)
+export function normalizePaginationParams(params: PaginationParams = {}): PaginationParams {
+  const page = Math.max(1, ensureNumber(params.page, 1))
+  const limit = Math.max(1, Math.min(100, ensureNumber(params.limit, 20))) // 限制最大100条
+  const offset = (page - 1) * limit
 
+  return {
+    ...params,
+    page,
+    limit,
+    offset
+  }
+}
+
+/**
+ * 创建安全的分页信息
+ * @param paginationData 原始分页数据
+ * @returns 安全的分页信息
+ */
+export function createSafePagination(paginationData: any = {}): SafePagination {
+  const total = ensureNumber(paginationData.total, 0)
+  const page = Math.max(1, ensureNumber(paginationData.page, 1))
+  const limit = Math.max(1, ensureNumber(paginationData.limit, 20))
+  const totalPages = Math.max(1, Math.ceil(total / limit))
+  
+  // 确保当前页不超过总页数
+  const safePage = Math.min(page, totalPages)
+  
   return {
     total,
     page: safePage,
     limit,
     totalPages,
     hasNext: safePage < totalPages,
-    hasPrev: safePage > 1
+    hasPrev: safePage > 1,
+    offset: (safePage - 1) * limit
   }
 }
 
 /**
- * Normalize pagination parameters for API requests
- * @param params - Raw pagination parameters
- * @returns Normalized pagination parameters
+ * 计算分页范围
+ * @param page 当前页
+ * @param totalPages 总页数
+ * @param maxVisible 最大显示页数
+ * @returns 分页范围
  */
-export function normalizePaginationParams(params: any): Required<Pick<BaseListParams, 'page' | 'limit'>> {
-  const page = Math.max(1, ensureNumber(safeGet(params, 'page', 1), 1))
-  const limit = Math.max(1, Math.min(
-    ensureNumber(safeGet(params, 'limit', DEFAULT_PAGINATION_CONFIG.limit), DEFAULT_PAGINATION_CONFIG.limit),
-    DEFAULT_PAGINATION_CONFIG.maxLimit
-  ))
-
-  return { page, limit }
-}
-
-/**
- * Calculate pagination display info
- * @param pagination - Pagination info
- * @returns Display information for pagination component
- */
-export function getPaginationDisplayInfo(pagination: PaginationInfo) {
-  const { total, page, limit } = pagination
-  const start = total === 0 ? 0 : (page - 1) * limit + 1
-  const end = Math.min(page * limit, total)
-
-  return {
-    start,
-    end,
-    total,
-    displayText: total === 0 
-      ? '暂无数据' 
-      : `显示第 ${start} 到第 ${end} 项，共 ${total} 项`
-  }
-}
-
-/**
- * Generate page numbers for pagination component
- * @param pagination - Pagination info
- * @param maxVisible - Maximum visible page numbers
- * @returns Array of page numbers to display
- */
-export function generatePageNumbers(pagination: PaginationInfo, maxVisible: number = 7): number[] {
-  const { page, totalPages } = pagination
-  
+export function calculatePaginationRange(
+  page: number, 
+  totalPages: number, 
+  maxVisible: number = 7
+): number[] {
   if (totalPages <= maxVisible) {
     return Array.from({ length: totalPages }, (_, i) => i + 1)
   }
@@ -94,7 +85,6 @@ export function generatePageNumbers(pagination: PaginationInfo, maxVisible: numb
   let start = Math.max(1, page - half)
   let end = Math.min(totalPages, start + maxVisible - 1)
 
-  // Adjust start if we're near the end
   if (end - start + 1 < maxVisible) {
     start = Math.max(1, end - maxVisible + 1)
   }
@@ -103,32 +93,29 @@ export function generatePageNumbers(pagination: PaginationInfo, maxVisible: numb
 }
 
 /**
- * Check if pagination parameters are valid
- * @param params - Pagination parameters
- * @returns Validation result
+ * 验证分页参数
+ * @param params 分页参数
+ * @returns 验证结果
  */
-export function validatePaginationParams(params: any): {
+export function validatePaginationParams(params: PaginationParams): {
   isValid: boolean
   errors: string[]
-  normalized: Required<Pick<BaseListParams, 'page' | 'limit'>>
+  normalized: PaginationParams
 } {
   const errors: string[] = []
-  const page = ensureNumber(safeGet(params, 'page', 1), 1)
-  const limit = ensureNumber(safeGet(params, 'limit', DEFAULT_PAGINATION_CONFIG.limit), DEFAULT_PAGINATION_CONFIG.limit)
+  
+  const page = params.page
+  const limit = params.limit
 
-  if (page < 1) {
-    errors.push('页码必须大于0')
+  if (page !== undefined && (typeof page !== 'number' || page < 1)) {
+    errors.push('页码必须是大于0的数字')
   }
 
-  if (limit < 1) {
-    errors.push('每页数量必须大于0')
+  if (limit !== undefined && (typeof limit !== 'number' || limit < 1 || limit > 100)) {
+    errors.push('每页数量必须是1-100之间的数字')
   }
 
-  if (limit > DEFAULT_PAGINATION_CONFIG.maxLimit) {
-    errors.push(`每页数量不能超过${DEFAULT_PAGINATION_CONFIG.maxLimit}`)
-  }
-
-  const normalized = normalizePaginationParams({ page, limit })
+  const normalized = normalizePaginationParams(params)
 
   return {
     isValid: errors.length === 0,
@@ -138,148 +125,152 @@ export function validatePaginationParams(params: any): {
 }
 
 /**
- * Create pagination state manager for components
- * @param initialParams - Initial pagination parameters
- * @returns Pagination state manager
+ * 创建分页查询字符串
+ * @param params 分页参数
+ * @returns 查询字符串
  */
-export function createPaginationState(initialParams: Partial<BaseListParams> = {}) {
-  const normalized = normalizePaginationParams(initialParams)
-  
-  let state = {
-    page: normalized.page,
-    limit: normalized.limit,
-    total: 0,
-    loading: false
+export function createPaginationQuery(params: PaginationParams): string {
+  const normalized = normalizePaginationParams(params)
+  const queryParams = new URLSearchParams()
+
+  Object.entries(normalized).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      queryParams.append(key, String(value))
+    }
+  })
+
+  return queryParams.toString()
+}
+
+/**
+ * 从URL解析分页参数
+ * @param url URL字符串或URLSearchParams
+ * @returns 分页参数
+ */
+export function parsePaginationFromUrl(url: string | URLSearchParams): PaginationParams {
+  const searchParams = typeof url === 'string' 
+    ? new URLSearchParams(url.split('?')[1] || '') 
+    : url
+
+  const params: PaginationParams = {}
+
+  if (searchParams.has('page')) {
+    params.page = parseInt(searchParams.get('page') || '1', 10)
   }
+
+  if (searchParams.has('limit')) {
+    params.limit = parseInt(searchParams.get('limit') || '20', 10)
+  }
+
+  // 解析其他查询参数
+  for (const [key, value] of searchParams.entries()) {
+    if (key !== 'page' && key !== 'limit') {
+      params[key] = value
+    }
+  }
+
+  return normalizePaginationParams(params)
+}
+
+/**
+ * 分页数据切片
+ * @param data 原始数据数组
+ * @param page 当前页
+ * @param limit 每页数量
+ * @returns 切片后的数据和分页信息
+ */
+export function paginateArray<T>(
+  data: T[], 
+  page: number = 1, 
+  limit: number = 20
+): {
+  data: T[]
+  pagination: SafePagination
+} {
+  const normalizedParams = normalizePaginationParams({ page, limit })
+  const total = data.length
+  const startIndex = normalizedParams.offset!
+  const endIndex = startIndex + normalizedParams.limit!
+  
+  const slicedData = data.slice(startIndex, endIndex)
+  const pagination = createSafePagination({
+    total,
+    page: normalizedParams.page,
+    limit: normalizedParams.limit
+  })
 
   return {
-    // Get current state
-    getState: () => ({ ...state }),
-    
-    // Update pagination info
-    updatePagination: (pagination: Partial<PaginationInfo>) => {
-      const safePagination = createSafePagination(pagination)
-      state.total = safePagination.total
-      // Ensure current page is within bounds
-      if (state.page > safePagination.totalPages) {
-        state.page = Math.max(1, safePagination.totalPages)
-      }
-    },
-    
-    // Change page
-    changePage: (page: number) => {
-      state.page = Math.max(1, page)
-    },
-    
-    // Change page size
-    changePageSize: (limit: number) => {
-      const oldLimit = state.limit
-      state.limit = Math.max(1, Math.min(limit, DEFAULT_PAGINATION_CONFIG.maxLimit))
-      
-      // Adjust page to maintain roughly the same position
-      if (oldLimit !== state.limit) {
-        const currentItem = (state.page - 1) * oldLimit + 1
-        state.page = Math.max(1, Math.ceil(currentItem / state.limit))
-      }
-    },
-    
-    // Reset to first page
-    reset: () => {
-      state.page = 1
-    },
-    
-    // Set loading state
-    setLoading: (loading: boolean) => {
-      state.loading = loading
-    },
-    
-    // Get current pagination info
-    getPaginationInfo: (): PaginationInfo => {
-      return createSafePagination({
-        total: state.total,
-        page: state.page,
-        limit: state.limit
-      })
-    },
-    
-    // Get parameters for API request
-    getRequestParams: () => ({
-      page: state.page,
-      limit: state.limit
-    })
+    data: slicedData,
+    pagination
   }
 }
 
 /**
- * Merge pagination data from different sources
- * @param sources - Array of pagination data sources
- * @returns Merged pagination info
+ * 合并分页结果
+ * @param results 多个分页结果
+ * @returns 合并后的结果
  */
-export function mergePaginationData(...sources: any[]): PaginationInfo {
-  const merged = sources.reduce((acc, source) => {
-    if (!source || typeof source !== 'object') return acc
-    
+export function mergePaginationResults<T>(
+  results: Array<{ data: T[]; pagination: SafePagination }>
+): { data: T[]; pagination: SafePagination } {
+  if (results.length === 0) {
     return {
-      ...acc,
-      total: safeGet(source, 'total', acc.total),
-      page: safeGet(source, 'page', acc.page),
-      limit: safeGet(source, 'limit', acc.limit),
-      totalPages: safeGet(source, 'totalPages', acc.totalPages)
+      data: [],
+      pagination: createSafePagination()
     }
-  }, {
-    total: 0,
-    page: 1,
-    limit: DEFAULT_PAGINATION_CONFIG.limit,
-    totalPages: 1
+  }
+
+  if (results.length === 1) {
+    return results[0]
+  }
+
+  const mergedData = results.flatMap(result => result.data)
+  const totalItems = results.reduce((sum, result) => sum + result.pagination.total, 0)
+  
+  // 使用第一个结果的分页参数作为基础
+  const basePagination = results[0].pagination
+  const mergedPagination = createSafePagination({
+    total: totalItems,
+    page: basePagination.page,
+    limit: mergedData.length
   })
 
-  return createSafePagination(merged)
-}
-
-/**
- * Convert pagination info to URL search params
- * @param pagination - Pagination info
- * @returns URL search params string
- */
-export function paginationToSearchParams(pagination: Pick<PaginationInfo, 'page' | 'limit'>): string {
-  const params = new URLSearchParams()
-  
-  if (pagination.page && pagination.page > 1) {
-    params.set('page', pagination.page.toString())
+  return {
+    data: mergedData,
+    pagination: mergedPagination
   }
+}
+
+/**
+ * 创建分页导航信息
+ * @param pagination 分页信息
+ * @returns 导航信息
+ */
+export function createPaginationNavigation(pagination: SafePagination) {
+  const { page, totalPages } = pagination
   
-  if (pagination.limit && pagination.limit !== DEFAULT_PAGINATION_CONFIG.limit) {
-    params.set('limit', pagination.limit.toString())
+  return {
+    first: 1,
+    last: totalPages,
+    prev: pagination.hasPrev ? page - 1 : null,
+    next: pagination.hasNext ? page + 1 : null,
+    pages: calculatePaginationRange(page, totalPages),
+    info: {
+      from: pagination.offset + 1,
+      to: Math.min(pagination.offset + pagination.limit, pagination.total),
+      total: pagination.total
+    }
   }
-  
-  return params.toString()
 }
 
-/**
- * Parse pagination info from URL search params
- * @param searchParams - URL search params
- * @returns Pagination parameters
- */
-export function paginationFromSearchParams(searchParams: URLSearchParams | string): Pick<BaseListParams, 'page' | 'limit'> {
-  const params = typeof searchParams === 'string' 
-    ? new URLSearchParams(searchParams) 
-    : searchParams
-
-  return normalizePaginationParams({
-    page: params.get('page'),
-    limit: params.get('limit')
-  })
-}
-
-/**
- * Check if two pagination states are equal
- * @param a - First pagination state
- * @param b - Second pagination state
- * @returns True if equal
- */
-export function isPaginationEqual(
-  a: Pick<PaginationInfo, 'page' | 'limit'>, 
-  b: Pick<PaginationInfo, 'page' | 'limit'>
-): boolean {
-  return a.page === b.page && a.limit === b.limit
+export default {
+  normalizePaginationParams,
+  createSafePagination,
+  calculatePaginationRange,
+  validatePaginationParams,
+  createPaginationQuery,
+  parsePaginationFromUrl,
+  paginateArray,
+  mergePaginationResults,
+  createPaginationNavigation
 }

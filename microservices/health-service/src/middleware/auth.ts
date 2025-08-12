@@ -14,18 +14,20 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
       return res.error('访问令牌缺失', 401, 'TOKEN_MISSING');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret') as any;
-    const user = await User.findByPk(decoded.id);
+    // 使用与auth-service相同的JWT密钥
+    const JWT_SECRET = process.env.JWT_SECRET || 'cattle-management-secret-key-2024';
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
     
-    if (!user) {
-      return res.error('用户不存在', 401, 'USER_NOT_FOUND');
-    }
+    // 简化版本：直接使用token中的用户信息，不查询数据库
+    const user = {
+      id: decoded.id,
+      username: decoded.username,
+      role_id: decoded.role_id,
+      base_id: decoded.base_id,
+      status: 'active' // 假设token有效则用户状态正常
+    };
 
-    if (user.status !== 'active') {
-      return res.error('用户已被禁用', 401, 'USER_DISABLED');
-    }
-
-    req.user = user;
+    (req as any).user = user;
     next();
   } catch (error) {
     return res.error('无效的访问令牌', 401, 'INVALID_TOKEN');

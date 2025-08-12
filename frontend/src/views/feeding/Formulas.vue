@@ -31,28 +31,32 @@
           <template #default="{ row }">
             <div class="ingredients-list">
               <el-tag
-                v-for="(ingredient, index) in row.ingredients.slice(0, 3)"
+                v-for="(ingredient, index) in ensureArray(safeGet(row, 'ingredients', [])).slice(0, 3)"
                 :key="index"
                 size="small"
                 style="margin-right: 4px; margin-bottom: 4px;"
               >
-                {{ ingredient.name }} {{ ingredient.ratio }}%
+                {{ safeGet(ingredient, 'name', '') }} {{ safeGet(ingredient, 'ratio', 0) }}%
               </el-tag>
-              <el-tag v-if="row.ingredients.length > 3" size="small" type="info">
-                +{{ row.ingredients.length - 3 }}
+              <el-tag v-if="ensureArray(safeGet(row, 'ingredients', [])).length > 3" size="small" type="info">
+                +{{ ensureArray(safeGet(row, 'ingredients', [])).length - 3 }}
               </el-tag>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="costPerKg" label="成本(¥/kg)" width="120">
           <template #default="{ row }">
-            ¥{{ row.costPerKg?.toFixed(2) || '0.00' }}
+            ¥{{ ensureNumber(safeGet(row, 'costPerKg', safeGet(row, 'cost_per_kg', 0)), 0).toFixed(2) }}
           </template>
         </el-table-column>
-        <el-table-column prop="createdByName" label="创建人" width="100" />
+        <el-table-column prop="createdByName" label="创建人" width="100">
+          <template #default="{ row }">
+            {{ safeGet(row, 'createdByName', safeGet(row, 'created_by_name', safeGet(row, 'creator.real_name', '-'))) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(safeGet(row, 'createdAt', safeGet(row, 'created_at', ''))) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -144,14 +148,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete } from '@element-plus/icons-vue'
 import { feedingApi } from '@/api/feeding'
 import type { FeedFormula, CreateFormulaRequest, UpdateFormulaRequest, IngredientItem } from '@/api/feeding'
 import IngredientEditor from '@/components/feeding/IngredientEditor.vue'
 import IngredientTable from '@/components/feeding/IngredientTable.vue'
-import { validateData } from '@/utils/dataValidation'
+import { validateData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const formulas = ref<FeedFormula[]>([])
@@ -255,24 +261,90 @@ function validateIngredients(rule: any, value: IngredientItem[], callback: any) 
 }
 
 // 获取配方列表
-const fetchFormulas = async () => {
+const fetchFormulas = withPageErrorHandler(async () => {
   loading.value = true
   try {
-    const response = await feedingApi.getFormulas({
+    const params = {
       page: pagination.value.page,
       limit: pagination.value.limit,
-      keyword: searchKeyword.value
-    })
-    // 根据API实现，response.data 应该是 { data: [...], total: number, page: number, limit: number }
-    formulas.value = response.data.data || []
-    pagination.value.total = response.data.total || 0
-  } catch (error) {
-    console.error('获取配方列表失败:', error)
-    ElMessage.error('获取配方列表失败')
+      keyword: searchKeyword.value || undefined
+    }
+    
+    console.log('🔍 饲料配方API调用参数:', params)
+    
+    const result = await safeApiCall(
+      () => feedingApi.getFormulas(params),
+      {
+        showMessage: false,
+        fallbackValue: { data: { data: [], total: 0 } }
+      }
+    )
+    
+    console.log('📥 饲料配方API原始响应:', result)
+    
+    if (result && result.data) {
+      // 尝试多种可能的数据结构
+      let formulasData = []
+      
+      // 检查不同的数据结构
+      if (result.data.data) {
+        formulasData = ensureArray(result.data.data)
+      } else if (result.data.formulas) {
+        formulasData = ensureArray(result.data.formulas)
+      } else if (Array.isArray(result.data)) {
+        formulasData = result.data
+      } else {
+        formulasData = []
+      }
+      
+      console.log('📋 提取的配方数据:', formulasData)
+      
+      formulas.value = validateDataArray(formulasData, (formula: any) => {
+        if (!formula || typeof formula !== 'object') return null
+        
+        console.log('🔧 处理单条配方:', formula)
+        
+        // 标准化数据字段，处理不同的字段名
+        const normalizedFormula = {
+          id: safeGet(formula, 'id', ''),
+          name: safeGet(formula, 'name', ''),
+          description: safeGet(formula, 'description', ''),
+          ingredients: ensureArray(safeGet(formula, 'ingredients', [])),
+          costPerKg: ensureNumber(safeGet(formula, 'costPerKg', safeGet(formula, 'cost_per_kg', 0)), 0),
+          createdBy: safeGet(formula, 'createdBy', safeGet(formula, 'created_by', '')),
+          createdByName: safeGet(formula, 'createdByName', safeGet(formula, 'created_by_name', safeGet(formula, 'creator.real_name', ''))),
+          createdAt: safeGet(formula, 'createdAt', safeGet(formula, 'created_at', '')),
+          updatedAt: safeGet(formula, 'updatedAt', safeGet(formula, 'updated_at', ''))
+        }
+        
+        console.log('✅ 标准化后的配方:', normalizedFormula)
+        
+        // 验证必要字段
+        return normalizedFormula.id && normalizedFormula.name ? normalizedFormula : null
+      })
+      
+      // 获取总数
+      let total = 0
+      if (result.data.total !== undefined) {
+        total = ensureNumber(result.data.total, 0)
+      } else if (result.data.pagination && result.data.pagination.total !== undefined) {
+        total = ensureNumber(result.data.pagination.total, 0)
+      } else {
+        total = formulas.value.length
+      }
+      
+      pagination.value.total = total
+      
+      console.log('✅ 饲料配方数据加载完成:', formulas.value.length, '条记录，总数:', pagination.value.total)
+    } else {
+      console.log('❌ 饲料配方API返回空数据')
+      formulas.value = []
+      pagination.value.total = 0
+    }
   } finally {
     loading.value = false
   }
-}
+}, '获取配方列表失败')
 
 // 搜索
 const handleSearch = () => {
@@ -334,7 +406,7 @@ const copyFormula = (formula: FeedFormula) => {
 const deleteFormula = async (formula: FeedFormula) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除配方"${formula.name}"吗？此操作不可恢复。`,
+      `确定要删除配方"${safeGet(formula, 'name', '未知')}"吗？此操作不可恢复。`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -343,12 +415,20 @@ const deleteFormula = async (formula: FeedFormula) => {
       }
     )
     
-    await feedingApi.deleteFormula(formula.id)
-    ElMessage.success('删除成功')
-    fetchFormulas()
+    const result = await safeApiCall(
+      () => feedingApi.deleteFormula(ensureNumber(formula.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('删除成功')
+      fetchFormulas()
+    }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除配方失败:', error)
       ElMessage.error('删除配方失败')
     }
   }
@@ -360,50 +440,45 @@ const handleIngredientsSave = (ingredients: IngredientItem[]) => {
 }
 
 // 提交表单
-const submitForm = async () => {
-  console.log('submitForm called')
-  console.log('formRef.value:', formRef.value)
-  console.log('formData.value:', formData.value)
-  
+const submitForm = withFormErrorHandler(async () => {
   if (!formRef.value) {
-    console.error('formRef is null')
     ElMessage.error('表单引用为空')
     return
   }
   
+  await formRef.value.validate()
+  submitting.value = true
+  
   try {
-    console.log('开始表单验证...')
-    await formRef.value.validate()
-    console.log('表单验证通过')
-    
-    submitting.value = true
-    
-    console.log('准备调用API, dialogMode:', dialogMode.value)
-    
     if (dialogMode.value === 'create') {
-      console.log('调用创建API, 数据:', formData.value)
-      const result = await feedingApi.createFormula(formData.value)
-      console.log('创建API响应:', result)
-      ElMessage.success('创建成功')
+      const result = await safeApiCall(
+        () => feedingApi.createFormula(formData.value),
+        {
+          showMessage: false,
+          fallbackValue: null
+        }
+      )
+      if (result !== null) {
+        dialogVisible.value = false
+        fetchFormulas()
+      }
     } else {
-      console.log('调用更新API, ID:', selectedFormula.value?.id, '数据:', formData.value)
-      const result = await feedingApi.updateFormula(selectedFormula.value!.id, formData.value)
-      console.log('更新API响应:', result)
-      ElMessage.success('更新成功')
+      const result = await safeApiCall(
+        () => feedingApi.updateFormula(ensureNumber(selectedFormula.value?.id, 0), formData.value),
+        {
+          showMessage: false,
+          fallbackValue: null
+        }
+      )
+      if (result !== null) {
+        dialogVisible.value = false
+        fetchFormulas()
+      }
     }
-    
-    dialogVisible.value = false
-    fetchFormulas()
-  } catch (error) {
-    console.error('提交失败:', error)
-    if (error.errors) {
-      console.error('验证错误:', error.errors)
-    }
-    ElMessage.error('提交失败: ' + (error.message || '未知错误'))
   } finally {
     submitting.value = false
   }
-}
+}, dialogMode.value === 'create' ? '创建成功' : '更新成功', '提交失败')
 
 // 重置表单
 const resetForm = () => {
@@ -419,9 +494,13 @@ const resetForm = () => {
     }]
   }
   selectedFormula.value = null
-  if (formRef.value) {
-    formRef.value.clearValidate()
-  }
+  
+  // 使用 nextTick 确保 DOM 更新后再清除验证
+  nextTick(() => {
+    if (formRef.value && typeof formRef.value.clearValidate === 'function') {
+      formRef.value.clearValidate()
+    }
+  })
 }
 
 // 格式化日期

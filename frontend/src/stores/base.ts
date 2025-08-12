@@ -14,11 +14,39 @@ export const useBaseStore = defineStore('base', () => {
     loading.value = true
     try {
       const response = await baseApi.getBases(params)
-      // 后端返回的数据结构是 { data: { bases: [], pagination: {} } }
-      bases.value = response.data.bases || response.data.data || []
-      return response.data
+      console.log('fetchBases 原始响应:', response)
+      
+      // 使用安全访问处理响应数据
+      const responseData = response?.data || response || {}
+      let basesData: Base[] = []
+      
+      // 尝试多种可能的数据结构
+      if (Array.isArray(responseData)) {
+        basesData = responseData
+      } else if (Array.isArray(responseData.bases)) {
+        basesData = responseData.bases
+      } else if (Array.isArray(responseData.data)) {
+        basesData = responseData.data
+      } else if (responseData.data && Array.isArray(responseData.data.bases)) {
+        basesData = responseData.data.bases
+      }
+      
+      // 验证数据完整性
+      const validatedBases = basesData.filter(base => 
+        base && typeof base === 'object' && base.id && base.name
+      )
+      
+      if (validatedBases.length !== basesData.length) {
+        console.warn(`过滤了 ${basesData.length - validatedBases.length} 条无效基地数据`)
+      }
+      
+      bases.value = validatedBases
+      console.log('处理后的基地数据:', bases.value)
+      
+      return responseData
     } catch (error) {
       console.error('获取基地列表失败:', error)
+      bases.value = []
       throw error
     } finally {
       loading.value = false

@@ -88,36 +88,36 @@
         <el-table-column prop="phone" label="手机号" width="130" />
         <el-table-column label="角色" width="120">
           <template #default="{ row }">
-            <el-tag v-if="row.role && row.role.name" :type="getRoleTagType(row.role.name)">
-              {{ row.role.name }}
+            <el-tag v-if="safeGet(row, 'role.name', '')" :type="getRoleTagType(safeGet(row, 'role.name', ''))">
+              {{ safeGet(row, 'role.name', '') }}
             </el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column label="所属基地" width="150">
           <template #default="{ row }">
-            <span v-if="row.base">{{ row.base.name }}</span>
+            <span v-if="safeGet(row, 'base.name', '')">{{ safeGet(row, 'base.name', '') }}</span>
             <span v-else>-</span>
           </template>
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getStatusTagType(row.status)">
-              {{ getStatusText(row.status) }}
+            <el-tag :type="getStatusTagType(safeGet(row, 'status', 'active'))">
+              {{ getStatusText(safeGet(row, 'status', 'active')) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="最后登录" width="160">
           <template #default="{ row }">
-            <span v-if="row.last_login_at">
-              {{ formatDateTime(row.last_login_at) }}
+            <span v-if="safeGet(row, 'last_login_at', '')">
+              {{ formatDateTime(safeGet(row, 'last_login_at', '')) }}
             </span>
             <span v-else>从未登录</span>
           </template>
         </el-table-column>
         <el-table-column prop="created_at" label="创建时间" width="160">
           <template #default="{ row }">
-            {{ formatDateTime(row.created_at) }}
+            {{ formatDateTime(safeGet(row, 'created_at', '')) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -389,7 +389,9 @@ import { useAuthStore } from '@/stores/auth'
 import type { User, Role, Base } from '@/types/auth'
 import type { Base as ApiBase } from '@/api/base'
 import type { OperationLog } from '@/api/user'
-import { validatePaginationData, validateDataArray, validateUserData, validateBaseData } from '@/utils/dataValidation'
+import { validatePaginationData, validateDataArray, validateUserData, validateBaseData, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet } from '@/utils/safeAccess'
 
 const authStore = useAuthStore()
 
@@ -524,48 +526,71 @@ const validBases = computed(() => {
 })
 
 // 方法
-const loadUsers = async () => {
+const loadUsers = withPageErrorHandler(async () => {
+  loading.value = true
   try {
-    loading.value = true
     const params: UserListParams = {
       page: pagination.page,
       limit: pagination.limit,
       ...searchForm
     }
     
-    const response = await userApi.getUsers(params)
+    const result = await safeApiCall(
+      () => userApi.getUsers(params),
+      {
+        showMessage: false,
+        fallbackValue: { data: [], pagination: { total: 0 } }
+      }
+    )
     
-    // 使用数据验证工具处理响应
-    const validatedData = validatePaginationData(response)
-    
-    // 验证每个用户数据
-    users.value = validateDataArray(validatedData.data, validateUserData)
-    pagination.total = validatedData.pagination.total
-  } catch (error) {
-    console.error('Load users error:', error)
-    ElMessage.error('加载用户列表失败')
-    users.value = []
-    pagination.total = 0
+    if (result) {
+      const validatedData = validatePaginationData(result)
+      users.value = validateDataArray(validatedData.data, validateUserData)
+      pagination.total = validatedData.pagination.total
+    }
   } finally {
     loading.value = false
   }
-}
+}, '加载用户列表失败')
 
 const loadRoles = async () => {
-  try {
-    roles.value = await userApi.getRoles()
-  } catch (error) {
-    console.error('Load roles error:', error)
+  const result = await safeApiCall(
+    () => userApi.getRoles(),
+    {
+      showMessage: false,
+      fallbackValue: []
+    }
+  )
+  
+  if (result) {
+    roles.value = ensureArray(result).filter(role => 
+      role && 
+      typeof role === 'object' && 
+      ensureNumber(role.id, 0) > 0 &&
+      role.name &&
+      typeof role.name === 'string'
+    )
   }
 }
 
 const loadBases = async () => {
-  try {
-    const response = await baseApi.getAllBases()
-    // 根据API实现，response.data 应该是基地数组
-    bases.value = response.data || []
-  } catch (error) {
-    console.error('Load bases error:', error)
+  const result = await safeApiCall(
+    () => baseApi.getAllBases(),
+    {
+      showMessage: false,
+      fallbackValue: { data: [] }
+    }
+  )
+  
+  if (result && result.data) {
+    const basesData = ensureArray(safeGet(result, 'data', []))
+    bases.value = basesData.filter(base => 
+      base && 
+      typeof base === 'object' && 
+      ensureNumber(base.id, 0) > 0 &&
+      base.name &&
+      typeof base.name === 'string'
+    )
   }
 }
 
@@ -639,13 +664,13 @@ const resetUserForm = () => {
   })
 }
 
-const handleSubmit = async () => {
+const handleSubmit = withFormErrorHandler(async () => {
   if (!userFormRef.value) return
   
+  await userFormRef.value.validate()
+  submitLoading.value = true
+  
   try {
-    await userFormRef.value.validate()
-    submitLoading.value = true
-    
     if (isEdit.value && userForm.id) {
       const updateData: UpdateUserRequest = {
         real_name: userForm.real_name,
@@ -655,8 +680,19 @@ const handleSubmit = async () => {
         base_id: userForm.base_id,
         status: userForm.status
       }
-      await userApi.updateUser(userForm.id, updateData)
-      ElMessage.success('用户更新成功')
+      
+      const result = await safeApiCall(
+        () => userApi.updateUser(ensureNumber(userForm.id, 0), updateData),
+        {
+          showMessage: false,
+          fallbackValue: null
+        }
+      )
+      
+      if (result !== null) {
+        dialogVisible.value = false
+        loadUsers()
+      }
     } else {
       const createData: CreateUserRequest = {
         username: userForm.username,
@@ -668,19 +704,24 @@ const handleSubmit = async () => {
         base_id: userForm.base_id,
         status: userForm.status
       }
-      await userApi.createUser(createData)
-      ElMessage.success('用户创建成功')
+      
+      const result = await safeApiCall(
+        () => userApi.createUser(createData),
+        {
+          showMessage: false,
+          fallbackValue: null
+        }
+      )
+      
+      if (result !== null) {
+        dialogVisible.value = false
+        loadUsers()
+      }
     }
-    
-    dialogVisible.value = false
-    loadUsers()
-  } catch (error: any) {
-    console.error('Submit user error:', error)
-    ElMessage.error(error.message || '操作失败')
   } finally {
     submitLoading.value = false
   }
-}
+}, isEdit.value ? '用户更新成功' : '用户创建成功', '操作失败')
 
 const handleResetPassword = (user: User) => {
   currentResetUser.value = user
@@ -689,23 +730,28 @@ const handleResetPassword = (user: User) => {
   resetPasswordForm.confirmPassword = ''
 }
 
-const handleResetPasswordSubmit = async () => {
+const handleResetPasswordSubmit = withFormErrorHandler(async () => {
   if (!resetPasswordFormRef.value || !currentResetUser.value) return
   
+  await resetPasswordFormRef.value.validate()
+  resetPasswordLoading.value = true
+  
   try {
-    await resetPasswordFormRef.value.validate()
-    resetPasswordLoading.value = true
+    const result = await safeApiCall(
+      () => userApi.resetPassword(ensureNumber(currentResetUser.value!.id, 0), resetPasswordForm.password),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
     
-    await userApi.resetPassword(currentResetUser.value.id, resetPasswordForm.password)
-    ElMessage.success('密码重置成功')
-    resetPasswordVisible.value = false
-  } catch (error: any) {
-    console.error('Reset password error:', error)
-    ElMessage.error(error.message || '密码重置失败')
+    if (result !== null) {
+      resetPasswordVisible.value = false
+    }
   } finally {
     resetPasswordLoading.value = false
   }
-}
+}, '密码重置成功', '密码重置失败')
 
 const handleBatchDelete = async () => {
   if (selectedUsers.value.length === 0) return
@@ -721,14 +767,22 @@ const handleBatchDelete = async () => {
       }
     )
     
-    const ids = selectedUsers.value.map(user => user.id)
-    await userApi.batchDeleteUsers(ids)
-    ElMessage.success('批量删除成功')
-    loadUsers()
+    const ids = selectedUsers.value.map(user => ensureNumber(user.id, 0))
+    const result = await safeApiCall(
+      () => userApi.batchDeleteUsers(ids),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('批量删除成功')
+      loadUsers()
+    }
   } catch (error: any) {
     if (error !== 'cancel') {
-      console.error('Batch delete error:', error)
-      ElMessage.error(error.message || '批量删除失败')
+      ElMessage.error('批量删除失败')
     }
   }
 }

@@ -271,61 +271,64 @@
       </el-card>
     </div>
 
-    <!-- 对话框组件 -->
-    <CattleFormDialog
-      v-model="showFormDialog"
-      :cattle="currentCattle"
-      @success="handleFormSuccess"
-    />
+    <!-- 对话框组件 - 使用条件渲染避免组件不存在的错误 -->
+    <template v-if="showFormDialog">
+      <CattleFormDialog
+        v-model="showFormDialog"
+        :cattle="currentCattle"
+        @success="handleFormSuccess"
+      />
+    </template>
 
-    <BatchImportDialog
-      v-model="showImportDialog"
-      @success="handleImportSuccess"
-    />
+    <template v-if="showImportDialog">
+      <BatchImportDialog
+        v-model="showImportDialog"
+        @success="handleImportSuccess"
+      />
+    </template>
 
-    <BatchTransferDialog
-      v-model="showTransferDialog"
-      :cattle-ids="selectedCattle"
-      @success="handleTransferSuccess"
-    />
+    <template v-if="showTransferDialog">
+      <BatchTransferDialog
+        v-model="showTransferDialog"
+        :cattle-ids="selectedCattle"
+        @success="handleTransferSuccess"
+      />
+    </template>
 
     <!-- 生命周期事件对话框 -->
     <el-dialog
       v-model="showLifecycleDialog"
-      :title="`${currentCattle?.ear_tag} - 生命周期事件`"
+      :title="`${safeGet(currentCattle, 'ear_tag', '未知')} - 生命周期事件`"
       width="80%"
       top="5vh"
     >
-      <LifecycleEvents
-        v-if="currentCattle && showLifecycleDialog"
-        :cattle-id="currentCattle.id"
-      />
+      <template v-if="currentCattle && showLifecycleDialog">
+        <LifecycleEvents :cattle-id="currentCattle.id" />
+      </template>
     </el-dialog>
 
     <!-- 照片管理对话框 -->
     <el-dialog
       v-model="showPhotoDialog"
-      :title="`${currentCattle?.ear_tag} - 照片管理`"
+      :title="`${safeGet(currentCattle, 'ear_tag', '未知')} - 照片管理`"
       width="80%"
       top="5vh"
     >
-      <PhotoManager
-        v-if="currentCattle && showPhotoDialog"
-        :cattle-id="currentCattle.id"
-      />
+      <template v-if="currentCattle && showPhotoDialog">
+        <PhotoManager :cattle-id="currentCattle.id" />
+      </template>
     </el-dialog>
 
     <!-- 转群管理对话框 -->
     <el-dialog
       v-model="showSingleTransferDialog"
-      :title="`${currentCattle?.ear_tag} - 转群管理`"
+      :title="`${safeGet(currentCattle, 'ear_tag', '未知')} - 转群管理`"
       width="80%"
       top="5vh"
     >
-      <TransferManager
-        v-if="currentCattle && showSingleTransferDialog"
-        :cattle-id="currentCattle.id"
-      />
+      <template v-if="currentCattle && showSingleTransferDialog">
+        <TransferManager :cattle-id="currentCattle.id" />
+      </template>
     </el-dialog>
   </div>
 </template>
@@ -353,6 +356,7 @@ import { useBaseStore } from '@/stores/base'
 import { cattleApi, type Cattle } from '@/api/cattle'
 import { safeGet, ensureArray, ensureNumber } from '@/utils/safeAccess'
 import { validatePaginationData, validateDataArray, validateCattleData, validateStatisticsData } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler } from '@/utils/errorHandler'
 import CattleFormDialog from '@/components/cattle/CattleFormDialog.vue'
 import BatchImportDialog from '@/components/cattle/BatchImportDialog.vue'
 import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
@@ -451,22 +455,26 @@ onMounted(async () => {
   }
 })
 
-const loadCattleList = async () => {
-  try {
-    console.log('开始加载牛只列表...')
-    console.log('搜索参数:', searchForm)
-    
-    await cattleStore.fetchCattleList({
+const loadCattleList = withPageErrorHandler(async () => {
+  console.log('开始加载牛只列表...')
+  console.log('搜索参数:', searchForm)
+  
+  const result = await safeApiCall(
+    () => cattleStore.fetchCattleList({
       ...searchForm,
-      page: currentPage.value
-    })
-    
+      page: currentPage.value,
+      limit: pageSize.value
+    }),
+    {
+      showMessage: false,
+      fallbackValue: null
+    }
+  )
+  
+  if (result) {
     console.log('牛只列表加载成功:', cattleStore.cattleList)
-  } catch (error) {
-    console.error('加载牛只列表失败:', error)
-    ElMessage.error('加载牛只列表失败: ' + (error as Error).message)
   }
-}
+}, '加载牛只列表失败')
 
 const handleSearch = () => {
   cattleStore.searchParams.page = 1
@@ -534,7 +542,7 @@ const editCattle = (cattle: Cattle) => {
 const confirmDelete = async (cattle: Cattle) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除牛只 ${cattle.ear_tag} 吗？`,
+      `确定要删除牛只 ${safeGet(cattle, 'ear_tag', '未知')} 吗？`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -542,8 +550,19 @@ const confirmDelete = async (cattle: Cattle) => {
         type: 'warning',
       }
     )
-    await cattleStore.deleteCattle(cattle.id)
-    ElMessage.success('删除成功')
+    
+    const result = await safeApiCall(
+      () => cattleStore.deleteCattle(ensureNumber(cattle.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('删除成功')
+      await loadCattleList()
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
@@ -581,17 +600,26 @@ const showBatchTransferDialog = () => {
 }
 
 const handleExport = async () => {
-  try {
-    const blob = await cattleApi.export(searchForm)
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `cattle_export_${dayjs().format('YYYY-MM-DD')}.xlsx`
-    link.click()
-    window.URL.revokeObjectURL(url)
-    ElMessage.success('导出成功')
-  } catch (error) {
-    ElMessage.error('导出失败')
+  const result = await safeApiCall(
+    () => cattleApi.export(searchForm),
+    {
+      showMessage: false,
+      fallbackValue: null
+    }
+  )
+  
+  if (result) {
+    try {
+      const url = window.URL.createObjectURL(result)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `cattle_export_${dayjs().format('YYYY-MM-DD')}.xlsx`
+      link.click()
+      window.URL.revokeObjectURL(url)
+      ElMessage.success('导出成功')
+    } catch (error) {
+      ElMessage.error('文件下载失败')
+    }
   }
 }
 

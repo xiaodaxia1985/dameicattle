@@ -98,41 +98,41 @@
         <el-table-column prop="order_number" label="订单号" width="150" />
         <el-table-column label="客户" min-width="120">
           <template #default="{ row }">
-            {{ row.customer?.name }}
+            {{ safeGet(row, 'customer.name', '-') }}
           </template>
         </el-table-column>
         <el-table-column prop="total_amount" label="订单金额" width="120">
           <template #default="{ row }">
-            ¥{{ row.total_amount?.toLocaleString() || 0 }}
+            ¥{{ ensureNumber(safeGet(row, 'total_amount', safeGet(row, 'totalAmount', 0)), 0).toLocaleString() }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="订单状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getStatusColor(row.status)">
-              {{ getStatusText(row.status) }}
+            <el-tag :type="getStatusColor(safeGet(row, 'status', 'pending'))">
+              {{ getStatusText(safeGet(row, 'status', 'pending')) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="payment_status" label="付款状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getPaymentStatusColor(row.payment_status)">
-              {{ getPaymentStatusText(row.payment_status) }}
+            <el-tag :type="getPaymentStatusColor(safeGet(row, 'payment_status', safeGet(row, 'paymentStatus', 'unpaid')))">
+              {{ getPaymentStatusText(safeGet(row, 'payment_status', safeGet(row, 'paymentStatus', 'unpaid'))) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="order_date" label="订单日期" width="120">
           <template #default="{ row }">
-            {{ formatDate(row.order_date) }}
+            {{ formatDate(safeGet(row, 'order_date', safeGet(row, 'orderDate', ''))) }}
           </template>
         </el-table-column>
         <el-table-column prop="delivery_date" label="预计交付" width="120">
           <template #default="{ row }">
-            {{ formatDate(row.delivery_date) }}
+            {{ formatDate(safeGet(row, 'delivery_date', safeGet(row, 'expectedDeliveryDate', ''))) }}
           </template>
         </el-table-column>
         <el-table-column label="创建人" width="100">
           <template #default="{ row }">
-            {{ row.creator?.real_name }}
+            {{ safeGet(row, 'creator.real_name', '-') }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="250" fixed="right">
@@ -188,7 +188,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { salesApi, type SalesOrder } from '@/api/sales'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
-import { validateData } from '@/utils/dataValidation'
+import { validateData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const loading = ref(false)
@@ -233,54 +235,74 @@ const pagination = reactive({
 })
 
 // 方法
-const fetchOrders = async () => {
+const fetchOrders = withPageErrorHandler(async () => {
   loading.value = true
   try {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
-      order_number: searchForm.orderNumber,
+      order_number: searchForm.orderNumber || undefined,
       customer_id: searchForm.customerId,
-      status: searchForm.status,
-      payment_status: searchForm.paymentStatus,
+      status: searchForm.status || undefined,
+      payment_status: searchForm.paymentStatus || undefined,
       start_date: searchForm.dateRange?.[0],
       end_date: searchForm.dateRange?.[1]
     }
     
-    const response = await salesApi.getOrders(params)
+    const result = await safeApiCall(
+      () => salesApi.getOrders(params),
+      {
+        showMessage: false,
+        fallbackValue: { data: { items: [], total: 0 } }
+      }
+    )
     
-    // 使用数据验证工具处理响应
-    const responseData = response.data || response
-    const ordersArray = validateData.safeArray(responseData.data || responseData)
-    
-    // 验证每个订单数据
-    orders.value = validateData.filterValidData(ordersArray, validateData.validateSalesOrder)
-    pagination.total = validateData.safeNumber(responseData.pagination?.total || responseData.total, 0)
-  } catch (error) {
-    console.error('获取订单列表失败:', error)
-    ElMessage.error('获取订单列表失败')
-    orders.value = []
-    pagination.total = 0
+    if (result && result.data) {
+      const ordersData = ensureArray(safeGet(result, 'data.items', []))
+      orders.value = validateDataArray(ordersData, (order: any) => {
+        return order && 
+               typeof order === 'object' && 
+               ensureNumber(order.id, 0) > 0 &&
+               order.order_number &&
+               typeof order.order_number === 'string' ? order : null
+      })
+      pagination.total = ensureNumber(safeGet(result, 'data.total', 0))
+    }
   } finally {
     loading.value = false
   }
-}
+}, '获取订单列表失败')
 
 const fetchCustomers = async () => {
-  try {
-    const response = await salesApi.getCustomers({ limit: 100 })
-    // 根据API实现，response.data 应该是 { items: [...], total: number, page: number, limit: number }
-    customerOptions.value = response.data.items || []
-  } catch (error) {
-    console.error('获取客户列表失败')
+  const result = await safeApiCall(
+    () => salesApi.getCustomers({ limit: 100 }),
+    {
+      showMessage: false,
+      fallbackValue: { data: { items: [] } }
+    }
+  )
+  
+  if (result && result.data) {
+    const customersData = ensureArray(safeGet(result, 'data.items', []))
+    customerOptions.value = customersData.filter(customer => 
+      customer && 
+      typeof customer === 'object' && 
+      ensureNumber(customer.id, 0) > 0 &&
+      customer.name &&
+      typeof customer.name === 'string'
+    )
   }
 }
 
 // 级联选择变更处理
-const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
-  searchForm.cascade = value
-  pagination.page = 1
-  fetchOrders()
+const handleCascadeChange = async (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  // 使用 modulesFix 工具进行安全的级联数据处理
+  const { handleCascadeChange: safeCascadeChange } = await import('@/utils/modulesFix')
+  
+  safeCascadeChange(value, searchForm, () => {
+    pagination.page = 1
+    fetchOrders()
+  })
 }
 
 const handleSearch = () => {
@@ -323,9 +345,19 @@ const handleApprove = async (row: SalesOrder) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await salesApi.approveOrder(row.id)
-    ElMessage.success('审批成功')
-    fetchOrders()
+    
+    const result = await safeApiCall(
+      () => salesApi.approveOrder(ensureNumber(row.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('审批成功')
+      fetchOrders()
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('审批失败')
@@ -341,9 +373,18 @@ const handleCancel = async (row: SalesOrder) => {
       inputPlaceholder: '请输入取消原因'
     })
     
-    await salesApi.cancelOrder(row.id, reason)
-    ElMessage.success('取消成功')
-    fetchOrders()
+    const result = await safeApiCall(
+      () => salesApi.cancelOrder(ensureNumber(row.id, 0), reason || '用户取消'),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('取消成功')
+      fetchOrders()
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('取消失败')

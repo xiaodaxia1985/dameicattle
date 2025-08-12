@@ -569,12 +569,16 @@ const fetchOrders = async () => {
     
     const response = await purchaseApi.getOrders(params)
     
-    // 使用数据验证工具处理响应
-    const validatedData = validatePaginationData(response.data || response)
+    // 处理响应数据
+    const responseData = response.data || response
+    console.log('采购订单API响应:', responseData)
     
-    // 验证每个订单数据
-    orders.value = validateDataArray(validatedData.data, validateOrderData)
-    pagination.total = validatedData.pagination.total
+    // 使用 modulesFix 工具进行数据标准化处理
+    const { normalizeDataList, fixProcurementOrderData } = await import('@/utils/modulesFix')
+    
+    const normalized = normalizeDataList(responseData, 'orders', fixProcurementOrderData)
+    orders.value = normalized.data
+    pagination.total = normalized.pagination.total
   } catch (error) {
     console.error('获取订单列表失败:', error)
     ElMessage.error('获取订单列表失败')
@@ -600,10 +604,14 @@ const fetchSuppliers = async () => {
 }
 
 // 级联选择变更处理
-const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
-  searchForm.cascade = value
-  pagination.page = 1
-  fetchOrders()
+const handleCascadeChange = async (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  // 使用 modulesFix 工具进行安全的级联数据处理
+  const { handleCascadeChange: safeCascadeChange } = await import('@/utils/modulesFix')
+  
+  safeCascadeChange(value, searchForm, () => {
+    pagination.page = 1
+    fetchOrders()
+  })
 }
 
 const handleSearch = () => {

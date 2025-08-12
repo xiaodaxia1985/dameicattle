@@ -47,24 +47,40 @@
         v-loading="loading"
         stripe
       >
-        <el-table-column prop="name" label="客户名称" min-width="150" />
-        <el-table-column prop="contact_person" label="联系人" width="120" />
-        <el-table-column prop="phone" label="联系电话" width="150" />
-        <el-table-column prop="customer_type" label="类型" width="120" />
+        <el-table-column prop="name" label="客户名称" min-width="150">
+          <template #default="{ row }">
+            {{ safeGet(row, 'name', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="contact_person" label="联系人" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'contact_person', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="phone" label="联系电话" width="150">
+          <template #default="{ row }">
+            {{ safeGet(row, 'phone', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="customer_type" label="类型" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'customer_type', '-') }}
+          </template>
+        </el-table-column>
         <el-table-column prop="credit_rating" label="评级" width="120">
           <template #default="{ row }">
-            <el-rate v-model="row.credit_rating" disabled show-score />
+            <el-rate :model-value="ensureNumber(safeGet(row, 'credit_rating', 0), 0)" disabled show-score />
           </template>
         </el-table-column>
         <el-table-column prop="credit_limit" label="信用额度" width="120">
           <template #default="{ row }">
-            ¥{{ row.credit_limit?.toLocaleString() || 0 }}
+            ¥{{ ensureNumber(safeGet(row, 'credit_limit', 0), 0).toLocaleString() }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-              {{ row.status === 'active' ? '启用' : '停用' }}
+            <el-tag :type="safeGet(row, 'status', 'active') === 'active' ? 'success' : 'danger'">
+              {{ safeGet(row, 'status', 'active') === 'active' ? '启用' : '停用' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -395,7 +411,9 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { salesApi, type Customer } from '@/api/sales'
-import { validateData } from '@/utils/dataValidation'
+import { validateData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const loading = ref(false)
@@ -486,33 +504,52 @@ const visitRules = {
 const dialogTitle = computed(() => isEdit.value ? '编辑客户' : '新增客户')
 
 // 方法
-const fetchCustomers = async () => {
+const fetchCustomers = withPageErrorHandler(async () => {
   loading.value = true
   try {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
-      search: searchForm.name,
-      customer_type: searchForm.customerType,
+      search: searchForm.name || undefined,
+      customer_type: searchForm.customerType || undefined,
       credit_rating: searchForm.creditRating
     }
-    const response = await salesApi.getCustomers(params)
-    // 根据API实现，response.data 应该是 { items: [...], total: number, page: number, limit: number }
-    customers.value = response.data.items || []
-    pagination.total = response.data.total || 0
-  } catch (error) {
-    ElMessage.error('获取客户列表失败')
+    
+    const result = await safeApiCall(
+      () => salesApi.getCustomers(params),
+      {
+        showMessage: false,
+        fallbackValue: { data: { items: [], total: 0 } }
+      }
+    )
+    
+    if (result && result.data) {
+      const customersData = ensureArray(safeGet(result, 'data.items', []))
+      customers.value = validateDataArray(customersData, (customer: any) => {
+        return customer && 
+               typeof customer === 'object' && 
+               ensureNumber(customer.id, 0) > 0 &&
+               customer.name &&
+               typeof customer.name === 'string' ? customer : null
+      })
+      pagination.total = ensureNumber(safeGet(result, 'data.total', 0))
+    }
   } finally {
     loading.value = false
   }
-}
+}, '获取客户列表失败')
 
 const fetchCustomerTypes = async () => {
-  try {
-    const response = await salesApi.getCustomerTypes()
-    customerTypes.value = response.data || []
-  } catch (error) {
-    console.error('获取客户类型失败')
+  const result = await safeApiCall(
+    () => salesApi.getCustomerTypes(),
+    {
+      showMessage: false,
+      fallbackValue: { data: [] }
+    }
+  )
+  
+  if (result && result.data) {
+    customerTypes.value = ensureArray(safeGet(result, 'data', []))
   }
 }
 
@@ -542,14 +579,21 @@ const handleEdit = (row: Customer) => {
   dialogVisible.value = true
 }
 
-const handleView = (row: Customer) => {
-  // 获取客户详情
-  salesApi.getCustomer(row.id).then(response => {
-    currentCustomer.value = response.data
+const handleView = async (row: Customer) => {
+  const result = await safeApiCall(
+    () => salesApi.getCustomer(ensureNumber(row.id, 0)),
+    {
+      showMessage: false,
+      fallbackValue: null
+    }
+  )
+  
+  if (result && result.data) {
+    currentCustomer.value = result.data
     detailDialogVisible.value = true
-  }).catch(() => {
+  } else {
     ElMessage.error('获取客户详情失败')
-  })
+  }
 }
 
 const handleDelete = async (row: Customer) => {
@@ -559,9 +603,19 @@ const handleDelete = async (row: Customer) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await salesApi.deleteCustomer(row.id)
-    ElMessage.success('客户已停用')
-    fetchCustomers()
+    
+    const result = await safeApiCall(
+      () => salesApi.deleteCustomer(ensureNumber(row.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('客户已停用')
+      fetchCustomers()
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('停用失败')
@@ -585,52 +639,79 @@ const handleVisit = (row: Customer) => {
   visitDialogVisible.value = true
 }
 
-const submitVisit = async () => {
+const submitVisit = withFormErrorHandler(async () => {
   if (!visitFormRef.value || !visitForm.customer_id) return
   
-  try {
-    await visitFormRef.value.validate()
-    submitting.value = true
-    
-    await salesApi.createCustomerVisit(visitForm.customer_id, visitForm)
-    ElMessage.success('回访记录添加成功')
-    visitDialogVisible.value = false
-    
-    // 如果当前正在查看客户详情，刷新客户信息
-    if (detailDialogVisible.value && currentCustomer.value) {
-      const updatedCustomer = await salesApi.getCustomer(currentCustomer.value.id)
-      currentCustomer.value = updatedCustomer.data
-    }
-  } catch (error) {
-    ElMessage.error('添加回访记录失败')
-  } finally {
-    submitting.value = false
-  }
-}
-
-const handleSubmit = async () => {
-  if (!formRef.value) return
+  await visitFormRef.value.validate()
+  submitting.value = true
   
   try {
-    await formRef.value.validate()
-    submitting.value = true
+    const result = await safeApiCall(
+      () => salesApi.createCustomerVisit(ensureNumber(visitForm.customer_id, 0), visitForm),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
     
-    if (isEdit.value) {
-      await salesApi.updateCustomer(form.id as number, form)
-      ElMessage.success('更新成功')
-    } else {
-      await salesApi.createCustomer(form)
-      ElMessage.success('创建成功')
+    if (result !== null) {
+      visitDialogVisible.value = false
+      
+      // 如果当前正在查看客户详情，刷新客户信息
+      if (detailDialogVisible.value && currentCustomer.value) {
+        const updatedResult = await safeApiCall(
+          () => salesApi.getCustomer(ensureNumber(currentCustomer.value!.id, 0)),
+          {
+            showMessage: false,
+            fallbackValue: null
+          }
+        )
+        if (updatedResult && updatedResult.data) {
+          currentCustomer.value = updatedResult.data
+        }
+      }
     }
-    
-    dialogVisible.value = false
-    fetchCustomers()
-  } catch (error) {
-    ElMessage.error('操作失败')
   } finally {
     submitting.value = false
   }
-}
+}, '回访记录添加成功', '添加回访记录失败')
+
+const handleSubmit = withFormErrorHandler(async () => {
+  if (!formRef.value) return
+  
+  await formRef.value.validate()
+  submitting.value = true
+  
+  try {
+    if (isEdit.value) {
+      const result = await safeApiCall(
+        () => salesApi.updateCustomer(ensureNumber(form.id, 0), form),
+        {
+          showMessage: false,
+          fallbackValue: null
+        }
+      )
+      if (result !== null) {
+        dialogVisible.value = false
+        fetchCustomers()
+      }
+    } else {
+      const result = await safeApiCall(
+        () => salesApi.createCustomer(form),
+        {
+          showMessage: false,
+          fallbackValue: null
+        }
+      )
+      if (result !== null) {
+        dialogVisible.value = false
+        fetchCustomers()
+      }
+    }
+  } finally {
+    submitting.value = false
+  }
+}, isEdit.value ? '更新成功' : '创建成功', '操作失败')
 
 const handleDialogClose = () => {
   formRef.value?.resetFields()

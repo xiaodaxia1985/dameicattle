@@ -55,23 +55,51 @@
     <!-- 设备列表 -->
     <div class="equipment-table">
       <el-table :data="equipmentList" v-loading="loading" stripe>
-        <el-table-column prop="code" label="设备编码" width="120" />
-        <el-table-column prop="name" label="设备名称" min-width="150" />
-        <el-table-column prop="category.name" label="设备分类" width="120" />
-        <el-table-column prop="brand" label="品牌" width="100" />
-        <el-table-column prop="model" label="型号" width="120" />
-        <el-table-column prop="base.name" label="所属基地" width="120" />
-        <el-table-column prop="barn.name" label="所属牛棚" width="120" />
+        <el-table-column prop="code" label="设备编码" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'code', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="设备名称" min-width="150">
+          <template #default="{ row }">
+            {{ safeGet(row, 'name', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="category.name" label="设备分类" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'category.name', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="brand" label="品牌" width="100">
+          <template #default="{ row }">
+            {{ safeGet(row, 'brand', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="model" label="型号" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'model', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="base.name" label="所属基地" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'base.name', '-') }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="barn.name" label="所属牛棚" width="120">
+          <template #default="{ row }">
+            {{ safeGet(row, 'barn.name', '-') }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusText(row.status) }}
+            <el-tag :type="getStatusType(safeGet(row, 'status', 'normal'))">
+              {{ getStatusText(safeGet(row, 'status', 'normal')) }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="purchase_date" label="采购日期" width="120">
           <template #default="{ row }">
-            {{ row.purchase_date ? formatDate(row.purchase_date) : '-' }}
+            {{ safeGet(row, 'purchase_date', '') ? formatDate(safeGet(row, 'purchase_date', '')) : '-' }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -138,7 +166,9 @@ import { equipmentApi } from '@/api/equipment'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import EquipmentForm from './components/EquipmentForm.vue'
 import EquipmentDetail from './components/EquipmentDetail.vue'
-import { validatePaginationData, validateDataArray, validateEquipmentData } from '@/utils/dataValidation'
+import { validatePaginationData, validateDataArray, validateEquipmentData, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const loading = ref(false)
@@ -176,43 +206,56 @@ const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId
 }
 
 // 加载设备列表
-const loadEquipment = async () => {
+const loadEquipment = withPageErrorHandler(async () => {
   loading.value = true
   try {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
-      search: searchForm.search,
-      categoryId: searchForm.categoryId,
-      status: searchForm.status,
+      search: searchForm.search || undefined,
+      categoryId: searchForm.categoryId || undefined,
+      status: searchForm.status || undefined,
       baseId: searchForm.cascade.baseId,
       barnId: searchForm.cascade.barnId,
     }
-    const response = await equipmentApi.getEquipment(params)
     
-    // 使用数据验证工具处理响应
-    const validatedData = validatePaginationData(response.data || response)
+    const result = await safeApiCall(
+      () => equipmentApi.getEquipment(params),
+      {
+        showMessage: false,
+        fallbackValue: { data: { data: [], total: 0 } }
+      }
+    )
     
-    // 验证每个设备数据
-    equipmentList.value = validateDataArray(validatedData.data, validateEquipmentData)
-    pagination.total = validatedData.pagination.total
-  } catch (error) {
-    console.error('加载设备列表失败:', error)
-    ElMessage.error('加载设备列表失败')
-    equipmentList.value = []
-    pagination.total = 0
+    if (result && result.data) {
+      const validatedData = validatePaginationData(result.data || result)
+      equipmentList.value = validateDataArray(validatedData.data, validateEquipmentData)
+      pagination.total = validatedData.pagination.total
+    }
   } finally {
     loading.value = false
   }
-}
+}, '加载设备列表失败')
 
 // 加载设备分类
 const loadCategories = async () => {
-  try {
-    const response = await equipmentApi.getCategories()
-    categories.value = response.data || []
-  } catch (error) {
-    console.error('加载设备分类失败:', error)
+  const result = await safeApiCall(
+    () => equipmentApi.getCategories(),
+    {
+      showMessage: false,
+      fallbackValue: { data: [] }
+    }
+  )
+  
+  if (result && result.data) {
+    const categoriesData = ensureArray(safeGet(result, 'data', []))
+    categories.value = categoriesData.filter(category => 
+      category && 
+      typeof category === 'object' && 
+      ensureNumber(category.id, 0) > 0 &&
+      category.name &&
+      typeof category.name === 'string'
+    )
   }
 }
 
@@ -261,7 +304,7 @@ const handleCommand = (command: string, equipment: any) => {
 const deleteEquipment = async (equipment: any) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除设备 "${equipment.name}" 吗？`,
+      `确定要删除设备 "${safeGet(equipment, 'name', '未知')}" 吗？`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -270,9 +313,18 @@ const deleteEquipment = async (equipment: any) => {
       }
     )
     
-    await equipmentApi.deleteEquipment(equipment.id)
-    ElMessage.success('删除成功')
-    loadEquipment()
+    const result = await safeApiCall(
+      () => equipmentApi.deleteEquipment(ensureNumber(equipment.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('删除成功')
+      loadEquipment()
+    }
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('删除失败')
@@ -281,21 +333,33 @@ const deleteEquipment = async (equipment: any) => {
 }
 
 // 处理表单提交
-const handleSubmit = async (formData: any) => {
-  try {
-    if (editingEquipment.value) {
-      await equipmentApi.updateEquipment(editingEquipment.value.id, formData)
-      ElMessage.success('更新成功')
-    } else {
-      await equipmentApi.createEquipment(formData)
-      ElMessage.success('添加成功')
+const handleSubmit = withFormErrorHandler(async (formData: any) => {
+  if (editingEquipment.value) {
+    const result = await safeApiCall(
+      () => equipmentApi.updateEquipment(ensureNumber(editingEquipment.value.id, 0), formData),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    if (result !== null) {
+      closeDialog()
+      loadEquipment()
     }
-    closeDialog()
-    loadEquipment()
-  } catch (error) {
-    ElMessage.error(editingEquipment.value ? '更新失败' : '添加失败')
+  } else {
+    const result = await safeApiCall(
+      () => equipmentApi.createEquipment(formData),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    if (result !== null) {
+      closeDialog()
+      loadEquipment()
+    }
   }
-}
+}, editingEquipment.value ? '更新成功' : '添加成功', editingEquipment.value ? '更新失败' : '添加失败')
 
 // 关闭对话框
 const closeDialog = () => {

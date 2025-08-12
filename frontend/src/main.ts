@@ -61,16 +61,35 @@ appStore.initializeApp()
 import { checkBackendConnection } from './utils/healthCheck'
 checkBackendConnection()
 
+// Initialize Vue component fixes
+import { fixAllVueErrors } from './utils/vueComponentFix'
+fixAllVueErrors()
+
+// Initialize all module fixes
+import { fixAllModules } from './utils/fixAllModules'
+fixAllModules().then((results) => {
+  console.log('🔧 模块修复完成:', results)
+}).catch((error) => {
+  console.error('❌ 模块修复失败:', error)
+})
+
 // Initialize debug tools in development
 if (import.meta.env.MODE === 'development') {
   import('./utils/debug').then(({ debugInfo }) => {
     console.log('🚀 前端应用已启动')
     console.log('💡 在控制台输入 debugInfo.printDebugInfo() 查看调试信息')
+    console.log('🔧 在控制台输入 testVueErrorFixes() 测试修复效果')
     
     // Auto-run debug info after a short delay
     setTimeout(() => {
       debugInfo.printDebugInfo()
     }, 2000)
+  })
+  
+  // 在开发模式下暴露修复工具到全局
+  import('./utils/vueComponentFix').then((vueComponentFix) => {
+    (window as any).testVueErrorFixes = vueComponentFix.testVueErrorFixes
+    (window as any).fixAllVueErrors = vueComponentFix.fixAllVueErrors
   })
 }
 

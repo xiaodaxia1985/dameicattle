@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>修复效果验证</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .button { background: #409eff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .button:hover { background: #66b1ff; }
+        .button.success { background: #67c23a; }
+        .button.error { background: #f56c6c; }
+        .result { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 4px; padding: 15px; margin: 10px 0; }
+        .status { padding: 5px 10px; border-radius: 4px; margin: 5px; display: inline-block; }
+        .status.success { background: #f0f9ff; color: #67c23a; border: 1px solid #67c23a; }
+        .status.error { background: #fef0f0; color: #f56c6c; border: 1px solid #f56c6c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>修复效果验证</h1>
+        <p>验证所有模块的修复效果</p>
+        
+        <!-- 认证状态 -->
+        <div style="margin-bottom: 20px; padding: 10px; background: #f0f9ff; border-radius: 4px;">
+            <strong>认证状态:</strong> <span id="authStatus">检查中...</span>
+            <button class="button" onclick="quickLogin()" style="margin-left: 10px;">快速登录</button>
+            <button class="button" onclick="checkAuthStatus()">检查认证</button>
+        </div>
+        
+        <div>
+            <button class="button" onclick="testHealthRecords()">测试健康记录</button>
+            <button class="button" onclick="testFeedingFormulas()">测试饲料配方</button>
+            <button class="button" onclick="testSalesOrders()">测试销售订单</button>
+            <button class="button" onclick="testProcurementOrders()">测试采购订单</button>
+            <button class="button" onclick="testMaterials()">测试物料管理</button>
+            <button class="button success" onclick="testAllModules()">测试所有模块</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>测试结果</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(title, status, message) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = 'result';
+            resultDiv.innerHTML = `
+                <h3>${title} <span class="status ${status}">${status === 'success' ? '✓ 正常' : '✗ 异常'}</span></h3>
+                <p>${message}</p>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+
+        // 获取认证令牌
+        function getAuthToken() {
+            // 尝试从localStorage获取token
+            const token = localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('access_token');
+            return token;
+        }
+
+        // 创建带认证的请求头
+        function getAuthHeaders() {
+            const token = getAuthToken();
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            return headers;
+        }
+
+        async function testHealthRecords() {
+            try {
+                const response = await fetch('/api/v1/health/records?page=1&limit=5', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success !== false) {
+                    addResult('健康记录模块', 'success', `API响应正常，状态码: ${response.status}，数据条数: ${data.data?.data?.length || 0}`);
+                } else if (response.status === 401) {
+                    addResult('健康记录模块', 'error', `认证失败: 请先登录系统获取token`);
+                } else {
+                    addResult('健康记录模块', 'error', `API响应异常: ${data.message || '未知错误'} (状态码: ${response.status})`);
+                }
+            } catch (error) {
+                addResult('健康记录模块', 'error', `请求失败: ${error.message}`);
+            }
+        }
+
+        async function testFeedingFormulas() {
+            try {
+                const response = await fetch('/api/v1/feeding/formulas?page=1&limit=5', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success !== false) {
+                    addResult('饲料配方模块', 'success', `API响应正常，状态码: ${response.status}，数据条数: ${data.data?.data?.length || 0}`);
+                } else if (response.status === 401) {
+                    addResult('饲料配方模块', 'error', `认证失败: 请先登录系统获取token`);
+                } else {
+                    addResult('饲料配方模块', 'error', `API响应异常: ${data.message || '未知错误'} (状态码: ${response.status})`);
+                }
+            } catch (error) {
+                addResult('饲料配方模块', 'error', `请求失败: ${error.message}`);
+            }
+        }
+
+        async function testSalesOrders() {
+            try {
+                const response = await fetch('/api/v1/sales/orders?page=1&limit=5', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success !== false) {
+                    addResult('销售订单模块', 'success', `API响应正常，状态码: ${response.status}，数据条数: ${data.data?.items?.length || 0}`);
+                } else if (response.status === 401) {
+                    addResult('销售订单模块', 'error', `认证失败: 请先登录系统获取token`);
+                } else {
+                    addResult('销售订单模块', 'error', `API响应异常: ${data.message || '未知错误'} (状态码: ${response.status})`);
+                }
+            } catch (error) {
+                addResult('销售订单模块', 'error', `请求失败: ${error.message}`);
+            }
+        }
+
+        async function testProcurementOrders() {
+            try {
+                const response = await fetch('/api/v1/procurement/orders?page=1&limit=5', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success !== false) {
+                    addResult('采购订单模块', 'success', `API响应正常，状态码: ${response.status}，数据条数: ${data.data?.orders?.length || 0}`);
+                } else if (response.status === 401) {
+                    addResult('采购订单模块', 'error', `认证失败: 请先登录系统获取token`);
+                } else {
+                    addResult('采购订单模块', 'error', `API响应异常: ${data.message || '未知错误'} (状态码: ${response.status})`);
+                }
+            } catch (error) {
+                addResult('采购订单模块', 'error', `请求失败: ${error.message}`);
+            }
+        }
+
+        async function testMaterials() {
+            try {
+                const response = await fetch('/api/v1/material/materials?page=1&limit=5', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                
+                if (response.ok && data.success !== false) {
+                    addResult('物料管理模块', 'success', `API响应正常，状态码: ${response.status}，数据条数: ${data.data?.length || 0}`);
+                } else if (response.status === 401) {
+                    addResult('物料管理模块', 'error', `认证失败: 请先登录系统获取token`);
+                } else {
+                    addResult('物料管理模块', 'error', `API响应异常: ${data.message || '未知错误'} (状态码: ${response.status})`);
+                }
+            } catch (error) {
+                addResult('物料管理模块', 'error', `请求失败: ${error.message}`);
+            }
+        }
+
+        // 检查认证状态
+        async function checkAuthStatus() {
+            const token = getAuthToken();
+            const statusElement = document.getElementById('authStatus');
+            
+            if (!token) {
+                statusElement.innerHTML = '<span style="color: #f56c6c;">未登录 - 需要token</span>';
+                return false;
+            }
+            
+            try {
+                // 尝试调用一个需要认证的API来验证token
+                const response = await fetch('/api/v1/auth/profile', {
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+                
+                if (response.ok) {
+                    statusElement.innerHTML = '<span style="color: #67c23a;">已认证 ✓</span>';
+                    return true;
+                } else {
+                    statusElement.innerHTML = '<span style="color: #f56c6c;">token无效或已过期</span>';
+                    return false;
+                }
+            } catch (error) {
+                statusElement.innerHTML = '<span style="color: #f56c6c;">认证检查失败</span>';
+                return false;
+            }
+        }
+
+        // 快速登录（使用默认测试账号）
+        async function quickLogin() {
+            try {
+                const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: 'admin',
+                        password: 'admin123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success && data.data.token) {
+                    localStorage.setItem('token', data.data.token);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    addResult('快速登录', 'success', '登录成功，token已保存');
+                    checkAuthStatus();
+                } else {
+                    addResult('快速登录', 'error', `登录失败: ${data.message || '未知错误'}`);
+                }
+            } catch (error) {
+                addResult('快速登录', 'error', `登录请求失败: ${error.message}`);
+            }
+        }
+
+        async function testAllModules() {
+            document.getElementById('results').innerHTML = '<p>正在测试所有模块...</p>';
+            
+            // 先检查认证状态
+            const isAuthenticated = await checkAuthStatus();
+            if (!isAuthenticated) {
+                addResult('认证检查', 'error', '请先登录或检查token有效性');
+                return;
+            }
+            
+            await testHealthRecords();
+            await testFeedingFormulas();
+            await testSalesOrders();
+            await testProcurementOrders();
+            await testMaterials();
+            
+            addResult('测试完成', 'success', '所有模块测试完成，请查看上方结果');
+        }
+
+        // 页面加载时检查认证状态
+        window.addEventListener('load', function() {
+            checkAuthStatus();
+        });
+    </script>
+</body>
+</html>

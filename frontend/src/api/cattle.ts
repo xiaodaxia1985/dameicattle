@@ -168,18 +168,17 @@ export const cattleApi = {
       const response = await cattleServiceApi.getCattleList(params)
       console.log('cattleApi.getList 原始响应:', response)
       
-      // 后端返回的数据结构是 { data: { cattle: [...], pagination: {...} } }
-      const responseData = response.data || {}
-      const data = Array.isArray(responseData.cattle) ? responseData.cattle : []
-      const pagination = responseData.pagination || {}
+      // 使用数据适配器处理响应
+      const { adaptPaginatedResponse } = await import('@/utils/dataAdapter')
+      const adapted = adaptPaginatedResponse<Cattle>(response, 'cattle')
       
       const result: CattleListResponse = {
-        data,
+        data: adapted.data,
         pagination: {
-          total: typeof pagination.total === 'number' ? pagination.total : 0,
-          page: typeof pagination.page === 'number' ? Math.max(1, pagination.page) : 1,
-          limit: typeof pagination.limit === 'number' ? Math.max(1, pagination.limit) : 20,
-          totalPages: typeof pagination.totalPages === 'number' ? Math.max(1, pagination.totalPages) : Math.max(1, Math.ceil((pagination.total || 0) / (pagination.limit || 20)))
+          total: adapted.pagination.total,
+          page: adapted.pagination.page,
+          limit: adapted.pagination.limit,
+          totalPages: adapted.pagination.totalPages || adapted.pagination.pages || Math.ceil(adapted.pagination.total / adapted.pagination.limit)
         }
       }
       

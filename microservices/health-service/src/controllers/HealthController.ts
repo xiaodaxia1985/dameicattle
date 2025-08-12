@@ -357,4 +357,242 @@ export class HealthController {
       res.error('获取健康统计信息失败', 500, 'HEALTH_STATISTICS_ERROR');
     }
   }
+
+  // 获取健康记录详情
+  static async getHealthRecordById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const healthRecord = await HealthRecord.findByPk(id, {
+        include: [
+          {
+            model: Cattle,
+            as: 'cattle',
+            attributes: ['id', 'ear_tag', 'breed', 'gender', 'base_id']
+          },
+          {
+            model: User,
+            as: 'veterinarian',
+            attributes: ['id', 'real_name', 'phone']
+          }
+        ]
+      });
+
+      if (!healthRecord) {
+        return res.error('健康记录不存在', 404, 'HEALTH_RECORD_NOT_FOUND');
+      }
+
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        // 超级管理员可以查看任何记录
+      } else if (dataPermission.baseId && (healthRecord as any).cattle?.base_id !== dataPermission.baseId) {
+        return res.error('权限不足，只能查看所属基地的健康记录', 403, 'INSUFFICIENT_PERMISSIONS');
+      } else if (!dataPermission.baseId) {
+        return res.error('没有基地权限，无法查看健康记录', 403, 'INSUFFICIENT_PERMISSIONS');
+      }
+
+      res.success(healthRecord, '获取健康记录详情成功');
+    } catch (error) {
+      logger.error('获取健康记录详情失败:', error);
+      res.error('获取健康记录详情失败', 500, 'GET_HEALTH_RECORD_ERROR');
+    }
+  }
+
+  // 获取疫苗记录列表
+  static async getVaccinationRecords(req: Request, res: Response) {
+    try {
+      // TODO: 实现疫苗记录逻辑
+      res.success({
+        records: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          pages: 0
+        }
+      }, '获取疫苗记录成功');
+    } catch (error) {
+      logger.error('获取疫苗记录失败:', error);
+      res.error('获取疫苗记录失败', 500, 'GET_VACCINATION_RECORDS_ERROR');
+    }
+  }
+
+  // 获取疫苗记录详情
+  static async getVaccinationRecordById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // TODO: 实现疫苗记录详情逻辑
+      res.success({ id, vaccine_name: '示例疫苗' }, '获取疫苗记录详情成功');
+    } catch (error) {
+      logger.error('获取疫苗记录详情失败:', error);
+      res.error('获取疫苗记录详情失败', 500, 'GET_VACCINATION_RECORD_ERROR');
+    }
+  }
+
+  // 创建疫苗记录
+  static async createVaccinationRecord(req: Request, res: Response) {
+    try {
+      // TODO: 实现创建疫苗记录逻辑
+      res.success({ id: 1, ...req.body }, '创建疫苗记录成功', 201);
+    } catch (error) {
+      logger.error('创建疫苗记录失败:', error);
+      res.error('创建疫苗记录失败', 500, 'CREATE_VACCINATION_RECORD_ERROR');
+    }
+  }
+
+  // 更新疫苗记录
+  static async updateVaccinationRecord(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // TODO: 实现更新疫苗记录逻辑
+      res.success({ id, ...req.body }, '更新疫苗记录成功');
+    } catch (error) {
+      logger.error('更新疫苗记录失败:', error);
+      res.error('更新疫苗记录失败', 500, 'UPDATE_VACCINATION_RECORD_ERROR');
+    }
+  }
+
+  // 删除疫苗记录
+  static async deleteVaccinationRecord(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // TODO: 实现删除疫苗记录逻辑
+      res.success(null, '删除疫苗记录成功');
+    } catch (error) {
+      logger.error('删除疫苗记录失败:', error);
+      res.error('删除疫苗记录失败', 500, 'DELETE_VACCINATION_RECORD_ERROR');
+    }
+  }
+
+  // 获取疾病记录列表
+  static async getDiseaseRecords(req: Request, res: Response) {
+    try {
+      // TODO: 实现疾病记录逻辑
+      res.success({
+        records: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          pages: 0
+        }
+      }, '获取疾病记录成功');
+    } catch (error) {
+      logger.error('获取疾病记录失败:', error);
+      res.error('获取疾病记录失败', 500, 'GET_DISEASE_RECORDS_ERROR');
+    }
+  }
+
+  // 获取疾病记录详情
+  static async getDiseaseRecordById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // TODO: 实现疾病记录详情逻辑
+      res.success({ id, disease_name: '示例疾病' }, '获取疾病记录详情成功');
+    } catch (error) {
+      logger.error('获取疾病记录详情失败:', error);
+      res.error('获取疾病记录详情失败', 500, 'GET_DISEASE_RECORD_ERROR');
+    }
+  }
+
+  // 创建疾病记录
+  static async createDiseaseRecord(req: Request, res: Response) {
+    try {
+      // TODO: 实现创建疾病记录逻辑
+      res.success({ id: 1, ...req.body }, '创建疾病记录成功', 201);
+    } catch (error) {
+      logger.error('创建疾病记录失败:', error);
+      res.error('创建疾病记录失败', 500, 'CREATE_DISEASE_RECORD_ERROR');
+    }
+  }
+
+  // 更新疾病记录
+  static async updateDiseaseRecord(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // TODO: 实现更新疾病记录逻辑
+      res.success({ id, ...req.body }, '更新疾病记录成功');
+    } catch (error) {
+      logger.error('更新疾病记录失败:', error);
+      res.error('更新疾病记录失败', 500, 'UPDATE_DISEASE_RECORD_ERROR');
+    }
+  }
+
+  // 删除疾病记录
+  static async deleteDiseaseRecord(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      // TODO: 实现删除疾病记录逻辑
+      res.success(null, '删除疾病记录成功');
+    } catch (error) {
+      logger.error('删除疾病记录失败:', error);
+      res.error('删除疾病记录失败', 500, 'DELETE_DISEASE_RECORD_ERROR');
+    }
+  }
+
+  // 获取健康预警
+  static async getHealthAlerts(req: Request, res: Response) {
+    try {
+      // TODO: 实现健康预警逻辑
+      res.success({
+        alerts: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          pages: 0
+        }
+      }, '获取健康预警成功');
+    } catch (error) {
+      logger.error('获取健康预警失败:', error);
+      res.error('获取健康预警失败', 500, 'GET_HEALTH_ALERTS_ERROR');
+    }
+  }
+
+  // 发送健康预警通知
+  static async sendHealthAlertNotifications(req: Request, res: Response) {
+    try {
+      // TODO: 实现发送健康预警通知逻辑
+      res.success({ sent_count: 0 }, '发送健康预警通知成功');
+    } catch (error) {
+      logger.error('发送健康预警通知失败:', error);
+      res.error('发送健康预警通知失败', 500, 'SEND_HEALTH_ALERT_NOTIFICATIONS_ERROR');
+    }
+  }
+
+  // 获取健康趋势分析
+  static async getHealthTrend(req: Request, res: Response) {
+    try {
+      // TODO: 实现健康趋势分析逻辑
+      res.success({
+        trend: [],
+        period: '30d'
+      }, '获取健康趋势分析成功');
+    } catch (error) {
+      logger.error('获取健康趋势分析失败:', error);
+      res.error('获取健康趋势分析失败', 500, 'GET_HEALTH_TREND_ERROR');
+    }
+  }
+
+  // 获取牛只健康档案
+  static async getCattleHealthProfile(req: Request, res: Response) {
+    try {
+      const { cattleId } = req.params;
+      // TODO: 实现牛只健康档案逻辑
+      res.success({
+        cattle_id: cattleId,
+        health_records: [],
+        vaccination_records: [],
+        health_summary: {
+          total_records: 0,
+          last_checkup: null,
+          health_status: 'healthy'
+        }
+      }, '获取牛只健康档案成功');
+    } catch (error) {
+      logger.error('获取牛只健康档案失败:', error);
+      res.error('获取牛只健康档案失败', 500, 'GET_CATTLE_HEALTH_PROFILE_ERROR');
+    }
+  }
 }

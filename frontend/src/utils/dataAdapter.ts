@@ -3,6 +3,8 @@
  * 用于统一处理微服务返回的数据结构
  */
 
+import { ensureArray, ensureNumber, ensureString } from './safeAccess'
+
 // 标准化分页数据结构
 export interface StandardPagination {
   total: number
@@ -28,30 +30,58 @@ export function adaptPaginatedResponse<T>(
   response: any, 
   dataKey: string = 'data'
 ): StandardListResponse<T> {
+  console.log('adaptPaginatedResponse 输入:', { response, dataKey })
+  
   // 处理不同的数据结构
   const responseData = response?.data || response || {}
+  console.log('responseData:', responseData)
   
-  // 获取实际数据数组
+  // 获取实际数据数组 - 增强处理逻辑
   let items: T[] = []
+  
+  // 1. 检查是否直接是数组
   if (Array.isArray(responseData)) {
-    // 直接是数组
     items = responseData
-  } else if (responseData[dataKey] && Array.isArray(responseData[dataKey])) {
-    // 有特定的数据字段
+  }
+  // 2. 检查特定的数据字段（如 cattle, orders, suppliers 等）
+  else if (responseData[dataKey] && Array.isArray(responseData[dataKey])) {
     items = responseData[dataKey]
-  } else if (responseData.data && Array.isArray(responseData.data)) {
-    // 通用的 data 字段
+  }
+  // 3. 检查通用的 data 字段
+  else if (responseData.data && Array.isArray(responseData.data)) {
     items = responseData.data
   }
+  // 4. 检查嵌套的数据结构 response.data.data
+  else if (responseData.data && responseData.data.data && Array.isArray(responseData.data.data)) {
+    items = responseData.data.data
+  }
+  // 5. 检查其他可能的字段名
+  else if (responseData.items && Array.isArray(responseData.items)) {
+    items = responseData.items
+  }
+  else if (responseData.records && Array.isArray(responseData.records)) {
+    items = responseData.records
+  }
+  else if (responseData.list && Array.isArray(responseData.list)) {
+    items = responseData.list
+  }
+  
+  console.log('提取的数据数组:', items)
 
-  // 获取分页信息
-  const pagination = responseData.pagination || {}
-  const total = pagination.total || items.length
-  const page = pagination.page || 1
-  const limit = pagination.limit || 20
-  const pages = pagination.pages || Math.ceil(total / limit)
+  // 获取分页信息 - 增强处理逻辑
+  let pagination = responseData.pagination || {}
+  
+  // 如果分页信息在嵌套结构中
+  if (!pagination.total && responseData.data && responseData.data.pagination) {
+    pagination = responseData.data.pagination
+  }
+  
+  const total = ensureNumber(pagination.total, items.length)
+  const page = ensureNumber(pagination.page, 1)
+  const limit = ensureNumber(pagination.limit, 20)
+  const pages = ensureNumber(pagination.pages || pagination.totalPages, Math.ceil(total / limit))
 
-  return {
+  const result = {
     data: items,
     pagination: {
       total,
@@ -61,6 +91,9 @@ export function adaptPaginatedResponse<T>(
       totalPages: pages
     }
   }
+  
+  console.log('adaptPaginatedResponse 输出:', result)
+  return result
 }
 
 /**

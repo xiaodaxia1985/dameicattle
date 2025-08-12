@@ -89,17 +89,63 @@ export interface SalesOrderItem {
 export const salesApi = {
   // 获取销售订单列表
   async getOrders(params: any = {}): Promise<{ data: { items: SalesOrder[], total: number, page: number, limit: number } }> {
+    console.log('🔍 salesApi.getOrders 调用参数:', params)
+    
     const response = await salesServiceApi.getSalesOrders(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<SalesOrder>(response, 'orders')
-    return { 
+    console.log('📥 salesServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let orders = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      orders = responseData
+      total = orders.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      orders = responseData.data
+      total = responseData.total || responseData.pagination?.total || orders.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.orders && Array.isArray(responseData.orders)) {
+      // 有orders字段且是数组
+      orders = responseData.orders
+      total = responseData.total || responseData.pagination?.total || orders.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      orders = responseData.items
+      total = responseData.total || responseData.pagination?.total || orders.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
       data: {
-        items: adapted.data,
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit
+        items: orders,
+        total,
+        page,
+        limit
       }
     }
+    
+    console.log('✅ salesApi.getOrders 解析结果:', { 
+      ordersCount: orders.length, 
+      total, 
+      page, 
+      limit,
+      sampleOrder: orders[0] || null
+    })
+    
+    return result
   },
 
   // 获取销售订单详情
@@ -152,17 +198,63 @@ export const salesApi = {
 
   // 获取客户列表
   async getCustomers(params: any = {}): Promise<{ data: { items: Customer[], total: number, page: number, limit: number } }> {
+    console.log('🔍 salesApi.getCustomers 调用参数:', params)
+    
     const response = await salesServiceApi.getCustomers(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<Customer>(response, 'customers')
-    return { 
+    console.log('📥 salesServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let customers = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      customers = responseData
+      total = customers.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      customers = responseData.data
+      total = responseData.total || responseData.pagination?.total || customers.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.customers && Array.isArray(responseData.customers)) {
+      // 有customers字段且是数组
+      customers = responseData.customers
+      total = responseData.total || responseData.pagination?.total || customers.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      customers = responseData.items
+      total = responseData.total || responseData.pagination?.total || customers.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
       data: {
-        items: adapted.data,
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit
+        items: customers,
+        total,
+        page,
+        limit
       }
     }
+    
+    console.log('✅ salesApi.getCustomers 解析结果:', { 
+      customersCount: customers.length, 
+      total, 
+      page, 
+      limit,
+      sampleCustomer: customers[0] || null
+    })
+    
+    return result
   },
 
   // 获取客户详情

@@ -107,14 +107,48 @@ export interface UpdateBarnRequest {
 export const baseApi = {
   // 获取基地列表
   async getBases(params: BaseListParams = {}): Promise<{ data: { bases: Base[], pagination: any } }> {
-    const response = await baseServiceApi.getBases(params)
-    return { data: response.data }
+    try {
+      const response = await baseServiceApi.getBases(params)
+      console.log('baseApi.getBases 原始响应:', response)
+      
+      // 使用数据适配器处理响应
+      const { adaptPaginatedResponse } = await import('@/utils/dataAdapter')
+      const adapted = adaptPaginatedResponse<Base>(response, 'bases')
+      
+      return { 
+        data: {
+          bases: adapted.data,
+          pagination: adapted.pagination
+        }
+      }
+    } catch (error) {
+      console.error('获取基地列表失败:', error)
+      return { 
+        data: {
+          bases: [],
+          pagination: { total: 0, page: 1, limit: 20, totalPages: 0 }
+        }
+      }
+    }
   },
 
   // 获取所有基地（不分页）
   async getAllBases(): Promise<{ data: Base[] }> {
-    const response = await baseServiceApi.get('/bases/all')
-    return { data: response.data }
+    try {
+      const response = await baseServiceApi.get('/bases/all')
+      console.log('baseApi.getAllBases 原始响应:', response)
+      
+      // 安全获取数据
+      const data = response?.data || []
+      const validatedData = Array.isArray(data) ? data.filter(base => 
+        base && typeof base === 'object' && base.id && base.name
+      ) : []
+      
+      return { data: validatedData }
+    } catch (error) {
+      console.error('获取所有基地失败:', error)
+      return { data: [] }
+    }
   },
 
   // 获取基地详情

@@ -537,6 +537,8 @@ import { useMaterialStore } from '@/stores/material'
 import type { FormInstance } from 'element-plus'
 import type { ProductionMaterial, MaterialCategory, Supplier } from '@/types/material'
 import { validatePaginationData, validateDataArray, ensureArray, ensureNumber, validateMaterialData } from '@/utils/dataValidation'
+import { safeApiCall, withFormErrorHandler } from '@/utils/errorHandler'
+import { safeGet } from '@/utils/safeAccess'
 
 // Store
 const materialStore = useMaterialStore()
@@ -713,38 +715,44 @@ const loadCurrentTabData = () => {
 }
 
 const loadMaterials = async () => {
-  try {
-    await materialStore.fetchMaterials({
+  await safeApiCall(
+    () => materialStore.fetchMaterials({
       page: materialStore.currentPage,
       limit: materialStore.pageSize,
       keyword: searchKeyword.value || undefined,
       category_id: selectedCategory.value,
       supplier_id: selectedSupplier.value,
       status: selectedStatus.value
-    })
-  } catch (error) {
-    ElMessage.error('加载物资列表失败')
-  }
+    }),
+    {
+      showMessage: true,
+      fallbackValue: null
+    }
+  )
 }
 
 const loadCategories = async () => {
-  try {
-    await materialStore.fetchCategories()
-  } catch (error) {
-    ElMessage.error('加载分类列表失败')
-  }
+  await safeApiCall(
+    () => materialStore.fetchCategories(),
+    {
+      showMessage: true,
+      fallbackValue: null
+    }
+  )
 }
 
 const loadSuppliers = async () => {
-  try {
-    await materialStore.fetchSuppliers({
+  await safeApiCall(
+    () => materialStore.fetchSuppliers({
       page: materialStore.currentPage,
       limit: materialStore.pageSize,
       keyword: supplierSearchKeyword.value || undefined
-    })
-  } catch (error) {
-    ElMessage.error('加载供应商列表失败')
-  }
+    }),
+    {
+      showMessage: true,
+      fallbackValue: null
+    }
+  )
 }
 
 // Material operations
@@ -918,6 +926,289 @@ const showSupplierFormDialog = (supplier?: Supplier) => {
       id: supplier.id,
       name: supplier.name,
       contact_person: supplier.contact_person || '',
+      phone: supplier.phone || '',
+      email: supplier.email || '',
+      address: supplier.address || '',
+      supplier_type: supplier.supplier_type,
+      rating: supplier.rating || 0,
+      business_license: supplier.business_license || '',
+      tax_number: supplier.tax_number || '',
+      bank_account: supplier.bank_account || '',
+      credit_limit: supplier.credit_limit || 0,
+      payment_terms: supplier.payment_terms || ''
+    })
+  }
+  supplierDialogVisible.value = true
+}
+
+const resetSupplierForm = () => {
+  Object.assign(supplierForm, {
+    id: undefined,
+    name: '',
+    contact_person: '',
+    phone: '',
+    email: '',
+    address: '',
+    supplier_type: '',
+    rating: 0,
+    business_license: '',
+    tax_number: '',
+    bank_account: '',
+    credit_limit: 0,
+    payment_terms: ''
+  })
+  nextTick(() => {
+    supplierFormRef.value?.clearValidate()
+  })
+}
+
+const handleSaveSupplier = withFormErrorHandler(async () => {
+  if (!supplierFormRef.value) return
+  
+  await supplierFormRef.value.validate()
+  saving.value = true
+  
+  try {
+    if (supplierForm.id) {
+      await materialStore.updateSupplier(supplierForm.id, supplierForm)
+    } else {
+      await materialStore.createSupplier(supplierForm)
+    }
+    
+    supplierDialogVisible.value = false
+    loadSuppliers()
+  } finally {
+    saving.value = false
+  }
+}, supplierForm.id ? '更新供应商成功' : '创建供应商成功', '保存供应商失败')
+
+const handleDeleteSupplier = async (supplier: Supplier) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除供应商"${safeGet(supplier, 'name', '未知')}"吗？`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const result = await safeApiCall(
+      () => materialStore.deleteSupplier(ensureNumber(supplier.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('删除供应商成功')
+      loadSuppliers()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除供应商失败')
+    }
+  }
+}
+
+// 初始化
+onMounted(() => {
+  loadCategories()
+  loadMaterials()
+})
+</script>
+
+<style scoped>
+.materials-page {
+  padding: 20px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+}
+
+.page-title {
+  margin: 0 0 8px 0;
+  color: #303133;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.page-description {
+  margin: 0;
+  color: #606266;
+  font-size: 14px;
+}
+
+.statistics-cards {
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card :deep(.el-card__body) {
+  padding: 20px;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 28px;
+  font-weight: bold;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+}
+
+.stat-icon {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 40px;
+  color: #e4e7ed;
+}
+
+.stat-card.warning {
+  border-left: 4px solid #e6a23c;
+}
+
+.stat-card.warning .stat-number {
+  color: #e6a23c;
+}
+
+.stat-card.warning .stat-icon {
+  color: #e6a23c;
+  opacity: 0.3;
+}
+
+.tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.search-filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.low-stock {
+  color: #f56c6c;
+  font-weight: bold;
+}
+</style>r.contact_person || '',
+      phone: supplier.phone || '',
+      email: supplier.email || '',
+      address: supplier.address || '',
+      supplier_type: supplier.supplier_type,
+      rating: supplier.rating || 0,
+      business_license: supplier.business_license || '',
+      tax_number: supplier.tax_number || '',
+      bank_account: supplier.bank_account || '',
+      credit_limit: supplier.credit_limit || 0,
+      payment_terms: supplier.payment_terms || ''
+    })
+  }
+  supplierDialogVisible.value = true
+}
+
+const resetSupplierForm = () => {
+  Object.assign(supplierForm, {
+    id: undefined,
+    name: '',
+    contact_person: '',
+    phone: '',
+    email: '',
+    address: '',
+    supplier_type: '',
+    rating: 0,
+    business_license: '',
+    tax_number: '',
+    bank_account: '',
+    credit_limit: 0,
+    payment_terms: ''
+  })
+  nextTick(() => {
+    supplierFormRef.value?.clearValidate()
+  })
+}
+
+const handleSaveSupplier = withFormErrorHandler(async () => {
+  if (!supplierFormRef.value) return
+  
+  await supplierFormRef.value.validate()
+  saving.value = true
+  
+  try {
+    if (supplierForm.id) {
+      await materialStore.updateSupplier(supplierForm.id, supplierForm)
+    } else {
+      await materialStore.createSupplier(supplierForm)
+    }
+    
+    supplierDialogVisible.value = false
+    loadSuppliers()
+  } finally {
+    saving.value = false
+  }
+}, supplierForm.id ? '更新供应商成功' : '创建供应商成功', '保存供应商失败')
+
+const handleDeleteSupplier = async (supplier: Supplier) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除供应商"${safeGet(supplier, 'name', '未知')}"吗？`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const result = await safeApiCall(
+      () => materialStore.deleteSupplier(ensureNumber(supplier.id, 0)),
+      {
+        showMessage: false,
+        fallbackValue: null
+      }
+    )
+    
+    if (result !== null) {
+      ElMessage.success('删除供应商成功')
+      loadSuppliers()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('删除供应商失败')
+    }
+  }
+}r.contact_person || '',
       phone: supplier.phone || '',
       email: supplier.email || '',
       address: supplier.address || '',

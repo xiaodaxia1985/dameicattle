@@ -312,21 +312,66 @@ export const newsApi = {
     isTop?: boolean
     keyword?: string
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
-    console.log('正在获取文章列表:', { url: '/news/articles', params })
+    console.log('🔍 newsApi.getArticles 调用参数:', params)
+    
     const response = await newsServiceApi.getNewsArticles(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<NewsArticle>(response, 'articles')
-    return {
+    console.log('📥 newsServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let articles = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      articles = responseData
+      total = articles.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      articles = responseData.data
+      total = responseData.total || responseData.pagination?.total || articles.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.articles && Array.isArray(responseData.articles)) {
+      // 有articles字段且是数组
+      articles = responseData.articles
+      total = responseData.total || responseData.pagination?.total || articles.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      articles = responseData.items
+      total = responseData.total || responseData.pagination?.total || articles.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = {
       data: {
-        data: adapted.data,
+        data: articles,
         pagination: {
-          total: adapted.pagination.total,
-          page: adapted.pagination.page,
-          limit: adapted.pagination.limit,
-          totalPages: adapted.pagination.totalPages || adapted.pagination.pages
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
         }
       }
     }
+    
+    console.log('✅ newsApi.getArticles 解析结果:', { 
+      articlesCount: articles.length, 
+      total, 
+      page, 
+      limit,
+      sampleArticle: articles[0] || null
+    })
+    
+    return result
   },
 
   // 获取新闻文章列表（使用备用端点）

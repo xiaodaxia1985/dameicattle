@@ -8,91 +8,91 @@ const logger = createLogger('api-gateway-routes');
 const MICROSERVICE_ROUTES = {
   // 认证服务
   '/api/v1/auth': {
-    target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
+    target: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 基地服务
   '/api/v1/base': {
-    target: process.env.BASE_SERVICE_URL || 'http://base-service:3002',
+    target: process.env.BASE_SERVICE_URL || 'http://localhost:3002',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 牛只服务
   '/api/v1/cattle': {
-    target: process.env.CATTLE_SERVICE_URL || 'http://cattle-service:3003',
+    target: process.env.CATTLE_SERVICE_URL || 'http://localhost:3003',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 健康服务
-  '/api/v1/health': {
-    target: process.env.HEALTH_SERVICE_URL || 'http://health-service:3004',
+  '/api/v1/health-service': {
+    target: process.env.HEALTH_SERVICE_URL || 'http://localhost:3004',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 饲养服务
   '/api/v1/feeding': {
-    target: process.env.FEEDING_SERVICE_URL || 'http://feeding-service:3005',
+    target: process.env.FEEDING_SERVICE_URL || 'http://localhost:3005',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 设备服务
   '/api/v1/equipment': {
-    target: process.env.EQUIPMENT_SERVICE_URL || 'http://equipment-service:3006',
+    target: process.env.EQUIPMENT_SERVICE_URL || 'http://localhost:3006',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 采购服务
   '/api/v1/procurement': {
-    target: process.env.PROCUREMENT_SERVICE_URL || 'http://procurement-service:3007',
+    target: process.env.PROCUREMENT_SERVICE_URL || 'http://localhost:3007',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 销售服务
   '/api/v1/sales': {
-    target: process.env.SALES_SERVICE_URL || 'http://sales-service:3008',
+    target: process.env.SALES_SERVICE_URL || 'http://localhost:3008',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 物料服务
   '/api/v1/material': {
-    target: process.env.MATERIAL_SERVICE_URL || 'http://material-service:3009',
+    target: process.env.MATERIAL_SERVICE_URL || 'http://localhost:3009',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 通知服务
   '/api/v1/notification': {
-    target: process.env.NOTIFICATION_SERVICE_URL || 'http://notification-service:3010',
+    target: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:3010',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 文件服务
   '/api/v1/file': {
-    target: process.env.FILE_SERVICE_URL || 'http://file-service:3011',
+    target: process.env.FILE_SERVICE_URL || 'http://localhost:3011',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 监控服务
   '/api/v1/monitoring': {
-    target: process.env.MONITORING_SERVICE_URL || 'http://monitoring-service:3012',
+    target: process.env.MONITORING_SERVICE_URL || 'http://localhost:3012',
     changeOrigin: true,
     timeout: 10000
   },
   
   // 新闻服务
   '/api/v1/news': {
-    target: process.env.NEWS_SERVICE_URL || 'http://news-service:3013',
+    target: process.env.NEWS_SERVICE_URL || 'http://localhost:3013',
     changeOrigin: true,
     timeout: 10000
   }
@@ -126,9 +126,9 @@ export const setupRoutes = (app: express.Application) => {
         });
       },
       
-      // 路径重写（如果需要）
-      pathRewrite: path === '/api/v1' ? {} : {
-        [`^${path}`]: ''
+      // 路径重写 - 保持原始路径
+      pathRewrite: {
+        // 不重写路径，直接转发
       }
     });
     

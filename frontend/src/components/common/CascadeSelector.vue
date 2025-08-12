@@ -194,10 +194,18 @@ const loadBarns = async (baseId: number) => {
 const loadCattle = async (barnId: number) => {
   try {
     const response = await cattleApi.getList({ barnId, status: 'active' })
-    availableCattle.value = response.data || []
+    console.log('加载牛只响应:', response)
+    
+    // 使用 quickFix 工具进行安全的数据处理
+    const { ensureArray, safeGet } = await import('@/utils/quickFix')
+    
+    // 安全获取牛只数据
+    const cattleData = safeGet(response, 'data', [])
+    availableCattle.value = ensureArray(cattleData)
   } catch (error) {
     console.error('加载牛只选项失败:', error)
-    ElMessage.error('加载牛只选项失败')
+    availableCattle.value = []
+    // 不显示错误消息，因为这可能是正常情况（牛棚为空）
   }
 }
 

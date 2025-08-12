@@ -105,17 +105,63 @@ export interface VaccinationListResponse {
 export const healthApi = {
   // 获取诊疗记录列表
   async getHealthRecords(params: HealthListParams = {}): Promise<{ data: HealthListResponse }> {
+    console.log('🔍 healthApi.getHealthRecords 调用参数:', params)
+    
     const response = await healthServiceApi.getHealthRecords(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<HealthRecord>(response, 'records')
-    return { 
+    console.log('📥 healthServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据，不使用复杂的适配器
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let records = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      records = responseData
+      total = records.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      records = responseData.data
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.records && Array.isArray(responseData.records)) {
+      // 有records字段且是数组
+      records = responseData.records
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      records = responseData.items
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
       data: {
-        data: adapted.data,
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit
+        data: records,
+        total,
+        page,
+        limit
       }
     }
+    
+    console.log('✅ healthApi.getHealthRecords 解析结果:', { 
+      recordsCount: records.length, 
+      total, 
+      page, 
+      limit,
+      sampleRecord: records[0] || null
+    })
+    
+    return result
   },
 
   // 获取诊疗记录详情
@@ -126,8 +172,31 @@ export const healthApi = {
 
   // 创建诊疗记录
   async createHealthRecord(data: CreateHealthRecordRequest): Promise<{ data: HealthRecord }> {
-    const response = await healthServiceApi.createHealthRecord(data)
-    return { data: response.data }
+    try {
+      console.log('创建健康记录API调用，参数:', data)
+      
+      // 直接处理数据，避免复杂的导入问题
+      const ensureString = (value: any, defaultValue: string = '') => {
+        return typeof value === 'string' ? value : (value ? String(value) : defaultValue)
+      }
+      
+      // 转换字段名为后端期望的格式
+      const requestData = {
+        cattle_id: ensureString(data.cattleId),
+        symptoms: ensureString(data.symptoms),
+        diagnosis: ensureString(data.diagnosis),
+        treatment: ensureString(data.treatment),
+        diagnosis_date: ensureString(data.diagnosisDate)
+      }
+      
+      console.log('清理后的请求数据:', requestData)
+      const response = await healthServiceApi.createHealthRecord(requestData)
+      console.log('创建健康记录API响应:', response)
+      return { data: response.data }
+    } catch (error) {
+      console.error('创建健康记录失败:', error)
+      throw error
+    }
   },
 
   // 更新诊疗记录

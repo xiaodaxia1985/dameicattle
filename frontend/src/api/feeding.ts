@@ -120,17 +120,63 @@ export interface UpdateFeedingRecordRequest {
 export const feedingApi = {
   // 获取饲料配方列表
   async getFormulas(params: FormulaListParams = {}): Promise<{ data: FormulaListResponse }> {
+    console.log('🔍 feedingApi.getFormulas 调用参数:', params)
+    
     const response = await feedingServiceApi.getFeedFormulas(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<FeedFormula>(response, 'formulas')
-    return {
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let formulas = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      formulas = responseData
+      total = formulas.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      formulas = responseData.data
+      total = responseData.total || responseData.pagination?.total || formulas.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.formulas && Array.isArray(responseData.formulas)) {
+      // 有formulas字段且是数组
+      formulas = responseData.formulas
+      total = responseData.total || responseData.pagination?.total || formulas.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      formulas = responseData.items
+      total = responseData.total || responseData.pagination?.total || formulas.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = {
       data: {
-        data: adapted.data,
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit
+        data: formulas,
+        total,
+        page,
+        limit
       }
     }
+    
+    console.log('✅ feedingApi.getFormulas 解析结果:', { 
+      formulasCount: formulas.length, 
+      total, 
+      page, 
+      limit,
+      sampleFormula: formulas[0] || null
+    })
+    
+    return result
   },
 
   // 获取饲料配方详情

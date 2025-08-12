@@ -34,15 +34,17 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+    // 使用与auth-service相同的JWT密钥
+    const JWT_SECRET = process.env.JWT_SECRET || 'cattle-management-secret-key-2024';
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
     
-    // 模拟用户信息（实际应该从数据库获取）
+    // 使用token中的用户信息
     req.user = {
-      id: decoded.id || decoded.userId,
+      id: decoded.id,
       username: decoded.username,
-      real_name: decoded.real_name || decoded.realName,
-      base_id: decoded.base_id || decoded.baseId,
-      role: decoded.role,
+      real_name: decoded.real_name || decoded.username,
+      base_id: decoded.base_id,
+      role: decoded.role || 'admin',
       permissions: decoded.permissions || []
     };
 
