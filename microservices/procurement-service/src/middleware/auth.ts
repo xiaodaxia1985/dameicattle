@@ -1,92 +1,136 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { logger } from '../utils/logger';
+import { Request, Response, NextFunction } from 'express'
+import jwt from 'jsonwebtoken'
+import { logger } from '../utils/logger'
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: number;
-    username: string;
-    real_name: string;
-    base_id?: number;
-    role?: string;
-    permissions?: string[];
-  };
-}
-
-interface DataPermission {
-  canAccessAllBases: boolean;
-  baseId?: number;
-}
-
-interface DataPermissionRequest extends AuthenticatedRequest {
-  dataPermission?: DataPermission;
-}
-
-export const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: '访问令牌缺失',
-        error: 'TOKEN_MISSING'
-      });
+// 扩展 Request 接口以包含用户信息
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string
+        username: string
+        name: string
+        role: string
+        permissions: string[]
+      }
     }
+  }
+}
 
-    // 使用与auth-service相同的JWT密钥
-    const JWT_SECRET = process.env.JWT_SECRET || 'cattle-management-secret-key-2024';
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
-    
-    // 使用token中的用户信息
-    req.user = {
-      id: decoded.id,
-      username: decoded.username,
-      real_name: decoded.real_name || decoded.username,
-      base_id: decoded.base_id,
-      role: decoded.role || 'admin',
-      permissions: decoded.permissions || []
-    };
+/**
+ * JWT 认证中间件
+ */
+export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization
+  const token = authHeader && authHeader.split(' ')[1] // Bearer TOKEN
 
-    next();
-  } catch (error) {
-    logger.error('认证失败:', error);
+  if (!token) {
     return res.status(401).json({
       success: false,
-      message: '访问令牌无效',
-      error: 'TOKEN_INVALID'
-    });
+      message: '访问令牌缺失',
+      code: 'TOKEN_MISSING'
+    })
   }
-};
 
-export const dataPermissionMiddleware = (req: DataPermissionRequest, res: Response, next: NextFunction) => {
   try {
-    const user = req.user;
+    const jwtSecret = process.env.JWT_SECRET || 'your-jwt-secret-key'
+    const decoded = jwt.verify(token, jwtSecret) as any
+
+    // 将用户信息添加到请求对象
+    req.user = {
+      id: decoded.id || decoded.userId,
+      username: decoded.username,
+      name: decoded.name || decoded.username,
+      role: decoded.role || 'user',
+      permissions: decoded.permissions || []
+    }
+
+    next()
+  } catch (error) {
+    logger.error('Token验证失败:', error)
     
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        success: false,
+        message: '访问令牌已过期',
+        code: 'TOKEN_EXPIRED'
+      })
+    }
+    
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({
+        success: false,
+        message: '无效的访问令牌',
+        code: 'TOKEN_INVALID'
+      })
+    }
+
+    return res.status(401).json({
+      success: false,
+      message: '令牌验证失败',
+      code: 'TOKEN_VERIFICATION_FAILED'
+    })
+  }
+}
+
+/**
+ * 权限检查中间件
+ */
+export const requirePermission = (permission: string) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user
+
     if (!user) {
       return res.status(401).json({
         success: false,
         message: '用户未认证',
-        error: 'USER_NOT_AUTHENTICATED'
-      });
+        code: 'USER_NOT_AUTHENTICATED'
+      })
     }
 
-    // 检查用户是否有访问所有基地的权限（超级管理员）
-    const canAccessAllBases = user.role === 'super_admin' || 
-                             (user.permissions && user.permissions.includes('access_all_bases'));
+    // 管理员拥有所有权限
+    if (user.role === 'admin') {
+      return next()
+    }
 
-    req.dataPermission = {
-      canAccessAllBases,
-      baseId: user.base_id
-    };
+    // 检查用户是否有指定权限
+    if (!user.permissions.includes(permission)) {
+      return res.status(403).json({
+        success: false,
+        message: '权限不足',
+        code: 'INSUFFICIENT_PERMISSIONS'
+      })
+    }
 
-    next();
-  } catch (error) {
-    logger.error('数据权限检查失败:', error);
-    return res.status(500).json({
-      success: false,
-      message: '数据权限检查失败',
-      error: 'DATA_PERMISSION_ERROR'
-    });
+    next()
   }
-};
+}
+
+/**
+ * 角色检查中间件
+ */
+export const requireRole = (roles: string | string[]) => {
+  const allowedRoles = Array.isArray(roles) ? roles : [roles]
+  
+  return (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: '用户未认证',
+        code: 'USER_NOT_AUTHENTICATED'
+      })
+    }
+
+    if (!allowedRoles.includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: '角色权限不足',
+        code: 'INSUFFICIENT_ROLE'
+      })
+    }
+
+    next()
+  }
+}

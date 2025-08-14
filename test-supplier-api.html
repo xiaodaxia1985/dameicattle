@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>供应商API测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-section h3 { margin-top: 0; color: #333; }
+        button { padding: 8px 16px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; font-family: monospace; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        input, select, textarea { padding: 5px; margin: 5px; border: 1px solid #ddd; border-radius: 3px; }
+        .form-group { margin: 10px 0; }
+        label { display: inline-block; width: 120px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>供应商API测试工具</h1>
+    
+    <div class="test-section">
+        <h3>1. 获取供应商列表</h3>
+        <button onclick="getSuppliers()">获取供应商列表</button>
+        <div id="suppliers-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 创建供应商</h3>
+        <div class="form-group">
+            <label>供应商名称:</label>
+            <input type="text" id="create-name" value="测试供应商" />
+        </div>
+        <div class="form-group">
+            <label>联系人:</label>
+            <input type="text" id="create-contact" value="张经理" />
+        </div>
+        <div class="form-group">
+            <label>联系电话:</label>
+            <input type="text" id="create-phone" value="13800138000" />
+        </div>
+        <div class="form-group">
+            <label>邮箱:</label>
+            <input type="email" id="create-email" value="test@example.com" />
+        </div>
+        <div class="form-group">
+            <label>地址:</label>
+            <input type="text" id="create-address" value="北京市朝阳区" />
+        </div>
+        <div class="form-group">
+            <label>供应商类型:</label>
+            <select id="create-type">
+                <option value="material">物资供应商</option>
+                <option value="cattle">牛只供应商</option>
+                <option value="equipment">设备供应商</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>信用额度:</label>
+            <input type="number" id="create-credit" value="100000" />
+        </div>
+        <div class="form-group">
+            <label>评级:</label>
+            <input type="number" id="create-rating" value="5" min="1" max="10" />
+        </div>
+        <button onclick="createSupplier()">创建供应商</button>
+        <div id="create-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 更新供应商</h3>
+        <div class="form-group">
+            <label>供应商ID:</label>
+            <input type="number" id="update-id" value="1" />
+        </div>
+        <div class="form-group">
+            <label>供应商名称:</label>
+            <input type="text" id="update-name" value="更新后的供应商" />
+        </div>
+        <div class="form-group">
+            <label>联系人:</label>
+            <input type="text" id="update-contact" value="李经理" />
+        </div>
+        <div class="form-group">
+            <label>联系电话:</label>
+            <input type="text" id="update-phone" value="13900139000" />
+        </div>
+        <button onclick="updateSupplier()">更新供应商</button>
+        <div id="update-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 删除供应商</h3>
+        <div class="form-group">
+            <label>供应商ID:</label>
+            <input type="number" id="delete-id" value="1" />
+        </div>
+        <button onclick="deleteSupplier()">删除供应商</button>
+        <div id="delete-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. 获取供应商详情</h3>
+        <div class="form-group">
+            <label>供应商ID:</label>
+            <input type="number" id="detail-id" value="1" />
+        </div>
+        <button onclick="getSupplierDetail()">获取详情</button>
+        <div id="detail-result" class="result"></div>
+    </div>
+
+    <script>
+        // 模拟登录token
+        const token = 'Bearer test-token';
+        const baseUrl = '/api/v1/procurement';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token,
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        function displayResult(elementId, result) {
+            const element = document.getElementById(elementId);
+            element.className = 'result ' + (result.success ? 'success' : 'error');
+            element.textContent = JSON.stringify(result, null, 2);
+        }
+
+        async function getSuppliers() {
+            const result = await makeRequest(`${baseUrl}/suppliers?page=1&limit=10`);
+            displayResult('suppliers-result', result);
+        }
+
+        async function createSupplier() {
+            const data = {
+                name: document.getElementById('create-name').value,
+                contactPerson: document.getElementById('create-contact').value,
+                phone: document.getElementById('create-phone').value,
+                email: document.getElementById('create-email').value,
+                address: document.getElementById('create-address').value,
+                supplierType: document.getElementById('create-type').value,
+                creditLimit: Number(document.getElementById('create-credit').value),
+                rating: Number(document.getElementById('create-rating').value)
+            };
+
+            const result = await makeRequest(`${baseUrl}/suppliers`, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            displayResult('create-result', result);
+        }
+
+        async function updateSupplier() {
+            const id = document.getElementById('update-id').value;
+            const data = {
+                name: document.getElementById('update-name').value,
+                contactPerson: document.getElementById('update-contact').value,
+                phone: document.getElementById('update-phone').value
+            };
+
+            const result = await makeRequest(`${baseUrl}/suppliers/${id}`, {
+                method: 'PUT',
+                body: JSON.stringify(data)
+            });
+            displayResult('update-result', result);
+        }
+
+        async function deleteSupplier() {
+            const id = document.getElementById('delete-id').value;
+            const result = await makeRequest(`${baseUrl}/suppliers/${id}`, {
+                method: 'DELETE'
+            });
+            displayResult('delete-result', result);
+        }
+
+        async function getSupplierDetail() {
+            const id = document.getElementById('detail-id').value;
+            const result = await makeRequest(`${baseUrl}/suppliers/${id}`);
+            displayResult('detail-result', result);
+        }
+
+        // 页面加载时自动获取供应商列表
+        window.onload = function() {
+            getSuppliers();
+        };
+    </script>
+</body>
+</html>

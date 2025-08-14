@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采购订单功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>采购订单功能测试</h1>
+    
+    <div class="test-section">
+        <h3>1. 获取订单列表</h3>
+        <button onclick="testGetOrders()">测试获取订单列表</button>
+        <div id="orders-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. 获取订单详情</h3>
+        <button onclick="testGetOrderDetail()">测试获取订单详情 (ID: 1)</button>
+        <div id="order-detail-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. 审批订单</h3>
+        <button onclick="testApproveOrder()">测试审批订单 (ID: 1)</button>
+        <div id="approve-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. 取消订单</h3>
+        <button onclick="testCancelOrder()">测试取消订单 (ID: 1)</button>
+        <div id="cancel-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. 获取供应商列表</h3>
+        <button onclick="testGetSuppliers()">测试获取供应商列表</button>
+        <div id="suppliers-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>6. 获取基地列表</h3>
+        <button onclick="testGetBases()">测试获取基地列表</button>
+        <div id="bases-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3007/api/v1/procurement';
+        const AUTH_TOKEN = 'Bearer test-token';
+
+        async function makeRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': AUTH_TOKEN,
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+                
+                const data = await response.json();
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testGetOrders() {
+            const result = await makeRequest(`${API_BASE}/orders`);
+            const resultDiv = document.getElementById('orders-result');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `成功获取订单列表:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `获取订单列表失败:\n${JSON.stringify(result, null, 2)}`;
+            }
+        }
+
+        async function testGetOrderDetail() {
+            const result = await makeRequest(`${API_BASE}/orders/1`);
+            const resultDiv = document.getElementById('order-detail-result');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `成功获取订单详情:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `获取订单详情失败:\n${JSON.stringify(result, null, 2)}`;
+            }
+        }
+
+        async function testApproveOrder() {
+            const result = await makeRequest(`${API_BASE}/orders/1/approve`, {
+                method: 'POST'
+            });
+            const resultDiv = document.getElementById('approve-result');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `成功审批订单:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `审批订单失败:\n${JSON.stringify(result, null, 2)}`;
+            }
+        }
+
+        async function testCancelOrder() {
+            const result = await makeRequest(`${API_BASE}/orders/1/cancel`, {
+                method: 'POST',
+                body: JSON.stringify({ reason: '测试取消' })
+            });
+            const resultDiv = document.getElementById('cancel-result');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `成功取消订单:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `取消订单失败:\n${JSON.stringify(result, null, 2)}`;
+            }
+        }
+
+        async function testGetSuppliers() {
+            const result = await makeRequest(`${API_BASE}/suppliers`);
+            const resultDiv = document.getElementById('suppliers-result');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `成功获取供应商列表:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `获取供应商列表失败:\n${JSON.stringify(result, null, 2)}`;
+            }
+        }
+
+        async function testGetBases() {
+            const result = await makeRequest(`${API_BASE}/bases`);
+            const resultDiv = document.getElementById('bases-result');
+            
+            if (result.success) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `成功获取基地列表:\n${JSON.stringify(result.data, null, 2)}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `获取基地列表失败:\n${JSON.stringify(result, null, 2)}`;
+            }
+        }
+
+        // 页面加载时自动测试获取订单列表
+        window.onload = function() {
+            testGetOrders();
+        };
+    </script>
+</body>
+</html>
+</content>
+</invoke>

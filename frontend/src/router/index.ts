@@ -131,9 +131,15 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'purchase',
         name: 'Purchase',
-        redirect: '/admin/purchase/orders',
+        redirect: '/admin/purchase/statistics',
         meta: { title: '采购管理', icon: 'ShoppingCart' },
         children: [
+          {
+            path: 'statistics',
+            name: 'PurchaseStatistics',
+            component: () => import('@/views/purchase/Statistics.vue'),
+            meta: { title: '采购统计分析' }
+          },
           {
             path: 'orders',
             name: 'PurchaseOrders',
@@ -145,12 +151,6 @@ const routes: RouteRecordRaw[] = [
             name: 'Suppliers',
             component: () => import('@/views/purchase/Suppliers.vue'),
             meta: { title: '供应商管理' }
-          },
-          {
-            path: 'statistics',
-            name: 'PurchaseStatistics',
-            component: () => import('@/views/purchase/Statistics.vue'),
-            meta: { title: '采购统计' }
           }
         ]
       },

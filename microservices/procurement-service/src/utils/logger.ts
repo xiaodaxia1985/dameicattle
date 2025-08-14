@@ -1,60 +1,56 @@
-import winston from 'winston';
-import path from 'path';
-import fs from 'fs';
+import winston from 'winston'
+import path from 'path'
 
-const { combine, timestamp, errors, json, printf, colorize } = winston.format;
+// 日志级别
+const logLevel = process.env.LOG_LEVEL || 'info'
 
-const logsDir = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
+// 创建日志格式
+const logFormat = winston.format.combine(
+  winston.format.timestamp({
+    format: 'YYYY-MM-DD HH:mm:ss'
+  }),
+  winston.format.errors({ stack: true }),
+  winston.format.printf(({ level, message, timestamp, stack }) => {
+    return `${timestamp} [${level.toUpperCase()}]: ${stack || message}`
+  })
+)
 
-const consoleFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
-  let log = `${timestamp} [${level.toUpperCase()}] [BASE-SERVICE]: ${message}`;
-  
-  if (stack) {
-    log += `\n${stack}`;
-  }
-  
-  if (Object.keys(meta).length > 0) {
-    log += `\n${JSON.stringify(meta, null, 2)}`;
-  }
-  
-  return log;
-});
-
+// 创建 Winston logger
 export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: combine(
-    timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
-    errors({ stack: true }),
-    json()
-  ),
-  defaultMeta: {
-    service: 'base-service',
-    environment: process.env.NODE_ENV || 'development'
-  },
+  level: logLevel,
+  format: logFormat,
   transports: [
+    // 控制台输出
+    new winston.transports.Console({
+      format: winston.format.combine(
+        winston.format.colorize(),
+        logFormat
+      )
+    }),
+    // 文件输出
     new winston.transports.File({
-      filename: path.join(logsDir, 'base-error.log'),
-      level: 'error',
-      maxsize: 5242880,
+      filename: path.join(process.cwd(), 'logs', 'procurement-service.log'),
+      maxsize: 5242880, // 5MB
       maxFiles: 5
     }),
+    // 错误日志单独文件
     new winston.transports.File({
-      filename: path.join(logsDir, 'base-combined.log'),
-      maxsize: 10485760,
-      maxFiles: 10
+      filename: path.join(process.cwd(), 'logs', 'procurement-service-error.log'),
+      level: 'error',
+      maxsize: 5242880, // 5MB
+      maxFiles: 5
     })
   ]
-});
+})
 
+// 在非生产环境下，将日志输出到控制台
 if (process.env.NODE_ENV !== 'production') {
   logger.add(new winston.transports.Console({
-    format: combine(
-      colorize(),
-      timestamp({ format: 'HH:mm:ss' }),
-      consoleFormat
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
     )
-  }));
+  }))
 }
+
+export default logger

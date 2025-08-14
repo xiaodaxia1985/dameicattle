@@ -1,30 +1,45 @@
-import Redis from 'redis';
-import { logger } from '../utils/logger';
+import Redis from 'ioredis'
+import { logger } from '../utils/logger'
 
-const {
-  REDIS_HOST = 'localhost',
-  REDIS_PORT = '6379',
-  REDIS_URL = `redis://${REDIS_HOST}:${REDIS_PORT}`,
-} = process.env;
+let redisClient: Redis | null = null
 
-export const redisClient = Redis.createClient({
-  url: REDIS_URL,
-});
-
-redisClient.on('error', (err) => {
-  logger.error('Redis Client Error:', err);
-});
-
-redisClient.on('connect', () => {
-  logger.info('Redis connected successfully');
-});
-
-export const initializeRedis = async (): Promise<void> => {
+export const initializeRedis = async (): Promise<Redis> => {
   try {
-    await redisClient.connect();
-    logger.info('Redis connection established');
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'
+    
+    redisClient = new Redis(redisUrl, {
+      maxRetriesPerRequest: 3,
+      lazyConnect: true
+    })
+
+    redisClient.on('connect', () => {
+      logger.info('Redis连接成功')
+    })
+
+    redisClient.on('error', (error) => {
+      logger.error('Redis连接错误:', error)
+    })
+
+    redisClient.on('close', () => {
+      logger.warn('Redis连接已关闭')
+    })
+
+    await redisClient.connect()
+    return redisClient
   } catch (error) {
-    logger.error('Failed to connect to Redis:', error);
-    throw error;
+    logger.error('Redis初始化失败:', error)
+    throw error
   }
-};
+}
+
+export const getRedisClient = (): Redis | null => {
+  return redisClient
+}
+
+export const closeRedis = async (): Promise<void> => {
+  if (redisClient) {
+    await redisClient.quit()
+    redisClient = null
+    logger.info('Redis连接已关闭')
+  }
+}

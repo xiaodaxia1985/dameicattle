@@ -140,18 +140,38 @@ export function fixProcurementOrderData(order: any) {
 
   return {
     id: order.id || 0,
-    order_number: order.order_number || order.orderNumber || '',
-    supplier_id: order.supplier_id || order.supplierId || 0,
-    base_id: order.base_id || order.baseId || 0,
-    total_amount: typeof order.total_amount === 'number' ? order.total_amount : 
-                  typeof order.totalAmount === 'number' ? order.totalAmount : 0,
+    orderNumber: order.order_number || order.orderNumber || '',
+    supplierId: order.supplier_id || order.supplierId || 0,
+    supplierName: order.supplier_name || order.supplierName || order.supplier?.name || '',
+    baseId: order.base_id || order.baseId || 0,
+    baseName: order.base_name || order.baseName || order.base?.name || '',
+    orderType: order.order_type || order.orderType || 'material',
+    totalAmount: typeof order.total_amount === 'number' ? order.total_amount : 
+                 typeof order.totalAmount === 'number' ? order.totalAmount : 0,
+    taxAmount: typeof order.tax_amount === 'number' ? order.tax_amount : 
+               typeof order.taxAmount === 'number' ? order.taxAmount : 0,
+    discountAmount: typeof order.discount_amount === 'number' ? order.discount_amount : 
+                    typeof order.discountAmount === 'number' ? order.discountAmount : 0,
     status: order.status || 'pending',
-    order_date: order.order_date || order.orderDate || '',
-    expected_delivery_date: order.expected_delivery_date || order.expectedDeliveryDate || null,
+    paymentStatus: order.payment_status || order.paymentStatus || 'unpaid',
+    paymentMethod: order.payment_method || order.paymentMethod || '',
+    orderDate: order.order_date || order.orderDate || '',
+    expectedDeliveryDate: order.expected_delivery_date || order.expectedDeliveryDate || null,
+    actualDeliveryDate: order.actual_delivery_date || order.actualDeliveryDate || null,
+    contractNumber: order.contract_number || order.contractNumber || '',
+    remark: order.remark || '',
+    createdBy: order.created_by || order.createdBy || '',
+    createdByName: order.created_by_name || order.createdByName || order.creator?.name || '',
+    approvedBy: order.approved_by || order.approvedBy || '',
+    approvedByName: order.approved_by_name || order.approvedByName || order.approver?.name || '',
+    approvedAt: order.approved_at || order.approvedAt || null,
     supplier: order.supplier || null,
+    base: order.base || null,
     creator: order.creator || null,
-    created_at: order.created_at || order.createdAt || '',
-    updated_at: order.updated_at || order.updatedAt || ''
+    approver: order.approver || null,
+    items: Array.isArray(order.items) ? order.items : [],
+    createdAt: order.created_at || order.createdAt || '',
+    updatedAt: order.updated_at || order.updatedAt || ''
   }
 }
 

@@ -7,9 +7,9 @@
 import type { ApiResponse } from './request'
 import { UnifiedApiClient } from '@/utils/apiClient'
 
-// 创建专用的微服务API客户端，使用空的baseURL让每个服务使用完整路径
+// 创建专用的微服务API客户端，使用正确的baseURL配置
 const microserviceApiClient = new UnifiedApiClient({
-  baseURL: '', // 空的baseURL，让每个微服务使用完整的/api/v1/xxx路径
+  baseURL: '', // 使用前端代理的baseURL
   timeout: 10000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -55,6 +55,11 @@ class MicroserviceApi {
   }
 
   protected buildUrl(path: string): string {
+    // 如果servicePath已经包含完整路径，直接拼接
+    if (this.servicePath.startsWith('/api/v1/')) {
+      return `${this.servicePath}${path.startsWith('/') ? path : `/${path}`}`
+    }
+    // 否则使用相对路径
     return `${this.servicePath}${path.startsWith('/') ? path : `/${path}`}`
   }
 

@@ -264,6 +264,7 @@ import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Download, ShoppingCart, Money, User, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { purchaseApi } from '@/api/purchase'
 
 // 响应式数据
 const dateRange = ref<[string, string]>([
@@ -302,14 +303,19 @@ let statusChart: echarts.ECharts | null = null
 // 方法
 const fetchStatistics = async () => {
   try {
-    // 模拟数据
-    Object.assign(statistics, {
-      totalOrders: 156,
-      totalAmount: 2580000,
-      activeSuppliers: 23,
-      avgOrderAmount: 16538
-    })
+    const params = {
+      startDate: dateRange.value?.[0] ? `${dateRange.value[0]}-01` : undefined,
+      endDate: dateRange.value?.[1] ? `${dateRange.value[1]}-31` : undefined
+    }
+    
+    const response = await purchaseApi.getStatistics(params)
+    console.log('统计数据响应:', response)
+    
+    if (response.data) {
+      Object.assign(statistics, response.data)
+    }
   } catch (error) {
+    console.error('获取统计数据失败:', error)
     ElMessage.error('获取统计数据失败')
   }
 }
@@ -317,92 +323,26 @@ const fetchStatistics = async () => {
 const fetchDetailData = async () => {
   tableLoading.value = true
   try {
+    const params = {
+      startDate: dateRange.value?.[0] ? `${dateRange.value[0]}-01` : undefined,
+      endDate: dateRange.value?.[1] ? `${dateRange.value[1]}-31` : undefined
+    }
+
     if (activeTab.value === 'monthly') {
-      // 模拟月度数据
-      monthlyData.value = [
-        {
-          month: '2024-01',
-          orderCount: 25,
-          totalAmount: 420000,
-          avgAmount: 16800,
-          cattleOrders: 8,
-          materialOrders: 12,
-          equipmentOrders: 5,
-          completionRate: 92
-        },
-        {
-          month: '2024-02',
-          orderCount: 18,
-          totalAmount: 310000,
-          avgAmount: 17222,
-          cattleOrders: 6,
-          materialOrders: 8,
-          equipmentOrders: 4,
-          completionRate: 89
-        },
-        {
-          month: '2024-03',
-          orderCount: 32,
-          totalAmount: 580000,
-          avgAmount: 18125,
-          cattleOrders: 12,
-          materialOrders: 15,
-          equipmentOrders: 5,
-          completionRate: 94
-        }
-      ]
+      const response = await purchaseApi.getMonthlyData(params)
+      console.log('月度数据响应:', response)
+      monthlyData.value = response.data?.monthlyData || []
     } else if (activeTab.value === 'supplier') {
-      // 模拟供应商数据
-      supplierData.value = [
-        {
-          supplierName: '优质牧业有限公司',
-          orderCount: 15,
-          totalAmount: 450000,
-          avgAmount: 30000,
-          rating: 5,
-          onTimeRate: 95,
-          lastOrderDate: '2024-03-15'
-        },
-        {
-          supplierName: '绿源饲料供应商',
-          orderCount: 28,
-          totalAmount: 380000,
-          avgAmount: 13571,
-          rating: 4,
-          onTimeRate: 88,
-          lastOrderDate: '2024-03-20'
-        }
-      ]
+      const response = await purchaseApi.getSupplierRanking(params)
+      console.log('供应商排行响应:', response)
+      supplierData.value = response.data?.supplierRanking || []
     } else if (activeTab.value === 'category') {
-      // 模拟类别数据
-      categoryData.value = [
-        {
-          category: 'cattle',
-          orderCount: 45,
-          totalAmount: 1200000,
-          percentage: 46.5,
-          avgAmount: 26667,
-          growthRate: 12.5
-        },
-        {
-          category: 'material',
-          orderCount: 78,
-          totalAmount: 980000,
-          percentage: 38.0,
-          avgAmount: 12564,
-          growthRate: 8.3
-        },
-        {
-          category: 'equipment',
-          orderCount: 33,
-          totalAmount: 400000,
-          percentage: 15.5,
-          avgAmount: 12121,
-          growthRate: -2.1
-        }
-      ]
+      const response = await purchaseApi.getTypeDistribution(params)
+      console.log('类型分布响应:', response)
+      categoryData.value = response.data?.typeDistribution || []
     }
   } catch (error) {
+    console.error('获取详细数据失败:', error)
     ElMessage.error('获取详细数据失败')
   } finally {
     tableLoading.value = false
@@ -415,16 +355,108 @@ const initCharts = async () => {
   // 初始化趋势图
   if (trendChartRef.value) {
     trendChart = echarts.init(trendChartRef.value)
-    updateTrendChart()
+    await updateTrendChart()
   }
 
   // 初始化类型分布图
   if (typeChartRef.value) {
     typeChart = echarts.init(typeChartRef.value)
+    await updateTypeChart()
+  }
+
+  // 初始化供应商排行图
+  if (supplierChartRef.value) {
+    supplierChart = echarts.init(supplierChartRef.value)
+    await updateSupplierChart()
+  }
+
+  // 初始化状态分布图
+  if (statusChartRef.value) {
+    statusChart = echarts.init(statusChartRef.value)
+    await updateStatusChart()
+  }
+}
+
+const updateTrendChart = async () => {
+  if (!trendChart) return
+
+  try {
+    const params = {
+      startDate: dateRange.value?.[0] ? `${dateRange.value[0]}-01` : undefined,
+      endDate: dateRange.value?.[1] ? `${dateRange.value[1]}-31` : undefined,
+      months: 6
+    }
+    
+    const response = await purchaseApi.getTrendData(params)
+    const trendData = response.data?.monthlyStats || []
+    
+    const months = trendData.map((item: any) => item.month?.slice(0, 7) || '')
+    const amountData = trendData.map((item: any) => Number(item.totalAmount) || 0)
+    const countData = trendData.map((item: any) => Number(item.orderCount) || 0)
+
+    const option = {
+      tooltip: {
+        trigger: 'axis'
+      },
+      legend: {
+        data: [trendType.value === 'amount' ? '采购金额' : '订单数量']
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '3%',
+        containLabel: true
+      },
+      xAxis: {
+        type: 'category',
+        boundaryGap: false,
+        data: months
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [
+        {
+          name: trendType.value === 'amount' ? '采购金额' : '订单数量',
+          type: 'line',
+          stack: 'Total',
+          data: trendType.value === 'amount' ? amountData : countData,
+          itemStyle: {
+            color: '#409EFF'
+          },
+          areaStyle: {
+            color: 'rgba(64, 158, 255, 0.1)'
+          }
+        }
+      ]
+    }
+    trendChart.setOption(option)
+  } catch (error) {
+    console.error('更新趋势图失败:', error)
+  }
+}
+
+const updateTypeChart = async () => {
+  if (!typeChart) return
+
+  try {
+    const params = {
+      startDate: dateRange.value?.[0] ? `${dateRange.value[0]}-01` : undefined,
+      endDate: dateRange.value?.[1] ? `${dateRange.value[1]}-31` : undefined
+    }
+    
+    const response = await purchaseApi.getTypeDistribution(params)
+    const typeData = response.data?.typeDistribution || []
+    
+    const chartData = typeData.map((item: any) => ({
+      value: Number(item.totalAmount) || 0,
+      name: getCategoryText(item.orderType)
+    }))
+
     const typeOption = {
       tooltip: {
         trigger: 'item',
-        formatter: '{a} <br/>{b}: {c} ({d}%)'
+        formatter: '{a} <br/>{b}: ¥{c} ({d}%)'
       },
       legend: {
         orient: 'vertical',
@@ -435,11 +467,7 @@ const initCharts = async () => {
           name: '采购类型',
           type: 'pie',
           radius: '50%',
-          data: [
-            { value: 1200000, name: '牛只采购' },
-            { value: 980000, name: '物资采购' },
-            { value: 400000, name: '设备采购' }
-          ],
+          data: chartData,
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
@@ -451,17 +479,34 @@ const initCharts = async () => {
       ]
     }
     typeChart.setOption(typeOption)
+  } catch (error) {
+    console.error('更新类型分布图失败:', error)
   }
+}
 
-  // 初始化供应商排行图
-  if (supplierChartRef.value) {
-    supplierChart = echarts.init(supplierChartRef.value)
+const updateSupplierChart = async () => {
+  if (!supplierChart) return
+
+  try {
+    const params = {
+      startDate: dateRange.value?.[0] ? `${dateRange.value[0]}-01` : undefined,
+      endDate: dateRange.value?.[1] ? `${dateRange.value[1]}-31` : undefined,
+      limit: 10
+    }
+    
+    const response = await purchaseApi.getSupplierRanking(params)
+    const supplierData = response.data?.supplierRanking || []
+    
+    const supplierNames = supplierData.map((item: any) => item.supplierName || '').reverse()
+    const supplierAmounts = supplierData.map((item: any) => Number(item.totalAmount) || 0).reverse()
+
     const supplierOption = {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
           type: 'shadow'
-        }
+        },
+        formatter: '{b}: ¥{c}'
       },
       grid: {
         left: '3%',
@@ -474,13 +519,13 @@ const initCharts = async () => {
       },
       yAxis: {
         type: 'category',
-        data: ['优质牧业', '绿源饲料', '现代设备', '金牛供应', '优选物资']
+        data: supplierNames
       },
       series: [
         {
           name: '采购金额',
           type: 'bar',
-          data: [450000, 380000, 320000, 280000, 250000],
+          data: supplierAmounts,
           itemStyle: {
             color: '#409EFF'
           }
@@ -488,14 +533,40 @@ const initCharts = async () => {
       ]
     }
     supplierChart.setOption(supplierOption)
+  } catch (error) {
+    console.error('更新供应商排行图失败:', error)
   }
+}
 
-  // 初始化状态分布图
-  if (statusChartRef.value) {
-    statusChart = echarts.init(statusChartRef.value)
+const updateStatusChart = async () => {
+  if (!statusChart) return
+
+  try {
+    const params = {
+      startDate: dateRange.value?.[0] ? `${dateRange.value[0]}-01` : undefined,
+      endDate: dateRange.value?.[1] ? `${dateRange.value[1]}-31` : undefined
+    }
+    
+    const response = await purchaseApi.getStatusDistribution(params)
+    const statusData = response.data?.statusDistribution || []
+    
+    const statusMap = {
+      pending: '待审批',
+      approved: '已审批',
+      delivered: '已交付',
+      completed: '已完成',
+      cancelled: '已取消'
+    }
+    
+    const chartData = statusData.map((item: any) => ({
+      value: Number(item.count) || 0,
+      name: statusMap[item.status] || item.status
+    }))
+
     const statusOption = {
       tooltip: {
-        trigger: 'item'
+        trigger: 'item',
+        formatter: '{a} <br/>{b}: {c} ({d}%)'
       },
       series: [
         {
@@ -517,70 +588,29 @@ const initCharts = async () => {
           labelLine: {
             show: false
           },
-          data: [
-            { value: 45, name: '已完成' },
-            { value: 32, name: '已审批' },
-            { value: 28, name: '已交付' },
-            { value: 15, name: '待审批' },
-            { value: 8, name: '已取消' }
-          ]
+          data: chartData
         }
       ]
     }
     statusChart.setOption(statusOption)
+  } catch (error) {
+    console.error('更新状态分布图失败:', error)
   }
 }
 
-const updateTrendChart = () => {
-  if (!trendChart) return
-
-  const months = ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06']
-  const amountData = [420000, 310000, 580000, 450000, 380000, 520000]
-  const countData = [25, 18, 32, 28, 22, 30]
-
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    legend: {
-      data: [trendType.value === 'amount' ? '采购金额' : '订单数量']
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: months
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [
-      {
-        name: trendType.value === 'amount' ? '采购金额' : '订单数量',
-        type: 'line',
-        stack: 'Total',
-        data: trendType.value === 'amount' ? amountData : countData,
-        itemStyle: {
-          color: '#409EFF'
-        },
-        areaStyle: {
-          color: 'rgba(64, 158, 255, 0.1)'
-        }
-      }
-    ]
-  }
-  trendChart.setOption(option)
+const handleDateChange = async () => {
+  await fetchStatistics()
+  await fetchDetailData()
+  await updateAllCharts()
 }
 
-const handleDateChange = () => {
-  fetchStatistics()
-  fetchDetailData()
-  updateTrendChart()
+const updateAllCharts = async () => {
+  await Promise.all([
+    updateTrendChart(),
+    updateTypeChart(),
+    updateSupplierChart(),
+    updateStatusChart()
+  ])
 }
 
 const handleExport = () => {

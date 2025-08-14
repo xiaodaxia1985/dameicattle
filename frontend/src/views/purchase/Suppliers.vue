@@ -150,7 +150,7 @@
           </el-col>
         </el-row>
 
-        <el-form-item label="地址">
+        <el-form-item label="地址" prop="address">
           <el-input v-model="form.address" type="textarea" placeholder="请输入地址" />
         </el-form-item>
 
@@ -251,10 +251,28 @@ const form = reactive({
 
 // 表单验证规则
 const rules = {
-  name: [{ required: true, message: '请输入供应商名称', trigger: 'blur' }],
-  contactPerson: [{ required: true, message: '请输入联系人', trigger: 'blur' }],
-  phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
-  supplierType: [{ required: true, message: '请选择供应商类型', trigger: 'change' }]
+  name: [
+    { required: true, message: '请输入供应商名称', trigger: 'blur' },
+    { min: 2, max: 100, message: '供应商名称长度在 2 到 100 个字符', trigger: 'blur' }
+  ],
+  contactPerson: [
+    { required: true, message: '请输入联系人', trigger: 'blur' },
+    { min: 2, max: 50, message: '联系人长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  phone: [
+    { required: true, message: '请输入联系电话', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
+  ],
+  supplierType: [
+    { required: true, message: '请选择供应商类型', trigger: 'change' }
+  ],
+  address: [
+    { required: true, message: '请输入地址', trigger: 'blur' },
+    { min: 5, max: 200, message: '地址长度在 5 到 200 个字符', trigger: 'blur' }
+  ],
+  email: [
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+  ]
 }
 
 // 计算属性
@@ -267,19 +285,62 @@ const fetchSuppliers = async () => {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
-      ...searchForm
+      name: searchForm.name,
+      supplierType: searchForm.supplierType,
+      rating: searchForm.rating
     }
+    
+    console.log('🔍 获取供应商列表参数:', params)
     const response = await purchaseApi.getSuppliers(params)
-    // 根据API实现，response.data 可能是 { items: [...], total: number } 或直接是数组
-    if (response.data.items) {
-      suppliers.value = response.data.items || []
-      pagination.total = response.data.total || 0
+    console.log('📥 供应商列表响应:', response)
+    
+    // 处理后端返回的数据结构
+    if (response.data && typeof response.data === 'object') {
+      // 如果返回的是包含suppliers和pagination的对象
+      if (response.data.suppliers && Array.isArray(response.data.suppliers)) {
+        suppliers.value = response.data.suppliers
+        if (response.data.pagination) {
+          pagination.total = response.data.pagination.total || 0
+        }
+      }
+      // 如果返回的是包含data字段的对象
+      else if (response.data.data && response.data.data.suppliers && Array.isArray(response.data.data.suppliers)) {
+        suppliers.value = response.data.data.suppliers
+        if (response.data.data.pagination) {
+          pagination.total = response.data.data.pagination.total || 0
+        }
+      }
+      // 如果返回的是包含items的对象
+      else if (response.data.items && Array.isArray(response.data.items)) {
+        suppliers.value = response.data.items
+        pagination.total = response.data.total || 0
+      }
+      // 如果直接返回数组
+      else if (Array.isArray(response.data)) {
+        suppliers.value = response.data
+        pagination.total = response.data.length
+      }
+      // 其他情况，初始化为空数组
+      else {
+        suppliers.value = []
+        pagination.total = 0
+      }
     } else {
-      suppliers.value = response.data || []
-      pagination.total = response.data.length || 0
+      // 如果response.data直接是数组
+      suppliers.value = Array.isArray(response.data) ? response.data : []
+      pagination.total = suppliers.value.length
     }
+    
+    console.log('✅ 供应商列表解析结果:', { 
+      count: suppliers.value.length, 
+      total: pagination.total,
+      sample: suppliers.value[0] || null
+    })
   } catch (error) {
+    console.error('获取供应商列表失败:', error)
     ElMessage.error('获取供应商列表失败')
+    suppliers.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
@@ -340,18 +401,39 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitting.value = true
     
+    // 确保所有必填字段都有值
+    const submitData = {
+      name: form.name?.trim(),
+      contactPerson: form.contactPerson?.trim(),
+      phone: form.phone?.trim(),
+      email: form.email?.trim() || '',
+      address: form.address?.trim() || '',
+      supplierType: form.supplierType || 'material',
+      businessLicense: form.businessLicense?.trim() || '',
+      taxNumber: form.taxNumber?.trim() || '',
+      bankAccount: form.bankAccount?.trim() || '',
+      creditLimit: Number(form.creditLimit) || 0,
+      paymentTerms: form.paymentTerms?.trim() || '',
+      rating: Number(form.rating) || 5,
+      remark: form.remark?.trim() || ''
+    }
+    
+    console.log('🚀 提交供应商表单数据:', submitData)
+    
     if (isEdit.value && form.id) {
-      await purchaseApi.updateSupplier(form.id, form)
+      await purchaseApi.updateSupplier(form.id, submitData)
       ElMessage.success('更新成功')
     } else {
-      await purchaseApi.createSupplier(form)
+      await purchaseApi.createSupplier(submitData)
       ElMessage.success('创建成功')
     }
     
     dialogVisible.value = false
     fetchSuppliers()
   } catch (error) {
-    ElMessage.error('操作失败')
+    console.error('供应商操作失败:', error)
+    const errorMessage = error?.response?.data?.message || error?.message || '操作失败'
+    ElMessage.error(errorMessage)
   } finally {
     submitting.value = false
   }

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>采购服务完整功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button.success {
+            background: #28a745;
+        }
+
+        button.warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        button.danger {
+            background: #dc3545;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .success-result {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .error-result {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .order-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background: #f9f9f9;
+        }
+
+        .order-item input {
+            margin: 5px 0;
+        }
+
+        .flex-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .flex-item {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            text-align: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>采购服务完整功能测试</h1>
+
+    <!-- 认证令牌设置 -->
+    <div class="container">
+        <h2>认证设置</h2>
+        <div class="form-group">
+            <label for="authToken">认证令牌:</label>
+            <input type="text" id="authToken" value="Bearer test-token-123" placeholder="Bearer your-token-here">
+        </div>
+    </div>
+
+    <!-- 基础功能测试 -->
+    <div class="container">
+        <h2>基础功能测试</h2>
+        <button onclick="testHealthCheck()">健康检查</button>
+        <button onclick="testGetBases()">获取基地列表</button>
+        <button onclick="testGetStatistics()">获取统计数据</button>
+        <div id="basicResult" class="result"></div>
+    </div>
+
+    <!-- 供应商管理 -->
+    <div class="container">
+        <h2>供应商管理</h2>
+        <div class="flex-container">
+            <div class="flex-item">
+                <h3>创建供应商</h3>
+                <div class="form-group">
+                    <label>供应商名称:</label>
+                    <input type="text" id="supplierName" value="优质饲料供应商">
+                </div>
+                <div class="form-group">
+                    <label>联系人:</label>
+                    <input type="text" id="contactPerson" value="张经理">
+                </div>
+                <div class="form-group">
+                    <label>联系电话:</label>
+                    <input type="text" id="phone" value="13800138001">
+                </div>
+                <div class="form-group">
+                    <label>邮箱:</label>
+                    <input type="email" id="email" value="zhang@supplier.com">
+                </div>
+                <div class="form-group">
+                    <label>地址:</label>
+                    <input type="text" id="address" value="北京市朝阳区饲料街123号">
+                </div>
+                <div class="form-group">
+                    <label>供应商类型:</label>
+                    <select id="supplierType">
+                        <option value="material">物资采购</option>
+                        <option value="cattle">牛只采购</option>
+                        <option value="equipment">设备采购</option>
+                        <option value="mixed">混合类型</option>
+                    </select>
+                </div>
+                <button onclick="createSupplier()">创建供应商</button>
+            </div>
+            <div class="flex-item">
+                <h3>供应商操作</h3>
+                <button onclick="getSuppliers()">获取供应商列表</button>
+                <button onclick="searchSuppliers()">搜索供应商</button>
+            </div>
+        </div>
+        <div id="supplierResult" class="result"></div>
+    </div>
+
+    <!-- 采购订单管理 -->
+    <div class="container">
+        <h2>采购订单管理</h2>
+        <div class="flex-container">
+            <div class="flex-item">
+                <h3>创建采购订单</h3>
+                <div class="form-group">
+                    <label>供应商ID:</label>
+                    <input type="number" id="orderSupplierId" value="1">
+                </div>
+                <div class="form-group">
+                    <label>供应商名称:</label>
+                    <input type="text" id="orderSupplierName" value="优质饲料供应商">
+                </div>
+                <div class="form-group">
+                    <label>基地ID:</label>
+                    <input type="number" id="orderBaseId" value="1">
+                </div>
+                <div class="form-group">
+                    <label>基地名称:</label>
+                    <input type="text" id="orderBaseName" value="主基地">
+                </div>
+                <div class="form-group">
+                    <label>订单类型:</label>
+                    <select id="orderType">
+                        <option value="material">物资采购</option>
+                        <option value="cattle">牛只采购</option>
+                        <option value="equipment">设备采购</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>订单日期:</label>
+                    <input type="date" id="orderDate" value="2025-08-14">
+                </div>
+                <div class="form-group">
+                    <label>预计交付日期:</label>
+                    <input type="date" id="expectedDeliveryDate" value="2025-08-24">
+                </div>
+                <div class="form-group">
+                    <label>付款方式:</label>
+                    <select id="paymentMethod">
+                        <option value="transfer">银行转账</option>
+                        <option value="cash">现金</option>
+                        <option value="check">支票</option>
+                        <option value="credit">信用证</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>合同编号:</label>
+                    <input type="text" id="contractNumber" value="CT-2025-001">
+                </div>
+                <div class="form-group">
+                    <label>备注:</label>
+                    <textarea id="orderRemark" placeholder="订单备注信息">测试采购订单</textarea>
+                </div>
+
+                <h4>订单明细</h4>
+                <div id="orderItems">
+                    <div class="order-item">
+                        <input type="text" placeholder="商品名称" value="玉米饲料" class="item-name">
+                        <input type="text" placeholder="规格" value="50kg/袋" class="item-spec">
+                        <input type="number" placeholder="数量" value="100" class="item-quantity">
+                        <input type="text" placeholder="单位" value="袋" class="item-unit">
+                        <input type="number" placeholder="单价" value="150" step="0.01" class="item-price">
+                        <input type="text" placeholder="备注" value="优质玉米饲料" class="item-remark">
+                        <button onclick="removeOrderItem(this)" class="danger">删除</button>
+                    </div>
+                </div>
+                <button onclick="addOrderItem()">添加明细</button>
+                <button onclick="createOrder()" class="success">创建订单</button>
+            </div>
+            <div class="flex-item">
+                <h3>订单操作</h3>
+                <button onclick="getOrders()">获取订单列表</button>
+                <button onclick="searchOrders()">搜索订单</button>
+                <div class="form-group">
+                    <label>订单ID (用于操作):</label>
+                    <input type="number" id="operationOrderId" value="1">
+                </div>
+                <button onclick="getOrderById()">获取订单详情</button>
+                <button onclick="approveOrder()" class="success">审批订单</button>
+                <button onclick="cancelOrder()" class="danger">取消订单</button>
+                <button onclick="batchApproveOrders()" class="warning">批量审批</button>
+            </div>
+        </div>
+        <div id="orderResult" class="result"></div>
+    </div>
+
+    <!-- 统计数据展示 -->
+    <div class="container">
+        <h2>统计数据</h2>
+        <button onclick="loadStatistics()">刷新统计数据</button>
+        <div id="statisticsContainer" class="stats-grid">
+            <!-- 统计卡片将在这里动态生成 -->
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3007/api/v1/procurement';
+
+        function getAuthHeaders() {
+            const token = document.getElementById('authToken').value;
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': token
+            };
+        }
+
+        function displayResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.textContent = JSON.stringify(data, null, 2);
+            element.className = `result ${isError ? 'error-result' : 'success-result'}`;
+        }
+
+        // 基础功能测试
+        async function testHealthCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                displayResult('basicResult', data);
+            } catch (error) {
+                displayResult('basicResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetBases() {
+            try {
+                const response = await fetch(`${API_BASE}/bases`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('basicResult', data);
+            } catch (error) {
+                displayResult('basicResult', { error: error.message }, true);
+            }
+        }
+
+        async function testGetStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('basicResult', data);
+            } catch (error) {
+                displayResult('basicResult', { error: error.message }, true);
+            }
+        }
+
+        // 供应商管理
+        async function createSupplier() {
+            try {
+                const supplierData = {
+                    name: document.getElementById('supplierName').value,
+                    contactPerson: document.getElementById('contactPerson').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    address: document.getElementById('address').value,
+                    supplierType: document.getElementById('supplierType').value,
+                    businessLicense: 'BL123456789',
+                    taxNumber: 'TX987654321',
+                    creditLimit: 100000,
+                    rating: 8,
+                    remark: '测试供应商'
+                };
+
+                const response = await fetch(`${API_BASE}/suppliers`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(supplierData)
+                });
+                const data = await response.json();
+                displayResult('supplierResult', data, !response.ok);
+            } catch (error) {
+                displayResult('supplierResult', { error: error.message }, true);
+            }
+        }
+
+        async function getSuppliers() {
+            try {
+                const response = await fetch(`${API_BASE}/suppliers?page=1&limit=10`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('supplierResult', data);
+            } catch (error) {
+                displayResult('supplierResult', { error: error.message }, true);
+            }
+        }
+
+        async function searchSuppliers() {
+            try {
+                const response = await fetch(`${API_BASE}/suppliers?name=优质&supplierType=material`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('supplierResult', data);
+            } catch (error) {
+                displayResult('supplierResult', { error: error.message }, true);
+            }
+        }
+
+        // 采购订单管理
+        function addOrderItem() {
+            const container = document.getElementById('orderItems');
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'order-item';
+            itemDiv.innerHTML = `
+                <input type="text" placeholder="商品名称" class="item-name">
+                <input type="text" placeholder="规格" class="item-spec">
+                <input type="number" placeholder="数量" class="item-quantity">
+                <input type="text" placeholder="单位" class="item-unit">
+                <input type="number" placeholder="单价" step="0.01" class="item-price">
+                <input type="text" placeholder="备注" class="item-remark">
+                <button onclick="removeOrderItem(this)" class="danger">删除</button>
+            `;
+            container.appendChild(itemDiv);
+        }
+
+        function removeOrderItem(button) {
+            button.parentElement.remove();
+        }
+
+        function collectOrderItems() {
+            const items = [];
+            const itemElements = document.querySelectorAll('.order-item');
+
+            itemElements.forEach(item => {
+                const itemName = item.querySelector('.item-name').value;
+                const specification = item.querySelector('.item-spec').value;
+                const quantity = parseFloat(item.querySelector('.item-quantity').value) || 0;
+                const unit = item.querySelector('.item-unit').value;
+                const unitPrice = parseFloat(item.querySelector('.item-price').value) || 0;
+                const remark = item.querySelector('.item-remark').value;
+
+                if (itemName && quantity > 0 && unitPrice > 0) {
+                    items.push({
+                        itemName,
+                        specification,
+                        quantity,
+                        unit,
+                        unitPrice,
+                        remark
+                    });
+                }
+            });
+
+            return items;
+        }
+
+        async function createOrder() {
+            try {
+                const items = collectOrderItems();
+                if (items.length === 0) {
+                    alert('请至少添加一个订单明细');
+                    return;
+                }
+
+                const orderData = {
+                    supplierId: parseInt(document.getElementById('orderSupplierId').value),
+                    supplierName: document.getElementById('orderSupplierName').value,
+                    baseId: parseInt(document.getElementById('orderBaseId').value),
+                    baseName: document.getElementById('orderBaseName').value,
+                    orderType: document.getElementById('orderType').value,
+                    orderDate: document.getElementById('orderDate').value,
+                    expectedDeliveryDate: document.getElementById('expectedDeliveryDate').value,
+                    paymentMethod: document.getElementById('paymentMethod').value,
+                    contractNumber: document.getElementById('contractNumber').value,
+                    remark: document.getElementById('orderRemark').value,
+                    taxAmount: 0,
+                    discountAmount: 0,
+                    items: items
+                };
+
+                const response = await fetch(`${API_BASE}/orders`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify(orderData)
+                });
+                const data = await response.json();
+                displayResult('orderResult', data, !response.ok);
+
+                if (response.ok && data.data && data.data.order) {
+                    document.getElementById('operationOrderId').value = data.data.order.id;
+                }
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function getOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders?page=1&limit=10`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('orderResult', data);
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function searchOrders() {
+            try {
+                const response = await fetch(`${API_BASE}/orders?status=pending&orderType=material`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('orderResult', data);
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function getOrderById() {
+            try {
+                const orderId = document.getElementById('operationOrderId').value;
+                const response = await fetch(`${API_BASE}/orders/${orderId}`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+                displayResult('orderResult', data, !response.ok);
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function approveOrder() {
+            try {
+                const orderId = document.getElementById('operationOrderId').value;
+                const response = await fetch(`${API_BASE}/orders/${orderId}/approve`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                displayResult('orderResult', data, !response.ok);
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function cancelOrder() {
+            try {
+                const orderId = document.getElementById('operationOrderId').value;
+                const reason = prompt('请输入取消原因:', '测试取消订单');
+                if (!reason) return;
+
+                const response = await fetch(`${API_BASE}/orders/${orderId}/cancel`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ reason })
+                });
+                const data = await response.json();
+                displayResult('orderResult', data, !response.ok);
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        async function batchApproveOrders() {
+            try {
+                const orderIds = prompt('请输入要批量审批的订单ID (用逗号分隔):', '1,2,3');
+                if (!orderIds) return;
+
+                const ids = orderIds.split(',').map(id => parseInt(id.trim())).filter(id => !isNaN(id));
+
+                const response = await fetch(`${API_BASE}/orders/batch-approve`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ orderIds: ids })
+                });
+                const data = await response.json();
+                displayResult('orderResult', data, !response.ok);
+            } catch (error) {
+                displayResult('orderResult', { error: error.message }, true);
+            }
+        }
+
+        // 统计数据
+        async function loadStatistics() {
+            try {
+                const response = await fetch(`${API_BASE}/statistics`, {
+                    headers: getAuthHeaders()
+                });
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    displayStatistics(data.data);
+                } else {
+                    displayResult('statisticsContainer', data, true);
+                }
+            } catch (error) {
+                displayResult('statisticsContainer', { error: error.message }, true);
+            }
+        }
+
+        function displayStatistics(stats) {
+            const container = document.getElementById('statisticsContainer');
+            container.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${stats.totalOrders}</div>
+                    <div class="stat-label">总订单数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.pendingOrders}</div>
+                    <div class="stat-label">待审批订单</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.approvedOrders}</div>
+                    <div class="stat-label">已审批订单</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.completedOrders}</div>
+                    <div class="stat-label">已完成订单</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">¥${stats.totalAmount.toLocaleString()}</div>
+                    <div class="stat-label">订单总金额</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${stats.activeSuppliers}</div>
+                    <div class="stat-label">活跃供应商</div>
+                </div>
+            `;
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 设置默认日期
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('orderDate').value = today;
+
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 7);
+            document.getElementById('expectedDeliveryDate').value = nextWeek.toISOString().split('T')[0];
+
+            // 加载初始统计数据
+            loadStatistics();
+        });
+    </script>
+</body>
+
+</html>

@@ -97,6 +97,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="orderNumber" label="订单号" width="150" />
         <el-table-column prop="supplierName" label="供应商" min-width="120" />
+        <el-table-column prop="baseName" label="采购基地" width="120" />
         <el-table-column prop="orderType" label="类型" width="100">
           <template #default="{ row }">
             <el-tag :type="getOrderTypeColor(row.orderType)">
@@ -134,7 +135,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="createdByName" label="创建人" width="100" />
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="320" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="handleView(row)">查看</el-button>
             <el-button 
@@ -152,6 +153,29 @@
               :disabled="row.status !== 'pending'"
             >
               审批
+            </el-button>
+            <el-button 
+              size="small" 
+              type="warning" 
+              @click="handleDeliver(row)"
+              :disabled="row.status !== 'approved'"
+            >
+              交付
+            </el-button>
+            <el-button 
+              size="small" 
+              type="info" 
+              @click="handlePay(row)"
+              :disabled="!['approved', 'delivered'].includes(row.status)"
+            >
+              付款
+            </el-button>
+            <el-button 
+              size="small" 
+              @click="handleComplete(row)"
+              :disabled="row.status !== 'delivered' || row.paymentStatus !== 'paid'"
+            >
+              完成
             </el-button>
             <el-button 
               size="small" 
@@ -401,7 +425,7 @@
     <el-dialog
       v-model="detailDialogVisible"
       title="订单详情"
-      width="1000px"
+      width="1200px"
     >
       <div v-if="currentOrder" class="order-detail">
         <!-- 基本信息 -->
@@ -422,14 +446,20 @@
             </el-col>
             <el-col :span="8">
               <div class="detail-item">
+                <label>采购基地：</label>
+                <span>{{ currentOrder.baseName }}</span>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row :gutter="20">
+            <el-col :span="8">
+              <div class="detail-item">
                 <label>订单类型：</label>
                 <el-tag :type="getOrderTypeColor(currentOrder.orderType)">
                   {{ getOrderTypeText(currentOrder.orderType) }}
                 </el-tag>
               </div>
             </el-col>
-          </el-row>
-          <el-row :gutter="20">
             <el-col :span="8">
               <div class="detail-item">
                 <label>订单状态：</label>
@@ -446,13 +476,57 @@
                 </el-tag>
               </div>
             </el-col>
+          </el-row>
+          <el-row :gutter="20">
             <el-col :span="8">
               <div class="detail-item">
                 <label>订单金额：</label>
                 <span class="amount">¥{{ currentOrder.totalAmount?.toLocaleString() || 0 }}</span>
               </div>
             </el-col>
+            <el-col :span="8">
+              <div class="detail-item">
+                <label>订单日期：</label>
+                <span>{{ formatDate(currentOrder.orderDate) }}</span>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div class="detail-item">
+                <label>预计交付：</label>
+                <span>{{ formatDate(currentOrder.expectedDeliveryDate) }}</span>
+              </div>
+            </el-col>
           </el-row>
+        </el-card>
+
+        <!-- 状态流转时间线 -->
+        <el-card class="detail-section">
+          <template #header>
+            <div class="section-header">
+              <span>状态流转时间线</span>
+              <el-button size="small" @click="refreshTimeline" :loading="timelineLoading">
+                刷新
+              </el-button>
+            </div>
+          </template>
+          <el-timeline v-if="orderTimeline.length > 0">
+            <el-timeline-item
+              v-for="(item, index) in orderTimeline"
+              :key="index"
+              :timestamp="formatDateTime(item.timestamp)"
+              :type="item.type"
+              :icon="getTimelineIcon(item.status)"
+            >
+              <el-card class="timeline-card">
+                <h4>{{ item.title }}</h4>
+                <p>{{ item.description }}</p>
+                <div class="timeline-operator">
+                  <el-tag size="small">{{ item.operator }}</el-tag>
+                </div>
+              </el-card>
+            </el-timeline-item>
+          </el-timeline>
+          <el-empty v-else description="暂无状态流转记录" />
         </el-card>
 
         <!-- 订单明细 -->
@@ -493,10 +567,12 @@ import { validatePaginationData, validateDataArray, validateOrderData } from '@/
 // 响应式数据
 const loading = ref(false)
 const submitting = ref(false)
+const timelineLoading = ref(false)
 const orders = ref<PurchaseOrder[]>([])
 const selectedOrders = ref<PurchaseOrder[]>([])
 const supplierOptions = ref<any[]>([])
 const baseOptions = ref<any[]>([])
+const orderTimeline = ref<any[]>([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -567,18 +643,38 @@ const fetchOrders = async () => {
     // Remove dateRange from params since we've extracted startDate and endDate
     const { dateRange, ...finalParams } = params
     
-    const response = await purchaseApi.getOrders(params)
+    const response = await purchaseApi.getOrders(finalParams)
+    console.log('采购订单API响应:', response)
     
-    // 处理响应数据
-    const responseData = response.data || response
-    console.log('采购订单API响应:', responseData)
-    
-    // 使用 modulesFix 工具进行数据标准化处理
-    const { normalizeDataList, fixProcurementOrderData } = await import('@/utils/modulesFix')
-    
-    const normalized = normalizeDataList(responseData, 'orders', fixProcurementOrderData)
-    orders.value = normalized.data
-    pagination.total = normalized.pagination.total
+    // 处理后端返回的数据结构
+    if (response.data && typeof response.data === 'object') {
+      // 如果返回的是包含orders和pagination的对象
+      if (response.data.orders && Array.isArray(response.data.orders)) {
+        orders.value = response.data.orders
+        if (response.data.pagination) {
+          pagination.total = response.data.pagination.total || 0
+        }
+      }
+      // 如果返回的是包含items的对象
+      else if (response.data.items && Array.isArray(response.data.items)) {
+        orders.value = response.data.items
+        pagination.total = response.data.total || 0
+      }
+      // 如果直接返回数组
+      else if (Array.isArray(response.data)) {
+        orders.value = response.data
+        pagination.total = response.data.length
+      }
+      // 其他情况，初始化为空数组
+      else {
+        orders.value = []
+        pagination.total = 0
+      }
+    } else {
+      // 如果response.data直接是数组
+      orders.value = Array.isArray(response.data) ? response.data : []
+      pagination.total = orders.value.length
+    }
   } catch (error) {
     console.error('获取订单列表失败:', error)
     ElMessage.error('获取订单列表失败')
@@ -592,14 +688,66 @@ const fetchOrders = async () => {
 const fetchSuppliers = async () => {
   try {
     const response = await purchaseApi.getSuppliers()
-    // 根据API实现，response.data 可能是 { items: [...], total: number } 或直接是数组
-    if (response.data.items) {
-      supplierOptions.value = response.data.items || []
+    console.log('供应商API响应:', response)
+    
+    // 处理后端返回的数据结构
+    if (response.data && typeof response.data === 'object') {
+      // 如果返回的是包含suppliers和pagination的对象
+      if (response.data.suppliers && Array.isArray(response.data.suppliers)) {
+        supplierOptions.value = response.data.suppliers
+      }
+      // 如果返回的是包含items的对象
+      else if (response.data.items && Array.isArray(response.data.items)) {
+        supplierOptions.value = response.data.items
+      }
+      // 如果直接返回数组
+      else if (Array.isArray(response.data)) {
+        supplierOptions.value = response.data
+      }
+      // 其他情况，初始化为空数组
+      else {
+        supplierOptions.value = []
+      }
     } else {
-      supplierOptions.value = response.data || []
+      // 如果response.data直接是数组
+      supplierOptions.value = Array.isArray(response.data) ? response.data : []
     }
   } catch (error) {
-    console.error('获取供应商列表失败')
+    console.error('获取供应商列表失败:', error)
+    supplierOptions.value = []
+  }
+}
+
+const fetchBases = async () => {
+  try {
+    const response = await purchaseApi.getBases()
+    console.log('基地API响应:', response)
+    
+    // 处理后端返回的数据结构
+    if (response.data && typeof response.data === 'object') {
+      // 如果返回的是包含bases和pagination的对象
+      if (response.data.bases && Array.isArray(response.data.bases)) {
+        baseOptions.value = response.data.bases
+      }
+      // 如果返回的是包含items的对象
+      else if (response.data.items && Array.isArray(response.data.items)) {
+        baseOptions.value = response.data.items
+      }
+      // 如果直接返回数组
+      else if (Array.isArray(response.data)) {
+        baseOptions.value = response.data
+      }
+      // 其他情况，初始化为空数组
+      else {
+        baseOptions.value = []
+      }
+    } else {
+      // 如果response.data直接是数组
+      baseOptions.value = Array.isArray(response.data) ? response.data : []
+    }
+  } catch (error) {
+    console.error('获取基地列表失败:', error)
+    baseOptions.value = []
   }
 }
 
@@ -641,20 +789,41 @@ const handleAdd = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (row: PurchaseOrder) => {
+const handleEdit = async (row: PurchaseOrder) => {
   isEdit.value = true
+  console.log('编辑订单数据:', row)
+  
+  // 重置表单
+  resetForm()
+  
+  // 使用 modulesFix 工具进行数据标准化处理
+  const { fixProcurementOrderData } = await import('@/utils/modulesFix')
+  const normalizedOrder = fixProcurementOrderData(row)
+  
+  console.log('标准化后的订单数据:', normalizedOrder)
+  
+  // 填充表单数据，确保字段名匹配
   Object.assign(form, {
-    ...row,
-    orderDate: row.orderDate ? new Date(row.orderDate) : '',
-    expectedDeliveryDate: row.expectedDeliveryDate ? new Date(row.expectedDeliveryDate) : ''
+    id: normalizedOrder.id,
+    supplierId: normalizedOrder.supplierId,
+    baseId: normalizedOrder.baseId,
+    orderType: normalizedOrder.orderType,
+    orderDate: normalizedOrder.orderDate ? new Date(normalizedOrder.orderDate) : '',
+    expectedDeliveryDate: normalizedOrder.expectedDeliveryDate ? new Date(normalizedOrder.expectedDeliveryDate) : '',
+    paymentMethod: normalizedOrder.paymentMethod || '',
+    contractNumber: normalizedOrder.contractNumber || '',
+    remark: normalizedOrder.remark || '',
+    discountAmount: normalizedOrder.discountAmount || 0,
+    taxAmount: normalizedOrder.taxAmount || 0,
+    totalAmount: normalizedOrder.totalAmount || 0,
+    items: Array.isArray(normalizedOrder.items) ? [...normalizedOrder.items] : []
   })
+  
+  console.log('填充后的表单数据:', form)
   dialogVisible.value = true
 }
 
-const handleView = (row: PurchaseOrder) => {
-  currentOrder.value = row
-  detailDialogVisible.value = true
-}
+
 
 const handleApprove = async (row: PurchaseOrder) => {
   try {
@@ -719,18 +888,30 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     submitting.value = true
     
+    // 获取供应商和基地名称
+    const selectedSupplier = supplierOptions.value.find(s => s.id === form.supplierId)
+    const selectedBase = baseOptions.value.find(b => b.id === form.baseId)
+    
+    const submitData = {
+      ...form,
+      supplierName: selectedSupplier?.name || '',
+      baseName: selectedBase?.name || ''
+    }
+    
     if (isEdit.value) {
       // 更新订单
+      await purchaseApi.updateOrder(form.id, submitData)
       ElMessage.success('更新成功')
     } else {
       // 创建订单
-      await purchaseApi.createOrder(form)
+      await purchaseApi.createOrder(submitData)
       ElMessage.success('创建成功')
     }
     
     dialogVisible.value = false
     fetchOrders()
   } catch (error) {
+    console.error('提交失败:', error)
     ElMessage.error('操作失败')
   } finally {
     submitting.value = false
@@ -744,8 +925,9 @@ const handleDialogClose = () => {
 
 const resetForm = () => {
   Object.assign(form, {
-    supplierId: null,
-    baseId: null,
+    id: undefined,
+    supplierId: undefined,
+    baseId: undefined,
     orderType: '',
     orderDate: '',
     expectedDeliveryDate: '',
@@ -792,6 +974,118 @@ const handleSupplierChange = () => {
 
 const handleSelectionChange = (selection: PurchaseOrder[]) => {
   selectedOrders.value = selection
+}
+
+// 新增状态流转处理方法
+const handleDeliver = async (row: PurchaseOrder) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入交付备注（可选）', '确认交付', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPlaceholder: '交付备注'
+    })
+    
+    await purchaseApi.deliverOrder(row.id, {
+      actualDeliveryDate: new Date().toISOString().split('T')[0],
+      deliveryNote: value || ''
+    })
+    ElMessage.success('交付确认成功')
+    fetchOrders()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('交付确认失败')
+    }
+  }
+}
+
+const handlePay = async (row: PurchaseOrder) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入付款金额', '付款确认', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPlaceholder: `订单总额: ¥${row.totalAmount?.toLocaleString() || 0}`,
+      inputValue: row.totalAmount?.toString() || '0'
+    })
+    
+    const paymentAmount = parseFloat(value)
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      ElMessage.error('请输入有效的付款金额')
+      return
+    }
+    
+    await purchaseApi.payOrder(row.id, {
+      paymentAmount,
+      paymentMethod: row.paymentMethod || 'transfer',
+      paymentNote: ''
+    })
+    ElMessage.success('付款确认成功')
+    fetchOrders()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('付款确认失败')
+    }
+  }
+}
+
+const handleComplete = async (row: PurchaseOrder) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入完成备注（可选）', '完成订单', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      inputPlaceholder: '完成备注'
+    })
+    
+    await purchaseApi.completeOrder(row.id, {
+      completionNote: value || ''
+    })
+    ElMessage.success('订单完成成功')
+    fetchOrders()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('订单完成失败')
+    }
+  }
+}
+
+// 时间线相关方法
+const refreshTimeline = async () => {
+  if (!currentOrder.value) return
+  
+  timelineLoading.value = true
+  try {
+    const response = await purchaseApi.getOrderTimeline(currentOrder.value.id)
+    orderTimeline.value = response.data?.timeline || []
+  } catch (error) {
+    console.error('获取订单时间线失败:', error)
+    ElMessage.error('获取订单时间线失败')
+  } finally {
+    timelineLoading.value = false
+  }
+}
+
+// 重写handleView方法以包含时间线加载
+const handleView = async (row: PurchaseOrder) => {
+  currentOrder.value = row
+  detailDialogVisible.value = true
+  await refreshTimeline()
+}
+
+// 时间线图标映射
+const getTimelineIcon = (status: string) => {
+  const iconMap: Record<string, string> = {
+    created: 'Plus',
+    approved: 'Check',
+    delivered: 'Truck',
+    paid: 'Money',
+    completed: 'CircleCheck',
+    cancelled: 'CircleClose'
+  }
+  return iconMap[status] || 'InfoFilled'
+}
+
+// 格式化日期时间
+const formatDateTime = (dateString: string) => {
+  return new Date(dateString).toLocaleString('zh-CN')
 }
 
 const handleSizeChange = (size: number) => {
@@ -871,6 +1165,7 @@ const formatDate = (dateString: string) => {
 onMounted(() => {
   fetchOrders()
   fetchSuppliers()
+  fetchBases()
 })
 </script>
 
@@ -954,6 +1249,25 @@ onMounted(() => {
 .detail-item .amount {
   color: #e6a23c;
   font-weight: bold;
+}
+
+.timeline-card {
+  margin-bottom: 10px;
+}
+
+.timeline-card h4 {
+  margin: 0 0 8px 0;
+  color: #303133;
+}
+
+.timeline-card p {
+  margin: 0 0 8px 0;
+  color: #606266;
+}
+
+.timeline-operator {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .el-form-item {
