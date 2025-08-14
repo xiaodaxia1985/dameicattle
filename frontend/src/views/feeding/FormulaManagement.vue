@@ -63,7 +63,7 @@
         
         <el-table-column prop="costPerKg" label="成本/kg" width="120" align="center">
           <template #default="{ row }">
-            <span class="cost-value">¥{{ (row.costPerKg || 0).toFixed(2) }}</span>
+            <span class="cost-value">¥{{ ensureNumber(safeGet(row, 'costPerKg', safeGet(row, 'cost_per_kg', 0)), 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
         
@@ -162,7 +162,7 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="配方名称">{{ selectedFormula.name }}</el-descriptions-item>
             <el-descriptions-item label="创建人">{{ selectedFormula.createdByName }}</el-descriptions-item>
-            <el-descriptions-item label="成本/kg">¥{{ (selectedFormula.costPerKg || 0).toFixed(2) }}</el-descriptions-item>
+            <el-descriptions-item label="成本/kg">¥{{ ensureNumber(safeGet(selectedFormula, 'costPerKg', safeGet(selectedFormula, 'cost_per_kg', 0)), 0).toFixed(2) }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDate(selectedFormula.createdAt) }}</el-descriptions-item>
             <el-descriptions-item label="配方描述" :span="2">
               {{ selectedFormula.description || '暂无描述' }}
@@ -189,6 +189,8 @@ import { feedingApi } from '@/api/feeding'
 import type { FeedFormula, IngredientItem } from '@/api/feeding'
 import IngredientEditor from '@/components/feeding/IngredientEditor.vue'
 import IngredientTable from '@/components/feeding/IngredientTable.vue'
+import { ensureNumber } from '@/utils/dataValidation'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const loading = ref(false)

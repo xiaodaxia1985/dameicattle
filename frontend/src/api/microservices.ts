@@ -388,8 +388,7 @@ export class FeedingServiceApi extends MicroserviceApi {
   }
 
   // 获取饲养统计
-  async getFeedingStatistics(baseId?: number): Promise<ApiResponse<any>> {
-    const params = baseId ? { baseId } : undefined
+  async getFeedingStatistics(params?: { base_id?: number; start_date?: string; end_date?: string }): Promise<ApiResponse<any>> {
     return this.get<any>('/statistics', params)
   }
 }

@@ -1,6 +1,5 @@
 import { materialServiceApi } from './microservices'
 import type { ApiResponse, PaginatedResponse } from './request'
-import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 简化类型定义，避免复杂的导入
 interface MaterialCategory {
@@ -204,18 +203,64 @@ export const materialApi = {
 
   // 库存管理
   async getInventory(params: any = {}): Promise<PaginatedResponse<Inventory[]>> {
+    console.log('🔍 materialApi.getInventory 调用参数:', params)
+    
     const response = await materialServiceApi.getInventory(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<Inventory>(response, 'inventory')
-    return {
-      data: adapted.data,
+    console.log('📥 materialServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let inventory = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      inventory = responseData
+      total = inventory.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      inventory = responseData.data
+      total = responseData.total || responseData.pagination?.total || inventory.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.inventory && Array.isArray(responseData.inventory)) {
+      // 有inventory字段且是数组
+      inventory = responseData.inventory
+      total = responseData.total || responseData.pagination?.total || inventory.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      inventory = responseData.items
+      total = responseData.total || responseData.pagination?.total || inventory.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = {
+      data: inventory,
       pagination: {
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit,
-        totalPages: adapted.pagination.totalPages || adapted.pagination.pages
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
       }
     }
+    
+    console.log('✅ materialApi.getInventory 解析结果:', { 
+      inventoryCount: inventory.length, 
+      total, 
+      page, 
+      limit,
+      sampleInventory: inventory[0] || null
+    })
+    
+    return result
   },
 
   async getInventoryStatistics(): Promise<ApiResponse<InventoryStatistics>> {
@@ -230,8 +275,64 @@ export const materialApi = {
 
   // 库存交易记录
   async getInventoryTransactions(params: any = {}): Promise<PaginatedResponse<InventoryTransaction[]>> {
+    console.log('🔍 materialApi.getInventoryTransactions 调用参数:', params)
+    
     const response = await materialServiceApi.getTransactions(params)
-    return response
+    console.log('📥 materialServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let transactions = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      transactions = responseData
+      total = transactions.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      transactions = responseData.data
+      total = responseData.total || responseData.pagination?.total || transactions.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.transactions && Array.isArray(responseData.transactions)) {
+      // 有transactions字段且是数组
+      transactions = responseData.transactions
+      total = responseData.total || responseData.pagination?.total || transactions.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      transactions = responseData.items
+      total = responseData.total || responseData.pagination?.total || transactions.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = {
+      data: transactions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+    
+    console.log('✅ materialApi.getInventoryTransactions 解析结果:', { 
+      transactionsCount: transactions.length, 
+      total, 
+      page, 
+      limit,
+      sampleTransaction: transactions[0] || null
+    })
+    
+    return result
   },
 
   async createInventoryTransaction(data: any): Promise<ApiResponse<InventoryTransaction>> {
@@ -241,8 +342,64 @@ export const materialApi = {
 
   // 库存预警
   async getInventoryAlerts(params: { base_id?: number } = {}): Promise<PaginatedResponse<InventoryAlert[]>> {
+    console.log('🔍 materialApi.getInventoryAlerts 调用参数:', params)
+    
     const response = await materialServiceApi.getAlerts(params)
-    return response
+    console.log('📥 materialServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let alerts = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      alerts = responseData
+      total = alerts.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      alerts = responseData.data
+      total = responseData.total || responseData.pagination?.total || alerts.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.alerts && Array.isArray(responseData.alerts)) {
+      // 有alerts字段且是数组
+      alerts = responseData.alerts
+      total = responseData.total || responseData.pagination?.total || alerts.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      alerts = responseData.items
+      total = responseData.total || responseData.pagination?.total || alerts.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = {
+      data: alerts,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    }
+    
+    console.log('✅ materialApi.getInventoryAlerts 解析结果:', { 
+      alertsCount: alerts.length, 
+      total, 
+      page, 
+      limit,
+      sampleAlert: alerts[0] || null
+    })
+    
+    return result
   },
 
   async resolveInventoryAlert(id: number): Promise<ApiResponse<void>> {

@@ -1,6 +1,5 @@
 import { salesServiceApi } from './microservices'
 import type { ApiResponse } from './request'
-import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 export interface Customer {
   id: number;

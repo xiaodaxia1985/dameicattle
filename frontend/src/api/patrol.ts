@@ -1,4 +1,4 @@
-import { monitoringServiceApi } from './microservices'
+import { feedingServiceApi } from './microservices'
 import type { ApiResponse } from './request'
 
 // 巡圈记录相关类型定义
@@ -181,58 +181,151 @@ export interface IoTDeviceData {
 export const patrolApi = {
   // 获取巡圈记录列表
   async getPatrolRecords(params: PatrolListParams = {}): Promise<{ data: PatrolListResponse }> {
-    console.log('巡圈记录API调用参数:', params)
-    const response = await monitoringServiceApi.get('/patrol/records', params)
-    console.log('巡圈记录API响应:', response)
-    return { data: response.data }
+    console.log('🔍 patrolApi.getPatrolRecords 调用参数:', params)
+    
+    const response = await feedingServiceApi.get('/patrol/records', params)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let records = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      records = responseData
+      total = records.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      records = responseData.data
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.records && Array.isArray(responseData.records)) {
+      // 有records字段且是数组
+      records = responseData.records
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      records = responseData.items
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
+      data: {
+        records: records,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    }
+    
+    console.log('✅ patrolApi.getPatrolRecords 解析结果:', { 
+      recordsCount: records.length, 
+      total, 
+      page, 
+      limit,
+      sampleRecord: records[0] || null
+    })
+    
+    return result
   },
 
   // 获取巡圈记录详情
   async getPatrolRecordById(id: number): Promise<{ data: PatrolRecord }> {
-    const response = await monitoringServiceApi.getById('/patrol/records', id)
-    return { data: response.data }
+    console.log('🔍 patrolApi.getPatrolRecordById 调用参数:', id)
+    
+    const response = await feedingServiceApi.get(`/patrol/records/${id}`)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    const responseData = response?.data || response || {}
+    console.log('✅ patrolApi.getPatrolRecordById 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 创建巡圈记录
   async createPatrolRecord(data: CreatePatrolRecordRequest): Promise<{ data: PatrolRecord }> {
-    console.log('创建巡圈记录API调用参数:', data)
-    const response = await monitoringServiceApi.post('/patrol/records', data)
-    console.log('创建巡圈记录API响应:', response)
-    return { data: response.data }
+    console.log('🔍 patrolApi.createPatrolRecord 调用参数:', data)
+    
+    const response = await feedingServiceApi.post('/patrol/records', data)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    const responseData = response?.data || response || {}
+    console.log('✅ patrolApi.createPatrolRecord 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 更新巡圈记录
   async updatePatrolRecord(id: number, data: UpdatePatrolRecordRequest): Promise<{ data: PatrolRecord }> {
-    const response = await monitoringServiceApi.update('/patrol/records', id, data)
-    return { data: response.data }
+    console.log('🔍 patrolApi.updatePatrolRecord 调用参数:', { id, data })
+    
+    const response = await feedingServiceApi.put(`/patrol/records/${id}`, data)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    const responseData = response?.data || response || {}
+    console.log('✅ patrolApi.updatePatrolRecord 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 删除巡圈记录
   async deletePatrolRecord(id: number): Promise<void> {
-    await monitoringServiceApi.remove('/patrol/records', id)
+    console.log('🔍 patrolApi.deletePatrolRecord 调用参数:', id)
+    
+    await feedingServiceApi.delete(`/patrol/records/${id}`)
+    console.log('✅ patrolApi.deletePatrolRecord 删除成功')
   },
 
   // 获取巡圈统计数据
   async getPatrolStatistics(params: { base_id: number; start_date: string; end_date: string }): Promise<{ data: PatrolStatistics }> {
-    console.log('巡圈统计API调用参数:', params)
-    const response = await monitoringServiceApi.get('/patrol/statistics', params)
-    console.log('巡圈统计API响应:', response)
-    return { data: response.data }
+    console.log('🔍 patrolApi.getPatrolStatistics 调用参数:', params)
+    
+    const response = await feedingServiceApi.get('/patrol/statistics', params)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    const responseData = response?.data || response || {}
+    console.log('✅ patrolApi.getPatrolStatistics 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 获取今日巡圈任务
   async getTodayPatrolTasks(params: { base_id?: number } = {}): Promise<{ data: TodayPatrolTasks }> {
-    console.log('今日巡圈任务API调用参数:', params)
-    const response = await monitoringServiceApi.get('/patrol/tasks/today', params)
-    console.log('今日巡圈任务API响应:', response)
-    return { data: response.data }
+    console.log('🔍 patrolApi.getTodayPatrolTasks 调用参数:', params)
+    
+    const response = await feedingServiceApi.get('/patrol/tasks/today', params)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    const responseData = response?.data || response || {}
+    console.log('✅ patrolApi.getTodayPatrolTasks 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 获取物联网设备数据
   async getIoTDeviceData(params: { barn_id: number }): Promise<{ data: IoTDeviceData }> {
-    console.log('物联网设备数据API调用参数:', params)
-    const response = await monitoringServiceApi.get('/patrol/iot/device-data', params)
-    console.log('物联网设备数据API响应:', response)
-    return { data: response.data }
+    console.log('🔍 patrolApi.getIoTDeviceData 调用参数:', params)
+    
+    const response = await feedingServiceApi.get('/patrol/iot/device-data', params)
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    const responseData = response?.data || response || {}
+    console.log('✅ patrolApi.getIoTDeviceData 解析结果:', responseData)
+    
+    return { data: responseData }
   }
 }

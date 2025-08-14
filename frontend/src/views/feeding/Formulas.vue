@@ -130,7 +130,7 @@
           <h3>基本信息</h3>
           <el-descriptions :column="2" border>
             <el-descriptions-item label="配方名称">{{ selectedFormula.name }}</el-descriptions-item>
-            <el-descriptions-item label="成本">¥{{ selectedFormula.costPerKg?.toFixed(2) }}/kg</el-descriptions-item>
+            <el-descriptions-item label="成本">¥{{ ensureNumber(safeGet(selectedFormula, 'costPerKg', 0), 0).toFixed(2) }}/kg</el-descriptions-item>
             <el-descriptions-item label="创建人">{{ selectedFormula.createdByName }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDate(selectedFormula.createdAt) }}</el-descriptions-item>
             <el-descriptions-item label="描述" :span="2">{{ selectedFormula.description || '无' }}</el-descriptions-item>

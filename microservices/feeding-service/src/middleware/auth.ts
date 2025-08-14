@@ -27,7 +27,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
       status: 'active' // 假设token有效则用户状态正常
     };
 
-    req.user = user as User;
+    req.user = user as any;
     next();
   } catch (error) {
     return res.error('无效的访问令牌', 401, 'INVALID_TOKEN');

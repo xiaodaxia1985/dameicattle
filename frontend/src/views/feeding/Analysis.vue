@@ -160,7 +160,7 @@
                 <div class="formula-info">
                   <div class="formula-name">{{ item.formulaName }}</div>
                   <div class="formula-stats">
-                    <span>成本: ¥{{ item.avgCostPerKg?.toFixed(2) }}/kg</span>
+                    <span>成本: ¥{{ ensureNumber(safeGet(item, 'avgCostPerKg', 0), 0).toFixed(2) }}/kg</span>
                     <span>使用: {{ item.usageCount }}次</span>
                     <span>总量: {{ item.totalAmount?.toFixed(1) }}kg</span>
                   </div>
@@ -213,7 +213,7 @@
           </el-table-column>
           <el-table-column prop="avgCostPerKg" label="平均成本/kg" width="120" sortable>
             <template #default="{ row }">
-              ¥{{ row.avgCostPerKg?.toFixed(2) }}
+              ¥{{ ensureNumber(safeGet(row, 'avgCostPerKg', 0), 0).toFixed(2) }}
             </template>
           </el-table-column>
           <el-table-column prop="efficiency" label="效率指数" width="100" sortable>
@@ -248,7 +248,7 @@
           <el-descriptions :column="2" border>
             <el-descriptions-item label="配方名称">{{ selectedFormulaAnalysis.formulaName }}</el-descriptions-item>
             <el-descriptions-item label="效率指数">{{ selectedFormulaAnalysis.efficiency?.toFixed(1) }}</el-descriptions-item>
-            <el-descriptions-item label="平均成本">¥{{ selectedFormulaAnalysis.avgCostPerKg?.toFixed(2) }}/kg</el-descriptions-item>
+            <el-descriptions-item label="平均成本">¥{{ ensureNumber(safeGet(selectedFormulaAnalysis, 'avgCostPerKg', 0), 0).toFixed(2) }}/kg</el-descriptions-item>
             <el-descriptions-item label="使用频率">{{ selectedFormulaAnalysis.usageCount }}次</el-descriptions-item>
           </el-descriptions>
         </div>
@@ -276,6 +276,8 @@ import { Document, TrendCharts, Money, Dish, Warning, ArrowUp, ArrowDown, Downlo
 import * as echarts from 'echarts'
 import { feedingApi } from '@/api/feeding'
 import { baseApi } from '@/api/base'
+import { ensureNumber } from '@/utils/dataValidation'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const dateRange = ref<[string, string]>(['', ''])

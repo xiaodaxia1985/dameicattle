@@ -164,25 +164,62 @@ export const cattleApi = {
   // 获取牛只列表
   async getList(params: CattleListParams = {}): Promise<CattleListResponse> {
     try {
-      console.log('cattleApi.getList 调用，参数:', params)
-      const response = await cattleServiceApi.getCattleList(params)
-      console.log('cattleApi.getList 原始响应:', response)
+      console.log('🔍 cattleApi.getList 调用参数:', params)
       
-      // 使用数据适配器处理响应
-      const { adaptPaginatedResponse } = await import('@/utils/dataAdapter')
-      const adapted = adaptPaginatedResponse<Cattle>(response, 'cattle')
+      const response = await cattleServiceApi.getCattleList(params)
+      console.log('📥 cattleServiceApi 原始响应:', response)
+      
+      // 直接解析微服务返回的数据
+      const responseData = response?.data || response || {}
+      console.log('📊 解析响应数据结构:', responseData)
+      
+      let cattle = []
+      let total = 0
+      let page = 1
+      let limit = 20
+      
+      // 处理不同的数据结构
+      if (Array.isArray(responseData)) {
+        // 直接是数组
+        cattle = responseData
+        total = cattle.length
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        // 有data字段且是数组
+        cattle = responseData.data
+        total = responseData.total || responseData.pagination?.total || cattle.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      } else if (responseData.cattle && Array.isArray(responseData.cattle)) {
+        // 有cattle字段且是数组
+        cattle = responseData.cattle
+        total = responseData.total || responseData.pagination?.total || cattle.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      } else if (responseData.items && Array.isArray(responseData.items)) {
+        // 有items字段且是数组
+        cattle = responseData.items
+        total = responseData.total || responseData.pagination?.total || cattle.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      }
       
       const result: CattleListResponse = {
-        data: adapted.data,
+        data: cattle,
         pagination: {
-          total: adapted.pagination.total,
-          page: adapted.pagination.page,
-          limit: adapted.pagination.limit,
-          totalPages: adapted.pagination.totalPages || adapted.pagination.pages || Math.ceil(adapted.pagination.total / adapted.pagination.limit)
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
         }
       }
       
-      console.log('cattleApi.getList 处理后数据:', result)
+      console.log('✅ cattleApi.getList 解析结果:', { 
+        cattleCount: cattle.length, 
+        total, 
+        page, 
+        limit,
+        sampleCattle: cattle[0] || null
+      })
       return result
     } catch (error) {
       console.error('cattleApi.getList 请求失败:', error)

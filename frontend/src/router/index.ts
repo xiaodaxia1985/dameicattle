@@ -34,26 +34,27 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'cattle',
         name: 'Cattle',
-        redirect: '/admin/cattle/list',
+        redirect: '/admin/cattle/bases',
         meta: { title: '牛场管理', icon: 'Grid' },
         children: [
+          {
+            path: 'bases',
+            name: 'Bases',
+            component: () => import('@/views/system/Bases.vue'),
+            meta: { title: '基地管理' }
+          },
+
           {
             path: 'list',
             name: 'CattleList',
             component: () => import('@/views/cattle/List.vue'),
-            meta: { title: '牛只列表' }
+            meta: { title: '牛只管理' }
           },
           {
             path: 'detail/:id',
             name: 'CattleDetail',
             component: () => import('@/views/cattle/Detail.vue'),
             meta: { title: '牛只详情', hidden: true, hideInMenu: true }
-          },
-          {
-            path: 'bases',
-            name: 'Bases',
-            component: () => import('@/views/system/Bases.vue'),
-            meta: { title: '基地管理' }
           }
         ]
       },
@@ -114,42 +115,16 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '饲喂记录' }
           },
           {
+            path: 'patrol-records',
+            name: 'PatrolRecords',
+            component: () => import('@/views/feeding/patrol/Records.vue'),
+            meta: { title: '巡圈记录' }
+          },
+          {
             path: 'formulas',
             name: 'FeedFormulas',
             component: () => import('@/views/feeding/Formulas.vue'),
             meta: { title: '饲料配方' }
-          },
-          {
-            path: 'analysis',
-            name: 'FeedingAnalysis',
-            component: () => import('@/views/feeding/Analysis.vue'),
-            meta: { title: '效率分析' }
-          },
-          {
-            path: 'patrol',
-            name: 'PatrolManagement',
-            redirect: '/admin/feeding/patrol/records',
-            meta: { title: '巡圈管理' },
-            children: [
-              {
-                path: 'records',
-                name: 'PatrolRecords',
-                component: () => import('@/views/feeding/patrol/Records.vue'),
-                meta: { title: '巡圈记录' }
-              },
-              {
-                path: 'dashboard',
-                name: 'PatrolDashboard',
-                component: () => import('@/views/feeding/patrol/Dashboard.vue'),
-                meta: { title: '巡圈总览' }
-              },
-              {
-                path: 'tasks',
-                name: 'PatrolTasks',
-                component: () => import('@/views/feeding/patrol/Tasks.vue'),
-                meta: { title: '今日任务' }
-              }
-            ]
           }
         ]
       },
@@ -280,12 +255,6 @@ const routes: RouteRecordRaw[] = [
             name: 'Roles',
             component: () => import('@/views/system/Roles.vue'),
             meta: { title: '角色管理' }
-          },
-          {
-            path: 'barns',
-            name: 'Barns',
-            component: () => import('@/views/system/Barns.vue'),
-            meta: { title: '牛棚管理' }
           },
           {
             path: 'operation-logs',

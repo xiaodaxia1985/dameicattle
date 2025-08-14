@@ -65,7 +65,7 @@ const startServer = async () => {
 
     if (process.env.NODE_ENV === 'development') {
       try {
-        await sequelize.sync({ force: false, alter: false });
+        await sequelize.sync({ force: false, alter: true });
         logger.info('Database models synchronized');
       } catch (error) {
         logger.warn('Database sync failed:', error);

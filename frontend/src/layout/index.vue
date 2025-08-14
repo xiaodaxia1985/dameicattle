@@ -24,13 +24,34 @@
               <el-icon><component :is="route.meta?.icon" /></el-icon>
               <span>{{ route.meta?.title }}</span>
             </template>
-            <el-menu-item
-              v-for="child in route.children"
-              :key="child.path"
-              :index="getChildRoutePath(route.path, child.path)"
-            >
-              {{ child.meta?.title }}
-            </el-menu-item>
+            
+            <!-- 处理子路由 -->
+            <template v-for="child in route.children" :key="child.path">
+              <!-- 如果子路由还有子路由，创建子菜单 -->
+              <el-sub-menu
+                v-if="child.children && child.children.length > 0"
+                :index="getChildRoutePath(route.path, child.path)"
+              >
+                <template #title>
+                  <span>{{ child.meta?.title }}</span>
+                </template>
+                <el-menu-item
+                  v-for="grandChild in child.children"
+                  :key="grandChild.path"
+                  :index="getChildRoutePath(getChildRoutePath(route.path, child.path), grandChild.path)"
+                >
+                  {{ grandChild.meta?.title }}
+                </el-menu-item>
+              </el-sub-menu>
+              
+              <!-- 如果子路由没有子路由，直接创建菜单项 -->
+              <el-menu-item
+                v-else
+                :index="getChildRoutePath(route.path, child.path)"
+              >
+                {{ child.meta?.title }}
+              </el-menu-item>
+            </template>
           </el-sub-menu>
           
           <el-menu-item
@@ -126,7 +147,9 @@ const menuRoutes = computed(() => {
     .filter(route => !route.meta?.hidden)
     .map(route => ({
       ...route,
-      path: route.path.startsWith('/') ? route.path : `/admin/${route.path}`
+      path: route.path.startsWith('/') ? route.path : `/admin/${route.path}`,
+      // 过滤掉隐藏的子路由
+      children: route.children?.filter(child => !child.meta?.hidden && !child.meta?.hideInMenu)
     }))
 })
 

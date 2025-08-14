@@ -181,12 +181,12 @@
         </el-table-column>
         <el-table-column label="用量(kg)" width="100" sortable>
           <template #default="{ row }">
-            {{ parseFloat(row.amount || 0).toFixed(1) }}
+            {{ ensureNumber(row.amount, 0).toFixed(1) }}
           </template>
         </el-table-column>
         <el-table-column label="成本(¥)" width="100" sortable>
           <template #default="{ row }">
-            ¥{{ (parseFloat(row.amount || 0) * parseFloat(row.formula?.cost_per_kg || 0)).toFixed(2) }}
+            ¥{{ (ensureNumber(row.amount, 0) * ensureNumber(safeGet(row, 'formula.cost_per_kg', safeGet(row, 'formula.costPerKg', 0)), 0)).toFixed(2) }}
           </template>
         </el-table-column>
         <el-table-column label="操作员" width="100">
@@ -251,7 +251,7 @@
             <el-option
               v-for="formula in formulas"
               :key="formula.id"
-              :label="`${formula.name} (¥${formula.cost_per_kg?.toFixed(2) || 0}/kg)`"
+              :label="`${formula.name} (¥${ensureNumber(safeGet(formula, 'cost_per_kg', safeGet(formula, 'costPerKg', 0)), 0).toFixed(2)}/kg)`"
               :value="formula.id"
             />
           </el-select>
@@ -338,8 +338,8 @@
           <el-descriptions-item label="配方">{{ selectedRecord.formula?.name || '未指定' }}</el-descriptions-item>
           <el-descriptions-item label="基地">{{ selectedRecord.base?.name || '未指定' }}</el-descriptions-item>
           <el-descriptions-item label="牛棚">{{ selectedRecord.barn?.name || '未指定' }}</el-descriptions-item>
-          <el-descriptions-item label="饲喂量">{{ parseFloat(selectedRecord.amount || 0).toFixed(1) }}kg</el-descriptions-item>
-          <el-descriptions-item label="成本">¥{{ (parseFloat(selectedRecord.amount || 0) * parseFloat(selectedRecord.formula?.cost_per_kg || 0)).toFixed(2) }}</el-descriptions-item>
+          <el-descriptions-item label="饲喂量">{{ ensureNumber(selectedRecord.amount, 0).toFixed(1) }}kg</el-descriptions-item>
+          <el-descriptions-item label="成本">¥{{ (ensureNumber(selectedRecord.amount, 0) * ensureNumber(safeGet(selectedRecord, 'formula.cost_per_kg', safeGet(selectedRecord, 'formula.costPerKg', 0)), 0)).toFixed(2) }}</el-descriptions-item>
           <el-descriptions-item label="操作员">{{ selectedRecord.operator?.real_name || selectedRecord.operator?.username || '未指定' }}</el-descriptions-item>
           <el-descriptions-item label="备注" :span="2">{{ selectedRecord.remark || '无' }}</el-descriptions-item>
         </el-descriptions>
@@ -531,7 +531,8 @@ import { baseApi } from '@/api/base'
 import { barnApi } from '@/api/barn'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import type { FeedingRecord, FeedFormula, CreateFeedingRecordRequest, UpdateFeedingRecordRequest } from '@/api/feeding'
-import { validateData } from '@/utils/dataValidation'
+import { validateData, ensureNumber } from '@/utils/dataValidation'
+import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const records = ref<FeedingRecord[]>([])
@@ -685,18 +686,18 @@ const formRules: Record<string, any> = {
 const totalRecords = computed(() => pagination.value.total)
 const totalAmount = computed(() => {
   const total = records.value.reduce((sum, record) => {
-    const amount = parseFloat(record.amount || 0)
-    return sum + (isNaN(amount) ? 0 : amount)
+    const amount = ensureNumber(record.amount, 0)
+    return sum + amount
   }, 0)
   return total.toFixed(1)
 })
 
 const totalCost = computed(() => {
   const total = records.value.reduce((sum, record) => {
-    const amount = parseFloat(record.amount || 0)
-    const costPerKg = parseFloat(record.formula?.cost_per_kg || 0)
+    const amount = ensureNumber(record.amount, 0)
+    const costPerKg = ensureNumber(safeGet(record, 'formula.cost_per_kg', safeGet(record, 'formula.costPerKg', 0)), 0)
     const cost = amount * costPerKg
-    return sum + (isNaN(cost) ? 0 : cost)
+    return sum + cost
   }, 0)
   return total.toFixed(2)
 })
@@ -704,7 +705,7 @@ const totalCost = computed(() => {
 const avgDailyCost = computed(() => {
   if (!dateRange.value || records.value.length === 0) return '0.00'
   const days = Math.max(1, Math.ceil((new Date(dateRange.value[1]).getTime() - new Date(dateRange.value[0]).getTime()) / (1000 * 60 * 60 * 24)))
-  const totalCostNum = parseFloat(totalCost.value)
+  const totalCostNum = ensureNumber(totalCost.value, 0)
   return (totalCostNum / days).toFixed(2)
 })
 

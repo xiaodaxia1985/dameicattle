@@ -1,6 +1,5 @@
 import { feedingServiceApi } from './microservices'
 import type { ApiResponse } from './request'
-import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 饲喂管理相关类型定义
 export interface IngredientItem {
@@ -199,30 +198,99 @@ export const feedingApi = {
 
   // 删除饲料配方
   async deleteFormula(id: string): Promise<void> {
-    await feedingServiceApi.remove('/formulas', id)
+    console.log('🔍 feedingApi.deleteFormula 调用参数:', id)
+    
+    try {
+      await feedingServiceApi.remove('/formulas', id)
+      console.log('✅ feedingApi.deleteFormula 删除成功')
+    } catch (error: any) {
+      console.error('❌ feedingApi.deleteFormula 删除失败:', error)
+      
+      // 如果是404错误，说明后端还没有实现这个端点
+      if (error.response?.status === 404 || error.message?.includes('404') || error.message?.includes('Route not found')) {
+        throw new Error('删除功能暂时不可用，后端服务正在开发中。请联系系统管理员。')
+      }
+      
+      // 其他错误直接抛出
+      throw error
+    }
   },
 
   // 获取饲喂记录列表
   async getFeedingRecords(params: FeedingListParams = {}): Promise<{ data: FeedingListResponse }> {
-    console.log('饲喂记录API调用参数:', params)
+    console.log('🔍 feedingApi.getFeedingRecords 调用参数:', params)
+    
     const response = await feedingServiceApi.getFeedingRecords(params)
-    console.log('饲喂记录API原始响应:', response)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<FeedingRecord>(response, 'records')
-    return { 
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let records = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      records = responseData
+      total = records.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      records = responseData.data
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.records && Array.isArray(responseData.records)) {
+      // 有records字段且是数组
+      records = responseData.records
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      records = responseData.items
+      total = responseData.total || responseData.pagination?.total || records.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
       data: {
-        data: adapted.data,
-        total: adapted.pagination.total,
-        page: adapted.pagination.page,
-        limit: adapted.pagination.limit
+        data: records,
+        total,
+        page,
+        limit
       }
     }
+    
+    console.log('✅ feedingApi.getFeedingRecords 解析结果:', { 
+      recordsCount: records.length, 
+      total, 
+      page, 
+      limit,
+      sampleRecord: records[0] || null
+    })
+    
+    return result
   },
 
   // 获取饲喂记录详情
   async getFeedingRecordById(id: string): Promise<{ data: FeedingRecord }> {
+    console.log('🔍 feedingApi.getFeedingRecordById 调用参数:', id)
+    
     const response = await feedingServiceApi.get(`/records/${id}`)
-    return { data: adaptSingleResponse<FeedingRecord>(response) }
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    console.log('✅ feedingApi.getFeedingRecordById 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 创建饲喂记录
@@ -242,19 +310,44 @@ export const feedingApi = {
 
   // 更新饲喂记录
   async updateFeedingRecord(id: string, data: UpdateFeedingRecordRequest): Promise<{ data: FeedingRecord }> {
+    console.log('🔍 feedingApi.updateFeedingRecord 调用参数:', { id, data })
+    
     const response = await feedingServiceApi.put(`/records/${id}`, data)
-    return { data: adaptSingleResponse<FeedingRecord>(response) }
+    console.log('📥 feedingServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    console.log('✅ feedingApi.updateFeedingRecord 解析结果:', responseData)
+    
+    return { data: responseData }
   },
 
   // 删除饲喂记录
   async deleteFeedingRecord(id: string): Promise<void> {
-    await feedingServiceApi.delete(`/records/${id}`)
+    console.log('🔍 feedingApi.deleteFeedingRecord 调用参数:', id)
+    
+    try {
+      await feedingServiceApi.remove('/records', id)
+      console.log('✅ feedingApi.deleteFeedingRecord 删除成功')
+    } catch (error: any) {
+      console.error('❌ feedingApi.deleteFeedingRecord 删除失败:', error)
+      
+      // 如果是404错误，说明后端还没有实现这个端点
+      if (error.response?.status === 404 || error.message?.includes('404') || error.message?.includes('Route not found')) {
+        throw new Error('删除功能暂时不可用，后端服务正在开发中。请联系系统管理员。')
+      }
+      
+      // 其他错误直接抛出
+      throw error
+    }
   },
 
   // 获取饲喂统计数据
   async getFeedingStatistics(params: { base_id?: number; start_date?: string; end_date?: string } = {}): Promise<{ data: FeedingStatistics }> {
     console.log('饲喂统计API调用参数:', params)
-    const response = await feedingServiceApi.getFeedingStatistics(params.base_id)
+    const response = await feedingServiceApi.getFeedingStatistics(params)
     console.log('饲喂统计API原始响应:', response)
     return { data: response.data }
   },
@@ -271,7 +364,7 @@ export const feedingApi = {
   async getFeedingEfficiency(params: { base_id?: number; start_date?: string; end_date?: string } = {}): Promise<{ data: any }> {
     console.log('饲喂效率分析API调用参数:', params)
     // 使用统计API获取数据，然后在前端计算效率指标
-    const response = await feedingServiceApi.getFeedingStatistics(params.base_id)
+    const response = await feedingServiceApi.getFeedingStatistics(params)
     console.log('饲喂统计API响应:', response)
     const statsData = response.data
     

@@ -203,11 +203,23 @@
         <!-- 基地牛棚牛只级联选择 -->
         <CascadeSelector
           v-model="recordForm.cascade"
+          base-label="选择基地"
+          barn-label="选择牛棚"
           cattle-label="选择牛只"
-          cattle-prop="cattleId"
           :required="true"
+          :disabled="!!editingRecord"
           @change="handleFormCascadeChange"
         />
+        
+        <!-- 编辑时显示牛只信息 -->
+        <div v-if="editingRecord" class="cattle-info">
+          <el-alert
+            :title="`当前牛只: ${editingRecord.cattleEarTag || '未知'} (基地-牛棚-牛只信息不可修改)`"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+        </div>
         <el-form-item label="症状" prop="symptoms">
           <el-input 
             v-model="recordForm.symptoms" 

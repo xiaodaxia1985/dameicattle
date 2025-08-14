@@ -1,6 +1,5 @@
 import { healthServiceApi } from './microservices'
 import type { ApiResponse } from './request'
-import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 健康管理相关类型定义
 export interface HealthRecord {

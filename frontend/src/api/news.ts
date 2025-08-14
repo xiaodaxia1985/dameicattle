@@ -1,7 +1,6 @@
 import { newsServiceApi } from './microservices'
 import request from './request'
 import type { ApiResponse } from './request'
-import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 新闻分类接口
 export interface NewsCategory {

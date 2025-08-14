@@ -1,6 +1,5 @@
 import { procurementServiceApi } from './microservices'
 import type { ApiResponse } from './request'
-import { adaptPaginatedResponse, adaptSingleResponse, adaptStatisticsResponse } from '@/utils/dataAdapter'
 
 // 采购管理相关类型定义
 export interface Supplier {
@@ -142,20 +141,66 @@ export const procurementApi = {
    * 获取采购订单列表
    */
   async getProcurementOrders(params: ProcurementListParams = {}): Promise<{ data: ProcurementListResponse }> {
+    console.log('🔍 procurementApi.getProcurementOrders 调用参数:', params)
+    
     const response = await procurementServiceApi.getProcurementOrders(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<ProcurementOrder>(response, 'orders')
-    return { 
+    console.log('📥 procurementServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let orders = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      orders = responseData
+      total = orders.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      orders = responseData.data
+      total = responseData.total || responseData.pagination?.total || orders.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.orders && Array.isArray(responseData.orders)) {
+      // 有orders字段且是数组
+      orders = responseData.orders
+      total = responseData.total || responseData.pagination?.total || orders.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      orders = responseData.items
+      total = responseData.total || responseData.pagination?.total || orders.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
       data: {
-        orders: adapted.data,
+        orders: orders,
         pagination: {
-          total: adapted.pagination.total,
-          page: adapted.pagination.page,
-          limit: adapted.pagination.limit,
-          pages: adapted.pagination.pages || adapted.pagination.totalPages || Math.ceil(adapted.pagination.total / adapted.pagination.limit)
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
         }
       }
     }
+    
+    console.log('✅ procurementApi.getProcurementOrders 解析结果:', { 
+      ordersCount: orders.length, 
+      total, 
+      page, 
+      limit,
+      sampleOrder: orders[0] || null
+    })
+    
+    return result
   },
 
   /**
@@ -219,20 +264,66 @@ export const procurementApi = {
    * 获取供应商列表
    */
   async getSuppliers(params: SupplierListParams = {}): Promise<{ data: SupplierListResponse }> {
+    console.log('🔍 procurementApi.getSuppliers 调用参数:', params)
+    
     const response = await procurementServiceApi.getSuppliers(params)
-    // 使用数据适配器处理响应
-    const adapted = adaptPaginatedResponse<Supplier>(response, 'suppliers')
-    return { 
+    console.log('📥 procurementServiceApi 原始响应:', response)
+    
+    // 直接解析微服务返回的数据
+    const responseData = response?.data || response || {}
+    console.log('📊 解析响应数据结构:', responseData)
+    
+    let suppliers = []
+    let total = 0
+    let page = 1
+    let limit = 20
+    
+    // 处理不同的数据结构
+    if (Array.isArray(responseData)) {
+      // 直接是数组
+      suppliers = responseData
+      total = suppliers.length
+    } else if (responseData.data && Array.isArray(responseData.data)) {
+      // 有data字段且是数组
+      suppliers = responseData.data
+      total = responseData.total || responseData.pagination?.total || suppliers.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.suppliers && Array.isArray(responseData.suppliers)) {
+      // 有suppliers字段且是数组
+      suppliers = responseData.suppliers
+      total = responseData.total || responseData.pagination?.total || suppliers.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    } else if (responseData.items && Array.isArray(responseData.items)) {
+      // 有items字段且是数组
+      suppliers = responseData.items
+      total = responseData.total || responseData.pagination?.total || suppliers.length
+      page = responseData.page || responseData.pagination?.page || 1
+      limit = responseData.limit || responseData.pagination?.limit || 20
+    }
+    
+    const result = { 
       data: {
-        suppliers: adapted.data,
+        suppliers: suppliers,
         pagination: {
-          total: adapted.pagination.total,
-          page: adapted.pagination.page,
-          limit: adapted.pagination.limit,
-          pages: adapted.pagination.pages || adapted.pagination.totalPages || Math.ceil(adapted.pagination.total / adapted.pagination.limit)
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
         }
       }
     }
+    
+    console.log('✅ procurementApi.getSuppliers 解析结果:', { 
+      suppliersCount: suppliers.length, 
+      total, 
+      page, 
+      limit,
+      sampleSupplier: suppliers[0] || null
+    })
+    
+    return result
   },
 
   /**

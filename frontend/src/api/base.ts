@@ -108,19 +108,66 @@ export const baseApi = {
   // 获取基地列表
   async getBases(params: BaseListParams = {}): Promise<{ data: { bases: Base[], pagination: any } }> {
     try {
+      console.log('🔍 baseApi.getBases 调用参数:', params)
+      
       const response = await baseServiceApi.getBases(params)
-      console.log('baseApi.getBases 原始响应:', response)
+      console.log('📥 baseServiceApi 原始响应:', response)
       
-      // 使用数据适配器处理响应
-      const { adaptPaginatedResponse } = await import('@/utils/dataAdapter')
-      const adapted = adaptPaginatedResponse<Base>(response, 'bases')
+      // 直接解析微服务返回的数据
+      const responseData = response?.data || response || {}
+      console.log('📊 解析响应数据结构:', responseData)
       
-      return { 
+      let bases = []
+      let total = 0
+      let page = 1
+      let limit = 20
+      
+      // 处理不同的数据结构
+      if (Array.isArray(responseData)) {
+        // 直接是数组
+        bases = responseData
+        total = bases.length
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        // 有data字段且是数组
+        bases = responseData.data
+        total = responseData.total || responseData.pagination?.total || bases.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      } else if (responseData.bases && Array.isArray(responseData.bases)) {
+        // 有bases字段且是数组
+        bases = responseData.bases
+        total = responseData.total || responseData.pagination?.total || bases.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      } else if (responseData.items && Array.isArray(responseData.items)) {
+        // 有items字段且是数组
+        bases = responseData.items
+        total = responseData.total || responseData.pagination?.total || bases.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      }
+      
+      const result = { 
         data: {
-          bases: adapted.data,
-          pagination: adapted.pagination
+          bases: bases,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+          }
         }
       }
+      
+      console.log('✅ baseApi.getBases 解析结果:', { 
+        basesCount: bases.length, 
+        total, 
+        page, 
+        limit,
+        sampleBase: bases[0] || null
+      })
+      
+      return result
     } catch (error) {
       console.error('获取基地列表失败:', error)
       return { 

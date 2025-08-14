@@ -360,6 +360,131 @@ export class FeedingController {
   }
 
   /**
+   * Get feeding record by ID
+   */
+  static async getFeedingRecordById(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const record = await FeedingRecord.findByPk(id, {
+        include: [
+          {
+            model: FeedFormula,
+            as: 'formula',
+            attributes: ['id', 'name', 'cost_per_kg']
+          },
+          {
+            model: User,
+            as: 'operator',
+            attributes: ['id', 'real_name', 'username']
+          }
+        ]
+      });
+
+      if (!record) {
+        return res.error('饲喂记录不存在', 404, 'RECORD_NOT_FOUND');
+      }
+
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (dataPermission && !dataPermission.canAccessAllBases && dataPermission.baseId !== record.base_id) {
+        return res.error('无权访问该记录', 403, 'ACCESS_DENIED');
+      }
+
+      res.success(record, '获取饲喂记录成功');
+    } catch (error) {
+      logger.error('Error fetching feeding record:', error);
+      res.error('获取饲喂记录失败', 500, 'FETCH_RECORD_ERROR');
+    }
+  }
+
+  /**
+   * Update feeding record
+   */
+  static async updateFeedingRecord(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { formula_id, base_id, barn_id, amount, feeding_date, remark } = req.body;
+
+      const record = await FeedingRecord.findByPk(id);
+      if (!record) {
+        return res.error('饲喂记录不存在', 404, 'RECORD_NOT_FOUND');
+      }
+
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (dataPermission && !dataPermission.canAccessAllBases && dataPermission.baseId !== record.base_id) {
+        return res.error('无权修改该记录', 403, 'ACCESS_DENIED');
+      }
+
+      // 验证配方是否存在
+      if (formula_id) {
+        const formula = await FeedFormula.findByPk(formula_id);
+        if (!formula) {
+          return res.error('指定的饲料配方不存在', 400, 'FORMULA_NOT_FOUND');
+        }
+      }
+
+      // 更新记录
+      await record.update({
+        formula_id: formula_id || record.formula_id,
+        base_id: base_id || record.base_id,
+        barn_id: barn_id || record.barn_id,
+        amount: amount !== undefined ? amount : record.amount,
+        feeding_date: feeding_date ? new Date(feeding_date) : record.feeding_date
+      });
+
+      // 重新获取更新后的记录，包含关联数据
+      const updatedRecord = await FeedingRecord.findByPk(id, {
+        include: [
+          {
+            model: FeedFormula,
+            as: 'formula',
+            attributes: ['id', 'name', 'cost_per_kg']
+          },
+          {
+            model: User,
+            as: 'operator',
+            attributes: ['id', 'real_name', 'username']
+          }
+        ]
+      });
+
+      res.success(updatedRecord, '更新饲喂记录成功');
+    } catch (error) {
+      logger.error('Error updating feeding record:', error);
+      res.error('更新饲喂记录失败', 500, 'UPDATE_RECORD_ERROR');
+    }
+  }
+
+  /**
+   * Delete feeding record
+   */
+  static async deleteFeedingRecord(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const record = await FeedingRecord.findByPk(id);
+      if (!record) {
+        return res.error('饲喂记录不存在', 404, 'RECORD_NOT_FOUND');
+      }
+
+      // 数据权限检查
+      const dataPermission = (req as any).dataPermission;
+      if (dataPermission && !dataPermission.canAccessAllBases && dataPermission.baseId !== record.base_id) {
+        return res.error('无权删除该记录', 403, 'ACCESS_DENIED');
+      }
+
+      await record.destroy();
+
+      res.success(null, '删除饲喂记录成功');
+    } catch (error) {
+      logger.error('Error deleting feeding record:', error);
+      res.error('删除饲喂记录失败', 500, 'DELETE_RECORD_ERROR');
+    }
+  }
+
+  /**
    * Get feeding statistics
    */
   static async getFeedingStatistics(req: Request, res: Response) {
@@ -426,7 +551,25 @@ export class FeedingController {
 
       // Daily statistics
       const dailyStats = records.reduce((acc, record) => {
-        const date = record.feeding_date.toISOString().split('T')[0];
+        // 安全处理日期，确保转换为字符串格式
+        let date: string;
+        try {
+          if (record.feeding_date instanceof Date) {
+            date = record.feeding_date.toISOString().split('T')[0];
+          } else {
+            // 将任何类型的日期值转换为字符串
+            const dateStr = String(record.feeding_date);
+            if (dateStr.includes('T')) {
+              date = dateStr.split('T')[0];
+            } else {
+              date = new Date(dateStr).toISOString().split('T')[0];
+            }
+          }
+        } catch (error) {
+          // 如果日期转换失败，使用当前日期
+          date = new Date().toISOString().split('T')[0];
+        }
+        
         if (!acc[date]) {
           acc[date] = { count: 0, amount: 0 };
         }
