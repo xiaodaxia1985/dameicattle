@@ -40,6 +40,10 @@
       </el-form>
     </el-card>
 
+
+
+
+
     <!-- 客户列表 -->
     <el-card class="table-card">
       <el-table 
@@ -49,38 +53,38 @@
       >
         <el-table-column prop="name" label="客户名称" min-width="150">
           <template #default="{ row }">
-            {{ safeGet(row, 'name', '-') }}
+            {{ row.name || '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="contact_person" label="联系人" width="120">
           <template #default="{ row }">
-            {{ safeGet(row, 'contact_person', '-') }}
+            {{ row.contact_person || row.contactPerson || '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="phone" label="联系电话" width="150">
           <template #default="{ row }">
-            {{ safeGet(row, 'phone', '-') }}
+            {{ row.phone || '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="customer_type" label="类型" width="120">
           <template #default="{ row }">
-            {{ safeGet(row, 'customer_type', '-') }}
+            {{ row.customer_type || row.customerType || '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="credit_rating" label="评级" width="120">
           <template #default="{ row }">
-            <el-rate :model-value="ensureNumber(safeGet(row, 'credit_rating', 0), 0)" disabled show-score />
+            <el-rate :model-value="Number(row.credit_rating || row.creditRating || 0)" disabled show-score />
           </template>
         </el-table-column>
         <el-table-column prop="credit_limit" label="信用额度" width="120">
           <template #default="{ row }">
-            ¥{{ ensureNumber(safeGet(row, 'credit_limit', 0), 0).toLocaleString() }}
+            ¥{{ Number(row.credit_limit || row.creditLimit || 0).toLocaleString() }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="safeGet(row, 'status', 'active') === 'active' ? 'success' : 'danger'">
-              {{ safeGet(row, 'status', 'active') === 'active' ? '启用' : '停用' }}
+            <el-tag type="success">
+              启用
             </el-tag>
           </template>
         </el-table-column>
@@ -115,305 +119,22 @@
       </div>
     </el-card>
 
-    <!-- 客户表单对话框 -->
-    <el-dialog
-      v-model="dialogVisible"
-      :title="dialogTitle"
-      width="800px"
-      @close="handleDialogClose"
-    >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="120px"
-      >
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="客户名称" prop="name">
-              <el-input v-model="form.name" placeholder="请输入客户名称" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="客户类型" prop="customer_type">
-              <el-select v-model="form.customer_type" placeholder="请选择类型">
-                <el-option label="个人" value="个人" />
-                <el-option label="企业" value="企业" />
-                <el-option label="经销商" value="经销商" />
-              </el-select>
-            </el-form-item>
-          </el-col>
-        </el-row>
-        
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="联系人" prop="contact_person">
-              <el-input v-model="form.contact_person" placeholder="请输入联系人" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="联系电话" prop="phone">
-              <el-input v-model="form.phone" placeholder="请输入联系电话" />
-            </el-form-item>
-          </el-col>
-        </el-row>
 
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="邮箱">
-              <el-input v-model="form.email" placeholder="请输入邮箱" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="评级">
-              <el-rate v-model="form.credit_rating" show-score />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="地址">
-          <el-input v-model="form.address" type="textarea" placeholder="请输入地址" />
-        </el-form-item>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="营业执照号">
-              <el-input v-model="form.business_license" placeholder="请输入营业执照号" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="税号">
-              <el-input v-model="form.tax_number" placeholder="请输入税号" />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="银行账户">
-              <el-input v-model="form.bank_account" placeholder="请输入银行账户" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="信用额度">
-              <el-input-number 
-                v-model="form.credit_limit" 
-                :min="0" 
-                :precision="2"
-                placeholder="请输入信用额度"
-                style="width: 100%"
-              />
-            </el-form-item>
-          </el-col>
-        </el-row>
-
-        <el-form-item label="付款条件">
-          <el-input v-model="form.payment_terms" placeholder="请输入付款条件" />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
-          {{ isEdit ? '更新' : '创建' }}
-        </el-button>
-      </template>
-    </el-dialog>
-
-    <!-- 客户详情对话框 -->
-    <el-dialog
-      v-model="detailDialogVisible"
-      title="客户详情"
-      width="1000px"
-    >
-      <div v-if="currentCustomer" class="customer-detail">
-        <!-- 基本信息 -->
-        <el-card class="detail-section">
-          <template #header>基本信息</template>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>客户名称：</label>
-                <span>{{ currentCustomer.name }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>客户类型：</label>
-                <span>{{ currentCustomer.customer_type }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>信用评级：</label>
-                <el-rate v-model="currentCustomer.credit_rating" disabled show-score />
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>联系人：</label>
-                <span>{{ currentCustomer.contact_person }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>联系电话：</label>
-                <span>{{ currentCustomer.phone }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>邮箱：</label>
-                <span>{{ currentCustomer.email }}</span>
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="24">
-              <div class="detail-item">
-                <label>地址：</label>
-                <span>{{ currentCustomer.address }}</span>
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>营业执照号：</label>
-                <span>{{ currentCustomer.business_license }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>税号：</label>
-                <span>{{ currentCustomer.tax_number }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>银行账户：</label>
-                <span>{{ currentCustomer.bank_account }}</span>
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>信用额度：</label>
-                <span class="amount">¥{{ currentCustomer.credit_limit?.toLocaleString() || 0 }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>付款条件：</label>
-                <span>{{ currentCustomer.payment_terms }}</span>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div class="detail-item">
-                <label>状态：</label>
-                <el-tag :type="currentCustomer.status === 'active' ? 'success' : 'danger'">
-                  {{ currentCustomer.status === 'active' ? '启用' : '停用' }}
-                </el-tag>
-              </div>
-            </el-col>
-          </el-row>
-        </el-card>
-
-        <!-- 回访记录 -->
-        <el-card class="detail-section">
-          <template #header>
-            <div class="section-header">
-              <span>回访记录</span>
-              <el-button size="small" type="primary" @click="handleVisit(currentCustomer)">
-                <el-icon><Plus /></el-icon>
-                添加回访
-              </el-button>
-            </div>
-          </template>
-          <el-table :data="currentCustomer.visit_records || []" border>
-            <el-table-column prop="visit_date" label="回访日期" width="120">
-              <template #default="{ row }">
-                {{ formatDate(row.visit_date) }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="visit_type" label="回访类型" width="120" />
-            <el-table-column prop="purpose" label="回访目的" min-width="150" />
-            <el-table-column prop="content" label="回访内容" min-width="200" />
-            <el-table-column prop="result" label="回访结果" min-width="150" />
-            <el-table-column prop="next_visit_date" label="下次回访" width="120">
-              <template #default="{ row }">
-                {{ formatDate(row.next_visit_date) }}
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </div>
-    </el-dialog>
-
-    <!-- 回访记录表单对话框 -->
-    <el-dialog
-      v-model="visitDialogVisible"
-      title="添加回访记录"
-      width="600px"
-    >
-      <el-form
-        ref="visitFormRef"
-        :model="visitForm"
-        :rules="visitRules"
-        label-width="120px"
-      >
-        <el-form-item label="回访日期" prop="visit_date">
-          <el-date-picker
-            v-model="visitForm.visit_date"
-            type="date"
-            placeholder="请选择回访日期"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="回访类型" prop="visit_type">
-          <el-select v-model="visitForm.visit_type" placeholder="请选择回访类型">
-            <el-option label="电话回访" value="电话回访" />
-            <el-option label="实地拜访" value="实地拜访" />
-            <el-option label="邮件回访" value="邮件回访" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="回访目的" prop="purpose">
-          <el-input v-model="visitForm.purpose" placeholder="请输入回访目的" />
-        </el-form-item>
-        <el-form-item label="回访内容" prop="content">
-          <el-input v-model="visitForm.content" type="textarea" placeholder="请输入回访内容" />
-        </el-form-item>
-        <el-form-item label="回访结果">
-          <el-input v-model="visitForm.result" type="textarea" placeholder="请输入回访结果" />
-        </el-form-item>
-        <el-form-item label="下次回访日期">
-          <el-date-picker
-            v-model="visitForm.next_visit_date"
-            type="date"
-            placeholder="请选择下次回访日期"
-            style="width: 100%"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="visitDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitVisit" :loading="submitting">确认</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { salesApi, type Customer } from '@/api/sales'
 import { validateData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
 import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
 import { safeGet } from '@/utils/safeAccess'
+import { ensureUserLoggedIn, withAuth } from '@/utils/authGuard'
+
+const router = useRouter()
 
 // 响应式数据
 const loading = ref(false)
@@ -423,14 +144,18 @@ const customerTypes = ref<any[]>([])
 
 // 计算属性：过滤有效的客户数据
 const validCustomers = computed(() => {
-  return customers.value.filter(customer => 
-    customer && 
-    typeof customer === 'object' && 
-    customer.id !== undefined && 
-    customer.id !== null &&
-    customer.name &&
-    typeof customer.name === 'string'
-  )
+  console.log('🔍 validCustomers 计算属性执行，原始数据:', customers.value)
+  
+  // 直接返回所有数据，不进行过滤
+  const result = customers.value || []
+  
+  console.log('🎯 validCustomers 最终结果:', {
+    originalCount: customers.value?.length || 0,
+    resultCount: result.length,
+    result
+  })
+  
+  return result
 })
 
 // 搜索表单
@@ -447,97 +172,60 @@ const pagination = reactive({
   total: 0
 })
 
-// 对话框
-const dialogVisible = ref(false)
-const detailDialogVisible = ref(false)
-const visitDialogVisible = ref(false)
-const isEdit = ref(false)
-const formRef = ref()
-const visitFormRef = ref()
-const currentCustomer = ref<Customer | null>(null)
 
-// 表单数据
-const form = reactive({
-  id: null as number | null,
-  name: '',
-  contact_person: '',
-  phone: '',
-  email: '',
-  address: '',
-  credit_rating: 0,
-  customer_type: '',
-  business_license: '',
-  tax_number: '',
-  bank_account: '',
-  credit_limit: 0,
-  payment_terms: ''
-})
-
-// 回访表单
-const visitForm = reactive({
-  customer_id: null as number | null,
-  visit_date: '',
-  visit_type: '',
-  purpose: '',
-  content: '',
-  result: '',
-  next_visit_date: ''
-})
-
-// 表单验证规则
-const rules = {
-  name: [{ required: true, message: '请输入客户名称', trigger: 'blur' }],
-  contact_person: [{ required: true, message: '请输入联系人', trigger: 'blur' }],
-  phone: [{ required: true, message: '请输入联系电话', trigger: 'blur' }],
-  customer_type: [{ required: true, message: '请选择客户类型', trigger: 'change' }]
-}
-
-// 回访表单验证规则
-const visitRules = {
-  visit_date: [{ required: true, message: '请选择回访日期', trigger: 'change' }],
-  visit_type: [{ required: true, message: '请选择回访类型', trigger: 'change' }],
-  purpose: [{ required: true, message: '请输入回访目的', trigger: 'blur' }],
-  content: [{ required: true, message: '请输入回访内容', trigger: 'blur' }]
-}
-
-// 计算属性
-const dialogTitle = computed(() => isEdit.value ? '编辑客户' : '新增客户')
 
 // 方法
-const fetchCustomers = withPageErrorHandler(async () => {
+const fetchCustomers = async () => {
   loading.value = true
   try {
-    const params = {
-      page: pagination.page,
-      limit: pagination.limit,
-      search: searchForm.name || undefined,
-      customer_type: searchForm.customerType || undefined,
-      credit_rating: searchForm.creditRating
+    // 使用认证守卫确保用户已登录
+    const isLoggedIn = await ensureUserLoggedIn()
+    if (!isLoggedIn) {
+      console.log('❌ 用户未登录，无法获取客户数据')
+      return
     }
     
-    const result = await safeApiCall(
-      () => salesApi.getCustomers(params),
-      {
-        showMessage: false,
-        fallbackValue: { data: { items: [], total: 0 } }
+    console.log('🔍 开始获取客户数据...')
+    
+    // 使用withAuth包装API调用
+    await withAuth(async () => {
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit,
+        search: searchForm.name || undefined,
+        customer_type: searchForm.customerType || undefined,
+        credit_rating: searchForm.creditRating
       }
-    )
-    
-    if (result && result.data) {
-      const customersData = ensureArray(safeGet(result, 'data.items', []))
-      customers.value = validateDataArray(customersData, (customer: any) => {
-        return customer && 
-               typeof customer === 'object' && 
-               ensureNumber(customer.id, 0) > 0 &&
-               customer.name &&
-               typeof customer.name === 'string' ? customer : null
-      })
-      pagination.total = ensureNumber(safeGet(result, 'data.total', 0))
-    }
+      
+      console.log('🔍 请求参数:', params)
+      
+      const result = await salesApi.getCustomers(params)
+      console.log('📥 API返回结果:', result)
+      
+      if (result && result.data && result.data.items) {
+        customers.value = result.data.items
+        pagination.total = result.data.total || 0
+        
+        console.log('✅ 成功设置客户数据:', {
+          count: customers.value.length,
+          total: pagination.total,
+          firstCustomer: customers.value[0]
+        })
+      } else {
+        console.warn('⚠️ API返回数据格式异常:', result)
+        customers.value = []
+        pagination.total = 0
+      }
+    })
+  } catch (error) {
+    console.error('❌ 获取客户数据失败:', error)
+    ElMessage.error('获取客户数据失败')
+    customers.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
-}, '获取客户列表失败')
+}
 
 const fetchCustomerTypes = async () => {
   const result = await safeApiCall(
@@ -568,32 +256,15 @@ const handleReset = () => {
 }
 
 const handleAdd = () => {
-  isEdit.value = false
-  resetForm()
-  dialogVisible.value = true
+  router.push('/admin/sales/customers/new')
 }
 
 const handleEdit = (row: Customer) => {
-  isEdit.value = true
-  Object.assign(form, row)
-  dialogVisible.value = true
+  router.push(`/admin/sales/customers/${row.id}/edit`)
 }
 
-const handleView = async (row: Customer) => {
-  const result = await safeApiCall(
-    () => salesApi.getCustomer(ensureNumber(row.id, 0)),
-    {
-      showMessage: false,
-      fallbackValue: null
-    }
-  )
-  
-  if (result && result.data) {
-    currentCustomer.value = result.data
-    detailDialogVisible.value = true
-  } else {
-    ElMessage.error('获取客户详情失败')
-  }
+const handleView = (row: Customer) => {
+  router.push(`/admin/sales/customers/${row.id}`)
 }
 
 const handleDelete = async (row: Customer) => {
@@ -624,117 +295,10 @@ const handleDelete = async (row: Customer) => {
 }
 
 const handleVisit = (row: Customer) => {
-  // 重置表单
-  Object.assign(visitForm, {
-    customer_id: row.id,
-    visit_date: new Date(),
-    visit_type: '',
-    purpose: '',
-    content: '',
-    result: '',
-    next_visit_date: ''
-  })
-  
-  currentCustomer.value = row
-  visitDialogVisible.value = true
+  router.push(`/admin/sales/customers/${row.id}/visit/new`)
 }
 
-const submitVisit = withFormErrorHandler(async () => {
-  if (!visitFormRef.value || !visitForm.customer_id) return
-  
-  await visitFormRef.value.validate()
-  submitting.value = true
-  
-  try {
-    const result = await safeApiCall(
-      () => salesApi.createCustomerVisit(ensureNumber(visitForm.customer_id, 0), visitForm),
-      {
-        showMessage: false,
-        fallbackValue: null
-      }
-    )
-    
-    if (result !== null) {
-      visitDialogVisible.value = false
-      
-      // 如果当前正在查看客户详情，刷新客户信息
-      if (detailDialogVisible.value && currentCustomer.value) {
-        const updatedResult = await safeApiCall(
-          () => salesApi.getCustomer(ensureNumber(currentCustomer.value!.id, 0)),
-          {
-            showMessage: false,
-            fallbackValue: null
-          }
-        )
-        if (updatedResult && updatedResult.data) {
-          currentCustomer.value = updatedResult.data
-        }
-      }
-    }
-  } finally {
-    submitting.value = false
-  }
-}, '回访记录添加成功', '添加回访记录失败')
 
-const handleSubmit = withFormErrorHandler(async () => {
-  if (!formRef.value) return
-  
-  await formRef.value.validate()
-  submitting.value = true
-  
-  try {
-    if (isEdit.value) {
-      const result = await safeApiCall(
-        () => salesApi.updateCustomer(ensureNumber(form.id, 0), form),
-        {
-          showMessage: false,
-          fallbackValue: null
-        }
-      )
-      if (result !== null) {
-        dialogVisible.value = false
-        fetchCustomers()
-      }
-    } else {
-      const result = await safeApiCall(
-        () => salesApi.createCustomer(form),
-        {
-          showMessage: false,
-          fallbackValue: null
-        }
-      )
-      if (result !== null) {
-        dialogVisible.value = false
-        fetchCustomers()
-      }
-    }
-  } finally {
-    submitting.value = false
-  }
-}, isEdit.value ? '更新成功' : '创建成功', '操作失败')
-
-const handleDialogClose = () => {
-  formRef.value?.resetFields()
-  resetForm()
-}
-
-const resetForm = () => {
-  Object.assign(form, {
-    id: null,
-    name: '',
-    contact_person: '',
-    phone: '',
-    email: '',
-    address: '',
-    credit_rating: 0,
-    customer_type: '',
-    business_license: '',
-    tax_number: '',
-    bank_account: '',
-    credit_limit: 0,
-    payment_terms: ''
-  })
-}
 
 const handleSizeChange = (size: number) => {
   pagination.limit = size

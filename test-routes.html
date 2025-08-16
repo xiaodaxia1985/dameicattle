@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售管理路由测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .route-group {
+            margin-bottom: 30px;
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .route-group h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .route-link {
+            display: inline-block;
+            margin: 5px 10px 5px 0;
+            padding: 8px 16px;
+            background-color: #409eff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .route-link:hover {
+            background-color: #337ecc;
+        }
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>销售管理模块路由测试</h1>
+    <p>点击下面的链接测试各个页面的路由是否正常工作：</p>
+
+    <div class="route-group">
+        <h3>客户管理</h3>
+        <div class="description">测试客户管理相关的页面路由</div>
+        <a href="http://localhost:5173/admin/sales/customers" class="route-link" target="_blank">客户列表</a>
+        <a href="http://localhost:5173/admin/sales/customers/new" class="route-link" target="_blank">新增客户</a>
+        <a href="http://localhost:5173/admin/sales/customers/1" class="route-link" target="_blank">客户详情 (ID: 1)</a>
+        <a href="http://localhost:5173/admin/sales/customers/1/edit" class="route-link" target="_blank">编辑客户 (ID: 1)</a>
+        <a href="http://localhost:5173/admin/sales/customers/1/visit/new" class="route-link" target="_blank">添加回访记录</a>
+    </div>
+
+    <div class="route-group">
+        <h3>订单管理</h3>
+        <div class="description">测试订单管理相关的页面路由</div>
+        <a href="http://localhost:5173/admin/sales/orders" class="route-link" target="_blank">订单列表</a>
+        <a href="http://localhost:5173/admin/sales/orders/new" class="route-link" target="_blank">新建订单</a>
+        <a href="http://localhost:5173/admin/sales/orders/1" class="route-link" target="_blank">订单详情 (ID: 1)</a>
+        <a href="http://localhost:5173/admin/sales/orders/1/edit" class="route-link" target="_blank">编辑订单 (ID: 1)</a>
+    </div>
+
+    <div class="route-group">
+        <h3>测试说明</h3>
+        <div class="description">
+            <p><strong>预期行为：</strong></p>
+            <ul>
+                <li>点击链接后应该跳转到对应的页面，而不是立即返回列表页面</li>
+                <li>新增/编辑页面应该显示表单界面</li>
+                <li>详情页面应该显示详细信息（如果数据存在）</li>
+                <li>如果数据不存在，应该显示错误提示，但不立即返回</li>
+            </ul>
+            <p><strong>调试信息：</strong></p>
+            <ul>
+                <li>打开浏览器开发者工具的控制台查看日志信息</li>
+                <li>查看网络请求是否正常发送</li>
+                <li>检查是否有JavaScript错误</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="route-group">
+        <h3>常见问题排查</h3>
+        <div class="description">
+            <p>如果页面仍然立即返回列表页面，可能的原因：</p>
+            <ul>
+                <li><strong>认证问题：</strong> 检查用户是否已登录</li>
+                <li><strong>API问题：</strong> 检查销售服务是否正常运行</li>
+                <li><strong>路由问题：</strong> 检查路由配置是否正确</li>
+                <li><strong>组件问题：</strong> 检查组件是否正确导入</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

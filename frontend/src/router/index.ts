@@ -167,10 +167,58 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '销售订单' }
           },
           {
+            path: 'orders/new',
+            name: 'OrderCreate',
+            component: () => import('@/views/sales/OrderForm.vue'),
+            meta: { title: '新建订单', hidden: true }
+          },
+          {
+            path: 'orders/:id/edit',
+            name: 'OrderEdit',
+            component: () => import('@/views/sales/OrderForm.vue'),
+            meta: { title: '编辑订单', hidden: true }
+          },
+          {
+            path: 'orders/:id',
+            name: 'OrderDetail',
+            component: () => import('@/views/sales/OrderDetail.vue'),
+            meta: { title: '订单详情', hidden: true }
+          },
+          {
             path: 'customers',
             name: 'Customers',
             component: () => import('@/views/sales/Customers.vue'),
             meta: { title: '客户管理' }
+          },
+          {
+            path: 'customers/new',
+            name: 'CustomerCreate',
+            component: () => import('@/views/sales/CustomerForm.vue'),
+            meta: { title: '新增客户', hidden: true }
+          },
+          {
+            path: 'customers/:id/edit',
+            name: 'CustomerEdit',
+            component: () => import('@/views/sales/CustomerForm.vue'),
+            meta: { title: '编辑客户', hidden: true }
+          },
+          {
+            path: 'customers/:id',
+            name: 'CustomerDetail',
+            component: () => import('@/views/sales/CustomerDetail.vue'),
+            meta: { title: '客户详情', hidden: true }
+          },
+          {
+            path: 'customers/:customerId/visit/new',
+            name: 'CustomerVisitCreate',
+            component: () => import('@/views/sales/CustomerVisitForm.vue'),
+            meta: { title: '添加回访记录', hidden: true }
+          },
+          {
+            path: 'customers/:customerId/visit/:visitId/edit',
+            name: 'CustomerVisitEdit',
+            component: () => import('@/views/sales/CustomerVisitForm.vue'),
+            meta: { title: '编辑回访记录', hidden: true }
           }
         ]
       },
@@ -262,27 +310,7 @@ const routes: RouteRecordRaw[] = [
             component: () => import('@/views/system/OperationLogs.vue'),
             meta: { title: '操作日志' }
           },
-          {
-            path: 'test',
-            name: 'Test',
-            redirect: '/admin/system/test/map',
-            meta: { title: '功能测试' },
-            children: [
-              {
-                path: 'map',
-                name: 'MapTest',
-                component: () => import('@/views/test/MapTest.vue'),
-                meta: { title: '地图测试' }
-              },
-              {
-                path: 'geocode',
-                name: 'GeocodeTest',
-                component: () => import('@/views/test/GeocodeTest.vue'),
-                meta: { title: '地理编码测试' }
-              }
-            ]
-          }
-        ]
+              ]
       }
     ]
   },

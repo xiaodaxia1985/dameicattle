@@ -259,6 +259,7 @@ import { ElMessage } from 'element-plus'
 import { Download, Sell, Money, User, TrendCharts } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 import { salesApi } from '@/api/sales'
+import { ensureUserLoggedIn, withAuth } from '@/utils/authGuard'
 
 // 响应式数据
 const dateRange = ref<[string, string]>([
@@ -297,26 +298,46 @@ let baseChart: echarts.ECharts | null = null
 // 方法
 const fetchStatistics = async () => {
   try {
-    const params = {
-      start_date: dateRange.value[0] + '-01',
-      end_date: dateRange.value[1] + '-31'
+    // 使用认证守卫确保用户已登录
+    const isLoggedIn = await ensureUserLoggedIn()
+    if (!isLoggedIn) {
+      console.log('❌ 用户未登录，使用模拟数据')
+      useMockData()
+      return
     }
     
-    const response = await salesApi.getStatistics(params)
-    const data = response.data
+    console.log('🔍 开始获取销售统计数据...')
     
-    // 更新统计数据
-    Object.assign(statistics, {
-      totalOrders: data.total_statistics.total_orders || 0,
-      totalAmount: data.total_statistics.total_sales || 0,
-      activeCustomers: data.customer_statistics?.length || 0,
-      avgOrderAmount: data.total_statistics.avg_order_value || 0
+    // 使用withAuth包装API调用
+    await withAuth(async () => {
+      const params = {
+        start_date: dateRange.value[0] + '-01',
+        end_date: dateRange.value[1] + '-31'
+      }
+      
+      console.log('🔍 统计请求参数:', params)
+      
+      const response = await salesApi.getStatistics(params)
+      console.log('📥 统计API返回结果:', response)
+      
+      const data = response.data
+      
+      // 更新统计数据
+      Object.assign(statistics, {
+        totalOrders: data.total_statistics?.total_orders || 0,
+        totalAmount: data.total_statistics?.total_sales || 0,
+        activeCustomers: data.customer_statistics?.length || 0,
+        avgOrderAmount: data.total_statistics?.avg_order_value || 0
+      })
+      
+      console.log('✅ 成功更新统计数据:', statistics)
+      
+      // 更新图表数据
+      updateCharts(data)
     })
-    
-    // 更新图表数据
-    updateCharts(data)
   } catch (error) {
-    console.error('获取统计数据失败', error)
+    console.error('❌ 获取统计数据失败:', error)
+    ElMessage.error('获取统计数据失败，使用模拟数据')
     // 使用模拟数据
     useMockData()
   }

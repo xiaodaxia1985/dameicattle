@@ -394,17 +394,35 @@ CREATE TABLE IF NOT EXISTS sales_orders (
 CREATE TABLE IF NOT EXISTS sales_order_items (
     id SERIAL PRIMARY KEY,
     sales_order_id INTEGER NOT NULL,
-    cattle_id INTEGER NOT NULL,
-    unit_price DECIMAL(10, 2) NOT NULL,
+    item_type VARCHAR(20) NOT NULL CHECK (item_type IN ('cattle', 'material', 'equipment')),
+    -- 牛只类字段
+    cattle_id INTEGER,
+    ear_tag VARCHAR(50),
+    breed VARCHAR(100),
     weight DECIMAL(8, 2),
+    -- 物资类字段
+    material_id INTEGER,
+    material_name VARCHAR(100),
+    material_unit VARCHAR(20),
+    -- 设备类字段
+    equipment_id INTEGER,
+    equipment_name VARCHAR(100),
+    equipment_unit VARCHAR(20),
+    specification VARCHAR(100),
+    -- 公共字段
+    unit_price DECIMAL(10, 2) NOT NULL,
+    quantity DECIMAL(10, 2) DEFAULT 1,
     total_price DECIMAL(12, 2) NOT NULL,
     delivered BOOLEAN DEFAULT FALSE,
     delivery_date DATE,
+    order_id INTEGER REFERENCES sales_orders(id) ON DELETE CASCADE,
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_sales_order_items_order FOREIGN KEY (sales_order_id) REFERENCES sales_orders(id) ON DELETE CASCADE,
-    CONSTRAINT fk_sales_order_items_cattle FOREIGN KEY (cattle_id) REFERENCES cattle(id) ON DELETE RESTRICT
+    CONSTRAINT fk_sales_order_items_cattle FOREIGN KEY (cattle_id) REFERENCES cattle(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_sales_order_items_material FOREIGN KEY (material_id) REFERENCES production_materials(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_sales_order_items_equipment FOREIGN KEY (equipment_id) REFERENCES production_materials(id) ON DELETE RESTRICT
 );
 
 -- =====================================================
