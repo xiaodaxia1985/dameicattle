@@ -9,41 +9,41 @@ import { UnifiedApiClient } from '@/utils/apiClient'
 
 // 创建专用的微服务API客户端，使用正确的baseURL配置
 const microserviceApiClient = new UnifiedApiClient({
-  baseURL: '', // 使用前端代理的baseURL
+  baseURL: '/api/v1', // 使用前端代理的baseURL
   timeout: 10000,
   retryAttempts: 3,
   retryDelay: 1000,
   enableLogging: true
 })
 
-// 微服务路由映射 - 直接访问各个微服务
+// 微服务路由映射 - 使用相对路径，配合baseURL使用
 export const MICROSERVICE_ROUTES = {
   // 认证服务 - 端口3001
-  AUTH: '/api/v1/auth',
+  AUTH: '/auth',
   // 基地服务 - 端口3002
-  BASE: '/api/v1/base',
+  BASE: '/base',
   // 牛只服务 - 端口3003
-  CATTLE: '/api/v1/cattle',
+  CATTLE: '/cattle',
   // 健康服务 - 端口3004
-  HEALTH: '/api/v1/health',
+  HEALTH: '/health',
   // 饲养服务 - 端口3005
-  FEEDING: '/api/v1/feeding',
+  FEEDING: '/feeding',
   // 设备服务 - 端口3006
-  EQUIPMENT: '/api/v1/equipment',
+  EQUIPMENT: '/equipment',
   // 采购服务 - 端口3007
-  PROCUREMENT: '/api/v1/procurement',
+  PROCUREMENT: '/procurement',
   // 销售服务 - 端口3008
-  SALES: '/api/v1/sales',
+  SALES: '/sales',
   // 物料服务 - 端口3009
-  MATERIAL: '/api/v1/material',
+  MATERIAL: '/material',
   // 通知服务 - 端口3010
-  NOTIFICATION: '/api/v1/notification',
+  NOTIFICATION: '/notification',
   // 文件服务 - 端口3011
-  FILE: '/api/v1/file',
+  FILE: '/file',
   // 监控服务 - 端口3012
-  MONITORING: '/api/v1/monitoring',
+  MONITORING: '/monitoring',
   // 新闻服务 - 端口3013
-  NEWS: '/api/v1/news'
+  NEWS: '/news'
 } as const
 
 // 微服务API基类
@@ -55,11 +55,7 @@ class MicroserviceApi {
   }
 
   protected buildUrl(path: string): string {
-    // 如果servicePath已经包含完整路径，直接拼接
-    if (this.servicePath.startsWith('/api/v1/')) {
-      return `${this.servicePath}${path.startsWith('/') ? path : `/${path}`}`
-    }
-    // 否则使用相对路径
+    // 构建相对于服务路径的URL
     return `${this.servicePath}${path.startsWith('/') ? path : `/${path}`}`
   }
 

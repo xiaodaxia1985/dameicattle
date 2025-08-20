@@ -101,17 +101,46 @@ export const salesApi = {
   // 获取销售订单列表
   async getOrders(params: any = {}): Promise<{ data: { items: SalesOrder[], total: number, page: number, limit: number } }> {
     return withAuth(async () => {
+      console.log('🔄 salesApi.getOrders 开始调用，参数:', params)
       const response = await salesServiceApi.getSalesOrders(params)
+      console.log('📥 salesServiceApi.getSalesOrders 原始响应:', response)
+      
       // 统一类型断言，避免 TS 报错
       const responseData: any = response?.data || response || {};
+      console.log('📊 responseData 解析:', responseData)
+      
       let orders: SalesOrder[] = [];
       let total = 0;
       let page = 1;
       let limit = 20;
-      if (Array.isArray(responseData)) {
+      
+      // 处理标准微服务响应格式 { success: true, data: {...}, message: "..." }
+      if (responseData.success && responseData.data) {
+        const apiData = responseData.data;
+        console.log('📋 标准格式 apiData:', apiData)
+        
+        if (Array.isArray(apiData.orders)) {
+          orders = apiData.orders as SalesOrder[];
+          total = apiData.pagination?.total || orders.length;
+          page = apiData.pagination?.page || 1;
+          limit = apiData.pagination?.limit || 20;
+        } else if (Array.isArray(apiData.items)) {
+          orders = apiData.items as SalesOrder[];
+          total = apiData.total || orders.length;
+          page = apiData.page || 1;
+          limit = apiData.limit || 20;
+        } else if (Array.isArray(apiData)) {
+          orders = apiData as SalesOrder[];
+          total = orders.length;
+        }
+      }
+      // 处理直接数组格式
+      else if (Array.isArray(responseData)) {
         orders = responseData as SalesOrder[];
         total = orders.length;
-      } else if (Array.isArray(responseData.data)) {
+      } 
+      // 处理其他可能的格式
+      else if (Array.isArray(responseData.data)) {
         orders = responseData.data as SalesOrder[];
         total = responseData.total || responseData.pagination?.total || orders.length;
         page = responseData.page || responseData.pagination?.page || 1;
@@ -127,6 +156,8 @@ export const salesApi = {
         page = responseData.page || responseData.pagination?.page || 1;
         limit = responseData.limit || responseData.pagination?.limit || 20;
       }
+      
+      console.log('🎯 数据解析结果:', { ordersCount: orders.length, total, page, limit })
       
       // 数据格式转换：将数据库字段名转换为前端期望的字段名
       const transformedOrders = orders.map((order: any) => ({
@@ -179,27 +210,110 @@ export const salesApi = {
   // 获取销售订单详情
   async getOrder(id: number): Promise<{ data: SalesOrder }> {
     return withAuth(async () => {
-      console.log('🔍 salesApi.getOrder 调用参数:', id)
-      const response = await salesServiceApi.getById('/orders', id)
-      console.log('📥 salesServiceApi.getById 原始响应:', response)
-      // 兼容多种后端返回格式
-      const orderData = response?.data?.order || response?.data || response?.order || response;
-      console.log('✅ salesApi.getOrder 解析结果:', orderData);
+      console.log('🔄 salesApi.getOrder 开始调用，ID:', id)
+      const response = await salesServiceApi.get(`/orders/${id}`)
+      console.log('📥 salesServiceApi.get 原始响应:', response)
+      
+      // 统一处理响应数据
+      const responseData: any = response?.data || response || {};
+      console.log('📊 responseData 解析:', responseData)
+      
+      let orderData = null;
+      
+      // 处理标准微服务响应格式 { success: true, data: {...}, message: "..." }
+      if (responseData.success && responseData.data) {
+        orderData = responseData.data;
+        console.log('📋 标准格式 orderData:', orderData)
+      }
+      // 处理直接返回订单对象的格式
+      else if (responseData.id && typeof responseData.id === 'number') {
+        orderData = responseData;
+      }
+      // 处理其他可能的格式
+      else if (responseData.order && typeof responseData.order.id === 'number') {
+        orderData = responseData.order;
+      }
+      
+      console.log('🎯 最终解析的 orderData:', orderData);
+      
       // 严格校验数据有效性
       if (!orderData || typeof orderData !== 'object' || typeof orderData.id !== 'number') {
-        // 只检查已知的 message 字段，避免类型警告
-        const backendMsg = typeof response?.message === 'string' ? response.message : '';
+        const backendMsg = typeof responseData?.message === 'string' ? responseData.message : '';
         throw new Error(`订单不存在或无效。${backendMsg}`)
       }
-      return { data: orderData };
+      
+      // 数据格式转换：将数据库字段名转换为前端期望的字段名
+      const transformedOrder = {
+        ...orderData,
+        order_number: orderData.orderNumber || orderData.order_number,
+        customer_name: orderData.customerName || orderData.customer_name,
+        total_amount: orderData.totalAmount || orderData.total_amount,
+        tax_amount: orderData.taxAmount || orderData.tax_amount,
+        discount_amount: orderData.discountAmount || orderData.discount_amount,
+        payment_status: orderData.paymentStatus || orderData.payment_status,
+        payment_method: orderData.paymentMethod || orderData.payment_method,
+        order_date: orderData.orderDate || orderData.order_date,
+        delivery_date: orderData.expectedDeliveryDate || orderData.delivery_date,
+        actual_delivery_date: orderData.actualDeliveryDate || orderData.actual_delivery_date,
+        contract_number: orderData.contractNumber || orderData.contract_number,
+        logistics_company: orderData.logisticsCompany || orderData.logistics_company,
+        tracking_number: orderData.trackingNumber || orderData.tracking_number,
+        created_by: orderData.createdBy || orderData.created_by,
+        created_by_name: orderData.createdByName || orderData.created_by_name,
+        approved_by: orderData.approvedBy || orderData.approved_by,
+        approved_by_name: orderData.approvedByName || orderData.approved_by_name,
+        approved_at: orderData.approvedAt || orderData.approved_at,
+        created_at: orderData.createdAt || orderData.created_at,
+        updated_at: orderData.updatedAt || orderData.updated_at,
+        customer: orderData.customer || { name: orderData.customerName || orderData.customer_name },
+        creator: orderData.creator || { real_name: orderData.createdByName || orderData.created_by_name }
+      };
+      
+      console.log('✅ salesApi.getOrder 解析结果:', transformedOrder);
+      return { data: transformedOrder };
     })
   },
 
   // 创建销售订单
   async createOrder(data: any): Promise<{ data: SalesOrder }> {
     return withAuth(async () => {
-      const response = await salesServiceApi.createSalesOrder(data)
-      return { data: response.data }
+      console.log('🔄 salesApi.createOrder 开始调用，原始数据:', data)
+      
+      // 转换前端数据格式为后端期望的格式
+      const backendData = {
+        customer_id: data.customer_id,
+        base_id: data.base_id || 1, // 默认基地ID，应该从用户权限获取
+        cattle_ids: [], // 从items中提取cattle_id
+        total_amount: data.total_amount || 0,
+        order_date: data.order_date,
+        expected_delivery_date: data.delivery_date || null,
+        notes: data.remark || ''
+      };
+      
+      // 从items中提取cattle_ids
+      if (data.items && Array.isArray(data.items)) {
+        backendData.cattle_ids = data.items
+          .filter(item => item.itemType === 'cattle' && item.cattle_id)
+          .map(item => item.cattle_id);
+      }
+      
+      console.log('📊 转换后的后端数据:', backendData)
+      
+      const response = await salesServiceApi.createSalesOrder(backendData)
+      console.log('📥 后端响应:', response)
+      
+      // 处理响应数据
+      const responseData = response?.data || response || {};
+      let orderData = null;
+      
+      if (responseData.success && responseData.data) {
+        orderData = responseData.data;
+      } else if (responseData.id) {
+        orderData = responseData;
+      }
+      
+      console.log('✅ salesApi.createOrder 解析结果:', orderData);
+      return { data: orderData };
     })
   },
 
@@ -254,43 +368,63 @@ export const salesApi = {
   // 获取客户列表
   async getCustomers(params: any = {}): Promise<{ data: { items: Customer[], total: number, page: number, limit: number } }> {
     return withAuth(async () => {
-      console.log('🔍 salesApi.getCustomers 调用参数:', params)
-      
+      console.log('🔄 salesApi.getCustomers 开始调用，参数:', params)
       const response = await salesServiceApi.getCustomers(params)
-      console.log('📥 salesServiceApi 原始响应:', response)
+      console.log('📥 salesServiceApi.getCustomers 原始响应:', response)
       
-      // 直接解析微服务返回的数据，恢复原有逻辑
-      const responseData = response?.data || response || {};
-      let customers = [];
+      // 统一类型断言，避免 TS 报错
+      const responseData: any = response?.data || response || {};
+      console.log('📊 responseData 解析:', responseData)
+      
+      let customers: Customer[] = [];
       let total = 0;
       let page = 1;
       let limit = 20;
-      // 处理不同的数据结构，安全访问动态属性
-      if (Array.isArray(responseData)) {
-        customers = responseData;
-        total = customers.length;
-      } else if ((responseData as any).customers && Array.isArray((responseData as any).customers)) {
-        customers = (responseData as any).customers;
-        total = (responseData as any).pagination?.total || customers.length;
-        page = (responseData as any).pagination?.page || 1;
-        limit = (responseData as any).pagination?.limit || 20;
-      } else if ((responseData as any).data && Array.isArray((responseData as any).data)) {
-        customers = (responseData as any).data;
-        total = (responseData as any).total || (responseData as any).pagination?.total || customers.length;
-        page = (responseData as any).page || (responseData as any).pagination?.page || 1;
-        limit = (responseData as any).limit || (responseData as any).pagination?.limit || 20;
-      } else if ((responseData as any).items && Array.isArray((responseData as any).items)) {
-        customers = (responseData as any).items;
-        total = (responseData as any).total || (responseData as any).pagination?.total || customers.length;
-        page = (responseData as any).page || (responseData as any).pagination?.page || 1;
-        limit = (responseData as any).limit || (responseData as any).pagination?.limit || 20;
-      } else {
-        // fallback: try to extract array from known keys
-        customers = Array.isArray(responseData) ? responseData : [];
-        total = customers.length;
-        page = 1;
-        limit = 20;
+      
+      // 处理标准微服务响应格式 { success: true, data: {...}, message: "..." }
+      if (responseData.success && responseData.data) {
+        const apiData = responseData.data;
+        console.log('📋 标准格式 apiData:', apiData)
+        
+        if (Array.isArray(apiData.customers)) {
+          customers = apiData.customers as Customer[];
+          total = apiData.pagination?.total || customers.length;
+          page = apiData.pagination?.page || 1;
+          limit = apiData.pagination?.limit || 20;
+        } else if (Array.isArray(apiData.items)) {
+          customers = apiData.items as Customer[];
+          total = apiData.total || customers.length;
+          page = apiData.page || 1;
+          limit = apiData.limit || 20;
+        } else if (Array.isArray(apiData)) {
+          customers = apiData as Customer[];
+          total = customers.length;
+        }
       }
+      // 处理直接数组格式
+      else if (Array.isArray(responseData)) {
+        customers = responseData as Customer[];
+        total = customers.length;
+      }
+      // 处理其他可能的格式
+      else if (Array.isArray(responseData.data)) {
+        customers = responseData.data as Customer[];
+        total = responseData.total || responseData.pagination?.total || customers.length;
+        page = responseData.page || responseData.pagination?.page || 1;
+        limit = responseData.limit || responseData.pagination?.limit || 20;
+      } else if (Array.isArray(responseData.customers)) {
+        customers = responseData.customers as Customer[];
+        total = responseData.total || responseData.pagination?.total || customers.length;
+        page = responseData.page || responseData.pagination?.page || 1;
+        limit = responseData.limit || responseData.pagination?.limit || 20;
+      } else if (Array.isArray(responseData.items)) {
+        customers = responseData.items as Customer[];
+        total = responseData.total || responseData.pagination?.total || customers.length;
+        page = responseData.page || responseData.pagination?.page || 1;
+        limit = responseData.limit || responseData.pagination?.limit || 20;
+      }
+      
+      console.log('🎯 数据解析结果:', { customersCount: customers.length, total, page, limit })
       
       // 数据格式转换：将数据库字段名转换为前端期望的字段名
       const transformedCustomers = customers.map((customer: any) => ({
@@ -332,19 +466,56 @@ export const salesApi = {
   // 获取客户详情
   async getCustomer(id: number): Promise<{ data: Customer }> {
     return withAuth(async () => {
-      console.log('🔍 salesApi.getCustomer 调用参数:', id)
-      const response = await salesServiceApi.getById('/customers', id)
-      console.log('📥 salesServiceApi.getById 原始响应:', response)
-      // 兼容多种后端返回格式
-      const customerData = (response as any)?.data?.customer || (response as any)?.data || (response as any)?.customer || response;
-      console.log('✅ salesApi.getCustomer 解析结果:', customerData);
+      console.log('🔄 salesApi.getCustomer 开始调用，ID:', id)
+      const response = await salesServiceApi.get(`/customers/${id}`)
+      console.log('📥 salesServiceApi.get 原始响应:', response)
+      
+      // 统一处理响应数据
+      const responseData: any = response?.data || response || {};
+      console.log('📊 responseData 解析:', responseData)
+      
+      let customerData = null;
+      
+      // 处理标准微服务响应格式 { success: true, data: {...}, message: "..." }
+      if (responseData.success && responseData.data) {
+        customerData = responseData.data;
+        console.log('📋 标准格式 customerData:', customerData)
+      }
+      // 处理直接返回客户对象的格式
+      else if (responseData.id && typeof responseData.id === 'number') {
+        customerData = responseData;
+      }
+      // 处理其他可能的格式
+      else if (responseData.customer && typeof responseData.customer.id === 'number') {
+        customerData = responseData.customer;
+      }
+      
+      console.log('🎯 最终解析的 customerData:', customerData);
+      
       // 严格校验数据有效性
       if (!customerData || typeof customerData !== 'object' || typeof customerData.id !== 'number') {
-        // 只检查已知的 message 字段，避免类型警告
-        const backendMsg = typeof response?.message === 'string' ? response.message : '';
+        const backendMsg = typeof responseData?.message === 'string' ? responseData.message : '';
         throw new Error(`客户不存在或无效。${backendMsg}`)
       }
-      return { data: customerData };
+      
+      // 数据格式转换：将数据库字段名转换为前端期望的字段名
+      const transformedCustomer = {
+        ...customerData,
+        contact_person: customerData.contactPerson || customerData.contact_person,
+        customer_type: customerData.customerType || customerData.customer_type,
+        business_license: customerData.businessLicense || customerData.business_license,
+        tax_number: customerData.taxNumber || customerData.tax_number,
+        bank_account: customerData.bankAccount || customerData.bank_account,
+        credit_limit: customerData.creditLimit || customerData.credit_limit,
+        credit_rating: customerData.creditRating || customerData.credit_rating,
+        payment_terms: customerData.paymentTerms || customerData.payment_terms,
+        created_at: customerData.createdAt || customerData.created_at,
+        updated_at: customerData.updatedAt || customerData.updated_at,
+        visit_records: customerData.visitRecords || customerData.visit_records || []
+      };
+      
+      console.log('✅ salesApi.getCustomer 解析结果:', transformedCustomer);
+      return { data: transformedCustomer };
     })
   },
 
@@ -438,8 +609,32 @@ export const salesApi = {
   // 获取牛只列表（用于销售订单选择）
   async getCattle(params: any = {}): Promise<{ data: any }> {
     return withAuth(async () => {
+      console.log('🔄 salesApi.getCattle 开始调用，参数:', params)
       const response = await salesServiceApi.get('/cattle', params)
-      return { data: response.data }
+      console.log('📥 salesServiceApi.get cattle 原始响应:', response)
+      
+      // 统一处理响应数据
+      const responseData: any = response?.data || response || {};
+      console.log('📊 cattle responseData 解析:', responseData)
+      
+      let cattleData = [];
+      
+      // 处理标准微服务响应格式
+      if (responseData.success && responseData.data) {
+        const apiData = responseData.data;
+        if (Array.isArray(apiData.cattle)) {
+          cattleData = apiData.cattle;
+        } else if (Array.isArray(apiData.items)) {
+          cattleData = apiData.items;
+        } else if (Array.isArray(apiData)) {
+          cattleData = apiData;
+        }
+      } else if (Array.isArray(responseData)) {
+        cattleData = responseData;
+      }
+      
+      console.log('✅ salesApi.getCattle 解析结果:', cattleData);
+      return { data: cattleData };
     })
   }
 }

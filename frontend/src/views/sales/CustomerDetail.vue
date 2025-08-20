@@ -6,19 +6,13 @@
         <h2>客户详情</h2>
       </div>
       <div class="header-right">
+        <el-button @click="handleRefresh" :loading="loading">
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
         <el-button type="primary" @click="handleEdit">编辑客户</el-button>
         <el-button type="success" @click="handleAddVisit">添加回访</el-button>
       </div>
-    </div>
-
-    <!-- 调试信息 -->
-    <div v-if="customer" style="background: #f0f0f0; padding: 10px; margin-bottom: 20px; border-radius: 4px;">
-      <h4>调试信息（数据已加载）:</h4>
-      <p>客户ID: {{ customer.id }}</p>
-      <p>客户名称: {{ customer.name }}</p>
-      <p>联系人: {{ customer.contact_person || '未设置' }}</p>
-      <p>电话: {{ customer.phone || '未设置' }}</p>
-      <p>数据对象: {{ JSON.stringify(customer, null, 2) }}</p>
     </div>
 
     <div v-if="customer" class="customer-detail">
@@ -179,16 +173,18 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Plus } from '@element-plus/icons-vue'
-import { salesApi, type Customer } from '@/api/sales'
-import { safeApiCall } from '@/utils/errorHandler'
-import { ensureNumber } from '@/utils/dataValidation'
+import { ArrowLeft, Plus, Refresh } from '@element-plus/icons-vue'
+import { useSalesStore } from '@/stores/sales'
+import type { Customer } from '@/api/sales'
 
 const router = useRouter()
 const route = useRoute()
+const salesStore = useSalesStore()
 
 // 响应式数据
+const loading = ref(false)
 const customer = ref<Customer | null>(null)
+const customerId = Number(route.params.id)
 
 // 方法
 const goBack = () => {
@@ -196,57 +192,48 @@ const goBack = () => {
 }
 
 const handleEdit = () => {
-  router.push(`/admin/sales/customers/${customer.value?.id}/edit`)
-}
-
-const handleAddVisit = () => {
-  router.push(`/admin/sales/customers/${customer.value?.id}/visit/new`)
-}
-
-const handleEditVisit = (visit: any) => {
-  router.push(`/admin/sales/customers/${customer.value?.id}/visit/${visit.id}/edit`)
-}
-
-// 字段名转换函数，兼容后端各种格式
-function transformCustomer(raw: any): Customer {
-  if (!raw || typeof raw !== 'object') return raw
-  return {
-    ...raw,
-    contact_person: raw.contact_person || raw.contactPerson,
-    customer_type: raw.customer_type || raw.customerType,
-    business_license: raw.business_license || raw.businessLicense,
-    tax_number: raw.tax_number || raw.taxNumber,
-    bank_account: raw.bank_account || raw.bankAccount,
-    credit_limit: raw.credit_limit || raw.creditLimit,
-    credit_rating: raw.credit_rating || raw.creditRating,
-    payment_terms: raw.payment_terms || raw.paymentTerms,
-    created_at: raw.created_at || raw.createdAt,
-    updated_at: raw.updated_at || raw.updatedAt,
-    visit_records: Array.isArray(raw.visit_records) ? raw.visit_records : (raw.visitRecords || [])
+  if (customer.value) {
+    router.push(`/admin/sales/customers/${customer.value.id}/edit`)
   }
 }
 
-const loadCustomer = async (id: number) => {
+const handleAddVisit = () => {
+  if (customer.value) {
+    router.push(`/admin/sales/customers/${customer.value.id}/visit/new`)
+  }
+}
+
+const handleEditVisit = (visit: any) => {
+  if (customer.value) {
+    router.push(`/admin/sales/customers/${customer.value.id}/visit/${visit.id}/edit`)
+  }
+}
+
+const handleRefresh = async () => {
+  await fetchCustomerData(true) // Force refresh
+}
+
+// 从销售store获取客户数据
+const fetchCustomerData = async (forceRefresh = false) => {
+  if (!customerId || isNaN(customerId)) {
+    ElMessage.error('无效的客户ID')
+    return
+  }
+
   try {
-    console.log('🔍 开始加载客户详情，ID:', id)
-    const result = await safeApiCall(
-      () => salesApi.getCustomer(id),
-      {
-        showMessage: false,
-        fallbackValue: null
-      }
-    )
-    console.log('📥 客户详情加载结果:', result)
-    if (result && typeof result === 'object' && typeof result.id === 'number') {
-      customer.value = transformCustomer(result)
-      console.log('✅ 客户详情加载成功，customer.value:', customer.value)
-      return
-    } else {
-      console.error('❌ 客户详情数据无效:', result)
-      ElMessage.error('获取客户详情失败，请检查客户是否存在')
-    }
+    loading.value = true
+    console.log('🔍 获取客户详情:', customerId)
+    
+    // 优先使用缓存，如果没有则从API获取
+    const customerData = await salesStore.getCustomerById(customerId, forceRefresh)
+    customer.value = customerData
+    
+    console.log('✅ 客户详情获取成功:', customerData)
   } catch (error) {
+    console.error('❌ 获取客户详情失败:', error)
     ElMessage.error('获取客户详情失败')
+  } finally {
+    loading.value = false
   }
 }
 
@@ -255,11 +242,8 @@ const formatDate = (dateString?: string) => {
 }
 
 // 生命周期
-onMounted(() => {
-  const id = route.params.id as string
-  if (id) {
-    loadCustomer(Number(id))
-  }
+onMounted(async () => {
+  await fetchCustomerData()
 })
 </script>
 

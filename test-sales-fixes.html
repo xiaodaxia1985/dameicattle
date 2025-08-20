@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售模块修复验证</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .test-section h3 {
+            color: #409eff;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #66b1ff;
+        }
+        .test-button.success {
+            background: #67c23a;
+        }
+        .test-button.danger {
+            background: #f56c6c;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #67c23a;
+        }
+        .error {
+            border-left: 4px solid #f56c6c;
+            color: #f56c6c;
+        }
+        .warning {
+            border-left: 4px solid #e6a23c;
+            color: #e6a23c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 销售模块修复验证工具</h1>
+        
+        <div class="test-section">
+            <h3>1. 基地列表获取测试</h3>
+            <p>测试基地列表是否能正确获取数据（修复getBases API调用）</p>
+            <button class="test-button" onclick="testGetBases()">测试基地列表获取</button>
+            <div id="bases-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 牛只列表获取测试</h3>
+            <p>测试牛只列表是否能正确获取数据</p>
+            <button class="test-button" onclick="testGetCattle()">测试牛只列表获取</button>
+            <div id="cattle-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 客户更新测试</h3>
+            <p>测试客户更新是否能避免"admin"字符串错误</p>
+            <button class="test-button" onclick="testCustomerUpdate()">测试客户更新</button>
+            <div id="customer-update-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 订单创建测试</h3>
+            <p>测试订单创建是否能正确处理数据格式</p>
+            <button class="test-button" onclick="testOrderCreation()">测试订单创建</button>
+            <div id="order-create-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. 完整流程测试</h3>
+            <p>测试完整的创建订单流程</p>
+            <button class="test-button success" onclick="testCompleteFlow()">测试完整流程</button>
+            <div id="complete-flow-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 测试基地列表获取
+        async function testGetBases() {
+            const resultDiv = document.getElementById('bases-result');
+            resultDiv.innerHTML = '🔄 正在测试基地列表获取...';
+            
+            try {
+                console.log('🔍 测试基地列表API...');
+                
+                // 直接调用基地服务API
+                const response = await fetch('/api/v1/base/bases');
+                const data = await response.json();
+                
+                console.log('📥 基地API响应:', data);
+                
+                let basesData = [];
+                
+                // 处理响应数据
+                if (data.success && data.data) {
+                    const apiData = data.data;
+                    if (Array.isArray(apiData.bases)) {
+                        basesData = apiData.bases;
+                    } else if (Array.isArray(apiData.items)) {
+                        basesData = apiData.items;
+                    } else if (Array.isArray(apiData)) {
+                        basesData = apiData;
+                    }
+                } else if (Array.isArray(data)) {
+                    basesData = data;
+                }
+                
+                if (basesData.length > 0) {
+                    resultDiv.innerHTML = `✅ 基地列表获取成功！
+
+基地数量: ${basesData.length}
+响应状态: ${response.status}
+
+基地列表:
+${JSON.stringify(basesData, null, 2)}
+
+第一个基地:
+- ID: ${basesData[0]?.id || '未知'}
+- 名称: ${basesData[0]?.name || '未知'}
+- 地址: ${basesData[0]?.address || '未知'}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `⚠️ 基地列表为空
+
+响应数据:
+${JSON.stringify(data, null, 2)}
+
+可能原因:
+1. 数据库中没有基地数据
+2. 用户权限不足
+3. 基地服务未正常运行`;
+                    resultDiv.className = 'result warning';
+                }
+                
+            } catch (error) {
+                console.error('❌ 基地列表获取失败:', error);
+                resultDiv.innerHTML = `❌ 基地列表获取失败:
+${error.message}
+
+错误详情:
+${JSON.stringify(error, null, 2)}
+
+可能原因:
+1. 基地服务未启动 (端口3002)
+2. API网关配置问题
+3. 网络连接问题`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 测试牛只列表获取
+        async function testGetCattle() {
+            const resultDiv = document.getElementById('cattle-result');
+            resultDiv.innerHTML = '🔄 正在测试牛只列表获取...';
+            
+            try {
+                console.log('🔍 测试牛只列表API...');
+                
+                // 调用销售服务的牛只API
+                const response = await fetch('/api/v1/sales/cattle?base_id=1&limit=5');
+                const data = await response.json();
+                
+                console.log('📥 牛只API响应:', data);
+                
+                let cattleData = [];
+                
+                // 处理响应数据
+                if (data.success && data.data) {
+                    const apiData = data.data;
+                    if (Array.isArray(apiData.cattle)) {
+                        cattleData = apiData.cattle;
+                    } else if (Array.isArray(apiData.items)) {
+                        cattleData = apiData.items;
+                    } else if (Array.isArray(apiData)) {
+                        cattleData = apiData;
+                    }
+                } else if (Array.isArray(data)) {
+                    cattleData = data;
+                }
+                
+                if (cattleData.length > 0) {
+                    resultDiv.innerHTML = `✅ 牛只列表获取成功！
+
+牛只数量: ${cattleData.length}
+响应状态: ${response.status}
+
+第一头牛只:
+- ID: ${cattleData[0]?.id || '未知'}
+- 耳标: ${cattleData[0]?.ear_tag || '未知'}
+- 品种: ${cattleData[0]?.breed || '未知'}
+- 重量: ${cattleData[0]?.weight || '未知'}kg`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `⚠️ 牛只列表为空
+
+响应数据:
+${JSON.stringify(data, null, 2)}
+
+可能原因:
+1. 指定基地没有牛只数据
+2. 牛只服务未正常运行
+3. 数据权限问题`;
+                    resultDiv.className = 'result warning';
+                }
+                
+            } catch (error) {
+                console.error('❌ 牛只列表获取失败:', error);
+                resultDiv.innerHTML = `❌ 牛只列表获取失败:
+${error.message}
+
+可能原因:
+1. 销售服务未启动 (端口3008)
+2. 牛只服务未启动 (端口3003)
+3. API路由配置问题`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 测试客户更新
+        async function testCustomerUpdate() {
+            const resultDiv = document.getElementById('customer-update-result');
+            resultDiv.innerHTML = '🔄 正在测试客户更新...';
+            
+            try {
+                console.log('🔍 测试客户更新API...');
+                
+                // 首先获取客户列表
+                const listResponse = await fetch('/api/v1/sales/customers?limit=1');
+                const listData = await listResponse.json();
+                
+                console.log('📥 客户列表响应:', listData);
+                
+                let customers = [];
+                if (listData.success && listData.data) {
+                    const apiData = listData.data;
+                    if (Array.isArray(apiData.customers)) {
+                        customers = apiData.customers;
+                    } else if (Array.isArray(apiData.items)) {
+                        customers = apiData.items;
+                    }
+                }
+                
+                if (customers.length === 0) {
+                    resultDiv.innerHTML = `⚠️ 没有找到客户数据进行测试
+
+请先创建一些客户数据，然后再测试更新功能。`;
+                    resultDiv.className = 'result warning';
+                    return;
+                }
+                
+                const testCustomer = customers[0];
+                console.log('🎯 测试客户:', testCustomer);
+                
+                // 准备更新数据（模拟可能导致问题的数据）
+                const updateData = {
+                    name: testCustomer.name,
+                    contact_person: testCustomer.contact_person,
+                    phone: testCustomer.phone,
+                    email: testCustomer.email,
+                    address: testCustomer.address,
+                    credit_rating: 4,
+                    credit_limit: 50000,
+                    customer_type: testCustomer.customer_type || 'individual',
+                    status: 'active'
+                };
+                
+                console.log('📊 更新数据:', updateData);
+                
+                // 调用更新API
+                const updateResponse = await fetch(`/api/v1/sales/customers/${testCustomer.id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updateData)
+                });
+                
+                const updateResult = await updateResponse.json();
+                console.log('📥 更新响应:', updateResult);
+                
+                if (updateResponse.ok) {
+                    resultDiv.innerHTML = `✅ 客户更新测试成功！
+
+测试客户ID: ${testCustomer.id}
+响应状态: ${updateResponse.status}
+
+更新前数据:
+- 信用评级: ${testCustomer.credit_rating}
+- 信用额度: ${testCustomer.credit_limit}
+
+更新后数据:
+- 信用评级: ${updateResult.credit_rating || updateResult.data?.credit_rating}
+- 信用额度: ${updateResult.credit_limit || updateResult.data?.credit_limit}
+
+✅ 没有出现"admin"字符串错误！`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ 客户更新失败:
+
+错误状态: ${updateResponse.status}
+错误信息: ${updateResult.message || '未知错误'}
+
+响应详情:
+${JSON.stringify(updateResult, null, 2)}`;
+                    resultDiv.className = 'result error';
+                }
+                
+            } catch (error) {
+                console.error('❌ 客户更新测试失败:', error);
+                resultDiv.innerHTML = `❌ 客户更新测试失败:
+${error.message}
+
+错误详情:
+${JSON.stringify(error, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 测试订单创建
+        async function testOrderCreation() {
+            const resultDiv = document.getElementById('order-create-result');
+            resultDiv.innerHTML = '🔄 正在测试订单创建...';
+            
+            try {
+                console.log('🔍 测试订单创建API...');
+                
+                // 准备测试数据
+                const orderData = {
+                    customer_id: 1,
+                    base_id: 1,
+                    cattle_ids: [1, 2],
+                    total_amount: 50000,
+                    order_date: new Date().toISOString().split('T')[0],
+                    expected_delivery_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                    notes: '测试订单创建'
+                };
+                
+                console.log('📊 订单数据:', orderData);
+                
+                // 调用创建API
+                const response = await fetch('/api/v1/sales/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(orderData)
+                });
+                
+                const result = await response.json();
+                console.log('📥 创建响应:', result);
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `✅ 订单创建测试成功！
+
+响应状态: ${response.status}
+订单号: ${result.order_number || result.data?.order_number || '未知'}
+订单ID: ${result.id || result.data?.id || '未知'}
+
+创建的订单信息:
+${JSON.stringify(result, null, 2)}
+
+✅ 没有出现400错误！`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ 订单创建失败:
+
+错误状态: ${response.status}
+错误信息: ${result.message || '未知错误'}
+
+可能原因:
+1. 客户ID不存在 (customer_id: ${orderData.customer_id})
+2. 基地ID不存在 (base_id: ${orderData.base_id})
+3. 牛只ID不存在 (cattle_ids: ${JSON.stringify(orderData.cattle_ids)})
+4. 用户权限不足
+
+响应详情:
+${JSON.stringify(result, null, 2)}`;
+                    resultDiv.className = 'result error';
+                }
+                
+            } catch (error) {
+                console.error('❌ 订单创建测试失败:', error);
+                resultDiv.innerHTML = `❌ 订单创建测试失败:
+${error.message}
+
+错误详情:
+${JSON.stringify(error, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 测试完整流程
+        async function testCompleteFlow() {
+            const resultDiv = document.getElementById('complete-flow-result');
+            resultDiv.innerHTML = '🔄 正在测试完整流程...';
+            
+            try {
+                let report = '🔄 开始完整流程测试...\n\n';
+                
+                // 1. 测试基地列表
+                report += '1️⃣ 测试基地列表获取...\n';
+                const basesResponse = await fetch('/api/v1/base/bases');
+                const basesData = await basesResponse.json();
+                
+                let bases = [];
+                if (basesData.success && basesData.data) {
+                    bases = basesData.data.bases || basesData.data.items || basesData.data;
+                } else if (Array.isArray(basesData)) {
+                    bases = basesData;
+                }
+                
+                if (bases.length > 0) {
+                    report += `✅ 基地列表获取成功 (${bases.length}个基地)\n`;
+                } else {
+                    report += `⚠️ 基地列表为空\n`;
+                }
+                
+                // 2. 测试客户列表
+                report += '\n2️⃣ 测试客户列表获取...\n';
+                const customersResponse = await fetch('/api/v1/sales/customers?limit=5');
+                const customersData = await customersResponse.json();
+                
+                let customers = [];
+                if (customersData.success && customersData.data) {
+                    customers = customersData.data.customers || customersData.data.items || [];
+                }
+                
+                if (customers.length > 0) {
+                    report += `✅ 客户列表获取成功 (${customers.length}个客户)\n`;
+                } else {
+                    report += `⚠️ 客户列表为空\n`;
+                }
+                
+                // 3. 测试牛只列表
+                if (bases.length > 0) {
+                    report += '\n3️⃣ 测试牛只列表获取...\n';
+                    const cattleResponse = await fetch(`/api/v1/sales/cattle?base_id=${bases[0].id}&limit=5`);
+                    const cattleData = await cattleResponse.json();
+                    
+                    let cattle = [];
+                    if (cattleData.success && cattleData.data) {
+                        cattle = cattleData.data.cattle || cattleData.data.items || [];
+                    }
+                    
+                    if (cattle.length > 0) {
+                        report += `✅ 牛只列表获取成功 (${cattle.length}头牛只)\n`;
+                    } else {
+                        report += `⚠️ 牛只列表为空\n`;
+                    }
+                }
+                
+                // 4. 总结
+                report += '\n📊 测试总结:\n';
+                report += `- 基地服务: ${bases.length > 0 ? '✅ 正常' : '⚠️ 无数据'}\n`;
+                report += `- 客户服务: ${customers.length > 0 ? '✅ 正常' : '⚠️ 无数据'}\n`;
+                report += `- 销售服务: ✅ API正常响应\n`;
+                
+                if (bases.length > 0 && customers.length > 0) {
+                    report += '\n🎉 所有核心功能测试通过！\n';
+                    report += '现在可以正常使用订单创建功能了。\n';
+                    resultDiv.className = 'result success';
+                } else {
+                    report += '\n⚠️ 部分功能缺少测试数据\n';
+                    report += '建议先创建基地和客户数据。\n';
+                    resultDiv.className = 'result warning';
+                }
+                
+                resultDiv.innerHTML = report;
+                
+            } catch (error) {
+                console.error('❌ 完整流程测试失败:', error);
+                resultDiv.innerHTML = `❌ 完整流程测试失败:
+${error.message}
+
+错误详情:
+${JSON.stringify(error, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 页面加载时自动运行基础测试
+        window.addEventListener('load', () => {
+            console.log('🚀 销售模块修复验证工具已加载');
+            console.log('请点击按钮进行各项测试');
+        });
+    </script>
+</body>
+</html>

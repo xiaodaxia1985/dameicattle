@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>销售模块完整功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+        .test-section h3 {
+            color: #409eff;
+            margin-top: 0;
+        }
+        .test-button {
+            background: #409eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #66b1ff;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            border-left: 4px solid #67c23a;
+        }
+        .error {
+            border-left: 4px solid #f56c6c;
+            color: #f56c6c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 销售API调试工具</h1>
+        
+        <div class="test-section">
+            <h3>1. 直接测试微服务API</h3>
+            <button class="test-button" onclick="testDirectMicroservice()">测试销售订单API</button>
+            <button class="test-button" onclick="testDirectCustomers()">测试客户API</button>
+            <div id="direct-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 测试前端API层</h3>
+            <button class="test-button" onclick="testFrontendOrders()">测试前端订单API</button>
+            <button class="test-button" onclick="testFrontendCustomers()">测试前端客户API</button>
+            <div id="frontend-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 测试状态管理</h3>
+            <button class="test-button" onclick="testSalesStore()">测试销售Store</button>
+            <div id="store-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        // 直接测试微服务API
+        async function testDirectMicroservice() {
+            const resultDiv = document.getElementById('direct-result');
+            resultDiv.innerHTML = '🔄 正在测试微服务API...';
+            
+            try {
+                // 测试销售订单
+                console.log('🔍 测试销售订单API...');
+                const ordersResponse = await fetch('/api/v1/sales/orders?page=1&limit=5');
+                const ordersData = await ordersResponse.json();
+                
+                console.log('📥 订单API响应:', ordersData);
+                
+                resultDiv.innerHTML = `✅ 微服务API测试成功！
+
+订单API响应:
+${JSON.stringify(ordersData, null, 2)}
+
+响应状态: ${ordersResponse.status}
+响应头: ${JSON.stringify(Object.fromEntries(ordersResponse.headers.entries()), null, 2)}`;
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                console.error('❌ 微服务API测试失败:', error);
+                resultDiv.innerHTML = `❌ 微服务API测试失败:
+${error.message}
+
+错误详情:
+${JSON.stringify(error, null, 2)}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testDirectCustomers() {
+            const resultDiv = document.getElementById('direct-result');
+            resultDiv.innerHTML = '🔄 正在测试客户API...';
+            
+            try {
+                console.log('🔍 测试客户API...');
+                const customersResponse = await fetch('/api/v1/sales/customers?page=1&limit=5');
+                const customersData = await customersResponse.json();
+                
+                console.log('📥 客户API响应:', customersData);
+                
+                resultDiv.innerHTML = `✅ 客户API测试成功！
+
+客户API响应:
+${JSON.stringify(customersData, null, 2)}
+
+响应状态: ${customersResponse.status}`;
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                console.error('❌ 客户API测试失败:', error);
+                resultDiv.innerHTML = `❌ 客户API测试失败:
+${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 测试前端API层
+        async function testFrontendOrders() {
+            const resultDiv = document.getElementById('frontend-result');
+            resultDiv.innerHTML = '🔄 正在测试前端API层...';
+            
+            try {
+                // 模拟前端API调用
+                console.log('🔍 测试前端API层...');
+                
+                // 这里需要模拟前端的API调用逻辑
+                const response = await fetch('/api/v1/sales/orders?page=1&limit=5');
+                const rawData = await response.json();
+                
+                console.log('📥 前端API原始数据:', rawData);
+                
+                // 模拟前端数据处理逻辑
+                let orders = [];
+                let total = 0;
+                let page = 1;
+                let limit = 20;
+                
+                if (Array.isArray(rawData)) {
+                    orders = rawData;
+                    total = orders.length;
+                } else if (rawData.success && rawData.data) {
+                    const apiData = rawData.data;
+                    if (Array.isArray(apiData.orders)) {
+                        orders = apiData.orders;
+                        total = apiData.pagination?.total || orders.length;
+                        page = apiData.pagination?.page || 1;
+                        limit = apiData.pagination?.limit || 20;
+                    } else if (Array.isArray(apiData.items)) {
+                        orders = apiData.items;
+                        total = apiData.total || orders.length;
+                        page = apiData.page || 1;
+                        limit = apiData.limit || 20;
+                    }
+                }
+                
+                resultDiv.innerHTML = `✅ 前端API层测试成功！
+
+原始数据结构:
+${JSON.stringify(rawData, null, 2)}
+
+解析后的数据:
+- 订单数量: ${orders.length}
+- 总数: ${total}
+- 页码: ${page}
+- 每页数量: ${limit}
+
+第一个订单:
+${JSON.stringify(orders[0] || null, null, 2)}`;
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                console.error('❌ 前端API层测试失败:', error);
+                resultDiv.innerHTML = `❌ 前端API层测试失败:
+${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testFrontendCustomers() {
+            const resultDiv = document.getElementById('frontend-result');
+            resultDiv.innerHTML = '🔄 正在测试前端客户API...';
+            
+            try {
+                console.log('🔍 测试前端客户API...');
+                
+                const response = await fetch('/api/v1/sales/customers?page=1&limit=5');
+                const rawData = await response.json();
+                
+                console.log('📥 前端客户API原始数据:', rawData);
+                
+                // 模拟前端数据处理逻辑
+                let customers = [];
+                let total = 0;
+                
+                if (Array.isArray(rawData)) {
+                    customers = rawData;
+                    total = customers.length;
+                } else if (rawData.success && rawData.data) {
+                    const apiData = rawData.data;
+                    if (Array.isArray(apiData.customers)) {
+                        customers = apiData.customers;
+                        total = apiData.pagination?.total || customers.length;
+                    } else if (Array.isArray(apiData.items)) {
+                        customers = apiData.items;
+                        total = apiData.total || customers.length;
+                    }
+                }
+                
+                resultDiv.innerHTML = `✅ 前端客户API测试成功！
+
+原始数据结构:
+${JSON.stringify(rawData, null, 2)}
+
+解析后的数据:
+- 客户数量: ${customers.length}
+- 总数: ${total}
+
+第一个客户:
+${JSON.stringify(customers[0] || null, null, 2)}`;
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                console.error('❌ 前端客户API测试失败:', error);
+                resultDiv.innerHTML = `❌ 前端客户API测试失败:
+${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 测试状态管理
+        async function testSalesStore() {
+            const resultDiv = document.getElementById('store-result');
+            resultDiv.innerHTML = '🔄 正在测试状态管理...';
+            
+            try {
+                console.log('🔍 测试状态管理...');
+                
+                // 这里需要检查Vue应用是否可用
+                if (typeof window.Vue === 'undefined') {
+                    throw new Error('Vue应用未加载，无法测试状态管理');
+                }
+                
+                resultDiv.innerHTML = `⚠️ 状态管理测试需要在Vue应用环境中运行
+                
+请在浏览器开发者工具中运行以下代码来测试状态管理:
+
+// 1. 检查销售Store是否可用
+const salesStore = useSalesStore();
+console.log('销售Store:', salesStore);
+
+// 2. 测试获取订单
+await salesStore.fetchOrders();
+console.log('订单数据:', salesStore.orders);
+
+// 3. 测试获取客户
+await salesStore.fetchCustomers();
+console.log('客户数据:', salesStore.customers);`;
+                resultDiv.className = 'result';
+                
+            } catch (error) {
+                console.error('❌ 状态管理测试失败:', error);
+                resultDiv.innerHTML = `❌ 状态管理测试失败:
+${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // 页面加载时自动运行基础测试
+        window.addEventListener('load', () => {
+            console.log('🚀 销售API调试工具已加载');
+            console.log('请点击按钮进行各项测试');
+        });
+    </script>
+</body>
+</html>

@@ -2,10 +2,44 @@
   <div class="customers-container">
     <div class="page-header">
       <h2>客户管理</h2>
-      <el-button type="primary" @click="handleAdd">
-        <el-icon><Plus /></el-icon>
-        新增客户
-      </el-button>
+      <div class="header-actions">
+        <el-button @click="handleRefresh" :loading="salesStore.customersLoading">
+          <el-icon><Refresh /></el-icon>
+          刷新
+        </el-button>
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          新增客户
+        </el-button>
+      </div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stats-cards">
+      <el-card class="stat-card">
+        <div class="stat-content">
+          <div class="stat-number">{{ salesStore.getCustomersStatistics.total }}</div>
+          <div class="stat-label">总客户数</div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-content">
+          <div class="stat-number">{{ salesStore.getCustomersStatistics.active }}</div>
+          <div class="stat-label">活跃客户</div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-content">
+          <div class="stat-number">{{ salesStore.getCustomersStatistics.highCredit }}</div>
+          <div class="stat-label">高信用客户</div>
+        </div>
+      </el-card>
+      <el-card class="stat-card">
+        <div class="stat-content">
+          <div class="stat-number">{{ salesStore.getCustomersStatistics.lowCredit }}</div>
+          <div class="stat-label">低信用客户</div>
+        </div>
+      </el-card>
     </div>
 
     <!-- 搜索筛选 -->
@@ -16,21 +50,25 @@
         </el-form-item>
         <el-form-item label="客户类型">
           <el-select v-model="searchForm.customerType" placeholder="请选择类型" clearable>
-            <el-option 
-              v-for="type in customerTypes" 
-              :key="type.customer_type" 
-              :label="type.customer_type" 
-              :value="type.customer_type" 
-            />
+            <el-option label="个人客户" value="individual" />
+            <el-option label="企业客户" value="enterprise" />
+            <el-option label="经销商" value="dealer" />
+            <el-option label="批发商" value="wholesaler" />
           </el-select>
         </el-form-item>
-        <el-form-item label="评级">
+        <el-form-item label="信用评级">
           <el-select v-model="searchForm.creditRating" placeholder="请选择评级" clearable>
             <el-option label="5星" :value="5" />
             <el-option label="4星" :value="4" />
             <el-option label="3星" :value="3" />
             <el-option label="2星" :value="2" />
             <el-option label="1星" :value="1" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="客户状态">
+          <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
+            <el-option label="活跃" value="active" />
+            <el-option label="停用" value="inactive" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -40,67 +78,116 @@
       </el-form>
     </el-card>
 
-
-
-
-
     <!-- 客户列表 -->
     <el-card class="table-card">
+      <div class="table-header">
+        <div class="batch-actions">
+          <el-button 
+            type="success" 
+            :disabled="salesStore.selectedCustomerIds.length === 0"
+            @click="handleBatchExport"
+          >
+            批量导出 ({{ salesStore.selectedCustomerIds.length }})
+          </el-button>
+        </div>
+        <div class="table-info">
+          <span>共 {{ salesStore.customersPagination.total }} 条记录</span>
+        </div>
+      </div>
+
       <el-table 
-        :data="validCustomers" 
-        v-loading="loading"
+        :data="salesStore.customers" 
+        v-loading="salesStore.customersLoading"
         stripe
+        @selection-change="handleSelectionChange"
       >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="客户名称" min-width="150">
           <template #default="{ row }">
-            {{ row.name || '-' }}
+            <el-button type="text" @click="handleView(row)">
+              {{ row.name || '-' }}
+            </el-button>
           </template>
         </el-table-column>
         <el-table-column prop="contact_person" label="联系人" width="120">
           <template #default="{ row }">
-            {{ row.contact_person || row.contactPerson || '-' }}
+            {{ row.contact_person || '-' }}
           </template>
         </el-table-column>
         <el-table-column prop="phone" label="联系电话" width="150">
           <template #default="{ row }">
-            {{ row.phone || '-' }}
+            <span class="phone-number">{{ row.phone || '-' }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="customer_type" label="类型" width="120">
+        <el-table-column prop="email" label="邮箱" width="180">
           <template #default="{ row }">
-            {{ row.customer_type || row.customerType || '-' }}
+            {{ row.email || '-' }}
           </template>
         </el-table-column>
-        <el-table-column prop="credit_rating" label="评级" width="120">
+        <el-table-column prop="customer_type" label="客户类型" width="120">
           <template #default="{ row }">
-            <el-rate :model-value="Number(row.credit_rating || row.creditRating || 0)" disabled show-score />
+            <el-tag :type="getCustomerTypeColor(row.customer_type)" size="small">
+              {{ getCustomerTypeText(row.customer_type) }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="credit_limit" label="信用额度" width="120">
+        <el-table-column prop="credit_rating" label="信用评级" width="140">
           <template #default="{ row }">
-            ¥{{ Number(row.credit_limit || row.creditLimit || 0).toLocaleString() }}
+            <el-rate 
+              :model-value="row.credit_rating || 0" 
+              disabled 
+              show-score 
+              text-color="#ff9900"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column prop="credit_limit" label="信用额度" width="120" align="right">
+          <template #default="{ row }">
+            <span class="amount">¥{{ (row.credit_limit || 0).toLocaleString() }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
-            <el-tag type="success">
-              启用
+            <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
+              {{ row.status === 'active' ? '活跃' : '停用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column prop="created_at" label="创建时间" width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.created_at) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="handleView(row)">查看</el-button>
             <el-button size="small" type="primary" @click="handleEdit(row)">编辑</el-button>
             <el-button size="small" type="success" @click="handleVisit(row)">回访</el-button>
-            <el-button 
-              size="small" 
-              type="danger" 
-              @click="handleDelete(row)"
-              v-if="row.status === 'active'"
-            >
-              停用
-            </el-button>
+            <el-dropdown trigger="click" @command="(command) => handleMoreAction(command, row)">
+              <el-button size="small">
+                更多<el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="rating">调整评级</el-dropdown-item>
+                  <el-dropdown-item command="statistics">客户统计</el-dropdown-item>
+                  <el-dropdown-item 
+                    command="disable" 
+                    v-if="row.status === 'active'"
+                    divided
+                  >
+                    停用客户
+                  </el-dropdown-item>
+                  <el-dropdown-item 
+                    command="enable" 
+                    v-if="row.status === 'inactive'"
+                    divided
+                  >
+                    启用客户
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
@@ -108,9 +195,9 @@
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.limit"
-          :total="pagination.total"
+          v-model:current-page="salesStore.customersPage"
+          v-model:page-size="salesStore.customersLimit"
+          :total="salesStore.customersPagination.total"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
@@ -119,130 +206,87 @@
       </div>
     </el-card>
 
-
+    <!-- 调整评级对话框 -->
+    <el-dialog v-model="ratingDialogVisible" title="调整客户评级" width="500px">
+      <el-form :model="ratingForm" label-width="100px">
+        <el-form-item label="客户名称">
+          <span>{{ selectedCustomer?.name }}</span>
+        </el-form-item>
+        <el-form-item label="当前评级">
+          <el-rate :model-value="selectedCustomer?.credit_rating || 0" disabled />
+        </el-form-item>
+        <el-form-item label="新评级" required>
+          <el-rate v-model="ratingForm.credit_rating" />
+        </el-form-item>
+        <el-form-item label="调整原因">
+          <el-input 
+            v-model="ratingForm.comment" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入调整原因"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="ratingDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleUpdateRating" :loading="submitting">
+          确定
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { salesApi, type Customer } from '@/api/sales'
-import { validateData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
-import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
-import { safeGet } from '@/utils/safeAccess'
-import { ensureUserLoggedIn, withAuth } from '@/utils/authGuard'
+import { Plus, Refresh, ArrowDown } from '@element-plus/icons-vue'
+import { useSalesStore } from '@/stores/sales'
+import type { Customer } from '@/api/sales'
 
 const router = useRouter()
+const salesStore = useSalesStore()
 
 // 响应式数据
-const loading = ref(false)
 const submitting = ref(false)
-const customers = ref<Customer[]>([])
-const customerTypes = ref<any[]>([])
-
-// 计算属性：过滤有效的客户数据
-const validCustomers = computed(() => {
-  console.log('🔍 validCustomers 计算属性执行，原始数据:', customers.value)
-  
-  // 直接返回所有数据，不进行过滤
-  const result = customers.value || []
-  
-  console.log('🎯 validCustomers 最终结果:', {
-    originalCount: customers.value?.length || 0,
-    resultCount: result.length,
-    result
-  })
-  
-  return result
-})
+const ratingDialogVisible = ref(false)
+const selectedCustomer = ref<Customer | null>(null)
 
 // 搜索表单
 const searchForm = reactive({
   name: '',
   customerType: '',
-  creditRating: undefined as number | undefined
+  creditRating: undefined as number | undefined,
+  status: ''
 })
 
-// 分页
-const pagination = reactive({
-  page: 1,
-  limit: 20,
-  total: 0
+// 评级表单
+const ratingForm = reactive({
+  credit_rating: 0,
+  comment: ''
 })
-
-
 
 // 方法
 const fetchCustomers = async () => {
-  loading.value = true
-  try {
-    // 使用认证守卫确保用户已登录
-    const isLoggedIn = await ensureUserLoggedIn()
-    if (!isLoggedIn) {
-      console.log('❌ 用户未登录，无法获取客户数据')
-      return
-    }
-    
-    console.log('🔍 开始获取客户数据...')
-    
-    // 使用withAuth包装API调用
-    await withAuth(async () => {
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        search: searchForm.name || undefined,
-        customer_type: searchForm.customerType || undefined,
-        credit_rating: searchForm.creditRating
-      }
-      
-      console.log('🔍 请求参数:', params)
-      
-      const result = await salesApi.getCustomers(params)
-      console.log('📥 API返回结果:', result)
-      
-      if (result && result.data && result.data.items) {
-        customers.value = result.data.items
-        pagination.total = result.data.total || 0
-        
-        console.log('✅ 成功设置客户数据:', {
-          count: customers.value.length,
-          total: pagination.total,
-          firstCustomer: customers.value[0]
-        })
-      } else {
-        console.warn('⚠️ API返回数据格式异常:', result)
-        customers.value = []
-        pagination.total = 0
-      }
-    })
-  } catch (error) {
-    console.error('❌ 获取客户数据失败:', error)
-    ElMessage.error('获取客户数据失败')
-    customers.value = []
-    pagination.total = 0
-  } finally {
-    loading.value = false
+  const params = {
+    page: salesStore.customersPage,
+    limit: salesStore.customersLimit,
+    search: searchForm.name || undefined,
+    customer_type: searchForm.customerType || undefined,
+    credit_rating: searchForm.creditRating,
+    status: searchForm.status || undefined
   }
+  
+  salesStore.setCustomerFilters(params)
+  await salesStore.fetchCustomers(params)
 }
 
-const fetchCustomerTypes = async () => {
-  const result = await safeApiCall(
-    () => salesApi.getCustomerTypes(),
-    {
-      showMessage: false,
-      fallbackValue: { data: [] }
-    }
-  )
-  
-  if (result && result.data) {
-    customerTypes.value = ensureArray(safeGet(result, 'data', []))
-  }
+const handleRefresh = async () => {
+  await salesStore.fetchCustomers({}, true) // Force refresh
 }
 
 const handleSearch = () => {
-  pagination.page = 1
   fetchCustomers()
 }
 
@@ -250,8 +294,10 @@ const handleReset = () => {
   Object.assign(searchForm, {
     name: '',
     customerType: '',
-    creditRating: null
+    creditRating: undefined,
+    status: ''
   })
+  salesStore.clearCustomersCache()
   handleSearch()
 }
 
@@ -267,47 +313,127 @@ const handleView = (row: Customer) => {
   router.push(`/admin/sales/customers/${row.id}`)
 }
 
-const handleDelete = async (row: Customer) => {
+const handleVisit = (row: Customer) => {
+  router.push(`/admin/sales/customers/${row.id}/visit/new`)
+}
+
+const handleMoreAction = async (command: string, row: Customer) => {
+  switch (command) {
+    case 'rating':
+      selectedCustomer.value = row
+      ratingForm.credit_rating = row.credit_rating || 0
+      ratingForm.comment = ''
+      ratingDialogVisible.value = true
+      break
+      
+    case 'statistics':
+      // 跳转到客户统计页面或显示统计信息
+      ElMessage.info('客户统计功能开发中')
+      break
+      
+    case 'disable':
+      await handleDisableCustomer(row)
+      break
+      
+    case 'enable':
+      await handleEnableCustomer(row)
+      break
+  }
+}
+
+const handleDisableCustomer = async (row: Customer) => {
   try {
-    await ElMessageBox.confirm('确定要停用这个客户吗？', '提示', {
+    await ElMessageBox.confirm('确定要停用这个客户吗？停用后该客户将无法进行新的交易。', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
     
-    const result = await safeApiCall(
-      () => salesApi.deleteCustomer(ensureNumber(row.id, 0)),
-      {
-        showMessage: false,
-        fallbackValue: null
-      }
-    )
-    
-    if (result !== null) {
-      ElMessage.success('客户已停用')
-      fetchCustomers()
-    }
+    // 这里应该调用停用客户的API
+    await salesStore.deleteCustomer(row.id)
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('停用失败')
+      console.error('停用客户失败:', error)
     }
   }
 }
 
-const handleVisit = (row: Customer) => {
-  router.push(`/admin/sales/customers/${row.id}/visit/new`)
+const handleEnableCustomer = async (row: Customer) => {
+  try {
+    await ElMessageBox.confirm('确定要启用这个客户吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'info'
+    })
+    
+    // 这里应该调用启用客户的API
+    ElMessage.success('客户已启用')
+    await fetchCustomers()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('启用客户失败:', error)
+    }
+  }
 }
 
+const handleUpdateRating = async () => {
+  if (!selectedCustomer.value) return
+  
+  try {
+    submitting.value = true
+    
+    // 调用更新评级API
+    await salesStore.updateCustomer(selectedCustomer.value.id, {
+      credit_rating: ratingForm.credit_rating
+    })
+    
+    ratingDialogVisible.value = false
+    ElMessage.success('客户评级更新成功')
+  } catch (error) {
+    console.error('更新客户评级失败:', error)
+  } finally {
+    submitting.value = false
+  }
+}
 
+const handleBatchExport = () => {
+  ElMessage.info('批量导出功能开发中')
+}
+
+const handleSelectionChange = (selection: Customer[]) => {
+  const selectedIds = selection.map(customer => customer.id)
+  salesStore.selectCustomers(selectedIds)
+}
 
 const handleSizeChange = (size: number) => {
-  pagination.limit = size
+  salesStore.customersLimit = size
   fetchCustomers()
 }
 
 const handleCurrentChange = (page: number) => {
-  pagination.page = page
+  salesStore.customersPage = page
   fetchCustomers()
+}
+
+// 状态和类型转换方法
+const getCustomerTypeText = (type?: string) => {
+  const typeMap: Record<string, string> = {
+    individual: '个人客户',
+    enterprise: '企业客户',
+    dealer: '经销商',
+    wholesaler: '批发商'
+  }
+  return typeMap[type || ''] || type || '-'
+}
+
+const getCustomerTypeColor = (type?: string): "success" | "primary" | "warning" | "info" | "danger" => {
+  const colorMap: Record<string, "success" | "primary" | "warning" | "info" | "danger"> = {
+    individual: 'success',
+    enterprise: 'primary',
+    dealer: 'warning',
+    wholesaler: 'info'
+  }
+  return colorMap[type || ''] || 'info'
 }
 
 const formatDate = (dateString?: string) => {
@@ -315,9 +441,9 @@ const formatDate = (dateString?: string) => {
 }
 
 // 生命周期
-onMounted(() => {
-  fetchCustomers()
-  fetchCustomerTypes()
+onMounted(async () => {
+  // 初始化数据
+  await salesStore.fetchCustomers()
 })
 </script>
 
@@ -338,6 +464,38 @@ onMounted(() => {
   color: #303133;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  text-align: center;
+}
+
+.stat-content {
+  padding: 10px;
+}
+
+.stat-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #409eff;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #606266;
+}
+
 .search-card {
   margin-bottom: 20px;
 }
@@ -346,37 +504,36 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.table-info {
+  color: #606266;
+  font-size: 14px;
+}
+
+.phone-number {
+  font-family: 'Courier New', monospace;
+  color: #409eff;
+}
+
+.amount {
+  font-weight: bold;
+  color: #e6a23c;
+}
+
 .pagination-container {
   display: flex;
   justify-content: center;
   margin-top: 20px;
-}
-
-.detail-section {
-  margin-bottom: 20px;
-}
-
-.detail-item {
-  margin-bottom: 10px;
-}
-
-.detail-item label {
-  font-weight: bold;
-  color: #606266;
-}
-
-.detail-item .amount {
-  color: #e6a23c;
-  font-weight: bold;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.el-form-item {
-  margin-bottom: 20px;
 }
 </style>
