@@ -1,4 +1,21 @@
-﻿const express = require('express');
+﻿﻿﻿﻿﻿﻿/**
+ * ⚠️ 已弃用的销售服务应用
+ * 
+ * 这个文件是销售服务的旧版本实现，已被新的 TypeScript 版本替代。
+ * 新版本位于: src/app.ts 和 src/controllers/SalesController.ts
+ * 
+ * 旧版本问题:
+ * - 缺少完整的权限控制
+ * - 验证逻辑不完善 (如缺少 customerName 和 baseName 验证)
+ * - 没有数据权限中间件
+ * - 错误处理不完整
+ * 
+ * 请使用新版本的 TypeScript 实现！
+ * 启动命令: npm run dev (使用 ts-node)
+ * 构建命令: npm run build && npm start
+ */
+
+const express = require('express');
 const cors = require('cors');
 const { Sequelize, DataTypes } = require('sequelize');
 
@@ -495,176 +512,26 @@ app.get('/api/v1/sales/orders/:id', authMiddleware, async (req, res) => {
   }
 });
 
-// 创建销售订单
+// ⚠️ 旧版本的销售订单创建逻辑已移除
+// 请使用新版本的 TypeScript 控制器: src/controllers/SalesController.ts
+// 新版本提供了更好的权限控制、数据验证和错误处理
+
+// 创建销售订单 - 已禁用，请使用新版本TypeScript控制器
+/*
 app.post('/api/v1/sales/orders', authMiddleware, async (req, res) => {
-  const transaction = await sequelize.transaction();
-  try {
-    const {
-      customerId,
-      customerName,
-      baseId,
-      baseName,
-      orderDate,
-      expectedDeliveryDate,
-      paymentMethod,
-      contractNumber,
-      logisticsCompany,
-      remark,
-      taxAmount = 0,
-      discountAmount = 0,
-      items = []
-    } = req.body;
-
-    const user = req.user;
-
-    if (!customerId || !customerName || !baseId || !baseName || !orderDate) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: '请提供必要的订单信息',
-        code: 'MISSING_REQUIRED_FIELDS'
-      });
+  res.status(501).json({
+    success: false,
+    message: '此接口已迁移到新版本，请使用 TypeScript 控制器',
+    code: 'DEPRECATED_ENDPOINT',
+    migration_info: {
+      old_endpoint: '/api/v1/sales/orders (POST)',
+      new_controller: 'src/controllers/SalesController.ts',
+      new_route: 'src/routes/sales.ts',
+      start_command: 'npm run dev'
     }
-
-    if (!Array.isArray(items) || items.length === 0) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        message: '订单必须包含至少一个牛只',
-        code: 'NO_ORDER_ITEMS'
-      });
-    }
-
-    const orderNumber = await generateOrderNumber();
-
-    const subtotal = items.reduce((sum, item) => {
-      return sum + (Number(item.weight) * Number(item.unitPrice));
-    }, 0);
-    const totalAmount = subtotal + Number(taxAmount) - Number(discountAmount);
-
-    const order = await SalesOrder.create({
-      orderNumber,
-      customerId: Number(customerId),
-      customerName,
-      baseId: Number(baseId),
-      baseName,
-      orderDate: new Date(orderDate),
-      expectedDeliveryDate: expectedDeliveryDate ? new Date(expectedDeliveryDate) : null,
-      paymentMethod,
-      contractNumber,
-      logisticsCompany,
-      remark,
-      taxAmount: Number(taxAmount),
-      discountAmount: Number(discountAmount),
-      totalAmount,
-      createdBy: user.id
-    }, { transaction });
-
-    const orderItems = items.map(item => {
-      if (item.itemType === 'cattle') {
-        return {
-          orderId: order.id,
-          itemType: 'cattle',
-          cattleId: Number(item.cattleId),
-          earTag: item.earTag,
-          breed: item.breed,
-          weight: Number(item.weight),
-          unitPrice: Number(item.unitPrice),
-          quantity: Number(item.quantity),
-          totalPrice: Number(item.totalPrice),
-          notes: item.remark
-        }
-      } else if (item.itemType === 'material') {
-        return {
-          orderId: order.id,
-          itemType: 'material',
-          materialId: item.materialId || null,
-          materialName: item.materialName || '',
-          materialUnit: item.materialUnit || '',
-          unitPrice: Number(item.unitPrice),
-          quantity: Number(item.quantity),
-          totalPrice: Number(item.totalPrice),
-          notes: item.remark
-        }
-      } else if (item.itemType === 'equipment') {
-        return {
-          orderId: order.id,
-          itemType: 'equipment',
-          equipmentId: item.equipmentId || null,
-          equipmentName: item.equipmentName || '',
-          equipmentUnit: item.equipmentUnit || '',
-          specification: item.specification || '',
-          unitPrice: Number(item.unitPrice),
-          quantity: Number(item.quantity),
-          totalPrice: Number(item.totalPrice),
-          notes: item.remark
-        }
-      }
-      return {}
-    });
-
-    await SalesOrderItem.bulkCreate(orderItems, { transaction });
-
-    await transaction.commit();
-
-    const createdOrder = await SalesOrder.findByPk(order.id, {
-      include: [{
-        model: SalesOrderItem,
-        as: 'items'
-      }]
-    });
-
-    res.status(201).json({
-      success: true,
-      data: { order: createdOrder },
-      message: '创建销售订单成功'
-    });
-  } catch (error) {
-    await transaction.rollback();
-    console.error('创建销售订单失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '创建销售订单失败',
-      error: error.message
-    });
-  }
+  });
 });
-
-// 更新销售订单
-app.put('/api/v1/sales/orders/:id', authMiddleware, async (req, res) => {
-  const transaction = await sequelize.transaction();
-  
-  try {
-    const { id } = req.params;
-    const {
-      customerId,
-      customerName,
-      baseId,
-      baseName,
-      orderDate,
-      expectedDeliveryDate,
-      paymentMethod,
-      contractNumber,
-      logisticsCompany,
-      remark,
-      taxAmount = 0,
-      discountAmount = 0,
-      items = []
-    } = req.body;
-
-    const order = await SalesOrder.findByPk(id, { transaction });
-
-    if (!order) {
-      await transaction.rollback();
-      return res.status(404).json({
-        success: false,
-        message: '销售订单不存在',
-        code: 'ORDER_NOT_FOUND'
-      });
-    }
-
-    if (order.status !== 'pending') {
-      await transaction.rollback();
+*/
       return res.status(400).json({
         success: false,
         message: '只有待审批状态的订单才能编辑',
@@ -1380,54 +1247,80 @@ app.post('/api/v1/sales/customers/:id/visits', authMiddleware, async (req, res) 
 // 获取基地列表
 app.get('/api/v1/sales/bases', authMiddleware, async (req, res) => {
   try {
-    const mockBases = [
-      {
-        id: 1,
-        name: '主基地',
-        address: '北京市朝阳区农业园区1号',
-        status: 'active',
-        manager: '张经理',
-        phone: '13800138001'
+    const axios = require('axios');
+    const BASE_SERVICE_URL = process.env.BASE_SERVICE_URL || 'http://localhost:3002';
+    
+    console.log('🔄 销售服务调用基地服务获取基地列表...');
+    console.log('🔗 基地服务URL:', BASE_SERVICE_URL);
+    
+    // 调用基地服务获取真实数据
+    const response = await axios.get(`${BASE_SERVICE_URL}/api/v1/base/bases`, {
+      headers: {
+        'Authorization': req.headers.authorization || 'Bearer test-token'
       },
-      {
-        id: 2,
-        name: '分基地A',
-        address: '河北省廊坊市农业园区2号',
-        status: 'active',
-        manager: '李经理',
-        phone: '13800138002'
-      },
-      {
-        id: 3,
-        name: '分基地B',
-        address: '天津市武清区农业园区3号',
-        status: 'active',
-        manager: '王经理',
-        phone: '13800138003'
+      timeout: 10000 // 10秒超时
+    });
+    
+    console.log('📥 基地服务响应:', response.data);
+    
+    // 处理基地服务的响应数据
+    let basesData = [];
+    if (response.data && response.data.success) {
+      // 标准微服务响应格式
+      const apiData = response.data.data;
+      if (Array.isArray(apiData.bases)) {
+        basesData = apiData.bases;
+      } else if (Array.isArray(apiData)) {
+        basesData = apiData;
       }
-    ];
-
-    const activeBases = mockBases.filter(base => base.status === 'active');
-
+    } else if (Array.isArray(response.data)) {
+      // 直接返回数组格式
+      basesData = response.data;
+    }
+    
+    console.log('✅ 解析到的基地数据:', basesData.length, '个基地');
+    
+    // 转换为销售服务期望的格式
+    const transformedBases = basesData.map(base => ({
+      id: base.id,
+      name: base.name,
+      code: base.code || `BASE${base.id.toString().padStart(3, '0')}`,
+      address: base.address || '',
+      status: 'active', // 默认为活跃状态
+      manager: base.manager_name || base.manager || '未分配',
+      phone: base.manager_phone || base.phone || ''
+    }));
+    
     res.json({
       success: true,
       data: {
-        bases: activeBases,
+        bases: transformedBases,
         pagination: {
-          total: activeBases.length,
+          total: transformedBases.length,
           page: 1,
           limit: 20,
-          pages: 1
+          pages: Math.ceil(transformedBases.length / 20)
         }
       },
       message: '获取基地列表成功'
     });
   } catch (error) {
-    console.error('获取基地列表失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '获取基地列表失败',
-      error: error.message
+    console.error('❌ 获取基地列表失败:', error.message);
+    console.error('错误详情:', error.response?.data || error);
+    
+    // 如果基地服务不可用，返回空数据而不是错误
+    res.json({
+      success: true,
+      data: {
+        bases: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          pages: 0
+        }
+      },
+      message: '基地服务不可用，返回空列表'
     });
   }
 });
@@ -1435,73 +1328,102 @@ app.get('/api/v1/sales/bases', authMiddleware, async (req, res) => {
 // 获取牛只列表（用于销售订单选择）
 app.get('/api/v1/sales/cattle', authMiddleware, async (req, res) => {
   try {
-    const { baseId, status = 'healthy' } = req.query;
-
-    // 模拟牛只数据
-    const mockCattle = [
-      {
-        id: 1,
-        earTag: 'C001',
-        breed: '安格斯牛',
-        weight: 520.5,
-        age: 24,
-        gender: 'male',
-        status: 'healthy',
-        baseId: 1,
-        baseName: '主基地',
-        estimatedPrice: 26000
-      },
-      {
-        id: 2,
-        earTag: 'C002',
-        breed: '西门塔尔牛',
-        weight: 480.0,
-        age: 22,
-        gender: 'female',
-        status: 'healthy',
-        baseId: 1,
-        baseName: '主基地',
-        estimatedPrice: 24000
-      },
-      {
-        id: 3,
-        earTag: 'C003',
-        breed: '夏洛莱牛',
-        weight: 550.0,
-        age: 26,
-        gender: 'male',
-        status: 'healthy',
-        baseId: 2,
-        baseName: '分基地A',
-        estimatedPrice: 27500
-      }
-    ];
-
-    let filteredCattle = mockCattle.filter(cattle => cattle.status === status);
-
-    if (baseId) {
-      filteredCattle = filteredCattle.filter(cattle => cattle.baseId === Number(baseId));
+    const { base_id, baseId, status = 'active', page = 1, limit = 50 } = req.query;
+    const finalBaseId = base_id || baseId; // 支持两种参数名
+    
+    const axios = require('axios');
+    const CATTLE_SERVICE_URL = process.env.CATTLE_SERVICE_URL || 'http://localhost:3003';
+    
+    console.log('🔄 销售服务调用牛只服务获取牛只列表...');
+    console.log('🔗 牛只服务URL:', CATTLE_SERVICE_URL);
+    console.log('📊 请求参数:', { finalBaseId, status, page, limit });
+    
+    // 构建请求参数
+    const params = {
+      page,
+      limit,
+      status
+    };
+    
+    if (finalBaseId) {
+      params.base_id = finalBaseId;
     }
-
+    
+    // 调用牛只服务获取真实数据
+    const response = await axios.get(`${CATTLE_SERVICE_URL}/api/v1/cattle/cattle`, {
+      headers: {
+        'Authorization': req.headers.authorization || 'Bearer test-token'
+      },
+      params,
+      timeout: 10000 // 10秒超时
+    });
+    
+    console.log('📥 牛只服务响应:', response.data);
+    
+    // 处理牛只服务的响应数据
+    let cattleData = [];
+    let pagination = { total: 0, page: 1, limit: 50, pages: 0 };
+    
+    if (response.data && response.data.success) {
+      // 标准微服务响应格式
+      const apiData = response.data.data;
+      if (Array.isArray(apiData.cattle)) {
+        cattleData = apiData.cattle;
+        pagination = apiData.pagination || pagination;
+      } else if (Array.isArray(apiData)) {
+        cattleData = apiData;
+      }
+    } else if (Array.isArray(response.data)) {
+      // 直接返回数组格式
+      cattleData = response.data;
+    }
+    
+    console.log('✅ 解析到的牛只数据:', cattleData.length, '头牛');
+    
+    // 转换为销售服务期望的格式
+    const transformedCattle = cattleData.map(cattle => ({
+      id: cattle.id,
+      ear_tag: cattle.ear_tag || cattle.earTag,
+      breed: cattle.breed || '未知品种',
+      weight: cattle.weight || 0,
+      age: cattle.age_months || cattle.age || 0,
+      gender: cattle.gender,
+      status: cattle.health_status || cattle.status || 'healthy',
+      base_id: cattle.base_id || cattle.baseId,
+      base_name: cattle.base?.name || cattle.baseName || '',
+      estimated_price: cattle.estimated_price || cattle.estimatedPrice || 0
+    }));
+    
     res.json({
       success: true,
       data: {
-        cattle: filteredCattle,
+        cattle: transformedCattle,
         pagination: {
-          total: filteredCattle.length,
-          page: 1,
-          limit: 100,
-          pages: 1
+          total: pagination.total || transformedCattle.length,
+          page: Number(page),
+          limit: Number(limit),
+          pages: Math.ceil((pagination.total || transformedCattle.length) / Number(limit))
         }
       },
       message: '获取牛只列表成功'
     });
   } catch (error) {
-    console.error('获取牛只列表失败:', error);
-    res.status(500).json({
-      success: false,
-      message: '获取牛只列表失败',
-      error: error.message
+    console.error('❌ 获取牛只列表失败:', error.message);
+    console.error('错误详情:', error.response?.data || error);
+    
+    // 如果牛只服务不可用，返回空数据而不是错误
+    res.json({
+      success: true,
+      data: {
+        cattle: [],
+        pagination: {
+          total: 0,
+          page: Number(req.query.page || 1),
+          limit: Number(req.query.limit || 50),
+          pages: 0
+        }
+      },
+      message: '牛只服务不可用，返回空列表'
     });
   }
 });

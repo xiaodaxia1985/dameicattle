@@ -44,9 +44,11 @@ router.get('/customers/types', SalesController.getCustomerTypes);
 // 客户价值分析
 router.get('/customers/value-analysis', SalesController.getCustomerValueAnalysis);
 
-// 基地和牛只数据（用于销售订单）
+// 基地、牛只、物资和设备数据（用于销售订单）
 router.get('/bases', SalesController.getBases);
 router.get('/cattle', SalesController.getCattle);
+router.get('/materials', SalesController.getMaterials);
+router.get('/equipment', SalesController.getEquipment);
 
 // 统计路由
 router.get('/statistics', dataPermissionMiddleware, SalesController.getSalesStatistics);

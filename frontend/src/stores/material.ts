@@ -83,8 +83,38 @@ export const useMaterialStore = defineStore('material', () => {
   const fetchMaterials = async (params?: MaterialListParams) => {
     loading.value = true
     try {
+      // 权限控制：根据用户角色获取物资数据
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const user = authStore.user
+      
+      console.log('🔄 materialStore.fetchMaterials: 开始获取物资列表...')
+      console.log('👤 当前用户信息:', {
+        username: user?.username,
+        role: user?.role,
+        base_id: user?.base_id,
+        isAdminUser: user?.role === 'admin' || user?.role === 'super_admin'
+      })
+      
+      let finalParams = { ...params }
+      
+      // 如果不是管理员，只能看到自己基地的物资
+      if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+        if (user.base_id) {
+          finalParams.base_id = user.base_id
+          console.log('🔒 非管理员用户，限制查看基地:', user.base_id)
+        } else {
+          console.warn('⚠️ 用户没有关联基地，将返回空结果')
+          materials.value = []
+          total.value = 0
+          return
+        }
+      }
+      
+      console.log('📤 最终请求参数:', finalParams)
+      
       const result = await safeApiCall(
-        () => materialApi.getProductionMaterials(params),
+        () => materialApi.getProductionMaterials(finalParams),
         {
           showMessage: false,
           fallbackValue: { data: [], pagination: { total: 0 } }
@@ -93,6 +123,12 @@ export const useMaterialStore = defineStore('material', () => {
       
       materials.value = ensureArray(safeGet(result, 'data', []))
       total.value = ensureNumber(safeGet(result, 'pagination.total', 0))
+      
+      console.log('✅ 物资列表获取成功:', {
+        materialsCount: materials.value.length,
+        total: total.value,
+        sampleMaterial: materials.value[0] || null
+      })
     } finally {
       loading.value = false
     }
@@ -101,8 +137,38 @@ export const useMaterialStore = defineStore('material', () => {
   const fetchInventory = async (params?: InventoryListParams) => {
     loading.value = true
     try {
+      // 权限控制：根据用户角色获取库存数据
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const user = authStore.user
+      
+      console.log('🔄 materialStore.fetchInventory: 开始获取库存数据...')
+      console.log('👤 当前用户信息:', {
+        username: user?.username,
+        role: user?.role,
+        base_id: user?.base_id,
+        isAdminUser: user?.role === 'admin' || user?.role === 'super_admin'
+      })
+      
+      let finalParams = { ...params }
+      
+      // 如果不是管理员，只能看到自己基地的库存
+      if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+        if (user.base_id) {
+          finalParams.base_id = user.base_id
+          console.log('🔒 非管理员用户，限制查看基地:', user.base_id)
+        } else {
+          console.warn('⚠️ 用户没有关联基地，将返回空结果')
+          inventory.value = []
+          total.value = 0
+          return
+        }
+      }
+      
+      console.log('📤 最终请求参数:', finalParams)
+      
       const result = await safeApiCall(
-        () => materialApi.getInventory(params),
+        () => materialApi.getInventory(finalParams),
         {
           showMessage: false,
           fallbackValue: { data: [], pagination: { total: 0 } }
@@ -111,6 +177,12 @@ export const useMaterialStore = defineStore('material', () => {
       
       inventory.value = ensureArray(safeGet(result, 'data', []))
       total.value = ensureNumber(safeGet(result, 'pagination.total', 0))
+      
+      console.log('✅ 库存数据获取成功:', {
+        inventoryCount: inventory.value.length,
+        total: total.value,
+        sampleInventory: inventory.value[0] || null
+      })
     } finally {
       loading.value = false
     }
@@ -119,8 +191,38 @@ export const useMaterialStore = defineStore('material', () => {
   const fetchTransactions = async (params?: TransactionListParams) => {
     loading.value = true
     try {
+      // 权限控制：根据用户角色获取交易记录
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const user = authStore.user
+      
+      console.log('🔄 materialStore.fetchTransactions: 开始获取交易记录...')
+      console.log('👤 当前用户信息:', {
+        username: user?.username,
+        role: user?.role,
+        base_id: user?.base_id,
+        isAdminUser: user?.role === 'admin' || user?.role === 'super_admin'
+      })
+      
+      let finalParams = { ...params }
+      
+      // 如果不是管理员，只能看到自己基地的交易记录
+      if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+        if (user.base_id) {
+          finalParams.base_id = user.base_id
+          console.log('🔒 非管理员用户，限制查看基地:', user.base_id)
+        } else {
+          console.warn('⚠️ 用户没有关联基地，将返回空结果')
+          transactions.value = []
+          total.value = 0
+          return
+        }
+      }
+      
+      console.log('📤 最终请求参数:', finalParams)
+      
       const result = await safeApiCall(
-        () => materialApi.getInventoryTransactions(params),
+        () => materialApi.getInventoryTransactions(finalParams),
         {
           showMessage: false,
           fallbackValue: { data: [], pagination: { total: 0 } }
@@ -129,6 +231,12 @@ export const useMaterialStore = defineStore('material', () => {
       
       transactions.value = ensureArray(safeGet(result, 'data', []))
       total.value = ensureNumber(safeGet(result, 'pagination.total', 0))
+      
+      console.log('✅ 交易记录获取成功:', {
+        transactionsCount: transactions.value.length,
+        total: total.value,
+        sampleTransaction: transactions.value[0] || null
+      })
     } finally {
       loading.value = false
     }
@@ -137,8 +245,38 @@ export const useMaterialStore = defineStore('material', () => {
   const fetchAlerts = async (params?: { base_id?: number }) => {
     loading.value = true
     try {
+      // 权限控制：根据用户角色获取预警信息
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      const user = authStore.user
+      
+      console.log('🔄 materialStore.fetchAlerts: 开始获取预警信息...')
+      console.log('👤 当前用户信息:', {
+        username: user?.username,
+        role: user?.role,
+        base_id: user?.base_id,
+        isAdminUser: user?.role === 'admin' || user?.role === 'super_admin'
+      })
+      
+      let finalParams = { ...params }
+      
+      // 如果不是管理员，只能看到自己基地的预警
+      if (user && user.role !== 'admin' && user.role !== 'super_admin') {
+        if (user.base_id) {
+          finalParams.base_id = user.base_id
+          console.log('🔒 非管理员用户，限制查看基地:', user.base_id)
+        } else {
+          console.warn('⚠️ 用户没有关联基地，将返回空结果')
+          alerts.value = []
+          total.value = 0
+          return
+        }
+      }
+      
+      console.log('📤 最终请求参数:', finalParams)
+      
       const result = await safeApiCall(
-        () => materialApi.getInventoryAlerts(params),
+        () => materialApi.getInventoryAlerts(finalParams),
         {
           showMessage: false,
           fallbackValue: { data: [], pagination: { total: 0 } }
@@ -147,6 +285,12 @@ export const useMaterialStore = defineStore('material', () => {
       
       alerts.value = ensureArray(safeGet(result, 'data', []))
       total.value = ensureNumber(safeGet(result, 'pagination.total', 0))
+      
+      console.log('✅ 预警信息获取成功:', {
+        alertsCount: alerts.value.length,
+        total: total.value,
+        sampleAlert: alerts.value[0] || null
+      })
     } finally {
       loading.value = false
     }

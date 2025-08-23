@@ -15,32 +15,48 @@
     </div>
 
     <!-- 统计卡片 -->
-    <div class="stats-cards">
+    <div class="stats-cards" v-if="!initializationError">
       <el-card class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ salesStore.getOrdersStatistics.total }}</div>
+          <div class="stat-number">{{ safeOrdersStatistics.total || 0 }}</div>
           <div class="stat-label">总订单数</div>
         </div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ salesStore.getOrdersStatistics.pending }}</div>
+          <div class="stat-number">{{ safeOrdersStatistics.pending || 0 }}</div>
           <div class="stat-label">待审批</div>
         </div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">{{ salesStore.getOrdersStatistics.approved }}</div>
+          <div class="stat-number">{{ safeOrdersStatistics.approved || 0 }}</div>
           <div class="stat-label">已审批</div>
         </div>
       </el-card>
       <el-card class="stat-card">
         <div class="stat-content">
-          <div class="stat-number">¥{{ salesStore.getOrdersStatistics.totalAmount.toLocaleString() }}</div>
+          <div class="stat-number">¥{{ (safeOrdersStatistics.totalAmount || 0).toLocaleString() }}</div>
           <div class="stat-label">总金额</div>
         </div>
       </el-card>
     </div>
+    
+    <!-- 错误状态 -->
+    <el-alert
+      v-if="initializationError"
+      title="页面初始化失败"
+      type="error"
+      description="请检查网络连接或刷新页面重试"
+      show-icon
+      style="margin-bottom: 20px"
+    >
+      <template #default>
+        <div style="margin-top: 10px;">
+          <el-button type="primary" @click="retryInitialization">重试加载</el-button>
+        </div>
+      </template>
+    </el-alert>
 
     <!-- 搜索筛选 -->
     <el-card class="search-card">
@@ -218,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
@@ -227,6 +243,10 @@ import type { SalesOrder } from '@/api/sales'
 
 const router = useRouter()
 const salesStore = useSalesStore()
+
+// 组件状态管理
+const isComponentMounted = ref(false)
+const initializationError = ref(false)
 
 // 搜索表单
 const searchForm = reactive({
@@ -237,8 +257,67 @@ const searchForm = reactive({
   dateRange: undefined as [string, string] | undefined
 })
 
+// 安全的统计数据computed
+const safeOrdersStatistics = computed(() => {
+  if (!isComponentMounted.value || !salesStore.orders) {
+    return {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      delivered: 0,
+      completed: 0,
+      cancelled: 0,
+      totalAmount: 0
+    }
+  }
+  
+  try {
+    return salesStore.getOrdersStatistics || {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      delivered: 0,
+      completed: 0,
+      cancelled: 0,
+      totalAmount: 0
+    }
+  } catch (error) {
+    console.warn('⚠️ 获取订单统计失败:', error)
+    return {
+      total: 0,
+      pending: 0,
+      approved: 0,
+      delivered: 0,
+      completed: 0,
+      cancelled: 0,
+      totalAmount: 0
+    }
+  }
+})
+
 // 方法
+const retryInitialization = async () => {
+  initializationError.value = false
+  try {
+    console.log('🔄 重试初始化数据...')
+    await Promise.all([
+      salesStore.fetchOrders({}, true), // 强制刷新
+      salesStore.fetchCustomers({}, true)
+    ])
+    ElMessage.success('数据重新加载成功')
+  } catch (error) {
+    console.error('❌ 重试初始化失败:', error)
+    initializationError.value = true
+    ElMessage.error('重试失败，请稍后再试')
+  }
+}
+
 const fetchOrders = async () => {
+  if (!isComponentMounted.value) {
+    console.warn('⚠️ 组件尚未挂载，跳过获取订单')
+    return
+  }
+  
   const params = {
     page: salesStore.ordersPage,
     limit: salesStore.ordersLimit,
@@ -255,7 +334,11 @@ const fetchOrders = async () => {
 }
 
 const handleRefresh = async () => {
-  await salesStore.fetchOrders({}, true) // Force refresh
+  if (initializationError.value) {
+    await retryInitialization()
+  } else {
+    await salesStore.fetchOrders({}, true) // Force refresh
+  }
 }
 
 const handleSearch = () => {
@@ -409,11 +492,43 @@ const formatDate = (dateString?: string) => {
 
 // 生命周期
 onMounted(async () => {
-  // 初始化数据
-  await Promise.all([
-    salesStore.fetchOrders(),
-    salesStore.fetchCustomers()
-  ])
+  try {
+    console.log('🚀 Orders组件开始挂载...')
+    
+    // 确保DOM已经渲染
+    await nextTick()
+    
+    // 标记组件已挂载
+    isComponentMounted.value = true
+    
+    console.log('🔄 初始化销售订单页面数据...')
+    
+    // 初始化数据
+    await Promise.all([
+      salesStore.fetchOrders().catch(error => {
+        console.error('❌ 获取订单列表失败:', error)
+        ElMessage.error('获取订单列表失败')
+        return { data: { items: [], total: 0, page: 1, limit: 20 } }
+      }),
+      salesStore.fetchCustomers().catch(error => {
+        console.error('❌ 获取客户列表失败:', error)
+        ElMessage.error('获取客户列表失败')
+        return { data: { items: [], total: 0, page: 1, limit: 20 } }
+      })
+    ])
+    
+    console.log('✅ 销售订单页面数据初始化完成')
+  } catch (error) {
+    console.error('❌ 销售订单页面初始化失败:', error)
+    initializationError.value = true
+    ElMessage.error('页面数据加载失败，请刷新重试')
+  }
+})
+
+// 组件销毁时清理
+onUnmounted(() => {
+  console.log('🧹 Orders组件卸载，清理资源...')
+  isComponentMounted.value = false
 })
 </script>
 

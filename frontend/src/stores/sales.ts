@@ -601,7 +601,57 @@ export const useSalesStore = defineStore('sales', () => {
     batchApproveOrders,
     
     // Additional utility methods for forms
-    getBases: salesApi.getBases,
-    getCattle: salesApi.getCattle
+    // 获取基地列表（直接调用基地服务）
+    getBases: async () => {
+      try {
+        console.log('🔄 salesStore.getBases: 直接调用基地服务...')
+        // 直接使用基地API，和牛场管理模块一样
+        const { baseApi } = await import('@/api/base')
+        const response = await baseApi.getBases()
+        console.log('✅ salesStore.getBases: 基地数据获取成功:', response)
+        return response
+      } catch (error) {
+        console.error('❌ salesStore.getBases: 获取基地列表失败:', error)
+        throw error
+      }
+    },
+    getCattle: async (params: any = {}) => {
+      try {
+        console.log('🔄 salesStore.getCattle: 直接调用牛只服务...', params)
+        // 直接使用牛只 API
+        const { CattleServiceApi } = await import('@/api/microservices')
+        const cattleApi = new CattleServiceApi()
+        const response = await cattleApi.getCattleList(params)
+        console.log('✅ salesStore.getCattle: 牛只数据获取成功:', response)
+        return response
+      } catch (error) {
+        console.error('❌ salesStore.getCattle: 获取牛只列表失败:', error)
+        throw error
+      }
+    },
+    getMaterials: async (params: any = {}) => {
+      try {
+        console.log('🔄 salesStore.getMaterials: 调用销售服务获取物资...', params)
+        const response = await salesApi.getMaterials(params)
+        console.log('✅ salesStore.getMaterials: 物资数据获取成功:', response)
+        return response
+      } catch (error) {
+        console.error('❌ salesStore.getMaterials: 获取物资列表失败:', error)
+        // 物资服务可能不可用，返回空数据而不是抛出错误
+        return { data: [] }
+      }
+    },
+    getEquipment: async (params: any = {}) => {
+      try {
+        console.log('🔄 salesStore.getEquipment: 调用销售服务获取设备...', params)
+        const response = await salesApi.getEquipment(params)
+        console.log('✅ salesStore.getEquipment: 设备数据获取成功:', response)
+        return response
+      } catch (error) {
+        console.error('❌ salesStore.getEquipment: 获取设备列表失败:', error)
+        // 设备服务可能不可用，返回空数据而不是抛出错误
+        return { data: [] }
+      }
+    }
   }
 })

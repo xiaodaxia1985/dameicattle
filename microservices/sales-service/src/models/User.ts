@@ -4,25 +4,25 @@ import { sequelize } from '../config/database';
 interface UserAttributes {
   id: number;
   username: string;
-  real_name: string;
+  realName: string;
   phone?: string;
   email?: string;
-  base_id?: number;
-  created_at: Date;
-  updated_at: Date;
+  baseId?: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   public id!: number;
   public username!: string;
-  public real_name!: string;
+  public realName!: string;
   public phone?: string;
   public email?: string;
-  public base_id?: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
+  public baseId?: number;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 User.init(
@@ -37,9 +37,10 @@ User.init(
       allowNull: false,
       unique: true,
     },
-    real_name: {
+    realName: {
       type: DataTypes.STRING(50),
       allowNull: false,
+      field: 'realName'
     },
     phone: {
       type: DataTypes.STRING(20),
@@ -52,25 +53,30 @@ User.init(
         isEmail: true,
       },
     },
-    base_id: {
+    baseId: {
       type: DataTypes.INTEGER,
       allowNull: true,
+      field: 'baseId'
     },
-    created_at: {
+    createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'createdAt'
     },
-    updated_at: {
+    updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
+      field: 'updatedAt'
     },
   },
   {
     sequelize,
     tableName: 'users',
     timestamps: true,
-    underscored: true,
+    underscored: false,
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
   }
 );

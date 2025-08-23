@@ -17,7 +17,7 @@ router.get('/sales/health', async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: 'unhealthy',
-      error: error.message
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

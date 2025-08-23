@@ -279,41 +279,107 @@ export const salesApi = {
     return withAuth(async () => {
       console.log('🔄 salesApi.createOrder 开始调用，原始数据:', data)
       
-      // 转换前端数据格式为后端期望的格式
-      const backendData = {
-        customer_id: data.customer_id,
-        base_id: data.base_id || 1, // 默认基地ID，应该从用户权限获取
-        cattle_ids: [], // 从items中提取cattle_id
-        total_amount: data.total_amount || 0,
-        order_date: data.order_date,
-        expected_delivery_date: data.delivery_date || null,
-        notes: data.remark || ''
-      };
+      // 数据验证
+      if (!data.customer_id) {
+        throw new Error('请选择客户')
+      }
+      if (!data.order_date) {
+        throw new Error('请选择订单日期')
+      }
+      if (!data.base_id) {
+        throw new Error('请选择基地')
+      }
+      if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+        throw new Error('请至少添加一个商品')
+      }
       
-      // 从items中提取cattle_ids
+      // 计算订单总金额
+      let calculatedTotalAmount = 0
       if (data.items && Array.isArray(data.items)) {
-        backendData.cattle_ids = data.items
-          .filter(item => item.itemType === 'cattle' && item.cattle_id)
-          .map(item => item.cattle_id);
+        calculatedTotalAmount = data.items.reduce((sum: number, item: any) => {
+          const itemTotal = Number(item.quantity || 1) * Number(item.unit_price || 0)
+          return sum + itemTotal
+        }, 0)
+      }
+      
+      // 使用表单中的总金额，如果没有则使用计算值
+      const finalTotalAmount = data.total_amount || calculatedTotalAmount || 0
+      
+      // 转换前端数据格式为后端期望的格式
+      // 新版本的 TypeScript 控制器会自动处理 customerName 和 baseName
+      const backendData = {
+        customer_id: Number(data.customer_id),
+        base_id: Number(data.base_id),
+        total_amount: Number(finalTotalAmount),
+        order_date: data.order_date,
+        delivery_date: data.delivery_date || null,
+        payment_method: data.payment_method || null,
+        contract_number: data.contract_number || null,
+        remark: data.remark || data.notes || '',
+        items: [] // 直接传递items数组
+      }
+      
+      // 处理订单明细数据
+      if (data.items && Array.isArray(data.items)) {
+        backendData.items = data.items.map((item: any) => {
+          const transformedItem: any = {
+            itemType: item.itemType || 'cattle',
+            quantity: Number(item.quantity || 1),
+            unit_price: Number(item.unit_price || 0),
+            notes: item.notes || null
+          }
+          
+          // 根据商品类型添加相应字段
+          if (item.itemType === 'cattle' && item.cattle_id) {
+            transformedItem.cattle_id = Number(item.cattle_id)
+            transformedItem.ear_tag = item.ear_tag || item.earTag || ''
+            transformedItem.breed = item.breed || ''
+            transformedItem.weight = Number(item.weight || 0)
+            transformedItem.quality_grade = item.quality_grade || item.qualityGrade || null
+          } else if (item.itemType === 'material') {
+            transformedItem.material_id = item.material_id ? Number(item.material_id) : null
+            transformedItem.material_name = item.material_name || ''
+            transformedItem.specification = item.specification || ''
+          } else if (item.itemType === 'equipment') {
+            transformedItem.equipment_id = item.equipment_id ? Number(item.equipment_id) : null
+            transformedItem.equipment_name = item.equipment_name || ''
+            transformedItem.specification = item.specification || ''
+          }
+          
+          return transformedItem
+        })
       }
       
       console.log('📊 转换后的后端数据:', backendData)
+      
+      // 最终验证必需字段
+      if (!backendData.customer_id || !backendData.base_id || !backendData.order_date) {
+        throw new Error('缺少必需的订单信息：客户、基地或订单日期')
+      }
       
       const response = await salesServiceApi.createSalesOrder(backendData)
       console.log('📥 后端响应:', response)
       
       // 处理响应数据
-      const responseData = response?.data || response || {};
-      let orderData = null;
+      const responseData = response?.data || response || {}
+      let orderData = null
       
       if (responseData.success && responseData.data) {
-        orderData = responseData.data;
+        orderData = responseData.data
       } else if (responseData.id) {
-        orderData = responseData;
+        orderData = responseData
+      } else {
+        console.warn('⚠️ 未预期的响应格式:', responseData)
+        // 如果响应格式不符合预期，但没有错误，尝试使用整个响应作为订单数据
+        orderData = responseData
       }
       
-      console.log('✅ salesApi.createOrder 解析结果:', orderData);
-      return { data: orderData };
+      if (!orderData || !orderData.id) {
+        throw new Error('订单创建失败：服务器返回的数据无效')
+      }
+      
+      console.log('✅ salesApi.createOrder 解析结果:', orderData)
+      return { data: orderData }
     })
   },
 
@@ -601,8 +667,63 @@ export const salesApi = {
   // 获取基地列表（用于下拉选择）
   async getBases(): Promise<{ data: any[] }> {
     return withAuth(async () => {
-      const response = await salesServiceApi.get('/bases')
-      return { data: response.data }
+      console.log('🔄 salesApi.getBases 开始调用...')
+      try {
+        const response = await salesServiceApi.get('/bases')
+        console.log('📥 salesServiceApi.get bases 原始响应:', response)
+        
+        // 统一处理响应数据
+        const responseData: any = response?.data || response || {};
+        console.log('📊 bases responseData 解析:', responseData)
+        
+        let basesData = []
+        
+        // 处理标准微服务响应格式: {success: true, data: {bases: [...], pagination: {}}, message: "..."}
+        if (responseData.success && responseData.data) {
+          const apiData = responseData.data;
+          console.log('📋 标准格式 apiData:', apiData)
+          
+          if (Array.isArray(apiData.bases)) {
+            basesData = apiData.bases;
+            console.log('✅ 从 apiData.bases 提取到基地数据:', basesData.length, '个基地')
+          } else if (Array.isArray(apiData.items)) {
+            basesData = apiData.items;
+            console.log('✅ 从 apiData.items 提取到基地数据:', basesData.length, '个基地')
+          } else if (Array.isArray(apiData)) {
+            basesData = apiData;
+            console.log('✅ 从 apiData 提取到基地数据:', basesData.length, '个基地')
+          } else {
+            console.warn('⚠️  无法识别的 apiData 格式:', apiData)
+          }
+        } 
+        // 处理直接返回数组的格式
+        else if (Array.isArray(responseData)) {
+          basesData = responseData;
+          console.log('✅ 从 responseData 直接数组提取到基地数据:', basesData.length, '个基地')
+        } 
+        // 处理其他可能的格式
+        else if (Array.isArray(responseData.data)) {
+          basesData = responseData.data;
+          console.log('✅ 从 responseData.data 提取到基地数据:', basesData.length, '个基地')
+        } else {
+          console.warn('⚠️  无法识别的响应数据格式:', responseData)
+        }
+        
+        console.log('🎯 最终提取的基地数据:', basesData);
+        
+        // 验证基地数据有效性
+        if (!Array.isArray(basesData)) {
+          console.error('❌ 基地数据不是数组格式:', basesData)
+          throw new Error('基地数据格式错误')
+        }
+        
+        console.log('✅ salesApi.getBases 解析成功，返回', basesData.length, '个基地');
+        return { data: basesData };
+      } catch (error) {
+        console.error('❌ salesApi.getBases 调用失败:', error);
+        console.error('错误详情:', (error as any).response?.data || (error as any).message || error);
+        throw error;
+      }
     })
   },
 
@@ -610,31 +731,186 @@ export const salesApi = {
   async getCattle(params: any = {}): Promise<{ data: any }> {
     return withAuth(async () => {
       console.log('🔄 salesApi.getCattle 开始调用，参数:', params)
-      const response = await salesServiceApi.get('/cattle', params)
-      console.log('📥 salesServiceApi.get cattle 原始响应:', response)
-      
-      // 统一处理响应数据
-      const responseData: any = response?.data || response || {};
-      console.log('📊 cattle responseData 解析:', responseData)
-      
-      let cattleData = [];
-      
-      // 处理标准微服务响应格式
-      if (responseData.success && responseData.data) {
-        const apiData = responseData.data;
-        if (Array.isArray(apiData.cattle)) {
-          cattleData = apiData.cattle;
-        } else if (Array.isArray(apiData.items)) {
-          cattleData = apiData.items;
-        } else if (Array.isArray(apiData)) {
-          cattleData = apiData;
+      try {
+        const response = await salesServiceApi.get('/cattle', params)
+        console.log('📥 salesServiceApi.get cattle 原始响应:', response)
+        
+        // 统一处理响应数据
+        const responseData: any = response?.data || response || {};
+        console.log('📊 cattle responseData 解析:', responseData)
+        
+        let cattleData = [];
+        
+        // 处理标准微服务响应格式: {success: true, data: {cattle: [...], pagination: {}}, message: "..."}
+        if (responseData.success && responseData.data) {
+          const apiData = responseData.data;
+          console.log('📋 标准格式 apiData:', apiData)
+          
+          if (Array.isArray(apiData.cattle)) {
+            cattleData = apiData.cattle;
+            console.log('✅ 从 apiData.cattle 提取到牛只数据:', cattleData.length, '头牛')
+          } else if (Array.isArray(apiData.items)) {
+            cattleData = apiData.items;
+            console.log('✅ 从 apiData.items 提取到牛只数据:', cattleData.length, '头牛')
+          } else if (Array.isArray(apiData)) {
+            cattleData = apiData;
+            console.log('✅ 从 apiData 提取到牛只数据:', cattleData.length, '头牛')
+          } else {
+            console.warn('⚠️  无法识别的 apiData 格式:', apiData)
+          }
+        } 
+        // 处理直接返回数组的格式
+        else if (Array.isArray(responseData)) {
+          cattleData = responseData;
+          console.log('✅ 从 responseData 直接数组提取到牛只数据:', cattleData.length, '头牛')
+        } 
+        // 处理其他可能的格式
+        else if (Array.isArray(responseData.data)) {
+          cattleData = responseData.data;
+          console.log('✅ 从 responseData.data 提取到牛只数据:', cattleData.length, '头牛')
+        } else {
+          console.warn('⚠️  无法识别的响应数据格式:', responseData)
         }
-      } else if (Array.isArray(responseData)) {
-        cattleData = responseData;
+        
+        console.log('🎯 最终提取的牛只数据:', cattleData);
+        
+        // 验证牛只数据有效性
+        if (!Array.isArray(cattleData)) {
+          console.error('❌ 牛只数据不是数组格式:', cattleData)
+          throw new Error('牛只数据格式错误')
+        }
+        
+        console.log('✅ salesApi.getCattle 解析成功，返回', cattleData.length, '头牛');
+        return { data: cattleData };
+      } catch (error) {
+        console.error('❌ salesApi.getCattle 调用失败:', error);
+        console.error('错误详情:', (error as any).response?.data || (error as any).message || error);
+        throw error;
       }
-      
-      console.log('✅ salesApi.getCattle 解析结果:', cattleData);
-      return { data: cattleData };
+    })
+  },
+
+  // 获取物资列表（用于销售订单选择）
+  async getMaterials(params: any = {}): Promise<{ data: any }> {
+    return withAuth(async () => {
+      console.log('🔄 salesApi.getMaterials 开始调用，参数:', params)
+      try {
+        const response = await salesServiceApi.get('/materials', params)
+        console.log('📥 salesServiceApi.get materials 原始响应:', response)
+        
+        // 统一处理响应数据
+        const responseData: any = response?.data || response || {};
+        console.log('📊 materials responseData 解析:', responseData)
+        
+        let materialsData = [];
+        
+        // 处理标准微服务响应格式
+        if (responseData.success && responseData.data) {
+          const apiData = responseData.data;
+          console.log('📋 标准格式 apiData:', apiData)
+          
+          if (Array.isArray(apiData.materials)) {
+            materialsData = apiData.materials;
+            console.log('✅ 从 apiData.materials 提取到物资数据:', materialsData.length, '个物资')
+          } else if (Array.isArray(apiData.items)) {
+            materialsData = apiData.items;
+            console.log('✅ 从 apiData.items 提取到物资数据:', materialsData.length, '个物资')
+          } else if (Array.isArray(apiData)) {
+            materialsData = apiData;
+            console.log('✅ 从 apiData 提取到物资数据:', materialsData.length, '个物资')
+          }
+        } 
+        // 处理直接返回数组的格式
+        else if (Array.isArray(responseData)) {
+          materialsData = responseData;
+          console.log('✅ 从 responseData 直接数组提取到物资数据:', materialsData.length, '个物资')
+        } 
+        // 处理其他可能的格式
+        else if (Array.isArray(responseData.data)) {
+          materialsData = responseData.data;
+          console.log('✅ 从 responseData.data 提取到物资数据:', materialsData.length, '个物资')
+        } else {
+          console.warn('⚠️ 无法识别的响应数据格式:', responseData)
+        }
+        
+        console.log('🎯 最终提取的物资数据:', materialsData);
+        
+        // 验证物资数据有效性
+        if (!Array.isArray(materialsData)) {
+          console.error('❌ 物资数据不是数组格式:', materialsData)
+          materialsData = []; // 如果格式错误，返回空数组而不是抛出错误
+        }
+        
+        console.log('✅ salesApi.getMaterials 解析成功，返回', materialsData.length, '个物资');
+        return { data: materialsData };
+      } catch (error) {
+        console.error('❌ salesApi.getMaterials 调用失败:', error);
+        console.error('错误详情:', (error as any).response?.data || (error as any).message || error);
+        // 物资服务可能不可用，返回空数组而不是抛出错误
+        return { data: [] };
+      }
+    })
+  },
+
+  // 获取设备列表（用于销售订单选择）
+  async getEquipment(params: any = {}): Promise<{ data: any }> {
+    return withAuth(async () => {
+      console.log('🔄 salesApi.getEquipment 开始调用，参数:', params)
+      try {
+        const response = await salesServiceApi.get('/equipment', params)
+        console.log('📥 salesServiceApi.get equipment 原始响应:', response)
+        
+        // 统一处理响应数据
+        const responseData: any = response?.data || response || {};
+        console.log('📊 equipment responseData 解析:', responseData)
+        
+        let equipmentData = [];
+        
+        // 处理标准微服务响应格式
+        if (responseData.success && responseData.data) {
+          const apiData = responseData.data;
+          console.log('📋 标准格式 apiData:', apiData)
+          
+          if (Array.isArray(apiData.equipment)) {
+            equipmentData = apiData.equipment;
+            console.log('✅ 从 apiData.equipment 提取到设备数据:', equipmentData.length, '个设备')
+          } else if (Array.isArray(apiData.items)) {
+            equipmentData = apiData.items;
+            console.log('✅ 从 apiData.items 提取到设备数据:', equipmentData.length, '个设备')
+          } else if (Array.isArray(apiData)) {
+            equipmentData = apiData;
+            console.log('✅ 从 apiData 提取到设备数据:', equipmentData.length, '个设备')
+          }
+        } 
+        // 处理直接返回数组的格式
+        else if (Array.isArray(responseData)) {
+          equipmentData = responseData;
+          console.log('✅ 从 responseData 直接数组提取到设备数据:', equipmentData.length, '个设备')
+        } 
+        // 处理其他可能的格式
+        else if (Array.isArray(responseData.data)) {
+          equipmentData = responseData.data;
+          console.log('✅ 从 responseData.data 提取到设备数据:', equipmentData.length, '个设备')
+        } else {
+          console.warn('⚠️ 无法识别的响应数据格式:', responseData)
+        }
+        
+        console.log('🎯 最终提取的设备数据:', equipmentData);
+        
+        // 验证设备数据有效性
+        if (!Array.isArray(equipmentData)) {
+          console.error('❌ 设备数据不是数组格式:', equipmentData)
+          equipmentData = []; // 如果格式错误，返回空数组而不是抛出错误
+        }
+        
+        console.log('✅ salesApi.getEquipment 解析成功，返回', equipmentData.length, '个设备');
+        return { data: equipmentData };
+      } catch (error) {
+        console.error('❌ salesApi.getEquipment 调用失败:', error);
+        console.error('错误详情:', (error as any).response?.data || (error as any).message || error);
+        // 设备服务可能不可用，返回空数组而不是抛出错误
+        return { data: [] };
+      }
     })
   }
 }

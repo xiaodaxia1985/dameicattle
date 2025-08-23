@@ -73,7 +73,7 @@ export const dataPermissionMiddleware = (req: DataPermissionRequest, res: Respon
 
     // 检查用户是否有访问所有基地的权限（超级管理员）
     const canAccessAllBases = user.role === 'super_admin' || 
-                             (user.permissions && user.permissions.includes('access_all_bases'));
+                             (user.permissions && user.permissions.includes('access_all_bases')) || false;
 
     req.dataPermission = {
       canAccessAllBases,

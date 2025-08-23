@@ -1,76 +1,89 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
 
-interface CattleAttributes {
+interface MaterialAttributes {
   id: number;
-  earTag: string;
-  breed: string;
-  weight: number;
+  name: string;
+  category: string;
+  unit: string;
+  specification?: string;
+  description?: string;
   baseId: number;
-  status: string;
+  baseName: string;
+  status: 'active' | 'inactive';
   createdAt: Date;
   updatedAt: Date;
 }
 
-interface CattleCreationAttributes extends Optional<CattleAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
+interface MaterialCreationAttributes extends Optional<MaterialAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
-export class Cattle extends Model<CattleAttributes, CattleCreationAttributes> implements CattleAttributes {
+export class Material extends Model<MaterialAttributes, MaterialCreationAttributes> implements MaterialAttributes {
   public id!: number;
-  public earTag!: string;
-  public breed!: string;
-  public weight!: number;
+  public name!: string;
+  public category!: string;
+  public unit!: string;
+  public specification?: string;
+  public description?: string;
   public baseId!: number;
-  public status!: string;
+  public baseName!: string;
+  public status!: 'active' | 'inactive';
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-Cattle.init(
+Material.init(
   {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
-    earTag: {
-      type: DataTypes.STRING(50),
+    name: {
+      type: DataTypes.STRING(255),
       allowNull: false,
-      field: 'earTag'
     },
-    breed: {
+    category: {
       type: DataTypes.STRING(100),
       allowNull: false,
     },
-    weight: {
-      type: DataTypes.DECIMAL(8, 2),
+    unit: {
+      type: DataTypes.STRING(50),
       allowNull: false,
+    },
+    specification: {
+      type: DataTypes.TEXT,
+    },
+    description: {
+      type: DataTypes.TEXT,
     },
     baseId: {
       type: DataTypes.INTEGER,
       allowNull: false,
       field: 'baseId'
     },
-    status: {
-      type: DataTypes.STRING(20),
+    baseName: {
+      type: DataTypes.STRING(255),
       allowNull: false,
+      field: 'baseName'
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive'),
       defaultValue: 'active'
     },
     createdAt: {
       type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
       field: 'createdAt'
     },
     updatedAt: {
       type: DataTypes.DATE,
-      allowNull: false,
       defaultValue: DataTypes.NOW,
       field: 'updatedAt'
-    },
+    }
   },
   {
     sequelize,
-    tableName: 'cattle',
+    tableName: 'materials',
     timestamps: true,
     underscored: false,
     createdAt: 'createdAt',

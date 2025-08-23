@@ -3,38 +3,62 @@ import { sequelize } from '../config/database';
 
 interface SalesOrderAttributes {
   id: number;
-  order_number: string;
-  customer_id: number;
-  base_id: number;
-  cattle_ids: number[]; // Array of cattle IDs
-  total_amount: number;
-  order_date: Date;
-  expected_delivery_date?: Date;
-  actual_delivery_date?: Date;
-  notes?: string;
+  orderNumber: string;
+  customerId: number;
+  customerName: string;
+  baseId: number;
+  baseName: string;
+  totalAmount: number;
+  taxAmount: number;
+  discountAmount: number;
   status: 'pending' | 'approved' | 'delivered' | 'completed' | 'cancelled';
-  created_by: number;
-  created_at: Date;
-  updated_at: Date;
+  paymentStatus: 'unpaid' | 'partial' | 'paid';
+  paymentMethod?: string;
+  orderDate: Date;
+  expectedDeliveryDate?: Date;
+  actualDeliveryDate?: Date;
+  contractNumber?: string;
+  logisticsCompany?: string;
+  trackingNumber?: string;
+  remark?: string;
+  createdBy: string;
+  createdByName: string;
+  approvedBy?: string;
+  approvedByName?: string;
+  approvedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-interface SalesOrderCreationAttributes extends Optional<SalesOrderAttributes, 'id' | 'created_at' | 'updated_at'> {}
+interface SalesOrderCreationAttributes extends Optional<SalesOrderAttributes, 'id' | 'createdAt' | 'updatedAt'> {}
 
 export class SalesOrder extends Model<SalesOrderAttributes, SalesOrderCreationAttributes> implements SalesOrderAttributes {
   public id!: number;
-  public order_number!: string;
-  public customer_id!: number;
-  public base_id!: number;
-  public cattle_ids!: number[];
-  public total_amount!: number;
-  public order_date!: Date;
-  public expected_delivery_date?: Date;
-  public actual_delivery_date?: Date;
-  public notes?: string;
+  public orderNumber!: string;
+  public customerId!: number;
+  public customerName!: string;
+  public baseId!: number;
+  public baseName!: string;
+  public totalAmount!: number;
+  public taxAmount!: number;
+  public discountAmount!: number;
   public status!: 'pending' | 'approved' | 'delivered' | 'completed' | 'cancelled';
-  public created_by!: number;
-  public readonly created_at!: Date;
-  public readonly updated_at!: Date;
+  public paymentStatus!: 'unpaid' | 'partial' | 'paid';
+  public paymentMethod?: string;
+  public orderDate!: Date;
+  public expectedDeliveryDate?: Date;
+  public actualDeliveryDate?: Date;
+  public contractNumber?: string;
+  public logisticsCompany?: string;
+  public trackingNumber?: string;
+  public remark?: string;
+  public createdBy!: string;
+  public createdByName!: string;
+  public approvedBy?: string;
+  public approvedByName?: string;
+  public approvedAt?: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 }
 
 SalesOrder.init(
@@ -44,87 +68,127 @@ SalesOrder.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    order_number: {
+    orderNumber: {
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
+      field: 'orderNumber'
     },
-    customer_id: {
+    customerId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'customerId'
     },
-    base_id: {
+    customerName: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      field: 'customerName'
+    },
+    baseId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'baseId'
     },
-    cattle_ids: {
-      type: DataTypes.ARRAY(DataTypes.INTEGER),
+    baseName: {
+      type: DataTypes.STRING(255),
       allowNull: false,
-      defaultValue: [],
+      field: 'baseName'
     },
-    total_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+    totalAmount: {
+      type: DataTypes.DECIMAL(15, 2),
       defaultValue: 0,
+      field: 'totalAmount'
     },
-    order_date: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
+    taxAmount: {
+      type: DataTypes.DECIMAL(15, 2),
+      defaultValue: 0,
+      field: 'taxAmount'
     },
-    expected_delivery_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    actual_delivery_date: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
-    notes: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+    discountAmount: {
+      type: DataTypes.DECIMAL(15, 2),
+      defaultValue: 0,
+      field: 'discountAmount'
     },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'delivered', 'completed', 'cancelled'),
-      allowNull: false,
-      defaultValue: 'pending',
+      defaultValue: 'pending'
     },
-    created_by: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
+    paymentStatus: {
+      type: DataTypes.ENUM('unpaid', 'partial', 'paid'),
+      defaultValue: 'unpaid',
+      field: 'paymentStatus'
     },
-    created_at: {
+    paymentMethod: {
+      type: DataTypes.STRING(100),
+      field: 'paymentMethod'
+    },
+    orderDate: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW,
+      field: 'orderDate'
     },
-    updated_at: {
+    expectedDeliveryDate: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
+      field: 'expectedDeliveryDate'
     },
+    actualDeliveryDate: {
+      type: DataTypes.DATE,
+      field: 'actualDeliveryDate'
+    },
+    contractNumber: {
+      type: DataTypes.STRING(100),
+      field: 'contractNumber'
+    },
+    logisticsCompany: {
+      type: DataTypes.STRING(255),
+      field: 'logisticsCompany'
+    },
+    trackingNumber: {
+      type: DataTypes.STRING(100),
+      field: 'trackingNumber'
+    },
+    remark: {
+      type: DataTypes.TEXT
+    },
+    createdBy: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      field: 'createdBy'
+    },
+    createdByName: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      field: 'createdByName'
+    },
+    approvedBy: {
+      type: DataTypes.STRING(50),
+      field: 'approvedBy'
+    },
+    approvedByName: {
+      type: DataTypes.STRING(100),
+      field: 'approvedByName'
+    },
+    approvedAt: {
+      type: DataTypes.DATE,
+      field: 'approvedAt'
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'createdAt'
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      field: 'updatedAt'
+    }
   },
   {
     sequelize,
     tableName: 'sales_orders',
     timestamps: true,
-    underscored: true,
-    indexes: [
-      {
-        fields: ['customer_id'],
-      },
-      {
-        fields: ['base_id'],
-      },
-      {
-        fields: ['status'],
-      },
-      {
-        fields: ['order_date'],
-      },
-      {
-        fields: ['created_by'],
-      },
-    ],
+    underscored: false,
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
   }
 );
