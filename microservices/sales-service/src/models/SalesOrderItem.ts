@@ -49,7 +49,7 @@ SalesOrderItem.init(
     orderId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: 'orderId',
+      field: 'order_id',
       references: {
         model: 'sales_orders',
         key: 'id'
@@ -59,12 +59,12 @@ SalesOrderItem.init(
     cattleId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: 'cattleId'
+      field: 'cattle_id'
     },
     earTag: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      field: 'earTag'
+      field: 'ear_tag'
     },
     breed: {
       type: DataTypes.STRING(100),
@@ -78,29 +78,29 @@ SalesOrderItem.init(
     unitPrice: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      field: 'unitPrice'
+      field: 'unit_price'
     },
     totalPrice: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
-      field: 'totalPrice'
+      field: 'total_price'
     },
     qualityGrade: {
       type: DataTypes.STRING(50),
-      field: 'qualityGrade'
+      field: 'quality_grade'
     },
     healthCertificate: {
       type: DataTypes.STRING(255),
-      field: 'healthCertificate'
+      field: 'health_certificate'
     },
     quarantineCertificate: {
       type: DataTypes.STRING(255),
-      field: 'quarantineCertificate'
+      field: 'quarantine_certificate'
     },
     deliveryStatus: {
       type: DataTypes.ENUM('pending', 'delivered', 'received'),
       defaultValue: 'pending',
-      field: 'deliveryStatus'
+      field: 'delivery_status'
     },
     remark: {
       type: DataTypes.TEXT
@@ -108,12 +108,12 @@ SalesOrderItem.init(
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
-      field: 'createdAt'
+      field: 'created_at'
     },
     updatedAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
-      field: 'updatedAt'
+      field: 'updated_at'
     }
   },
   {

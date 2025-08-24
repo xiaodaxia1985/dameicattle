@@ -5,11 +5,15 @@
 
 import type { User, LoginRequest, LoginResponse } from '@/types/auth'
 
+// Platform detection
+const isUniApp = typeof window !== 'undefined' && 'uni' in window
+const uni = isUniApp ? (window as any).uni : null
+
 // Token storage utilities
 export const tokenStorage = {
   // Get token from storage
   getToken(): string | null {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       return uni.getStorageSync('token') || null
     } else if (typeof window !== 'undefined') {
@@ -21,7 +25,7 @@ export const tokenStorage = {
 
   // Set token in storage
   setToken(token: string): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.setStorageSync('token', token)
     } else if (typeof window !== 'undefined') {
@@ -32,7 +36,7 @@ export const tokenStorage = {
 
   // Remove token from storage
   removeToken(): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.removeStorageSync('token')
     } else if (typeof window !== 'undefined') {
@@ -44,7 +48,7 @@ export const tokenStorage = {
 
   // Get token expiration time
   getTokenExpiration(): number | null {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       const expiration = uni.getStorageSync('tokenExpiration')
       return expiration ? parseInt(expiration) : null
@@ -58,7 +62,7 @@ export const tokenStorage = {
 
   // Set token expiration time
   setTokenExpiration(expirationTime: number): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.setStorageSync('tokenExpiration', expirationTime.toString())
     } else if (typeof window !== 'undefined') {
@@ -69,7 +73,7 @@ export const tokenStorage = {
 
   // Remove token expiration time
   removeTokenExpiration(): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.removeStorageSync('tokenExpiration')
     } else if (typeof window !== 'undefined') {
@@ -83,7 +87,7 @@ export const tokenStorage = {
 export const userStorage = {
   // Get user data from storage
   getUser(): User | null {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       const userData = uni.getStorageSync('user')
       return userData ? JSON.parse(userData) : null
@@ -98,7 +102,7 @@ export const userStorage = {
   // Set user data in storage
   setUser(user: User): void {
     const userData = JSON.stringify(user)
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.setStorageSync('user', userData)
     } else if (typeof window !== 'undefined') {
@@ -109,12 +113,12 @@ export const userStorage = {
 
   // Remove user data from storage
   removeUser(): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.removeStorageSync('user')
     } else if (typeof window !== 'undefined') {
       // Web environment
-      window.localStorage.removeItem('user')
+      window.localStorage.removeUser('user')
     }
   }
 }
@@ -123,7 +127,7 @@ export const userStorage = {
 export const permissionsStorage = {
   // Get permissions from storage
   getPermissions(): string[] {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       const permissions = uni.getStorageSync('permissions')
       return permissions ? JSON.parse(permissions) : []
@@ -138,7 +142,7 @@ export const permissionsStorage = {
   // Set permissions in storage
   setPermissions(permissions: string[]): void {
     const permissionsData = JSON.stringify(permissions)
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.setStorageSync('permissions', permissionsData)
     } else if (typeof window !== 'undefined') {
@@ -149,7 +153,7 @@ export const permissionsStorage = {
 
   // Remove permissions from storage
   removePermissions(): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       uni.removeStorageSync('permissions')
     } else if (typeof window !== 'undefined') {
@@ -219,7 +223,6 @@ export const permissionUtils = {
   // Check if user has specific permission
   hasPermission(permission: string): boolean {
     const permissions = permissionsStorage.getPermissions()
-    const user = userStorage.getUser()
     
     // 如果没有权限数据，返回false
     if (!permissions || permissions.length === 0) {
@@ -228,25 +231,6 @@ export const permissionUtils = {
     
     // 检查通配符权限（超级管理员）
     if (permissions.includes('*')) {
-      return true
-    }
-    
-    // 检查系统管理员权限
-    if (permissions.includes('system:admin') && permission.startsWith('system:')) {
-      return true
-    }
-    
-    // 检查基地全权限
-    if (permissions.includes('bases:all') && (
-      permission.startsWith('base:') || 
-      permission.startsWith('cattle:') || 
-      permission.startsWith('health:') || 
-      permission.startsWith('feeding:') ||
-      permission.startsWith('material:') ||
-      permission.startsWith('inventory:') ||
-      permission.startsWith('purchase:') ||
-      permission.startsWith('sales:')
-    )) {
       return true
     }
     
@@ -276,12 +260,6 @@ export const permissionUtils = {
   hasRole(roleName: string): boolean {
     const userRole = this.getUserRole()
     return userRole === roleName
-  },
-
-  // Check if user has any of the specified roles
-  hasAnyRole(roleNames: string[]): boolean {
-    const userRole = this.getUserRole()
-    return userRole ? roleNames.includes(userRole) : false
   }
 }
 
@@ -289,7 +267,7 @@ export const permissionUtils = {
 export const navigationUtils = {
   // Redirect to login page
   redirectToLogin(redirectPath?: string): void {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni) {
       // Miniprogram environment
       const url = redirectPath ? `/pages/login/index?redirect=${encodeURIComponent(redirectPath)}` : '/pages/login/index'
       uni.reLaunch({ url })
@@ -302,23 +280,11 @@ export const navigationUtils = {
     }
   },
 
-  // Redirect to home page after login
-  redirectToHome(): void {
-    if (typeof uni !== 'undefined') {
-      // Miniprogram environment
-      uni.reLaunch({ url: '/pages/index/index' })
-    } else if (typeof window !== 'undefined') {
-      // Web environment
-      const event = new CustomEvent('auth:redirect-to-home')
-      window.dispatchEvent(event)
-    }
-  },
-
   // Get current page path
   getCurrentPath(): string {
-    if (typeof uni !== 'undefined') {
+    if (isUniApp && uni && typeof (window as any).getCurrentPages === 'function') {
       // Miniprogram environment
-      const pages = getCurrentPages()
+      const pages = (window as any).getCurrentPages()
       const currentPage = pages[pages.length - 1]
       return currentPage ? currentPage.route || '' : ''
     } else if (typeof window !== 'undefined' && window.location) {
@@ -329,86 +295,11 @@ export const navigationUtils = {
   }
 }
 
-// Error handling utilities
-export const authErrorUtils = {
-  // Get user-friendly error message
-  getErrorMessage(errorCode: string): string {
-    const errorMessages: Record<string, string> = {
-      'MISSING_TOKEN': '请先登录',
-      'INVALID_TOKEN_FORMAT': '登录信息格式错误，请重新登录',
-      'INVALID_TOKEN': '登录信息无效，请重新登录',
-      'TOKEN_EXPIRED': '登录已过期，请重新登录',
-      'TOKEN_NOT_IN_SESSION': '会话已失效，请重新登录',
-      'TOKEN_MISMATCH': '登录状态异常，请重新登录',
-      'USER_NOT_FOUND': '用户不存在',
-      'ACCOUNT_INACTIVE': '账户已被禁用，请联系管理员',
-      'ACCOUNT_LOCKED': '账户已被锁定，请联系管理员',
-      'TOKEN_EXPIRED_BEYOND_GRACE': '登录已过期，请重新登录',
-      'INSUFFICIENT_PERMISSIONS': '权限不足，无法执行此操作',
-      'NO_ROLE_ASSIGNED': '用户未分配角色，请联系管理员',
-      'NO_PERMISSIONS_CONFIGURED': '角色权限未配置，请联系管理员'
-    }
-    
-    return errorMessages[errorCode] || '认证失败，请重新登录'
-  },
-
-  // Check if error requires re-login
-  requiresReLogin(errorCode: string): boolean {
-    const reLoginCodes = [
-      'MISSING_TOKEN',
-      'INVALID_TOKEN_FORMAT',
-      'INVALID_TOKEN',
-      'TOKEN_EXPIRED',
-      'TOKEN_NOT_IN_SESSION',
-      'TOKEN_MISMATCH',
-      'USER_NOT_FOUND',
-      'ACCOUNT_INACTIVE',
-      'ACCOUNT_LOCKED',
-      'TOKEN_EXPIRED_BEYOND_GRACE'
-    ]
-    
-    return reLoginCodes.includes(errorCode)
-  },
-
-  // Check if error can be recovered by token refresh
-  canRefreshToken(errorCode: string): boolean {
-    const refreshableCodes = [
-      'TOKEN_EXPIRED',
-      'TOKEN_NOT_IN_SESSION',
-      'TOKEN_MISMATCH'
-    ]
-    
-    return refreshableCodes.includes(errorCode)
-  }
-}
-
-// Platform detection utilities
-export const platformUtils = {
-  // Check if running in miniprogram
-  isMiniprogram(): boolean {
-    return typeof uni !== 'undefined'
-  },
-
-  // Check if running in web browser
-  isWeb(): boolean {
-    return typeof window !== 'undefined' && typeof uni === 'undefined'
-  },
-
-  // Get platform name
-  getPlatform(): 'miniprogram' | 'web' | 'unknown' {
-    if (this.isMiniprogram()) return 'miniprogram'
-    if (this.isWeb()) return 'web'
-    return 'unknown'
-  }
-}
-
 export default {
   tokenStorage,
   userStorage,
   permissionsStorage,
   authState,
   permissionUtils,
-  navigationUtils,
-  authErrorUtils,
-  platformUtils
+  navigationUtils
 }

@@ -21,7 +21,7 @@ export interface EnvironmentConfigs {
 }
 
 // Environment detection
-const isUniApp = typeof uni !== 'undefined'
+const isUniApp = typeof window !== 'undefined' && 'uni' in window
 const isDevelopment = process.env.NODE_ENV === 'development'
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'

@@ -62,7 +62,7 @@ Customer.init(
     contactPerson: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      field: 'contactPerson'
+      field: 'contact_person'
     },
     phone: {
       type: DataTypes.STRING(50),
@@ -83,7 +83,7 @@ Customer.init(
       type: DataTypes.STRING(20),
       allowNull: false,
       defaultValue: 'company',
-      field: 'customerType',
+      field: 'customer_type',
       validate: {
         isIn: [['individual', 'company', 'distributor', 'restaurant']]
       }
@@ -91,29 +91,29 @@ Customer.init(
     businessLicense: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      field: 'businessLicense'
+      field: 'business_license'
     },
     taxNumber: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      field: 'taxNumber'
+      field: 'tax_number'
     },
     bankAccount: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      field: 'bankAccount'
+      field: 'bank_account'
     },
     creditLimit: {
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
       defaultValue: 0,
-      field: 'creditLimit'
+      field: 'credit_limit'
     },
     creditRating: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 5,
-      field: 'creditRating',
+      field: 'credit_rating',
       validate: {
         min: 1,
         max: 10
@@ -122,7 +122,7 @@ Customer.init(
     paymentTerms: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      field: 'paymentTerms'
+      field: 'payment_terms'
     },
     status: {
       type: DataTypes.STRING(20),
@@ -139,24 +139,24 @@ Customer.init(
     createdBy: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      field: 'createdBy'
+      field: 'created_by'
     },
     createdByName: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      field: 'createdByName'
+      field: 'created_by_name'
     },
     createdAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      field: 'createdAt'
+      field: 'created_at'
     },
     updatedAt: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      field: 'updatedAt'
+      field: 'updated_at'
     },
   },
   {

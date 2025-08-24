@@ -44,6 +44,7 @@ export interface LoginResponse {
   token: string
   user: User
   permissions: string[]
+  expiresIn?: number
 }
 
 export interface RegisterRequest {

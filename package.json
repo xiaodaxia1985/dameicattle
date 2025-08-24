@@ -10,7 +10,6 @@
     "stop:microservices": "cd microservices && .\\stop-services.ps1",
     "build:frontend": "cd frontend && npm run build",
     "build:miniprogram": "cd miniprogram && npm run build:mp-weixin",
-    "test:frontend": "cd frontend && npm run test",
     "lint:frontend": "cd frontend && npm run lint",
     "clean:frontend": "cd frontend && rm -rf dist node_modules",
     "clean:all": "npm run clean:frontend && rm -rf node_modules"

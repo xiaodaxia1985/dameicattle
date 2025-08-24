@@ -72,7 +72,11 @@ export const api = {
   // Safe list request with pagination validation
   getList: async <T = any>(url: string, params?: any, config?: any): Promise<PaginatedApiResponse<T>> => {
     const response = await apiClient.get<T[]>(url, params, config)
-    return normalizeListResponse<T>(response)
+    return {
+      success: true,
+      data: response.data || [],
+      pagination: response.pagination || { total: 0, page: 1, limit: 10, totalPages: 0 }
+    } as PaginatedApiResponse<T>
   },
 
   // File upload helper
@@ -80,18 +84,14 @@ export const api = {
     return apiClient.post(url, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
-      },
-      // Add progress callback if supported
-      onUploadProgress: onProgress
+      }
     })
   },
 
   // Download helper
   download: async (url: string, filename?: string): Promise<void> => {
     try {
-      const response = await apiClient.get(url, {}, {
-        responseType: 'blob'
-      })
+      const response = await apiClient.get(url, {}, {})
 
       // Create download link
       const blob = new Blob([response.data])

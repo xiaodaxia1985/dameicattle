@@ -72,42 +72,42 @@ SalesOrder.init(
       type: DataTypes.STRING(50),
       allowNull: false,
       unique: true,
-      field: 'orderNumber'
+      field: 'order_number'
     },
     customerId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: 'customerId'
+      field: 'customer_id'
     },
     customerName: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      field: 'customerName'
+      field: 'customer_name'
     },
     baseId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      field: 'baseId'
+      field: 'base_id'
     },
     baseName: {
       type: DataTypes.STRING(255),
       allowNull: false,
-      field: 'baseName'
+      field: 'base_name'
     },
     totalAmount: {
       type: DataTypes.DECIMAL(15, 2),
       defaultValue: 0,
-      field: 'totalAmount'
+      field: 'total_amount'
     },
     taxAmount: {
       type: DataTypes.DECIMAL(15, 2),
       defaultValue: 0,
-      field: 'taxAmount'
+      field: 'tax_amount'
     },
     discountAmount: {
       type: DataTypes.DECIMAL(15, 2),
       defaultValue: 0,
-      field: 'discountAmount'
+      field: 'discount_amount'
     },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'delivered', 'completed', 'cancelled'),
@@ -116,36 +116,36 @@ SalesOrder.init(
     paymentStatus: {
       type: DataTypes.ENUM('unpaid', 'partial', 'paid'),
       defaultValue: 'unpaid',
-      field: 'paymentStatus'
+      field: 'payment_status'
     },
     paymentMethod: {
       type: DataTypes.STRING(100),
-      field: 'paymentMethod'
+      field: 'payment_method'
     },
     orderDate: {
       type: DataTypes.DATE,
       allowNull: false,
-      field: 'orderDate'
+      field: 'order_date'
     },
     expectedDeliveryDate: {
       type: DataTypes.DATE,
-      field: 'expectedDeliveryDate'
+      field: 'expected_delivery_date'
     },
     actualDeliveryDate: {
       type: DataTypes.DATE,
-      field: 'actualDeliveryDate'
+      field: 'actual_delivery_date'
     },
     contractNumber: {
       type: DataTypes.STRING(100),
-      field: 'contractNumber'
+      field: 'contract_number'
     },
     logisticsCompany: {
       type: DataTypes.STRING(255),
-      field: 'logisticsCompany'
+      field: 'logistics_company'
     },
     trackingNumber: {
       type: DataTypes.STRING(100),
-      field: 'trackingNumber'
+      field: 'tracking_number'
     },
     remark: {
       type: DataTypes.TEXT
@@ -153,34 +153,34 @@ SalesOrder.init(
     createdBy: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      field: 'createdBy'
+      field: 'created_by'
     },
     createdByName: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      field: 'createdByName'
+      field: 'created_by_name'
     },
     approvedBy: {
       type: DataTypes.STRING(50),
-      field: 'approvedBy'
+      field: 'approved_by'
     },
     approvedByName: {
       type: DataTypes.STRING(100),
-      field: 'approvedByName'
+      field: 'approved_by_name'
     },
     approvedAt: {
       type: DataTypes.DATE,
-      field: 'approvedAt'
+      field: 'approved_at'
     },
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
-      field: 'createdAt'
+      field: 'created_at'
     },
     updatedAt: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW,
-      field: 'updatedAt'
+      field: 'updated_at'
     }
   },
   {

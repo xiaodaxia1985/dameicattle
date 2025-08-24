@@ -4,8 +4,9 @@
  */
 
 // Environment detection
-const isUniApp = typeof uni !== 'undefined'
+const isUniApp = typeof window !== 'undefined' && 'uni' in window
 const isWeb = typeof window !== 'undefined' && !isUniApp
+const uni = isUniApp ? (window as any).uni : null
 
 // Types
 export interface ApiClientConfig {
@@ -205,6 +206,10 @@ export class UnifiedApiClient {
     timeout: number
   ): Promise<ApiResponse<T>> {
     return new Promise((resolve, reject) => {
+      if (!uni) {
+        reject(new Error('uni is not available'))
+        return
+      }
       uni.request({
         url,
         method: config.method || 'GET',
@@ -309,7 +314,7 @@ export class UnifiedApiClient {
   }
 
   private getToken(): string | null {
-    if (isUniApp) {
+    if (isUniApp && uni) {
       return uni.getStorageSync('token')
     } else if (isWeb) {
       return localStorage.getItem('token')

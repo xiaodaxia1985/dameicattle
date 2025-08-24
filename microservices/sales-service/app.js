@@ -1,5 +1,4 @@
-﻿﻿﻿﻿﻿﻿/**
- * ⚠️ 已弃用的销售服务应用
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿/* * ⚠️ 已弃用的销售服务应用
  * 
  * 这个文件是销售服务的旧版本实现，已被新的 TypeScript 版本替代。
  * 新版本位于: src/app.ts 和 src/controllers/SalesController.ts
@@ -48,42 +47,42 @@ const SalesOrder = sequelize.define('SalesOrder', {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
-    field: 'order_number'
+    field: 'orderNumber'
   },
   customerId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'customer_id'
+    field: 'customerId'
   },
   customerName: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'customer_name'
+    field: 'customerName'
   },
   baseId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'base_id'
+    field: 'baseId'
   },
   baseName: {
     type: DataTypes.STRING,
     allowNull: false,
-    field: 'base_name'
+    field: 'baseName'
   },
   totalAmount: {
     type: DataTypes.DECIMAL(15, 2),
     defaultValue: 0,
-    field: 'total_amount'
+    field: 'totalAmount'
   },
   taxAmount: {
     type: DataTypes.DECIMAL(15, 2),
     defaultValue: 0,
-    field: 'tax_amount'
+    field: 'taxAmount'
   },
   discountAmount: {
     type: DataTypes.DECIMAL(15, 2),
     defaultValue: 0,
-    field: 'discount_amount'
+    field: 'discountAmount'
   },
   status: {
     type: DataTypes.ENUM('pending', 'approved', 'delivered', 'completed', 'cancelled'),
@@ -92,54 +91,64 @@ const SalesOrder = sequelize.define('SalesOrder', {
   paymentStatus: {
     type: DataTypes.ENUM('unpaid', 'partial', 'paid'),
     defaultValue: 'unpaid',
-    field: 'payment_status'
+    field: 'paymentStatus'
   },
   paymentMethod: {
     type: DataTypes.STRING,
-    field: 'payment_method'
+    field: 'paymentMethod'
   },
   orderDate: {
     type: DataTypes.DATE,
     allowNull: false,
-    field: 'order_date'
+    field: 'orderDate'
   },
   expectedDeliveryDate: {
     type: DataTypes.DATE,
-    field: 'delivery_date'
+    field: 'expectedDeliveryDate'
   },
   actualDeliveryDate: {
     type: DataTypes.DATE,
-    field: 'actual_delivery_date'
+    field: 'actualDeliveryDate'
   },
   contractNumber: {
     type: DataTypes.STRING,
-    field: 'contract_number'
+    field: 'contractNumber'
   },
   logisticsCompany: {
     type: DataTypes.STRING,
-    field: 'logistics_company'
+    field: 'logisticsCompany'
   },
   trackingNumber: {
     type: DataTypes.STRING,
-    field: 'tracking_number'
+    field: 'trackingNumber'
   },
   remark: DataTypes.TEXT,
   createdBy: {
-    type: DataTypes.INTEGER,
-    field: 'created_by'
+    type: DataTypes.STRING,
+    field: 'createdBy'
+  },
+  createdByName: {
+    type: DataTypes.STRING,
+    field: 'createdByName'
   },
   approvedBy: {
-    type: DataTypes.INTEGER,
-    field: 'approved_by'
+    type: DataTypes.STRING,
+    field: 'approvedBy'
+  },
+  approvedByName: {
+    type: DataTypes.STRING,
+    field: 'approvedByName'
   },
   approvedAt: {
     type: DataTypes.DATE,
-    field: 'approved_at'
+    field: 'approvedAt'
   }
 }, {
   tableName: 'sales_orders',
   timestamps: true,
-  underscored: true
+  underscored: false,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 });
 
 // 销售订单明细模型
@@ -156,39 +165,22 @@ const SalesOrderItem = sequelize.define('SalesOrderItem', {
       model: SalesOrder,
       key: 'id'
     },
-    field: 'order_id'
+    field: 'orderId'
   },
-  itemType: {
-    type: DataTypes.ENUM('cattle', 'material', 'equipment'),
-    allowNull: false,
-    field: 'item_type'
-  },
-  // 牛只类字段
-  cattleId: { type: DataTypes.INTEGER, field: 'cattle_id' },
-  earTag: { type: DataTypes.STRING, field: 'ear_tag' },
+  cattleId: { type: DataTypes.INTEGER, field: 'cattleId' },
+  earTag: { type: DataTypes.STRING, field: 'earTag' },
   breed: { type: DataTypes.STRING, field: 'breed' },
   weight: { type: DataTypes.DECIMAL(8, 2), field: 'weight' },
-  // 物资类字段
-  materialId: { type: DataTypes.INTEGER, field: 'material_id' },
-  materialName: { type: DataTypes.STRING, field: 'material_name' },
-  materialUnit: { type: DataTypes.STRING, field: 'material_unit' },
-  // 设备类字段
-  equipmentId: { type: DataTypes.INTEGER, field: 'equipment_id' },
-  equipmentName: { type: DataTypes.STRING, field: 'equipment_name' },
-  equipmentUnit: { type: DataTypes.STRING, field: 'equipment_unit' },
-  specification: { type: DataTypes.STRING, field: 'specification' },
-  // 公共字段
-  unitPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: 'unit_price' },
-  quantity: { type: DataTypes.DECIMAL(10, 2), defaultValue: 1, field: 'quantity' },
-  totalPrice: { type: DataTypes.DECIMAL(12, 2), allowNull: false, field: 'total_price' },
-  delivered: { type: DataTypes.BOOLEAN, defaultValue: false, field: 'delivered' },
-  deliveryDate: { type: DataTypes.DATE, field: 'delivery_date' },
-  notes: DataTypes.TEXT,
-  createdAt: { type: DataTypes.DATE, field: 'created_at' },
-  updatedAt: { type: DataTypes.DATE, field: 'updated_at' }
+  unitPrice: { type: DataTypes.DECIMAL(10, 2), allowNull: false, field: 'unitPrice' },
+  totalPrice: { type: DataTypes.DECIMAL(15, 2), allowNull: false, field: 'totalPrice' },
+  deliveryStatus: { type: DataTypes.STRING, defaultValue: 'pending', field: 'deliveryStatus' },
+  remark: DataTypes.TEXT
 }, {
   tableName: 'sales_order_items',
-  timestamps: true
+  timestamps: true,
+  underscored: false,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 });
 
 // 客户模型
@@ -205,7 +197,7 @@ const Customer = sequelize.define('Customer', {
   },
   contactPerson: {
     type: DataTypes.STRING,
-    field: 'contact_person'
+    field: 'contactPerson'
   },
   phone: {
     type: DataTypes.STRING
@@ -216,38 +208,55 @@ const Customer = sequelize.define('Customer', {
   },
   customerType: {
     type: DataTypes.STRING,
-    field: 'customer_type'
+    field: 'customerType'
   },
   businessLicense: {
     type: DataTypes.STRING,
-    field: 'business_license'
+    field: 'businessLicense'
   },
   taxNumber: {
     type: DataTypes.STRING,
-    field: 'tax_number'
+    field: 'taxNumber'
   },
   bankAccount: {
     type: DataTypes.STRING,
-    field: 'bank_account'
+    field: 'bankAccount'
   },
   creditLimit: {
-    type: DataTypes.DECIMAL(12, 2),
+    type: DataTypes.DECIMAL(15, 2),
     defaultValue: 0,
-    field: 'credit_limit'
+    field: 'creditLimit'
   },
   creditRating: {
     type: DataTypes.INTEGER,
-    defaultValue: 0,
-    field: 'credit_rating'
+    defaultValue: 5,
+    field: 'creditRating'
   },
   paymentTerms: {
     type: DataTypes.STRING,
-    field: 'payment_terms'
+    field: 'paymentTerms'
+  },
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'active'
+  },
+  remark: {
+    type: DataTypes.TEXT
+  },
+  createdBy: {
+    type: DataTypes.STRING,
+    field: 'createdBy'
+  },
+  createdByName: {
+    type: DataTypes.STRING,
+    field: 'createdByName'
   }
 }, {
   tableName: 'customers',
   timestamps: true,
-  underscored: true
+  underscored: false,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 });
 
 // 客户回访记录模型
@@ -263,23 +272,28 @@ const CustomerVisitRecord = sequelize.define('CustomerVisitRecord', {
     references: {
       model: Customer,
       key: 'id'
-    }
+    },
+    field: 'customerId'
   },
   visitDate: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: false,
+    field: 'visitDate'
   },
   visitType: {
     type: DataTypes.STRING,
-    defaultValue: 'phone'
+    defaultValue: 'phone',
+    field: 'visitType'
   },
   visitorId: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    field: 'visitorId'
   },
   visitorName: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    field: 'visitorName'
   },
   purpose: {
     type: DataTypes.STRING,
@@ -291,7 +305,8 @@ const CustomerVisitRecord = sequelize.define('CustomerVisitRecord', {
   },
   result: DataTypes.TEXT,
   nextVisitDate: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
+    field: 'nextVisitDate'
   },
   status: {
     type: DataTypes.STRING,
@@ -300,7 +315,9 @@ const CustomerVisitRecord = sequelize.define('CustomerVisitRecord', {
 }, {
   tableName: 'customer_visit_records',
   timestamps: true,
-  underscored: false  // 使用驼峰式字段名
+  underscored: false,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 });
 
 // 设置关联关系
@@ -1625,13 +1642,31 @@ app.get('/api/v1/sales/statistics/customer-ranking', authMiddleware, async (req,
         'customerId',
         'customerName',
         [Sequelize.fn('COUNT', Sequelize.col('id')), 'orderCount'],
-        [Sequelize.fn('SUM', Sequelize.col('total_amount')), 'totalAmount'],
-        [Sequelize.fn('AVG', Sequelize.col('total_amount')), 'avgAmount']
+        [Sequelize.fn('SUM', Sequelize.col('totalAmount')), 'totalAmount'],
+        [Sequelize.fn('AVG', Sequelize.col('totalAmount')), 'avgAmount']
       ],
       group: ['customerId', 'customerName'],
-      order: [[Sequelize.fn('SUM', Sequelize.col('total_amount')), 'DESC']],
+      order: [[Sequelize.fn('SUM', Sequelize.col('totalAmount')), 'DESC']],
       limit: Number(limit)
     });
+
+    // 获取客户评级信息
+    const customerIds = customerStats.map(item => item.dataValues.customerId);
+    const customers = await Customer.findAll({
+      where: { id: { [Sequelize.Op.in]: customerIds } },
+      attributes: ['id', 'creditRating']
+    });
+
+    const customerRatingMap = {};
+    customers.forEach(customer => {
+      customerRatingMap[customer.id] = customer.creditRating;
+    });
+
+    const customerRanking = customerStats.map(item => ({
+      ...item.dataValues,
+      creditRating: customerRatingMap[item.dataValues.customerId] || 5,
+      satisfactionRate: Math.floor(Math.random() * 20) + 80 // 模拟满意度
+    }));
 
     // 获取客户评级信息
     const customerIds = customerStats.map(item => item.dataValues.customerId);

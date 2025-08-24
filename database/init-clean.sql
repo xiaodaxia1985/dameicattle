@@ -110,24 +110,27 @@ CREATE TABLE IF NOT EXISTS suppliers (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Customers table
+-- Customers table (Updated from sales-service migrations)
 CREATE TABLE IF NOT EXISTS customers (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    contact_person VARCHAR(50),
-    phone VARCHAR(20),
-    email VARCHAR(100),
-    address TEXT,
-    business_license VARCHAR(100),
-    tax_number VARCHAR(50),
-    bank_account VARCHAR(100),
-    credit_rating INTEGER DEFAULT 5 CHECK (credit_rating >= 1 AND credit_rating <= 5),
-    credit_limit DECIMAL(12, 2) DEFAULT 0,
-    status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'blacklisted')),
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    name VARCHAR(255) NOT NULL UNIQUE,
+    "contactPerson" VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL,
+    email VARCHAR(255),
+    address TEXT NOT NULL,
+    "customerType" VARCHAR(20) DEFAULT 'company' CHECK ("customerType" IN ('individual', 'company', 'distributor', 'restaurant')),
+    "businessLicense" VARCHAR(255),
+    "taxNumber" VARCHAR(255),
+    "bankAccount" VARCHAR(255),
+    "creditLimit" DECIMAL(15,2) DEFAULT 0,
+    "creditRating" INTEGER DEFAULT 5 CHECK ("creditRating" >= 1 AND "creditRating" <= 10),
+    "paymentTerms" VARCHAR(255),
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'blacklisted')),
+    remark TEXT,
+    "createdBy" VARCHAR(50) NOT NULL,
+    "createdByName" VARCHAR(100) NOT NULL,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =====================================================
@@ -367,62 +370,87 @@ CREATE TABLE IF NOT EXISTS purchase_order_items (
 -- 8. Sales Management Tables
 -- =====================================================
 
--- Sales orders table
+-- Sales orders table (Updated from sales-service migrations)
 CREATE TABLE IF NOT EXISTS sales_orders (
     id SERIAL PRIMARY KEY,
-    order_number VARCHAR(50) NOT NULL UNIQUE,
-    customer_id INTEGER NOT NULL,
-    base_id INTEGER NOT NULL,
-    order_date DATE NOT NULL,
-    expected_delivery_date DATE,
-    actual_delivery_date DATE,
-    total_amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'pending', 'approved', 'executing', 'completed', 'cancelled')),
-    notes TEXT,
-    created_by INTEGER,
-    approved_by INTEGER,
-    approved_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_sales_orders_customer FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_sales_orders_base FOREIGN KEY (base_id) REFERENCES bases(id) ON DELETE CASCADE,
-    CONSTRAINT fk_sales_orders_creator FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
-    CONSTRAINT fk_sales_orders_approver FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL
+    "orderNumber" VARCHAR(50) NOT NULL UNIQUE,
+    "customerId" INTEGER NOT NULL,
+    "customerName" VARCHAR(255) NOT NULL,
+    "baseId" INTEGER NOT NULL,
+    "baseName" VARCHAR(255) NOT NULL,
+    "totalAmount" DECIMAL(15,2) DEFAULT 0,
+    "taxAmount" DECIMAL(15,2) DEFAULT 0,
+    "discountAmount" DECIMAL(15,2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'delivered', 'completed', 'cancelled')),
+    "paymentStatus" VARCHAR(20) DEFAULT 'unpaid' CHECK ("paymentStatus" IN ('unpaid', 'partial', 'paid')),
+    "paymentMethod" VARCHAR(100),
+    "orderDate" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "expectedDeliveryDate" TIMESTAMP WITH TIME ZONE,
+    "actualDeliveryDate" TIMESTAMP WITH TIME ZONE,
+    "contractNumber" VARCHAR(100),
+    "logisticsCompany" VARCHAR(255),
+    "trackingNumber" VARCHAR(100),
+    remark TEXT,
+    "createdBy" VARCHAR(50) NOT NULL,
+    "createdByName" VARCHAR(100) NOT NULL,
+    "approvedBy" VARCHAR(50),
+    "approvedByName" VARCHAR(100),
+    "approvedAt" TIMESTAMP WITH TIME ZONE,
+    "deliveredBy" VARCHAR(50),
+    "deliveredByName" VARCHAR(100),
+    "deliveredAt" TIMESTAMP WITH TIME ZONE,
+    "deliveryNote" TEXT,
+    "paidBy" VARCHAR(50),
+    "paidByName" VARCHAR(100),
+    "paidAt" TIMESTAMP WITH TIME ZONE,
+    "paidAmount" DECIMAL(15,2) DEFAULT 0,
+    "paymentNote" TEXT,
+    "completedBy" VARCHAR(50),
+    "completedByName" VARCHAR(100),
+    "completedAt" TIMESTAMP WITH TIME ZONE,
+    "completionNote" TEXT,
+    "cancelledBy" VARCHAR(50),
+    "cancelledByName" VARCHAR(100),
+    "cancelledAt" TIMESTAMP WITH TIME ZONE,
+    "cancelReason" TEXT,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Sales order items table
+-- Sales order items table (Updated from sales-service migrations)
 CREATE TABLE IF NOT EXISTS sales_order_items (
     id SERIAL PRIMARY KEY,
-    sales_order_id INTEGER NOT NULL,
-    item_type VARCHAR(20) NOT NULL CHECK (item_type IN ('cattle', 'material', 'equipment')),
-    -- 牛只类字段
-    cattle_id INTEGER,
-    ear_tag VARCHAR(50),
+    "orderId" INTEGER NOT NULL REFERENCES sales_orders(id) ON DELETE CASCADE,
+    "cattleId" INTEGER NOT NULL,
+    "earTag" VARCHAR(50) NOT NULL,
     breed VARCHAR(100),
-    weight DECIMAL(8, 2),
-    -- 物资类字段
-    material_id INTEGER,
-    material_name VARCHAR(100),
-    material_unit VARCHAR(20),
-    -- 设备类字段
-    equipment_id INTEGER,
-    equipment_name VARCHAR(100),
-    equipment_unit VARCHAR(20),
-    specification VARCHAR(100),
-    -- 公共字段
-    unit_price DECIMAL(10, 2) NOT NULL,
-    quantity DECIMAL(10, 2) DEFAULT 1,
-    total_price DECIMAL(12, 2) NOT NULL,
-    delivered BOOLEAN DEFAULT FALSE,
-    delivery_date DATE,
-    order_id INTEGER REFERENCES sales_orders(id) ON DELETE CASCADE,
-    notes TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_sales_order_items_order FOREIGN KEY (sales_order_id) REFERENCES sales_orders(id) ON DELETE CASCADE,
-    CONSTRAINT fk_sales_order_items_cattle FOREIGN KEY (cattle_id) REFERENCES cattle(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_sales_order_items_material FOREIGN KEY (material_id) REFERENCES production_materials(id) ON DELETE RESTRICT,
-    CONSTRAINT fk_sales_order_items_equipment FOREIGN KEY (equipment_id) REFERENCES production_materials(id) ON DELETE RESTRICT
+    weight DECIMAL(8,2) NOT NULL,
+    "unitPrice" DECIMAL(10,2) NOT NULL,
+    "totalPrice" DECIMAL(15,2) NOT NULL,
+    "qualityGrade" VARCHAR(50),
+    "healthCertificate" VARCHAR(255),
+    "quarantineCertificate" VARCHAR(255),
+    "deliveryStatus" VARCHAR(20) DEFAULT 'pending' CHECK ("deliveryStatus" IN ('pending', 'delivered', 'received')),
+    remark TEXT,
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Customer visit records table (Added from sales-service migrations)
+CREATE TABLE IF NOT EXISTS customer_visit_records (
+    id SERIAL PRIMARY KEY,
+    "customerId" INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    "visitDate" TIMESTAMP WITH TIME ZONE NOT NULL,
+    "visitType" VARCHAR(20) DEFAULT 'phone' CHECK ("visitType" IN ('phone', 'visit', 'mail', 'video', 'wechat', 'other')),
+    "visitorId" VARCHAR(50) NOT NULL,
+    "visitorName" VARCHAR(100) NOT NULL,
+    purpose VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    result TEXT,
+    "nextVisitDate" TIMESTAMP WITH TIME ZONE,
+    status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('completed', 'pending', 'cancelled')),
+    "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- =====================================================
@@ -632,11 +660,29 @@ CREATE INDEX IF NOT EXISTS idx_purchase_orders_base_id ON purchase_orders(base_i
 CREATE INDEX IF NOT EXISTS idx_purchase_orders_order_date ON purchase_orders(order_date);
 CREATE INDEX IF NOT EXISTS idx_purchase_orders_status ON purchase_orders(status);
 
--- Sales orders table indexes
-CREATE INDEX IF NOT EXISTS idx_sales_orders_customer_id ON sales_orders(customer_id);
-CREATE INDEX IF NOT EXISTS idx_sales_orders_base_id ON sales_orders(base_id);
-CREATE INDEX IF NOT EXISTS idx_sales_orders_order_date ON sales_orders(order_date);
+-- Sales orders table indexes (Updated for sales-service migrations)
+CREATE INDEX IF NOT EXISTS idx_sales_orders_order_number ON sales_orders("orderNumber");
+CREATE INDEX IF NOT EXISTS idx_sales_orders_customer_id ON sales_orders("customerId");
+CREATE INDEX IF NOT EXISTS idx_sales_orders_base_id ON sales_orders("baseId");
 CREATE INDEX IF NOT EXISTS idx_sales_orders_status ON sales_orders(status);
+CREATE INDEX IF NOT EXISTS idx_sales_orders_payment_status ON sales_orders("paymentStatus");
+CREATE INDEX IF NOT EXISTS idx_sales_orders_order_date ON sales_orders("orderDate");
+CREATE INDEX IF NOT EXISTS idx_sales_orders_created_at ON sales_orders("createdAt");
+
+-- Sales order items table indexes (Added for sales-service migrations)
+CREATE INDEX IF NOT EXISTS idx_sales_order_items_order_id ON sales_order_items("orderId");
+CREATE INDEX IF NOT EXISTS idx_sales_order_items_cattle_id ON sales_order_items("cattleId");
+CREATE INDEX IF NOT EXISTS idx_sales_order_items_ear_tag ON sales_order_items("earTag");
+
+-- Customers table indexes (Updated for sales-service migrations)
+CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);
+CREATE INDEX IF NOT EXISTS idx_customers_status ON customers(status);
+CREATE INDEX IF NOT EXISTS idx_customers_created_at ON customers("createdAt");
+
+-- Customer visit records table indexes (Added for sales-service migrations)
+CREATE INDEX IF NOT EXISTS idx_customer_visit_records_customer_id ON customer_visit_records("customerId");
+CREATE INDEX IF NOT EXISTS idx_customer_visit_records_visit_date ON customer_visit_records("visitDate");
+CREATE INDEX IF NOT EXISTS idx_customer_visit_records_visitor_id ON customer_visit_records("visitorId");
 
 -- News articles table indexes
 CREATE INDEX IF NOT EXISTS idx_news_articles_category_id ON news_articles(category_id);
@@ -804,43 +850,6 @@ ON CONFLICT (config_key) DO UPDATE SET
 INSERT INTO users (username, password_hash, real_name, role, status) VALUES
 ('admin', '$2b$10$rQZ8kHWKtGKVQZ8kHWKtGOyQZ8kHWKtGKVQZ8kHWKtGKVQZ8kHWKtG', 'System Administrator', 'super_admin', 'active')
 ON CONFLICT (username) DO NOTHING;
-
--- Insert material categories
-INSERT INTO material_categories (name, description) VALUES
-('Feed', 'Various feed materials'),
-('Medicine', 'Veterinary medicines and vaccines'),
-('Equipment', 'Farming equipment and tools'),
-('Other', 'Other materials')
-ON CONFLICT (name) DO NOTHING;
-
--- Insert news categories
-INSERT INTO news_categories (name, description, sort_order) VALUES
-('Company News', 'Internal company news', 1),
-('Industry News', 'Industry related news', 2),
-('Policy & Regulation', 'Policy and regulation updates', 3),
-('Technical Sharing', 'Technical knowledge sharing', 4)
-ON CONFLICT (name) DO NOTHING;
-
--- Insert basic feed formulas
-INSERT INTO feed_formulas (name, description, ingredients, cost_per_kg) VALUES
-('Standard Fattening Formula', 'Standard formula for fattening cattle', '{"corn": 60, "soybean_meal": 20, "wheat_bran": 10, "premix": 5, "other": 5}', 4.50),
-('Breeding Cow Formula', 'Nutritional formula for breeding cows', '{"corn": 50, "soybean_meal": 25, "alfalfa": 15, "premix": 5, "other": 5}', 5.20),
-('Calf Starter Formula', 'Formula for calf starter period', '{"corn": 40, "soybean_meal": 30, "milk_powder": 20, "premix": 5, "other": 5}', 8.80)
-ON CONFLICT (name) DO NOTHING;
-
--- Insert basic production materials
-INSERT INTO production_materials (name, code, category_id, unit, description) VALUES
-('Corn', 'FEED001', 1, 'kg', 'Feed corn'),
-('Soybean Meal', 'FEED002', 1, 'kg', 'Feed soybean meal'),
-('Wheat Bran', 'FEED003', 1, 'kg', 'Feed wheat bran'),
-('Alfalfa Hay', 'FEED004', 1, 'kg', 'Premium alfalfa hay'),
-('Premix', 'FEED005', 1, 'kg', 'Vitamin mineral premix'),
-('FMD Vaccine', 'MED001', 2, 'dose', 'Foot and mouth disease vaccine'),
-('Brucellosis Vaccine', 'MED002', 2, 'dose', 'Brucellosis vaccine'),
-('Antibiotic', 'MED003', 2, 'bottle', 'Broad spectrum antibiotic'),
-('Water Dispenser', 'EQP001', 3, 'piece', 'Automatic water dispenser'),
-('Feed Trough', 'EQP002', 3, 'piece', 'Stainless steel feed trough')
-ON CONFLICT (code) DO NOTHING;
 
 -- =====================================================
 -- 15. Create Views
