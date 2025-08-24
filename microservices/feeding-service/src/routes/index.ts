@@ -1,28 +1,25 @@
 import { Router } from 'express';
-import feedingRouter from './feeding';
+import { FeedingController } from '../controllers/FeedingController';
+import feedingRoutes from './feeding';
+import patrolRoutes from './patrol';
 
 const router = Router();
+const controller = new FeedingController();
 
-// Health check route for API Gateway
-router.get('/feeding/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'feeding-service',
-      port: process.env.PORT || 3005
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: (error as Error).message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'feeding-service'
+  });
 });
 
-// Mount routes
-router.use('/feeding', feedingRouter);
+// 饲养管理路由 - 直接处理网关转发的请求
+router.use('/plans', feedingRoutes);
+router.use('/formulas', feedingRoutes);
+router.use('/records', feedingRoutes);
+router.use('/patrol', patrolRoutes);
+router.get('/statistics', controller.getAll.bind(controller));
 
 export default router;

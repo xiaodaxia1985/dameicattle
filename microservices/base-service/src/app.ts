@@ -39,8 +39,18 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// API路由
-app.use('/api/v1', routes);
+// 根路由
+app.get('/', (req, res) => {
+  res.success({
+    service: 'base-service',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  }, 'Base Service API');
+});
+
+// 直接路由（支持网关代理后的路径）
+app.use('/', routes);
 
 // 404处理
 app.use('*', (req, res) => {
@@ -71,10 +81,12 @@ const startServer = async () => {
     // 同步数据库模型（开发环境）
     if (process.env.NODE_ENV === 'development') {
       try {
-        await sequelize.sync({ force: false, alter: false });
-        logger.info('Database models synchronized');
+        // 使用 authenticate 替代 sync 来避免修改现有表结构
+        await sequelize.authenticate();
+        logger.info('Database connection verified');
       } catch (error) {
-        logger.warn('Database sync failed:', error);
+        logger.warn('Database authentication failed:', error);
+        // 继续启动服务，不因数据库验证失败而退出
       }
     }
 

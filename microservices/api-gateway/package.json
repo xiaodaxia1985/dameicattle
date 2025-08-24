@@ -6,8 +6,7 @@
     "scripts": {
         "dev": "nodemon src/app.ts",
         "build": "tsc",
-        "start": "ts-node src/app-simple.ts",
-        "start-built": "node dist/app.js"
+        "start": "npm run build && node dist/app.js"
     },
     "dependencies": {
         "@cattle-management/shared": "file:../shared",

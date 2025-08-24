@@ -4,7 +4,7 @@
     "description":  "Feeding Service",
     "main":  "dist/app.js",
     "scripts":  {
-                    "start":  "node dist/app.js",
+                    "start":  "npm run build && node dist/app.js",
                     "dev":  "node dist/app.js",
                     "build": "tsc",
                     "start:ts": "ts-node src/app.ts"

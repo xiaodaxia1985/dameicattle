@@ -1,23 +1,19 @@
 import { createClient } from 'redis';
 import { logger } from '../utils/logger';
 
-const {
-  REDIS_HOST = 'localhost',
-  REDIS_PORT = '6379',
-  REDIS_URL = `redis://${REDIS_HOST}:${REDIS_PORT}`,
-} = process.env;
-
-export const redisClient = createClient({
-  url: REDIS_URL,
+const redisClient = createClient({
+  url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-redisClient.on('error', (err) => {
-  logger.error('Redis Client Error:', err);
+redisClient.on('error', (err: any) => {
+  logger.error('Redis Client Error', err);
 });
 
 redisClient.on('connect', () => {
-  logger.info('Redis connected successfully');
+  logger.info('Redis Client Connected');
 });
+
+export { redisClient };
 
 export const initializeRedis = async (): Promise<void> => {
   try {

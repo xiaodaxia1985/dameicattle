@@ -1,5 +1,6 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database';
+import { Base } from './Base';
 
 interface BarnAttributes {
   id: number;
@@ -34,6 +35,9 @@ export class Barn extends Model<BarnAttributes, BarnCreationAttributes> implemen
   public utilization_rate?: number;
   public available_capacity?: number;
   public equipment_count?: number;
+
+  // Association
+  public base?: Base;
 
   public toJSON(): any {
     const values = { ...this.get() };

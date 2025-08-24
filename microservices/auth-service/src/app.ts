@@ -5,6 +5,7 @@ import { initializeRedis } from './config/redis';
 import { logger } from './utils/logger';
 import { responseWrapper } from './middleware/responseWrapper';
 import { errorHandler } from './middleware/errorHandler';
+import { AuthController } from './controllers/AuthController';
 import routes from './routes';
 
 // 加载环境变量
@@ -14,8 +15,16 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // 基础中间件
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// 设置请求超时
+app.use((req, res, next) => {
+  req.setTimeout(30000); // 30秒超时
+  res.setTimeout(30000);
+  next();
+});
+
 app.use(responseWrapper);
 
 // 健康检查
@@ -36,16 +45,56 @@ app.get('/health', async (req, res) => {
     }, 'Health check completed');
   } catch (error) {
     logger.error('Health check failed:', error);
-    res.error('Health check failed', 500, 'HEALTH_CHECK_FAILED');
+    if (res.error && typeof res.error === 'function') {
+      res.error('Health check failed', 500, 'HEALTH_CHECK_FAILED');
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Health check failed',
+        code: 'HEALTH_CHECK_FAILED',
+        meta: {
+          timestamp: new Date().toISOString(),
+          requestId: req.requestId || 'unknown',
+          version: '1.0.0'
+        }
+      });
+    }
   }
 });
 
-// API路由
-app.use('/api/v1', routes);
+// 根路由
+app.get('/', (req, res) => {
+  res.success({
+    service: 'auth-service',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  }, 'Auth Service API');
+});
+
+// 直接登录路由（兼容性）
+const authController = new AuthController();
+app.post('/login', authController.login.bind(authController));
+
+// 直接路由（支持网关代理后的路径）
+app.use('/', routes);
 
 // 404处理
 app.use('*', (req, res) => {
-  res.error('Route not found', 404, 'ROUTE_NOT_FOUND');
+  if (res.error && typeof res.error === 'function') {
+    res.error('Route not found', 404, 'ROUTE_NOT_FOUND');
+  } else {
+    res.status(404).json({
+      success: false,
+      message: 'Route not found',
+      code: 'ROUTE_NOT_FOUND',
+      meta: {
+        timestamp: new Date().toISOString(),
+        requestId: req.requestId || 'unknown',
+        version: '1.0.0'
+      }
+    });
+  }
 });
 
 // 错误处理

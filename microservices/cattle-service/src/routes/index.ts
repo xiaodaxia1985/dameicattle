@@ -3,26 +3,21 @@ import cattleRouter from './cattle';
 
 const router = Router();
 
-// Health check route for API Gateway
-router.get('/cattle/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'cattle-service',
-      port: process.env.PORT || 3003
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: error.message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'cattle-service'
+  });
 });
 
-// Mount routes
+// 牛只管理路由 - 直接处理网关转发的请求（网关已重写路径）
 router.use('/cattle', cattleRouter);
+
+// 错误处理
+router.use((error: any, req: any, res: any, next: any) => {
+  res.status(500).json({ error: error.message });
+});
 
 export default router;

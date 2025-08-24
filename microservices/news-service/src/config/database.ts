@@ -1,37 +1,23 @@
 import { Sequelize } from 'sequelize';
-import { createLogger } from '@cattle-management/shared';
+import { logger } from '../utils/logger';
 
-const logger = createLogger('news-service-database');
-
-const sequelize = new Sequelize({
+export const sequelize = new Sequelize({
+  dialect: 'postgres',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'news_db',
+  database: process.env.DB_NAME || 'cattle_management',
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'dianxin99',
-  dialect: 'postgres',
-  logging: (msg) => logger.debug(msg),
-  pool: {
-    max: 10,
-    min: 0,
-    acquire: 30000,
-    idle: 10000
-  }
+  logging: false
 });
 
-export { sequelize };
-
-export const connectDatabase = async () => {
+export const connectDatabase = async (): Promise<boolean> => {
   try {
     await sequelize.authenticate();
     logger.info('Database connection established successfully');
-    
-    await sequelize.sync({ alter: true });
-    logger.info('Database models synchronized');
-    
     return true;
   } catch (error) {
-    logger.error('Unable to connect to database', { error: (error as Error).message });
+    logger.error('Unable to connect to database:', error);
     return false;
   }
 };

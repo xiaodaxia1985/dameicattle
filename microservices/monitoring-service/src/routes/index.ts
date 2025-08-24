@@ -1,27 +1,25 @@
 import { Router } from 'express';
-import monitoringRouter from './monitoring';
+import { MonitoringController } from '../controllers/MonitoringController';
 
 const router = Router();
+const controller = new MonitoringController();
 
-// Health check route for API Gateway
-router.get('/monitoring/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'monitoring-service',
-      port: process.env.PORT || 3012
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: error.message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'monitoring-service'
+  });
 });
 
-router.use('/monitoring', monitoringRouter);
+// 监控管理路由 - 直接处理网关转发的请求
+router.get('/metrics/system', controller.getAll.bind(controller));
+router.get('/metrics/business', controller.getAll.bind(controller));
+router.get('/metrics/database', controller.getAll.bind(controller));
+router.get('/performance', controller.getAll.bind(controller));
+router.get('/logs', controller.getAll.bind(controller));
+router.get('/alerts', controller.getAll.bind(controller));
+router.post('/alerts', controller.create.bind(controller));
 
 export default router;

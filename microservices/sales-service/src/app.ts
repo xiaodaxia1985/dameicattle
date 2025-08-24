@@ -37,8 +37,18 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Mount routes
-app.use('/api/v1', routes);
+// 根路由
+app.get('/', (req, res) => {
+  res.success({
+    service: 'sales-service',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  }, 'Sales Service API');
+});
+
+// 直接路由（支持网关代理后的路径）
+app.use('/', routes);
 
 app.use('*', (req, res) => {
   res.error('Route not found', 404, 'ROUTE_NOT_FOUND');

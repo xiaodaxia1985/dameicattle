@@ -11,6 +11,17 @@ const app = express();
 const logger = createLogger('api-gateway');
 const PORT = process.env.PORT || 3000;
 
+// 请求日志中间件
+app.use((req, res, next) => {
+  logger.info(`收到请求: ${req.method} ${req.url}`, {
+    headers: req.headers,
+    body: req.method !== 'GET' ? req.body : undefined,
+    query: req.query,
+    ip: req.ip
+  });
+  next();
+});
+
 // 基础中间件
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));

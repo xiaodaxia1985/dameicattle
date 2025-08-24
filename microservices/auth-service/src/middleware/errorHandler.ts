@@ -13,6 +13,11 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
+  // 如果响应已经发送或连接已断开，直接返回
+  if (res.headersSent || error.code === 'ECONNABORTED') {
+    return next(error);
+  }
+
   // 记录错误日志
   logger.error('API Error', {
     requestId: req.requestId,
@@ -42,5 +47,19 @@ export const errorHandler = (
   }
 
   // 发送错误响应
-  res.error(message, statusCode, error.code);
+  if (res.error && typeof res.error === 'function') {
+    res.error(message, statusCode, error.code);
+  } else {
+    // Fallback if res.error is not available
+    res.status(statusCode).json({
+      success: false,
+      message,
+      code: error.code,
+      meta: {
+        timestamp: new Date().toISOString(),
+        requestId: req.requestId || 'unknown',
+        version: '1.0.0'
+      }
+    });
+  }
 };

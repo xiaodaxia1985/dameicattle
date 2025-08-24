@@ -128,6 +128,7 @@ Customer.init(
       type: DataTypes.STRING(20),
       allowNull: false,
       defaultValue: 'active',
+      field: 'status',
       validate: {
         isIn: [['active', 'inactive', 'blacklisted']]
       }

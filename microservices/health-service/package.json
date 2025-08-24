@@ -4,7 +4,7 @@
     "description": "Health Service",
     "main": "app.js",
     "scripts": {
-        "start": "node dist/app.js",
+        "start": "npm run build && node dist/app.js",
         "dev": "ts-node src/app.ts",
         "build": "tsc"
     },

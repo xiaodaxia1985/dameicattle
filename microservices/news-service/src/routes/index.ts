@@ -1,27 +1,22 @@
 import { Router } from 'express';
-import newsRouter from './news';
+import { NewsController } from '../controllers/NewsController';
 
 const router = Router();
+const controller = new NewsController();
 
-// Health check route for API Gateway
-router.get('/news/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'news-service',
-      port: process.env.PORT || 3013
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: error.message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'news-service'
+  });
 });
 
-router.use('/news', newsRouter);
+// 新闻管理路由 - 直接处理网关转发的请求
+router.get('/articles', controller.getAll.bind(controller));
+router.post('/articles', controller.create.bind(controller));
+router.get('/categories', controller.getAll.bind(controller));
+router.post('/categories', controller.create.bind(controller));
 
 export default router;

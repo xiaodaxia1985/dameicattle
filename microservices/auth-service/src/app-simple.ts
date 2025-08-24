@@ -83,6 +83,58 @@ app.post('/api/v1/auth/login', (req, res) => {
   });
 });
 
+// 添加/login路径支持API网关转发
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+  
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      message: '用户名和密码不能为空',
+      code: 'MISSING_CREDENTIALS'
+    });
+  }
+  
+  // 简单的测试认证
+  if (username === 'admin' && password === 'admin123') {
+    // 生成真正的JWT令牌
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'cattle-management-secret-key-2024';
+    
+    const token = jwt.sign(
+      {
+        id: 1,
+        username: 'admin',
+        role_id: 1,
+        base_id: null // admin can access all bases
+      },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+    
+    return res.json({
+      success: true,
+      message: '登录成功',
+      data: {
+        token,
+        user: {
+          id: 1,
+          username: 'admin',
+          role: 'admin',
+          role_id: 1,
+          base_id: null
+        }
+      }
+    });
+  }
+  
+  res.status(401).json({
+    success: false,
+    message: '用户名或密码错误',
+    code: 'INVALID_CREDENTIALS'
+  });
+});
+
 app.get('/api/v1/auth/profile', (req, res) => {
   res.json({
     success: true,

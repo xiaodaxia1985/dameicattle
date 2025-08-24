@@ -39,8 +39,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// API路由
-app.use('/api/v1', routes);
+// 直接路由（支持网关代理后的路径）
+app.use('/', routes);
 
 // 404处理
 app.use('*', (req, res) => {

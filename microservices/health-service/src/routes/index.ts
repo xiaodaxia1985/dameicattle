@@ -1,28 +1,34 @@
 import { Router } from 'express';
-import healthRouter from './health';
+import { HealthController } from '../controllers/HealthController';
 
 const router = Router();
+const controller = new HealthController();
 
-// Health check route for API Gateway (different from business health routes)
-router.get('/health/status', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'health-service',
-      port: process.env.PORT || 3004
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: (error as Error).message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'health-service'
+  });
 });
 
-// Mount routes
-router.use('/health', healthRouter);
+// 健康管理路由 - 直接处理网关转发的请求
+router.get('/records', controller.getAll.bind(controller));
+router.post('/records', controller.create.bind(controller));
+// 移除了不存在的方法
+
+
+
+// 疫苗管理路由
+router.get('/vaccines', controller.getAll.bind(controller));
+router.post('/vaccines', controller.create.bind(controller));
+
+// 疾病管理路由
+router.get('/diseases', controller.getAll.bind(controller));
+router.post('/diseases', controller.create.bind(controller));
+
+// 统计路由
+router.get('/statistics', controller.getAll.bind(controller));
 
 export default router;

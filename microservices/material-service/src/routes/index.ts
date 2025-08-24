@@ -1,28 +1,31 @@
 import { Router } from 'express';
-import materialsRouter from './materials';
+import { MaterialController } from '../controllers/MaterialController';
 
 const router = Router();
+const controller = new MaterialController();
 
-// Health check route for API Gateway
-router.get('/material/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'material-service',
-      port: process.env.PORT || 3009
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: (error as Error).message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'material-service'
+  });
 });
 
-// Mount routes
-router.use('/material', materialsRouter);
+// 物料管理路由 - 直接处理网关转发的请求
+router.get('/materials', controller.getAll.bind(controller));
+router.post('/materials', controller.create.bind(controller));
+
+// 库存管理路由
+router.get('/inventory', controller.getAll.bind(controller));
+router.post('/inventory/in', controller.create.bind(controller));
+router.post('/inventory/out', controller.create.bind(controller));
+
+// 预警管理路由
+router.get('/alerts', controller.getAll.bind(controller));
+
+// 统计路由
+router.get('/statistics', controller.getAll.bind(controller));
 
 export default router;

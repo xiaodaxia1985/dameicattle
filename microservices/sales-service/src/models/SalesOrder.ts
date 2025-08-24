@@ -111,7 +111,8 @@ SalesOrder.init(
     },
     status: {
       type: DataTypes.ENUM('pending', 'approved', 'delivered', 'completed', 'cancelled'),
-      defaultValue: 'pending'
+      defaultValue: 'pending',
+      field: 'status'
     },
     paymentStatus: {
       type: DataTypes.ENUM('unpaid', 'partial', 'paid'),

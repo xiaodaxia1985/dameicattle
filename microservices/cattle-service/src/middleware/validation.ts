@@ -1,35 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
-import Joi from 'joi';
-import { logger } from '../utils/logger';
+import * as Joi from 'joi';
 
-export const validateRequest = (schema: Joi.ObjectSchema) => {
+export const validate = (schema: Joi.ObjectSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const { error, value } = schema.validate(req.body, {
-      abortEarly: false,
-      allowUnknown: false,
-      stripUnknown: true,
-    });
-
+    const { error } = schema.validate(req.body);
     if (error) {
-      const details = error.details.map(detail => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-        code: detail.type,
-        value: detail.context?.value,
-      }));
-
-      logger.warn('Request validation failed', {
-        path: req.path,
-        method: req.method,
-        errors: details,
-        requestId: req.requestId,
+      res.status(400).json({ 
+        error: error.details.map((detail: any) => detail.message) 
       });
-
-      res.error('请求数据验证失败', 400, 'VALIDATION_ERROR', details);
       return;
     }
-
-    req.body = value;
     next();
   };
 };

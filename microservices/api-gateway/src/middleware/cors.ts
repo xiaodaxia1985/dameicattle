@@ -5,6 +5,7 @@ export const cors = (req: Request, res: Response, next: NextFunction) => {
   const allowedOrigins = [
     'http://localhost:3000',
     'http://localhost:3001',
+    'http://localhost:5173', // 前端开发服务器
     'http://localhost:8080',
     'https://cattle-management.com'
   ];

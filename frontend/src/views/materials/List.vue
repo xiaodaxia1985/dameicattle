@@ -15,7 +15,7 @@
           <el-input v-model="searchForm.code" placeholder="请输入物资编码" clearable />
         </el-form-item>
         <el-form-item label="分类">
-          <el-select v-model="searchForm.categoryId" placeholder="请选择分类" clearable>
+          <el-select v-model="searchForm.category_id" placeholder="请选择分类" clearable>
             <el-option
               v-for="category in categories"
               :key="category.id"
@@ -25,7 +25,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="供应商">
-          <el-select v-model="searchForm.supplierId" placeholder="请选择供应商" clearable>
+          <el-select v-model="searchForm.supplier_id" placeholder="请选择供应商" clearable>
             <el-option
               v-for="supplier in suppliers"
               :key="supplier.id"
@@ -47,8 +47,8 @@
       <el-table :data="tableData" v-loading="loading" stripe>
         <el-table-column prop="code" label="物资编码" width="120" />
         <el-table-column prop="name" label="物资名称" min-width="150" />
-        <el-table-column prop="categoryName" label="分类" width="120" />
-        <el-table-column prop="supplierName" label="供应商" width="150" />
+        <el-table-column prop="category_name" label="分类" width="120" />
+        <el-table-column prop="supplier_name" label="供应商" width="150" />
         <el-table-column prop="unit" label="单位" width="80" />
         <el-table-column prop="price" label="参考价格" width="100">
           <template #default="{ row }">
@@ -64,9 +64,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column prop="created_at" label="创建时间" width="180">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
@@ -111,8 +111,8 @@
         <el-form-item label="物资名称" prop="name">
           <el-input v-model="formData.name" placeholder="请输入物资名称" />
         </el-form-item>
-        <el-form-item label="分类" prop="categoryId">
-          <el-select v-model="formData.categoryId" placeholder="请选择分类" style="width: 100%">
+        <el-form-item label="分类" prop="category_id">
+          <el-select v-model="formData.category_id" placeholder="请选择分类" style="width: 100%">
             <el-option
               v-for="category in categories"
               :key="category.id"
@@ -121,8 +121,8 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="供应商" prop="supplierId">
-          <el-select v-model="formData.supplierId" placeholder="请选择供应商" style="width: 100%">
+        <el-form-item label="供应商" prop="supplier_id">
+          <el-select v-model="formData.supplier_id" placeholder="请选择供应商" style="width: 100%">
             <el-option
               v-for="supplier in suppliers"
               :key="supplier.id"
@@ -166,8 +166,8 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="物资编码">{{ viewData.code }}</el-descriptions-item>
         <el-descriptions-item label="物资名称">{{ viewData.name }}</el-descriptions-item>
-        <el-descriptions-item label="分类">{{ viewData.categoryName }}</el-descriptions-item>
-        <el-descriptions-item label="供应商">{{ viewData.supplierName }}</el-descriptions-item>
+        <el-descriptions-item label="分类">{{ viewData.category_name }}</el-descriptions-item>
+        <el-descriptions-item label="供应商">{{ viewData.supplier_name }}</el-descriptions-item>
         <el-descriptions-item label="单位">{{ viewData.unit }}</el-descriptions-item>
         <el-descriptions-item label="参考价格">
           <span v-if="viewData.price">¥{{ viewData.price }}</span>
@@ -180,7 +180,7 @@
           </el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="创建时间" :span="2">
-          {{ formatDate(viewData.createdAt) }}
+          {{ formatDate(viewData.created_at) }}
         </el-descriptions-item>
         <el-descriptions-item label="描述" :span="2">
           {{ viewData.description || '-' }}
@@ -209,8 +209,8 @@ const formRef = ref<FormInstance>()
 const searchForm = reactive({
   name: '',
   code: '',
-  categoryId: '',
-  supplierId: ''
+  category_id: '',
+  supplier_id: ''
 })
 
 // 表格数据
@@ -230,8 +230,8 @@ const formData = reactive({
   id: '',
   code: '',
   name: '',
-  categoryId: '',
-  supplierId: '',
+  category_id: '',
+  supplier_id: '',
   unit: '',
   price: 0,
   stock: 0,
@@ -246,8 +246,8 @@ const viewData = ref({})
 const formRules = {
   code: [{ required: true, message: '请输入物资编码', trigger: 'blur' }],
   name: [{ required: true, message: '请输入物资名称', trigger: 'blur' }],
-  categoryId: [{ required: true, message: '请选择分类', trigger: 'change' }],
-  supplierId: [{ required: true, message: '请选择供应商', trigger: 'change' }],
+  category_id: [{ required: true, message: '请选择分类', trigger: 'change' }],
+  supplier_id: [{ required: true, message: '请选择供应商', trigger: 'change' }],
   unit: [{ required: true, message: '请输入单位', trigger: 'blur' }]
 }
 
@@ -301,8 +301,8 @@ const handleReset = () => {
   Object.assign(searchForm, {
     name: '',
     code: '',
-    categoryId: '',
-    supplierId: ''
+    category_id: '',
+    supplier_id: ''
   })
   handleSearch()
 }
@@ -384,8 +384,8 @@ const resetForm = () => {
     id: '',
     code: '',
     name: '',
-    categoryId: '',
-    supplierId: '',
+    category_id: '',
+    supplier_id: '',
     unit: '',
     price: 0,
     stock: 0,

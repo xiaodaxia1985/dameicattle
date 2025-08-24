@@ -4,39 +4,36 @@ import { authMiddleware, dataPermissionMiddleware } from '../middleware/auth';
 
 const router = Router();
 
-// Apply authentication middleware to all routes
-router.use(authMiddleware);
-
 // 采购订单路由
-router.get('/orders', dataPermissionMiddleware, ProcurementController.getProcurementOrders);
-router.get('/orders/:id', dataPermissionMiddleware, ProcurementController.getProcurementOrderById);
-router.post('/orders', dataPermissionMiddleware, ProcurementController.createProcurementOrder);
-router.put('/orders/:id', dataPermissionMiddleware, ProcurementController.updateProcurementOrder);
-router.delete('/orders/:id', dataPermissionMiddleware, ProcurementController.deleteProcurementOrder);
+router.get('/orders', authMiddleware, dataPermissionMiddleware, ProcurementController.getProcurementOrders);
+router.post('/orders', authMiddleware, dataPermissionMiddleware, ProcurementController.createProcurementOrder);
+router.get('/orders/:id', authMiddleware, dataPermissionMiddleware, ProcurementController.getProcurementOrderById);
+router.put('/orders/:id', authMiddleware, dataPermissionMiddleware, ProcurementController.updateProcurementOrder);
+router.delete('/orders/:id', authMiddleware, dataPermissionMiddleware, ProcurementController.deleteProcurementOrder);
 
-// 采购订单状态管理
-router.post('/orders/:id/approve', dataPermissionMiddleware, ProcurementController.approveProcurementOrder);
-router.post('/orders/:id/cancel', dataPermissionMiddleware, ProcurementController.cancelProcurementOrder);
-router.post('/orders/:id/delivery', dataPermissionMiddleware, ProcurementController.confirmDelivery);
+// 订单操作
+router.post('/orders/:id/approve', authMiddleware, dataPermissionMiddleware, ProcurementController.approveProcurementOrder);
+router.post('/orders/:id/cancel', authMiddleware, dataPermissionMiddleware, ProcurementController.cancelProcurementOrder);
+router.post('/orders/:id/confirm-delivery', authMiddleware, dataPermissionMiddleware, ProcurementController.confirmDelivery);
 
 // 供应商路由
-router.get('/suppliers', ProcurementController.getSuppliers);
-router.get('/suppliers/:id', ProcurementController.getSupplierById);
-router.post('/suppliers', ProcurementController.createSupplier);
-router.put('/suppliers/:id', ProcurementController.updateSupplier);
-router.delete('/suppliers/:id', ProcurementController.deleteSupplier);
+router.get('/suppliers', authMiddleware, ProcurementController.getSuppliers);
+router.post('/suppliers', authMiddleware, ProcurementController.createSupplier);
+router.get('/suppliers/:id', authMiddleware, ProcurementController.getSupplierById);
+router.put('/suppliers/:id', authMiddleware, ProcurementController.updateSupplier);
+router.delete('/suppliers/:id', authMiddleware, ProcurementController.deleteSupplier);
 
-// 供应商统计和评价
-router.get('/suppliers/:id/statistics', ProcurementController.getSupplierStatistics);
+// 统计和报表
+router.get('/suppliers/statistics', authMiddleware, ProcurementController.getSupplierStatistics);
 
-// 采购趋势分析
-router.get('/trend', dataPermissionMiddleware, ProcurementController.getProcurementTrend);
+// 趋势分析
+router.get('/trend', authMiddleware, dataPermissionMiddleware, ProcurementController.getProcurementTrend);
 
 // 导出功能
-router.get('/orders/export', dataPermissionMiddleware, ProcurementController.exportProcurementOrders);
-router.get('/suppliers/export', ProcurementController.exportSuppliers);
+router.get('/export/orders', authMiddleware, dataPermissionMiddleware, ProcurementController.exportProcurementOrders);
+router.get('/export/suppliers', authMiddleware, ProcurementController.exportSuppliers);
 
-// 统计路由
-router.get('/statistics', dataPermissionMiddleware, ProcurementController.getProcurementStatistics);
+// 统计数据
+router.get('/statistics', authMiddleware, dataPermissionMiddleware, ProcurementController.getProcurementStatistics);
 
 export default router;

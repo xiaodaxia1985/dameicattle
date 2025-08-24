@@ -1,5 +1,28 @@
 # Start microservices using npm directly (no Docker)
 
+param(
+    [switch]$Rebuild,
+    [switch]$Help
+)
+
+if ($Help) {
+    Write-Host "Usage: .\start-services-npm.ps1 [-Rebuild] [-Help]" -ForegroundColor Cyan
+    Write-Host "  -Rebuild: Clean and rebuild all services before starting" -ForegroundColor Yellow
+    Write-Host "  -Help: Show this help message" -ForegroundColor Yellow
+    exit 0
+}
+
+if ($Rebuild) {
+    Write-Host "Rebuilding all microservices first..." -ForegroundColor Green
+    & ".\rebuild-all.ps1"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "Rebuild failed, aborting startup" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "Rebuild completed, starting services..." -ForegroundColor Green
+    Write-Host ""
+}
+
 Write-Host "Starting microservices using npm..." -ForegroundColor Green
 
 # Check Node.js
@@ -69,7 +92,24 @@ function Start-ServiceWithHealthCheck {
         [int]$StartupDelay = 3
     )
     
-    Write-Host "Starting $ServiceName..." -ForegroundColor Yellow
+    Write-Host "Building and starting $ServiceName..." -ForegroundColor Yellow
+    
+    # Force build before starting
+    Write-Host "  Building $ServiceName..." -ForegroundColor Cyan
+    $buildResult = Start-Process powershell -ArgumentList "-Command", "cd '$ServiceDir'; npm run build" -Wait -PassThru -WindowStyle Hidden
+    
+    if ($buildResult.ExitCode -ne 0) {
+        Write-Host "  Build failed for $ServiceName" -ForegroundColor Red
+        $script:serviceStatus += @{
+            Name = $ServiceName
+            Port = $Port
+            Status = "FAIL - Build failed"
+            Healthy = $false
+        }
+        return
+    }
+    
+    Write-Host "  Starting $ServiceName..." -ForegroundColor Cyan
     Start-Process powershell -ArgumentList "-Command", "cd '$ServiceDir'; npm start > ../logs/$ServiceName.log 2>&1" -WindowStyle Hidden
     
     Start-Sleep -Seconds $StartupDelay
@@ -86,6 +126,7 @@ function Start-ServiceWithHealthCheck {
 # Start services with health checks
 Write-Host ""
 Write-Host "Starting microservices with health checks..." -ForegroundColor Cyan
+Write-Host "Note: Services will use their configured start scripts (some use ts-node, others compile first)." -ForegroundColor Yellow
 Write-Host ""
 
 # Start auth service

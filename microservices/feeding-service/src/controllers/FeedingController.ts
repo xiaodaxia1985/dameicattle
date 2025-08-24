@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { Op } from 'sequelize';
 import { FeedFormula, FeedingRecord, User } from '../models';
 import { logger } from '../utils/logger';
@@ -485,6 +485,206 @@ export class FeedingController {
   }
 
   /**
+   * Get formulas (alias for getFeedFormulas)
+   */
+  static async getFormulas(req: Request, res: Response) {
+    return FeedingController.getFeedFormulas(req, res);
+  }
+
+  /**
+   * Get formula by ID (alias for getFeedFormula)
+   */
+  static async getFormulaById(req: Request, res: Response) {
+    return FeedingController.getFeedFormula(req, res);
+  }
+
+  /**
+   * Create formula (alias for createFeedFormula)
+   */
+  static async createFormula(req: Request, res: Response) {
+    return FeedingController.createFeedFormula(req, res);
+  }
+
+  /**
+   * Update formula (alias for updateFeedFormula)
+   */
+  static async updateFormula(req: Request, res: Response) {
+    return FeedingController.updateFeedFormula(req, res);
+  }
+
+  /**
+   * Delete formula (alias for deleteFeedFormula)
+   */
+  static async deleteFormula(req: Request, res: Response) {
+    return FeedingController.deleteFeedFormula(req, res);
+  }
+
+  /**
+   * Get feeding efficiency analysis
+   */
+  static async getFeedingEfficiency(req: Request, res: Response) {
+    try {
+      const { base_id, start_date, end_date } = req.query;
+
+      const whereClause: any = {};
+
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        if (base_id) {
+          whereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        whereClause.base_id = -1;
+      }
+
+      // Date range filter
+      if (start_date || end_date) {
+        whereClause.feeding_date = {};
+        if (start_date) {
+          whereClause.feeding_date[Op.gte] = start_date;
+        }
+        if (end_date) {
+          whereClause.feeding_date[Op.lte] = end_date;
+        }
+      }
+
+      const records = await FeedingRecord.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: FeedFormula,
+            as: 'formula',
+            attributes: ['id', 'name', 'cost_per_kg']
+          }
+        ]
+      });
+
+      // Calculate efficiency metrics
+      const totalAmount = records.reduce((sum, record) => sum + Number(record.amount), 0);
+      let totalCost = 0;
+      records.forEach(record => {
+        if ((record as any).formula?.cost_per_kg) {
+          totalCost += Number(record.amount) * Number((record as any).formula.cost_per_kg);
+        }
+      });
+
+      const averageCostPerKg = totalAmount > 0 ? totalCost / totalAmount : 0;
+      const recordCount = records.length;
+
+      const efficiency = {
+        recordCount,
+        totalAmount,
+        totalCost,
+        averageCostPerKg
+      };
+
+      res.success(efficiency, '获取饲喂效率分析成功');
+    } catch (error) {
+      logger.error('Error fetching feeding efficiency:', error);
+      res.error('获取饲喂效率分析失败', 500, 'FEEDING_EFFICIENCY_ERROR');
+    }
+  }
+
+  /**
+   * Get feeding trend data
+   */
+  static async getFeedingTrend(req: Request, res: Response) {
+    try {
+      const { base_id, start_date, end_date, period = '30d' } = req.query;
+
+      const whereClause: any = {};
+
+      // 数据权限过滤
+      const dataPermission = (req as any).dataPermission;
+      if (!dataPermission || dataPermission.canAccessAllBases) {
+        if (base_id) {
+          whereClause.base_id = base_id;
+        }
+      } else if (dataPermission.baseId) {
+        whereClause.base_id = dataPermission.baseId;
+      } else {
+        whereClause.base_id = -1;
+      }
+
+      // Date range filter
+      if (start_date || end_date) {
+        whereClause.feeding_date = {};
+        if (start_date) {
+          whereClause.feeding_date[Op.gte] = start_date;
+        }
+        if (end_date) {
+          whereClause.feeding_date[Op.lte] = end_date;
+        }
+      }
+
+      const records = await FeedingRecord.findAll({
+        where: whereClause,
+        include: [
+          {
+            model: FeedFormula,
+            as: 'formula',
+            attributes: ['id', 'name', 'cost_per_kg']
+          }
+        ],
+        order: [['feeding_date', 'ASC']]
+      });
+
+      // Group by date and calculate daily metrics
+      const dailyData = records.reduce((acc, record) => {
+        let date: string;
+        try {
+          if (record.feeding_date instanceof Date) {
+            date = record.feeding_date.toISOString().split('T')[0];
+          } else {
+            const dateStr = String(record.feeding_date);
+            if (dateStr.includes('T')) {
+              date = dateStr.split('T')[0];
+            } else {
+              date = new Date(dateStr).toISOString().split('T')[0];
+            }
+          }
+        } catch (error) {
+          date = new Date().toISOString().split('T')[0];
+        }
+
+        if (!acc[date]) {
+          acc[date] = { 
+            date, 
+            amount: 0, 
+            cost: 0, 
+            count: 0,
+            avg_cost: 0
+          };
+        }
+        
+        const amount = Number(record.amount);
+        const costPerKg = Number((record as any).formula?.cost_per_kg || 0);
+        const cost = amount * costPerKg;
+        
+        acc[date].amount += amount;
+        acc[date].cost += cost;
+        acc[date].count += 1;
+        
+        return acc;
+      }, {} as Record<string, { date: string; amount: number; cost: number; count: number; avg_cost: number }>);
+
+      // Calculate average cost per kg for each day
+      const trendData = Object.values(dailyData).map(day => ({
+        ...day,
+        avg_cost: day.amount > 0 ? day.cost / day.amount : 0
+      }));
+
+      res.success(trendData, '获取饲喂趋势数据成功');
+    } catch (error) {
+      logger.error('Error fetching feeding trend:', error);
+      res.error('获取饲喂趋势数据失败', 500, 'FEEDING_TREND_ERROR');
+    }
+  }
+
+  /**
    * Get feeding statistics
    */
   static async getFeedingStatistics(req: Request, res: Response) {
@@ -593,6 +793,23 @@ export class FeedingController {
     } catch (error) {
       logger.error('Error fetching feeding statistics:', error);
       res.error('获取饲喂统计信息失败', 500, 'FEEDING_STATISTICS_ERROR');
+    }
+  }
+
+  // 实例方法用于路由绑定
+  public async getAll(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await FeedingController.getFeedingRecords(req, res);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  public async create(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await FeedingController.createFeedingRecord(req, res);
+    } catch (error) {
+      next(error);
     }
   }
 }

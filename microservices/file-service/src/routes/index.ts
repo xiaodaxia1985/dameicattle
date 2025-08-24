@@ -1,27 +1,22 @@
 import { Router } from 'express';
-import filesRouter from './files';
+import { FileController } from '../controllers/FileController';
 
 const router = Router();
+const controller = new FileController();
 
-// Health check route for API Gateway
-router.get('/file/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'file-service',
-      port: process.env.PORT || 3011
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: error.message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'file-service'
+  });
 });
 
-router.use('/file', filesRouter);
+// 文件管理路由 - 直接处理网关转发的请求
+router.post('/upload', controller.create.bind(controller));
+router.post('/upload/batch', controller.create.bind(controller));
+router.get('/files', controller.getAll.bind(controller));
+router.get('/files/:id/download', controller.getAll.bind(controller));
 
 export default router;

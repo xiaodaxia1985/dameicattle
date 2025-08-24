@@ -36,11 +36,21 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// 根路由
+app.get('/', (req, res) => {
+  res.success({
+    service: 'feeding-service',
+    version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString()
+  }, 'Feeding Service API');
+});
+
 // Import routes
 import routes from './routes';
 
-// Mount routes
-app.use('/api/v1', routes);
+// 直接路由（支持网关代理后的路径）
+app.use('/', routes);
 
 app.use('*', (req, res) => {
   res.error('Route not found', 404, 'ROUTE_NOT_FOUND');
@@ -65,10 +75,11 @@ const startServer = async () => {
 
     if (process.env.NODE_ENV === 'development') {
       try {
-        await sequelize.sync({ force: false, alter: true });
+        await sequelize.sync({ force: false, alter: false });
         logger.info('Database models synchronized');
       } catch (error) {
         logger.warn('Database sync failed:', error);
+        // 继续启动服务，不因数据库同步失败而退出
       }
     }
 

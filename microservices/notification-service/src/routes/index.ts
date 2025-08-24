@@ -1,27 +1,20 @@
 import { Router } from 'express';
-import notificationsRouter from './notifications';
+import { NotificationController } from '../controllers/NotificationController';
 
 const router = Router();
+const controller = new NotificationController();
 
-// Health check route for API Gateway
-router.get('/notification/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'notification-service',
-      port: process.env.PORT || 3010
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: error.message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'notification-service'
+  });
 });
 
-router.use('/notification', notificationsRouter);
+// 通知管理路由 - 直接处理网关转发的请求
+router.get('/notifications', controller.getAll.bind(controller));
+router.post('/notifications', controller.create.bind(controller));
 
 export default router;

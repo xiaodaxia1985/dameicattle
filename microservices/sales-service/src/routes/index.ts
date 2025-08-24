@@ -3,8 +3,8 @@ import salesRouter from './sales';
 
 const router = Router();
 
-// Health check route for API Gateway
-router.get('/sales/health', async (req, res) => {
+// 统一健康检查路由
+router.get('/health', async (req, res) => {
   try {
     res.json({
       status: 'healthy',
@@ -22,6 +22,7 @@ router.get('/sales/health', async (req, res) => {
   }
 });
 
-router.use('/sales', salesRouter);
+// 销售管理路由 - 直接处理网关转发的请求
+router.use('/', salesRouter);
 
 export default router;

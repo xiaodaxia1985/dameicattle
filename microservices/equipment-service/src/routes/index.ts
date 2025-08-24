@@ -1,27 +1,27 @@
 import { Router } from 'express';
-import equipmentRouter from './equipment';
+import { EquipmentController } from '../controllers/EquipmentController';
 
 const router = Router();
+const controller = new EquipmentController();
 
-// Health check route for API Gateway
-router.get('/equipment/health', async (req, res) => {
-  try {
-    res.json({
-      status: 'healthy',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      version: '1.0.0',
-      service: 'equipment-service',
-      port: process.env.PORT || 3006
-    });
-  } catch (error) {
-    res.status(500).json({
-      status: 'unhealthy',
-      error: (error as Error).message
-    });
-  }
+// 健康检查
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'equipment-service'
+  });
 });
 
-router.use('/equipment', equipmentRouter);
+// 设备管理路由 - 直接处理网关转发的请求
+router.get('/equipment', controller.getAll.bind(controller));
+router.post('/equipment', controller.create.bind(controller));
+
+// 维护记录路由
+router.get('/maintenance', controller.getAll.bind(controller));
+router.post('/maintenance', controller.create.bind(controller));
+
+// 统计路由
+router.get('/statistics', controller.getAll.bind(controller));
 
 export default router;

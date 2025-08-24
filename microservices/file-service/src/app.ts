@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
 import { logger } from './utils/logger';
 import { responseWrapper } from './middleware/responseWrapper';
@@ -18,26 +18,26 @@ app.use(responseWrapper);
 // 健康检查
 app.get('/health', async (req, res) => {
   try {
-    res.success({
+    res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       version: '1.0.0',
       checks: {
-        filesystem: true // file service主要依赖文件系统
+        filesystem: true
       }
-    }, 'Health check completed');
+    });
   } catch (error) {
-    res.error('Health check failed', 500, 'HEALTH_CHECK_FAILED');
+    res.status(500).json({ error: 'Health check failed' });
   }
 });
 
-// Mount routes
-app.use('/api/v1', routes);
+// 直接路由（支持网关代理后的路径）
+app.use('/', routes);
 
 // 404处理
 app.use('*', (req, res) => {
-  res.error('Route not found', 404, 'ROUTE_NOT_FOUND');
+  res.status(404).json({ error: 'Route not found' });
 });
 
 // 错误处理
@@ -55,16 +55,6 @@ const startServer = async () => {
     process.exit(1);
   }
 };
-
-process.on('SIGTERM', async () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
-
-process.on('SIGINT', async () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
 
 startServer();
 

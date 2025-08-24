@@ -25,7 +25,7 @@ export const MICROSERVICE_ROUTES = {
   // 牛只服务 - 端口3003
   CATTLE: '/cattle',
   // 健康服务 - 端口3004
-  HEALTH: '/health',
+  HEALTH: '/health-service',
   // 饲养服务 - 端口3005
   FEEDING: '/feeding',
   // 设备服务 - 端口3006

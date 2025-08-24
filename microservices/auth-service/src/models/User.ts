@@ -9,12 +9,12 @@ export interface UserAttributes {
   real_name: string;
   email?: string;
   phone?: string;
-  role_id?: number | null;
+  role?: string;
   base_id?: number;
   status: 'active' | 'inactive' | 'locked';
   failed_login_attempts: number;
   locked_until?: Date;
-  last_login?: Date;
+  last_login_at?: Date;
   password_changed_at?: Date;
   password_reset_token?: string;
   password_reset_expires?: Date;
@@ -22,7 +22,6 @@ export interface UserAttributes {
   wechat_unionid?: string;
   created_at: Date;
   updated_at: Date;
-  role?: any;
 }
 
 interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 'created_at' | 'updated_at' | 'failed_login_attempts'> {}
@@ -34,12 +33,12 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public real_name!: string;
   public email?: string;
   public phone?: string;
-  public role_id?: number | null;
+  public role?: string;
   public base_id?: number;
   public status!: 'active' | 'inactive' | 'locked';
   public failed_login_attempts!: number;
   public locked_until?: Date;
-  public last_login?: Date;
+  public last_login_at?: Date;
   public password_changed_at?: Date;
   public password_reset_token?: string;
   public password_reset_expires?: Date;
@@ -47,7 +46,6 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   public wechat_unionid?: string;
   public created_at!: Date;
   public updated_at!: Date;
-  public role?: any;
 
   // 实例方法
   public async validatePassword(password: string): Promise<boolean> {
@@ -85,7 +83,7 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
     if (this.status === 'locked') {
       this.status = 'active';
     }
-    this.last_login = new Date();
+    this.last_login_at = new Date();
     await this.save();
   }
 
@@ -190,13 +188,10 @@ User.init(
         is: /^[0-9+\-\s()]+$/,
       },
     },
-    role_id: {
-      type: DataTypes.INTEGER,
+    role: {
+      type: DataTypes.STRING(20),
       allowNull: true,
-      references: {
-        model: 'roles',
-        key: 'id',
-      },
+      defaultValue: 'employee',
     },
     base_id: {
       type: DataTypes.INTEGER,
@@ -220,7 +215,7 @@ User.init(
       type: DataTypes.DATE,
       allowNull: true,
     },
-    last_login: {
+    last_login_at: {
       type: DataTypes.DATE,
       allowNull: true,
     },

@@ -115,6 +115,18 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '饲喂记录' }
           },
           {
+            path: 'patrol-dashboard',
+            name: 'PatrolDashboard',
+            component: () => import('@/views/feeding/patrol/Dashboard.vue'),
+            meta: { title: '巡圈总览' }
+          },
+          {
+            path: 'patrol-tasks',
+            name: 'PatrolTasks',
+            component: () => import('@/views/feeding/patrol/Tasks.vue'),
+            meta: { title: '巡圈任务' }
+          },
+          {
             path: 'patrol-records',
             name: 'PatrolRecords',
             component: () => import('@/views/feeding/patrol/Records.vue'),
@@ -125,6 +137,38 @@ const routes: RouteRecordRaw[] = [
             name: 'FeedFormulas',
             component: () => import('@/views/feeding/Formulas.vue'),
             meta: { title: '饲料配方' }
+          },
+          {
+            path: 'formula-management',
+            name: 'FormulaManagement',
+            component: () => import('@/views/feeding/FormulaManagement.vue'),
+            meta: { title: '配方管理' }
+          },
+          {
+            path: 'analysis',
+            name: 'FeedingAnalysis',
+            component: () => import('@/views/feeding/Analysis.vue'),
+            meta: { title: '效率分析' }
+          }
+        ]
+      },
+      {
+        path: 'equipment',
+        name: 'Equipment',
+        redirect: '/admin/equipment/dashboard',
+        meta: { title: '设备管理', icon: 'Monitor' },
+        children: [
+          {
+            path: 'dashboard',
+            name: 'EquipmentDashboard',
+            component: () => import('@/views/equipment/EquipmentDashboard.vue'),
+            meta: { title: '设备总览' }
+          },
+          {
+            path: 'list',
+            name: 'EquipmentList',
+            component: () => import('@/views/equipment/EquipmentList.vue'),
+            meta: { title: '设备列表' }
           }
         ]
       },
@@ -160,6 +204,12 @@ const routes: RouteRecordRaw[] = [
         redirect: '/admin/sales/orders',
         meta: { title: '销售管理', icon: 'Sell' },
         children: [
+          {
+            path: 'statistics',
+            name: 'SalesStatistics',
+            component: () => import('@/views/sales/Statistics.vue'),
+            meta: { title: '销售统计' }
+          },
           {
             path: 'orders',
             name: 'SalesOrders',
@@ -305,12 +355,18 @@ const routes: RouteRecordRaw[] = [
             meta: { title: '角色管理' }
           },
           {
+            path: 'barns',
+            name: 'Barns',
+            component: () => import('@/views/system/Barns.vue'),
+            meta: { title: '牛棚管理' }
+          },
+          {
             path: 'operation-logs',
             name: 'OperationLogs',
             component: () => import('@/views/system/OperationLogs.vue'),
             meta: { title: '操作日志' }
-          },
-              ]
+          }
+        ]
       }
     ]
   },

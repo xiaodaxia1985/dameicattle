@@ -1,97 +1,113 @@
-import { DataTypes, Model, Optional } from 'sequelize';
+import { DataTypes, Model, Optional, QueryTypes } from 'sequelize';
 import { sequelize } from '../config/database';
 
 interface BarnAttributes {
   id: number;
   name: string;
-  code: string;
   base_id: number;
-  capacity: number;
-  current_count: number;
+  capacity?: number;
+  current_count?: number;
+  barn_type?: string;
+  location?: string;
+  status: 'active' | 'inactive' | 'maintenance';
+  notes?: string;
   created_at: Date;
   updated_at: Date;
 }
 
-interface BarnCreationAttributes extends Optional<BarnAttributes, 'id' | 'current_count' | 'created_at' | 'updated_at'> {}
+interface BarnCreationAttributes extends Optional<BarnAttributes, 'id' | 'created_at' | 'updated_at'> {}
 
 export class Barn extends Model<BarnAttributes, BarnCreationAttributes> implements BarnAttributes {
   public id!: number;
   public name!: string;
-  public code!: string;
   public base_id!: number;
-  public capacity!: number;
-  public current_count!: number;
+  public capacity?: number;
+  public current_count?: number;
+  public barn_type?: string;
+  public location?: string;
+  public status!: 'active' | 'inactive' | 'maintenance';
+  public notes?: string;
   public created_at!: Date;
   public updated_at!: Date;
 
-  static async increment(field: string, options: any) {
-    return sequelize.query(
-      `UPDATE barns SET ${field} = ${field} + 1 WHERE id = :id`,
+  // 静态方法修复
+  static async getCattleCountByBarn(barnId: number): Promise<number> {
+    const result = await sequelize.query(
+      'SELECT COUNT(*) as count FROM cattle WHERE barn_id = :barnId AND status = :status',
       {
-        replacements: { id: options.where.id },
-        type: sequelize.QueryTypes.UPDATE
+        replacements: { barnId, status: 'active' },
+        type: QueryTypes.SELECT
       }
     );
+    return (result[0] as any).count || 0;
   }
 
-  static async decrement(field: string, options: any) {
-    return sequelize.query(
-      `UPDATE barns SET ${field} = GREATEST(${field} - 1, 0) WHERE id = :id`,
+  static async getAvailableCapacity(barnId: number): Promise<number> {
+    const result = await sequelize.query(
+      'SELECT capacity, (SELECT COUNT(*) FROM cattle WHERE barn_id = :barnId AND status = :status) as current_count FROM barns WHERE id = :barnId',
       {
-        replacements: { id: options.where.id },
-        type: sequelize.QueryTypes.UPDATE
+        replacements: { barnId, status: 'active' },
+        type: QueryTypes.SELECT
       }
     );
+    const barn = result[0] as any;
+    return (barn?.capacity || 0) - (barn?.current_count || 0);
   }
 }
 
-Barn.init(
-  {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true,
-    },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    code: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-    },
-    base_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'bases',
-        key: 'id',
-      },
-    },
-    capacity: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-    },
-    current_count: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0,
-    },
-    created_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-    },
-    updated_at: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
-    },
+Barn.init({
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
   },
-  {
-    sequelize,
-    tableName: 'barns',
-    timestamps: true,
-    underscored: true,
-  }
-);
+  name: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+  },
+  base_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+  capacity: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  current_count: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    defaultValue: 0,
+  },
+  barn_type: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
+  location: {
+    type: DataTypes.STRING(200),
+    allowNull: true,
+  },
+  status: {
+    type: DataTypes.ENUM('active', 'inactive', 'maintenance'),
+    allowNull: false,
+    defaultValue: 'active',
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  created_at: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+  },
+  updated_at: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
+  },
+}, {
+  sequelize,
+  tableName: 'barns',
+  timestamps: true,
+  underscored: true,
+});
