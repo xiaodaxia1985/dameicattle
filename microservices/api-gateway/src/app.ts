@@ -1,8 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import { createLogger, responseWrapper, errorHandler } from '@cattle-management/shared';
-import { setupRoutes } from './routes';
-import { rateLimiter } from './middleware/rateLimiter';
 import { cors } from './middleware/cors';
 
 dotenv.config();
@@ -11,22 +9,10 @@ const app = express();
 const logger = createLogger('api-gateway');
 const PORT = process.env.PORT || 3000;
 
-// 请求日志中间件
-app.use((req, res, next) => {
-  logger.info(`收到请求: ${req.method} ${req.url}`, {
-    headers: req.headers,
-    body: req.method !== 'GET' ? req.body : undefined,
-    query: req.query,
-    ip: req.ip
-  });
-  next();
-});
-
 // 基础中间件
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cors);
-app.use(rateLimiter);
 app.use(responseWrapper);
 
 // 健康检查
@@ -35,27 +21,61 @@ app.get('/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    version: '1.0.0'
+    version: '1.0.0',
+    message: 'API Gateway - 代理已移除，直连微服务模式'
   }, 'API Gateway is healthy');
 });
 
-// API健康检查（不需要认证）
-app.get('/api/v1/health', (req, res) => {
-  res.success({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: '1.0.0',
-    service: 'API Gateway'
-  }, 'API health check completed');
-});
+// 微服务状态检查
+app.get('/services/status', async (req, res) => {
+  const services = [
+    { name: 'auth-service', port: 3001 },
+    { name: 'base-service', port: 3002 },
+    { name: 'cattle-service', port: 3003 },
+    { name: 'health-service', port: 3004 },
+    { name: 'feeding-service', port: 3005 },
+    { name: 'equipment-service', port: 3006 },
+    { name: 'procurement-service', port: 3007 },
+    { name: 'sales-service', port: 3008 },
+    { name: 'material-service', port: 3009 },
+    { name: 'notification-service', port: 3010 },
+    { name: 'file-service', port: 3011 },
+    { name: 'monitoring-service', port: 3012 },
+    { name: 'news-service', port: 3013 }
+  ];
 
-// 设置路由
-setupRoutes(app);
+  const status = await Promise.allSettled(
+    services.map(async (service) => {
+      try {
+        const response = await fetch(`http://localhost:${service.port}/health`, { 
+          signal: AbortSignal.timeout(2000) 
+        });
+        return {
+          name: service.name,
+          port: service.port,
+          status: response.ok ? 'healthy' : 'unhealthy',
+          url: `http://localhost:${service.port}`
+        };
+      } catch {
+        return {
+          name: service.name,
+          port: service.port,
+          status: 'offline',
+          url: `http://localhost:${service.port}`
+        };
+      }
+    })
+  );
+
+  res.success({
+    services: status.map(s => s.status === 'fulfilled' ? s.value : s.reason),
+    timestamp: new Date().toISOString()
+  }, 'Services status check completed');
+});
 
 // 404处理
 app.use('*', (req, res) => {
-  res.error('Route not found', 404, 'ROUTE_NOT_FOUND');
+  res.error('API Gateway已移除代理功能，请直接访问微服务端口', 404, 'PROXY_REMOVED');
 });
 
 // 错误处理
@@ -63,8 +83,9 @@ app.use(errorHandler);
 
 // 启动服务
 app.listen(PORT, () => {
-  logger.info(`API Gateway is running on port ${PORT}`);
+  logger.info(`API Gateway is running on port ${PORT} - 代理已移除`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info('前端将直接连接各微服务端口');
 });
 
 export default app;

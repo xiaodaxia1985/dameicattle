@@ -1,26 +1,38 @@
 <template>
   <el-dialog
-    v-model="visible"
-    :title="cattle ? '编辑牛只' : '添加牛只'"
+    v-model="dialogVisible"
+    :title="isEdit ? '编辑牛只信息' : '添加牛只'"
     width="800px"
+    :close-on-click-modal="false"
     @close="handleClose"
   >
     <el-form
       ref="formRef"
       :model="form"
       :rules="rules"
-      label-width="100px"
-      class="cattle-form"
+      label-width="120px"
+      @submit.prevent
     >
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="耳标号" prop="ear_tag">
-            <el-input v-model="form.ear_tag" placeholder="请输入耳标号" />
+            <el-input
+              v-model="form.ear_tag"
+              placeholder="请输入耳标号"
+              :disabled="isEdit"
+            />
           </el-form-item>
         </el-col>
         <el-col :span="12">
           <el-form-item label="品种" prop="breed">
-            <el-input v-model="form.breed" placeholder="请输入品种" />
+            <el-select v-model="form.breed" placeholder="请选择品种" style="width: 100%">
+              <el-option label="西门塔尔牛" value="simmental" />
+              <el-option label="安格斯牛" value="angus" />
+              <el-option label="夏洛莱牛" value="charolais" />
+              <el-option label="利木赞牛" value="limousin" />
+              <el-option label="海福特牛" value="hereford" />
+              <el-option label="荷斯坦牛" value="holstein" />
+            </el-select>
           </el-form-item>
         </el-col>
       </el-row>
@@ -28,10 +40,10 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="性别" prop="gender">
-            <el-select v-model="form.gender" placeholder="请选择性别" style="width: 100%">
-              <el-option label="公牛" value="male" />
-              <el-option label="母牛" value="female" />
-            </el-select>
+            <el-radio-group v-model="form.gender">
+              <el-radio label="male">公牛</el-radio>
+              <el-radio label="female">母牛</el-radio>
+            </el-radio-group>
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -39,10 +51,10 @@
             <el-date-picker
               v-model="form.birth_date"
               type="date"
-              placeholder="请选择出生日期"
-              style="width: 100%"
+              placeholder="选择出生日期"
               format="YYYY-MM-DD"
               value-format="YYYY-MM-DD"
+              style="width: 100%"
             />
           </el-form-item>
         </el-col>
@@ -55,6 +67,7 @@
               v-model="form.weight"
               :min="0"
               :max="2000"
+              :precision="1"
               placeholder="请输入体重"
               style="width: 100%"
             />
@@ -74,9 +87,14 @@
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="所属基地" prop="base_id">
-            <el-select v-model="form.base_id" placeholder="请选择基地" style="width: 100%" @change="handleBaseChange">
+            <el-select
+              v-model="form.base_id"
+              placeholder="请选择基地"
+              style="width: 100%"
+              @change="handleBaseChange"
+            >
               <el-option
-                v-for="base in baseStore.bases"
+                v-for="base in bases"
                 :key="base.id"
                 :label="base.name"
                 :value="base.id"
@@ -85,14 +103,18 @@
           </el-form-item>
         </el-col>
         <el-col :span="12">
-          <el-form-item label="所在牛棚" prop="barn_id">
-            <el-select v-model="form.barn_id" placeholder="请选择牛棚" style="width: 100%">
+          <el-form-item label="所属牛棚" prop="barn_id">
+            <el-select
+              v-model="form.barn_id"
+              placeholder="请选择牛棚"
+              style="width: 100%"
+              :disabled="!form.base_id"
+            >
               <el-option
                 v-for="barn in availableBarns"
-                :key="barn.value"
-                :label="barn.label"
-                :value="barn.value"
-                :disabled="barn.disabled"
+                :key="barn.id"
+                :label="`${barn.name} (${barn.code})`"
+                :value="barn.id"
               />
             </el-select>
           </el-form-item>
@@ -114,7 +136,23 @@
             <el-input-number
               v-model="form.purchase_price"
               :min="0"
+              :precision="2"
               placeholder="请输入采购价格"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="20" v-if="form.source === 'purchased'">
+        <el-col :span="12">
+          <el-form-item label="采购日期" prop="purchase_date">
+            <el-date-picker
+              v-model="form.purchase_date"
+              type="date"
+              placeholder="选择采购日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
               style="width: 100%"
             />
           </el-form-item>
@@ -132,20 +170,21 @@
     </el-form>
 
     <template #footer>
-      <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" @click="handleSubmit" :loading="submitting">
-        {{ cattle ? '更新' : '创建' }}
-      </el-button>
+      <div class="dialog-footer">
+        <el-button @click="handleClose">取消</el-button>
+        <el-button type="primary" :loading="loading" @click="handleSubmit">
+          {{ isEdit ? '更新' : '创建' }}
+        </el-button>
+      </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed, type PropType } from 'vue'
-import { ElMessage, type FormInstance } from 'element-plus'
-import { useBaseStore } from '@/stores/base'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import { cattleApi, type Cattle, type CreateCattleRequest } from '@/api/cattle'
-import { barnApi } from '@/api/barn'
+import { baseApi, type Base, type Barn } from '@/api/base'
 
 interface Props {
   modelValue: boolean
@@ -160,186 +199,164 @@ interface Emits {
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
-const baseStore = useBaseStore()
 const formRef = ref<FormInstance>()
-const submitting = ref(false)
-const availableBarns = ref<Array<{
-  value: number
-  label: string
-  disabled: boolean
-}>>([])
+const loading = ref(false)
+const bases = ref<Base[]>([])
+const availableBarns = ref<Barn[]>([])
 
-const visible = computed({
+const dialogVisible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
 
+const isEdit = computed(() => !!props.cattle?.id)
+
 const form = reactive<CreateCattleRequest>({
   ear_tag: '',
   breed: '',
-  gender: 'male',
+  gender: 'female',
   birth_date: '',
   weight: undefined,
-  base_id: undefined as any,
+  base_id: 0,
   barn_id: undefined,
   source: 'born',
   purchase_price: undefined,
+  purchase_date: '',
   notes: ''
 })
 
-const rules = {
+const rules: FormRules = {
   ear_tag: [
     { required: true, message: '请输入耳标号', trigger: 'blur' },
-    { min: 2, max: 50, message: '耳标号长度在 2 到 50 个字符', trigger: 'blur' }
+    { min: 2, max: 20, message: '耳标号长度在 2 到 20 个字符', trigger: 'blur' }
   ],
   breed: [
-    { required: true, message: '请输入品种', trigger: 'blur' },
-    { min: 2, max: 50, message: '品种长度在 2 到 50 个字符', trigger: 'blur' }
+    { required: true, message: '请选择品种', trigger: 'change' }
   ],
   gender: [
     { required: true, message: '请选择性别', trigger: 'change' }
   ],
   base_id: [
-    { required: true, message: '请选择所属基地', trigger: 'change' }
+    { required: true, message: '请选择基地', trigger: 'change' }
   ],
   source: [
     { required: true, message: '请选择来源', trigger: 'change' }
   ]
 }
 
-watch(() => props.modelValue, async (newVal) => {
-  if (newVal) {
-    resetForm()
-    
-    // 确保基地数据已加载
-    if (baseStore.bases.length === 0) {
-      try {
-        await baseStore.fetchAllBases()
-      } catch (error) {
-        console.error('加载基地数据失败:', error)
-        ElMessage.error('加载基地数据失败')
-      }
-    }
-    
-    if (props.cattle) {
-      // 编辑模式，填充表单数据
-      Object.assign(form, {
-        ear_tag: props.cattle.ear_tag,
-        breed: props.cattle.breed,
-        gender: props.cattle.gender,
-        birth_date: props.cattle.birth_date || '',
-        weight: props.cattle.weight,
-        base_id: props.cattle.base_id,
-        barn_id: props.cattle.barn_id,
-        source: props.cattle.source || 'born',
-        purchase_price: props.cattle.purchase_price,
-        notes: props.cattle.notes || ''
-      })
-      
-      if (props.cattle.base_id) {
-        loadBarns(props.cattle.base_id)
-      }
-    }
-  }
-})
-
-const handleBaseChange = (baseId: number) => {
-  form.barn_id = undefined
-  if (baseId) {
-    loadBarns(baseId)
-  } else {
-    availableBarns.value = []
-  }
-}
-
-const loadBarns = async (baseId: number) => {
+// 加载基地列表
+const loadBases = async () => {
   try {
-    const response = await barnApi.getBarnOptions({ base_id: baseId })
-    console.log('Barn options response:', response.data)
-    
-    // 转换数据格式以匹配前端期望的结构
-    availableBarns.value = (response.data || []).map((barn: any) => ({
-      value: barn.id,
-      label: `${barn.name} (${barn.code}) - 容量:${barn.capacity} 可用:${barn.available_space || 0}`,
-      disabled: barn.available_space <= 0
-    }))
-    
-    console.log('Transformed barn options:', availableBarns.value)
+    const response = await baseApi.getBases()
+    bases.value = response.data.bases || []
   } catch (error) {
-    console.error('加载牛棚选项失败:', error)
-    ElMessage.error('加载牛棚选项失败')
+    console.error('加载基地列表失败:', error)
+    ElMessage.error('加载基地列表失败')
+  }
+}
+
+// 处理基地变更
+const handleBaseChange = async (baseId: number) => {
+  form.barn_id = undefined
+  availableBarns.value = []
+  
+  if (baseId) {
+    try {
+      const barns = await baseApi.getBarnsByBaseId(baseId)
+      availableBarns.value = barns || []
+    } catch (error) {
+      console.error('加载牛棚列表失败:', error)
+      ElMessage.error('加载牛棚列表失败')
+    }
+  }
+}
+
+// 初始化表单数据
+const initForm = () => {
+  if (props.cattle) {
+    Object.assign(form, {
+      ear_tag: props.cattle.ear_tag || '',
+      breed: props.cattle.breed || '',
+      gender: props.cattle.gender || 'female',
+      birth_date: props.cattle.birth_date || '',
+      weight: props.cattle.weight,
+      base_id: props.cattle.base_id || 0,
+      barn_id: props.cattle.barn_id,
+      source: props.cattle.source || 'born',
+      purchase_price: props.cattle.purchase_price,
+      purchase_date: props.cattle.purchase_date || '',
+      notes: props.cattle.notes || ''
+    })
+    
+    // 如果有基地ID，加载对应的牛棚
+    if (form.base_id) {
+      handleBaseChange(form.base_id)
+    }
+  } else {
+    // 重置表单
+    Object.assign(form, {
+      ear_tag: '',
+      breed: '',
+      gender: 'female',
+      birth_date: '',
+      weight: undefined,
+      base_id: 0,
+      barn_id: undefined,
+      source: 'born',
+      purchase_price: undefined,
+      purchase_date: '',
+      notes: ''
+    })
     availableBarns.value = []
   }
 }
 
+// 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
   
   try {
     await formRef.value.validate()
-    submitting.value = true
+    loading.value = true
     
-    if (props.cattle) {
-      // 编辑模式
+    if (isEdit.value && props.cattle) {
       await cattleApi.update(props.cattle.id, form)
       ElMessage.success('更新成功')
     } else {
-      // 创建模式
       await cattleApi.create(form)
       ElMessage.success('创建成功')
     }
     
     emit('success')
     handleClose()
-  } catch (error: any) {
-    console.error('表单提交失败:', error)
-    
-    // 处理特定的错误类型
-    if (error.response?.status === 409) {
-      ElMessage.error('耳标号已存在，请使用其他耳标号')
-    } else if (error.response?.status === 404) {
-      ElMessage.error('基地或牛棚不存在，请重新选择')
-    } else if (error.response?.status === 403) {
-      ElMessage.error('权限不足，无法在该基地创建牛只')
-    } else if (error.response?.status === 422) {
-      ElMessage.error('数据验证失败，请检查输入信息')
-    } else if (error.message) {
-      ElMessage.error(error.message)
-    } else {
-      ElMessage.error('操作失败，请稍后重试')
-    }
+  } catch (error) {
+    console.error('提交失败:', error)
+    ElMessage.error('操作失败')
   } finally {
-    submitting.value = false
+    loading.value = false
   }
 }
 
+// 关闭对话框
 const handleClose = () => {
-  visible.value = false
-  resetForm()
+  formRef.value?.resetFields()
+  dialogVisible.value = false
 }
 
-const resetForm = () => {
-  Object.assign(form, {
-    ear_tag: '',
-    breed: '',
-    gender: 'male',
-    birth_date: '',
-    weight: undefined,
-    base_id: undefined,
-    barn_id: undefined,
-    source: 'born',
-    purchase_price: undefined,
-    notes: ''
-  })
-  availableBarns.value = []
-  formRef.value?.clearValidate()
-}
+// 监听对话框显示状态
+watch(() => props.modelValue, (visible) => {
+  if (visible) {
+    initForm()
+  }
+})
+
+onMounted(() => {
+  loadBases()
+})
 </script>
 
-<style lang="scss" scoped>
-.cattle-form {
-  .el-form-item {
-    margin-bottom: 20px;
-  }
+<style scoped>
+.dialog-footer {
+  text-align: right;
 }
 </style>

@@ -129,6 +129,25 @@ export class CacheService {
     }
   }
 
+  static async deletePattern(pattern: string): Promise<number> {
+    if (!this.isConnected) {
+      return 0;
+    }
+
+    try {
+      const keys = await this.client.keys(pattern);
+      if (keys.length > 0) {
+        const result = await this.client.del(keys);
+        logger.debug(`按模式删除缓存: ${pattern}, 删除数量: ${result}`);
+        return result;
+      }
+      return 0;
+    } catch (error) {
+      logger.error(`按模式删除缓存失败: ${pattern}`, error);
+      return 0;
+    }
+  }
+
   static async flush(prefix?: string): Promise<void> {
     if (!this.isConnected) {
       return;

@@ -26,10 +26,27 @@ const isDevelopment = process.env.NODE_ENV === 'development'
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 
+// 微服务直连配置
+export const microserviceUrls = {
+  auth: 'http://localhost:3001',
+  base: 'http://localhost:3002', 
+  cattle: 'http://localhost:3003',
+  health: 'http://localhost:3004',
+  feeding: 'http://localhost:3005',
+  equipment: 'http://localhost:3006',
+  procurement: 'http://localhost:3007',
+  sales: 'http://localhost:3008',
+  material: 'http://localhost:3009',
+  notification: 'http://localhost:3010',
+  file: 'http://localhost:3011',
+  monitoring: 'http://localhost:3012',
+  news: 'http://localhost:3013'
+}
+
 // Base configurations for different environments
 export const environmentConfigs: EnvironmentConfigs = {
   development: {
-    baseURL: isUniApp ? 'http://localhost:3000/api/v1' : '/api/v1',
+    baseURL: '', // 不再使用统一baseURL
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000,
@@ -146,59 +163,59 @@ export function getFeatureFlags() {
   return featureFlags[environment]
 }
 
-// API endpoints configuration
+// API endpoints configuration - 直连微服务
 export const apiEndpoints = {
-  // Authentication
+  // Authentication - 直连3001端口
   auth: {
-    login: '/auth/login',
-    logout: '/auth/logout',
-    refresh: '/auth/refresh',
-    profile: '/auth/profile'
+    login: `${microserviceUrls.auth}/login`,
+    logout: `${microserviceUrls.auth}/logout`,
+    refresh: `${microserviceUrls.auth}/refresh`,
+    profile: `${microserviceUrls.auth}/profile`
   },
   
-  // Base management
+  // Base management - 直连3002端口
   bases: {
-    list: '/bases',
-    detail: (id: number) => `/bases/${id}`,
-    create: '/bases',
-    update: (id: number) => `/bases/${id}`,
-    delete: (id: number) => `/bases/${id}`,
-    statistics: (id: number) => `/bases/${id}/statistics`
+    list: `${microserviceUrls.base}/bases`,
+    detail: (id: number) => `${microserviceUrls.base}/bases/${id}`,
+    create: `${microserviceUrls.base}/bases`,
+    update: (id: number) => `${microserviceUrls.base}/bases/${id}`,
+    delete: (id: number) => `${microserviceUrls.base}/bases/${id}`,
+    statistics: (id: number) => `${microserviceUrls.base}/bases/${id}/statistics`
   },
   
-  // Barn management
+  // Barn management - 直连3002端口
   barns: {
-    list: '/barns',
-    detail: (id: number) => `/barns/${id}`,
-    create: '/barns',
-    update: (id: number) => `/barns/${id}`,
-    delete: (id: number) => `/barns/${id}`,
-    byBase: (baseId: number) => `/bases/${baseId}/barns`
+    list: `${microserviceUrls.base}/barns`,
+    detail: (id: number) => `${microserviceUrls.base}/barns/${id}`,
+    create: `${microserviceUrls.base}/barns`,
+    update: (id: number) => `${microserviceUrls.base}/barns/${id}`,
+    delete: (id: number) => `${microserviceUrls.base}/barns/${id}`,
+    byBase: (baseId: number) => `${microserviceUrls.base}/bases/${baseId}/barns`
   },
   
-  // Cattle management
+  // Cattle management - 直连3003端口
   cattle: {
-    list: '/cattle',
-    detail: (id: number) => `/cattle/${id}`,
-    create: '/cattle',
-    update: (id: number) => `/cattle/${id}`,
-    delete: (id: number) => `/cattle/${id}`,
-    health: (id: number) => `/cattle/${id}/health`
+    list: `${microserviceUrls.cattle}/cattle`,
+    detail: (id: number) => `${microserviceUrls.cattle}/cattle/${id}`,
+    create: `${microserviceUrls.cattle}/cattle`,
+    update: (id: number) => `${microserviceUrls.cattle}/cattle/${id}`,
+    delete: (id: number) => `${microserviceUrls.cattle}/cattle/${id}`,
+    health: (id: number) => `${microserviceUrls.cattle}/cattle/${id}/health`
   },
   
-  // Health monitoring
+  // Health monitoring - 直连3004端口
   health: {
-    system: '/health',
-    database: '/health/database',
-    redis: '/redis-health/redis',
-    services: '/health/services'
+    system: `${microserviceUrls.health}/health`,
+    database: `${microserviceUrls.health}/health/database`,
+    redis: `${microserviceUrls.health}/health/redis`,
+    services: `${microserviceUrls.health}/health/services`
   },
   
-  // File upload
+  // File upload - 直连3011端口
   upload: {
-    single: '/upload/single',
-    multiple: '/upload/multiple',
-    avatar: '/upload/avatar'
+    single: `${microserviceUrls.file}/upload/single`,
+    multiple: `${microserviceUrls.file}/upload/multiple`,
+    avatar: `${microserviceUrls.file}/upload/avatar`
   }
 }
 

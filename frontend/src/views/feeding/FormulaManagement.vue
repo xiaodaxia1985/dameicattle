@@ -189,8 +189,7 @@ import { feedingApi } from '@/api/feeding'
 import type { FeedFormula, IngredientItem } from '@/api/feeding'
 import IngredientEditor from '@/components/feeding/IngredientEditor.vue'
 import IngredientTable from '@/components/feeding/IngredientTable.vue'
-import { ensureNumber } from '@/utils/dataValidation'
-import { safeGet } from '@/utils/safeAccess'
+import { ensureArray, ensureNumber, safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const loading = ref(false)
@@ -257,7 +256,7 @@ onMounted(() => {
 const fetchFormulas = async () => {
   loading.value = true
   try {
-    const response = await feedingApi.getFormulas({
+    const response = await feedingApi.getFeedFormulas({
       page: currentPage.value,
       limit: pageSize.value,
       keyword: searchKeyword.value
@@ -324,7 +323,7 @@ const deleteFormula = async (formula: FeedFormula) => {
       }
     )
     
-    await feedingApi.deleteFormula(formula.id)
+    await feedingApi.deleteFeedFormula(formula.id)
     ElMessage.success('配方删除成功')
     fetchFormulas()
   } catch (error: any) {
@@ -355,10 +354,10 @@ const handleSaveFormula = async () => {
     }
     
     if (isEdit.value && selectedFormula.value) {
-      await feedingApi.updateFormula(selectedFormula.value.id, formData)
+      await feedingApi.updateFeedFormula(selectedFormula.value.id, formData)
       ElMessage.success('配方更新成功')
     } else {
-      await feedingApi.createFormula(formData)
+      await feedingApi.createFeedFormula(formData)
       ElMessage.success('配方创建成功')
     }
     

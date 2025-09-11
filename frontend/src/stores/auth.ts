@@ -127,61 +127,33 @@ export const useAuthStore = defineStore('auth', () => {
   const initializeAuth = async (): Promise<void> => {
     console.log('初始化认证状态...')
     
-    // Use cross-platform utilities to get stored data
-    const storedToken = tokenStorage.getToken()
-    const storedUser = userStorage.getUser()
-    const storedPermissions = permissionsStorage.getPermissions()
-    
-    console.log('从存储中读取的数据:', {
-      hasToken: !!storedToken,
-      hasUser: !!storedUser,
-      permissionsCount: storedPermissions.length
-    })
-    
-    if (storedToken && storedUser) {
-      // 检查token是否过期
-      if (authState.isTokenExpired()) {
-        console.log('Token已过期，清除认证状态')
-        authState.clearAuthData()
-        token.value = ''
-        user.value = null
-        permissions.value = []
-      } else {
-        console.log('Token存在且未过期，设置认证状态')
-        
-        // 先设置认证状态，这样用户可以正常使用系统
+    try {
+      const storedToken = tokenStorage.getToken()
+      const storedUser = userStorage.getUser()
+      const storedPermissions = permissionsStorage.getPermissions()
+      
+      console.log('从存储中读取的数据:', {
+        hasToken: !!storedToken,
+        hasUser: !!storedUser,
+        permissionsCount: storedPermissions.length
+      })
+      
+      if (storedToken && storedUser) {
+        // 直接设置认证状态，不进行复杂的验证
         token.value = storedToken
         user.value = storedUser
         permissions.value = storedPermissions
-        
-        // 在后台验证token有效性，但不阻塞用户操作
-        // 如果验证失败，只在用户下次操作时才处理
-        setTimeout(async () => {
-          try {
-            console.log('后台验证token有效性...')
-            await authApi.getProfile()
-            console.log('Token验证成功')
-          } catch (error: any) {
-            console.log('Token后台验证失败:', error.message)
-            // 只有在明确的认证错误时才清除状态
-            if (error.response?.status === 401 || error.response?.status === 403) {
-              console.log('Token无效，清除认证状态')
-              authState.clearAuthData()
-              token.value = ''
-              user.value = null
-              permissions.value = []
-              
-              // 触发一个自定义事件，通知应用认证状态已失效
-              if (typeof window !== 'undefined') {
-                const event = new CustomEvent('auth:token-invalid')
-                window.dispatchEvent(event)
-              }
-            }
-          }
-        }, 100) // 延迟100ms执行，避免阻塞初始化
+        console.log('认证状态已恢复')
+      } else {
+        console.log('没有有效的认证数据')
+        token.value = ''
+        user.value = null
+        permissions.value = []
       }
-    } else {
-      console.log('没有有效的认证数据')
+    } catch (error) {
+      console.error('认证状态初始化失败:', error)
+      // 初始化失败时清除状态
+      authState.clearAuthData()
       token.value = ''
       user.value = null
       permissions.value = []

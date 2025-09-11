@@ -229,7 +229,7 @@ import {
 } from '@element-plus/icons-vue'
 import { useBaseStore } from '@/stores/base'
 import { barnApi, type Barn } from '@/api/barn'
-import { validatePaginationData, validateDataArray, validateBarnData, validateStatisticsData } from '@/utils/dataValidation'
+import { validatePaginationData, validateDataArray } from '@/utils/dataValidation'
 
 const baseStore = useBaseStore()
 

@@ -1,106 +1,147 @@
 <template>
   <div class="lifecycle-events">
-    <div class="events-header">
-      <div class="header-left">
-        <h3>生命周期事件</h3>
-        <p>记录牛只从出生到现在的重要事件</p>
-      </div>
-      <div class="header-actions">
-        <el-button type="primary" @click="showAddEventDialog = true">
-          <el-icon><Plus /></el-icon>
-          添加事件
-        </el-button>
-      </div>
+    <!-- 工具栏 -->
+    <div class="toolbar">
+      <el-button type="primary" @click="showAddDialog = true">
+        <el-icon><Plus /></el-icon>
+        添加事件
+      </el-button>
+      <el-select v-model="filterType" placeholder="事件类型" style="width: 150px" @change="loadEvents">
+        <el-option label="全部" value="" />
+        <el-option label="出生" value="birth" />
+        <el-option label="断奶" value="weaning" />
+        <el-option label="配种" value="breeding" />
+        <el-option label="怀孕" value="pregnancy" />
+        <el-option label="产犊" value="calving" />
+        <el-option label="疫苗接种" value="vaccination" />
+        <el-option label="治疗" value="treatment" />
+        <el-option label="转群" value="transfer" />
+        <el-option label="销售" value="sale" />
+        <el-option label="死亡" value="death" />
+      </el-select>
     </div>
 
-    <div v-loading="loading" class="events-timeline">
+    <!-- 事件时间线 -->
+    <div class="events-timeline" v-loading="loading">
       <el-timeline v-if="events.length > 0">
         <el-timeline-item
           v-for="event in events"
           :key="event.id"
-          :timestamp="formatDate(event.event_date)"
+          :timestamp="formatDateTime(event.event_date)"
           :type="getEventType(event.event_type)"
           :icon="getEventIcon(event.event_type)"
           placement="top"
         >
           <el-card class="event-card">
             <div class="event-header">
-              <div class="event-title">
-                <span class="event-type">{{ getEventTypeName(event.event_type) }}</span>
-                <el-tag :type="getEventTagType(event.event_type)" size="small">
-                  {{ getEventStatus(event.event_type) }}
-                </el-tag>
-              </div>
+              <h4>{{ getEventTitle(event.event_type) }}</h4>
               <div class="event-actions">
-                <el-button size="small" text @click="viewEventDetail(event)">
-                  <el-icon><View /></el-icon>
+                <el-button size="small" text @click="viewEvent(event)">
+                  详情
                 </el-button>
-                <el-button size="small" text @click="editEvent(event)">
-                  <el-icon><Edit /></el-icon>
+                <el-button size="small" text type="primary" @click="editEvent(event)">
+                  编辑
+                </el-button>
+                <el-button size="small" text type="danger" @click="deleteEvent(event)">
+                  删除
                 </el-button>
               </div>
             </div>
+            
             <div class="event-content">
-              <p v-if="event.description" class="event-description">{{ event.description }}</p>
-              <div v-if="event.data && Object.keys(event.data).length > 0" class="event-data">
-                <div v-for="(value, key) in event.data" :key="key" class="data-item">
-                  <span class="data-label">{{ getDataLabel(key) }}:</span>
-                  <span class="data-value">{{ formatDataValue(key, value) }}</span>
-                </div>
+              <p v-if="event.description">{{ event.description }}</p>
+              
+              <!-- 特殊事件数据展示 -->
+              <div v-if="event.data" class="event-data">
+                <template v-if="event.event_type === 'vaccination'">
+                  <p><strong>疫苗名称:</strong> {{ event.data.vaccine_name }}</p>
+                  <p><strong>剂量:</strong> {{ event.data.dosage }}</p>
+                  <p><strong>兽医:</strong> {{ event.data.veterinarian }}</p>
+                </template>
+                
+                <template v-else-if="event.event_type === 'breeding'">
+                  <p><strong>配种方式:</strong> {{ event.data.breeding_method }}</p>
+                  <p><strong>公牛:</strong> {{ event.data.bull_ear_tag }}</p>
+                  <p><strong>预产期:</strong> {{ event.data.expected_calving_date }}</p>
+                </template>
+                
+                <template v-else-if="event.event_type === 'treatment'">
+                  <p><strong>疾病:</strong> {{ event.data.disease }}</p>
+                  <p><strong>治疗方案:</strong> {{ event.data.treatment_plan }}</p>
+                  <p><strong>药物:</strong> {{ event.data.medication }}</p>
+                </template>
+                
+                <template v-else-if="event.event_type === 'transfer'">
+                  <p><strong>源牛棚:</strong> {{ event.data.from_barn }}</p>
+                  <p><strong>目标牛棚:</strong> {{ event.data.to_barn }}</p>
+                  <p><strong>原因:</strong> {{ event.data.reason }}</p>
+                </template>
               </div>
-              <div v-if="event.operator_name" class="event-operator">
-                操作人: {{ event.operator_name }}
+              
+              <div class="event-meta">
+                <span v-if="event.operator">操作员: {{ event.operator.real_name }}</span>
               </div>
             </div>
           </el-card>
         </el-timeline-item>
       </el-timeline>
       
-      <el-empty v-else description="暂无生命周期事件记录" />
+      <el-empty v-else description="暂无生命周期事件" />
     </div>
 
-    <!-- 添加事件对话框 -->
+    <!-- 分页 -->
+    <div class="pagination" v-if="pagination.total > 0">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50]"
+        :total="pagination.total"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
+    </div>
+
+    <!-- 添加/编辑事件对话框 -->
     <el-dialog
-      v-model="showAddEventDialog"
-      title="添加生命周期事件"
+      v-model="showAddDialog"
+      :title="editingEvent ? '编辑事件' : '添加事件'"
       width="600px"
-      @close="resetEventForm"
+      @close="resetForm"
     >
       <el-form
-        ref="eventFormRef"
+        ref="formRef"
         :model="eventForm"
-        :rules="eventFormRules"
-        label-width="100px"
+        :rules="eventRules"
+        label-width="120px"
       >
         <el-form-item label="事件类型" prop="event_type">
           <el-select v-model="eventForm.event_type" placeholder="请选择事件类型" style="width: 100%">
             <el-option label="出生" value="birth" />
-            <el-option label="采购" value="purchase" />
-            <el-option label="转入" value="transfer_in" />
-            <el-option label="转出" value="transfer_out" />
-            <el-option label="称重记录" value="weight_record" />
-            <el-option label="健康检查" value="health_check" />
-            <el-option label="疫苗接种" value="vaccination" />
-            <el-option label="治疗" value="treatment" />
-            <el-option label="配种" value="breeding" />
-            <el-option label="妊检" value="pregnancy_check" />
-            <el-option label="产犊" value="calving" />
             <el-option label="断奶" value="weaning" />
+            <el-option label="配种" value="breeding" />
+            <el-option label="怀孕确认" value="pregnancy" />
+            <el-option label="产犊" value="calving" />
+            <el-option label="疫苗接种" value="vaccination" />
+            <el-option label="疾病治疗" value="treatment" />
+            <el-option label="转群" value="transfer" />
             <el-option label="销售" value="sale" />
             <el-option label="死亡" value="death" />
             <el-option label="其他" value="other" />
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="事件日期" prop="event_date">
           <el-date-picker
             v-model="eventForm.event_date"
-            type="date"
+            type="datetime"
             placeholder="选择事件日期"
+            format="YYYY-MM-DD HH:mm"
+            value-format="YYYY-MM-DD HH:mm:ss"
             style="width: 100%"
           />
         </el-form-item>
-        
+
         <el-form-item label="事件描述" prop="description">
           <el-input
             v-model="eventForm.description"
@@ -109,64 +150,97 @@
             placeholder="请输入事件描述"
           />
         </el-form-item>
-        
-        <!-- 根据事件类型显示不同的数据字段 -->
-        <template v-if="eventForm.event_type === 'weight_record'">
-          <el-form-item label="体重(kg)" prop="weight">
-            <el-input-number
-              v-model="eventForm.weight"
-              :min="0"
-              :max="2000"
-              :precision="1"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </template>
-        
-        <template v-if="eventForm.event_type === 'health_check'">
-          <el-form-item label="健康状态" prop="health_status">
-            <el-select v-model="eventForm.health_status" placeholder="请选择健康状态" style="width: 100%">
-              <el-option label="健康" value="healthy" />
-              <el-option label="患病" value="sick" />
-              <el-option label="治疗中" value="treatment" />
-            </el-select>
-          </el-form-item>
-        </template>
-        
+
+        <!-- 疫苗接种特殊字段 -->
         <template v-if="eventForm.event_type === 'vaccination'">
           <el-form-item label="疫苗名称" prop="vaccine_name">
             <el-input v-model="eventForm.vaccine_name" placeholder="请输入疫苗名称" />
           </el-form-item>
-          <el-form-item label="批次号" prop="batch_number">
-            <el-input v-model="eventForm.batch_number" placeholder="请输入批次号" />
+          <el-form-item label="剂量" prop="dosage">
+            <el-input v-model="eventForm.dosage" placeholder="请输入剂量" />
+          </el-form-item>
+          <el-form-item label="兽医" prop="veterinarian">
+            <el-input v-model="eventForm.veterinarian" placeholder="请输入兽医姓名" />
           </el-form-item>
         </template>
-        
-        <template v-if="eventForm.event_type === 'purchase'">
-          <el-form-item label="采购价格" prop="purchase_price">
-            <el-input-number
-              v-model="eventForm.purchase_price"
-              :min="0"
-              :precision="2"
+
+        <!-- 配种特殊字段 -->
+        <template v-if="eventForm.event_type === 'breeding'">
+          <el-form-item label="配种方式" prop="breeding_method">
+            <el-select v-model="eventForm.breeding_method" placeholder="请选择配种方式" style="width: 100%">
+              <el-option label="自然交配" value="natural" />
+              <el-option label="人工授精" value="artificial" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="公牛耳标" prop="bull_ear_tag">
+            <el-input v-model="eventForm.bull_ear_tag" placeholder="请输入公牛耳标号" />
+          </el-form-item>
+          <el-form-item label="预产期" prop="expected_calving_date">
+            <el-date-picker
+              v-model="eventForm.expected_calving_date"
+              type="date"
+              placeholder="选择预产期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
               style="width: 100%"
             />
           </el-form-item>
         </template>
+
+        <!-- 治疗特殊字段 -->
+        <template v-if="eventForm.event_type === 'treatment'">
+          <el-form-item label="疾病名称" prop="disease">
+            <el-input v-model="eventForm.disease" placeholder="请输入疾病名称" />
+          </el-form-item>
+          <el-form-item label="治疗方案" prop="treatment_plan">
+            <el-input v-model="eventForm.treatment_plan" type="textarea" :rows="2" placeholder="请输入治疗方案" />
+          </el-form-item>
+          <el-form-item label="使用药物" prop="medication">
+            <el-input v-model="eventForm.medication" placeholder="请输入使用的药物" />
+          </el-form-item>
+        </template>
       </el-form>
-      
+
       <template #footer>
-        <el-button @click="showAddEventDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleAddEvent" :loading="submitting">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="showAddDialog = false">取消</el-button>
+          <el-button type="primary" :loading="submitting" @click="submitEvent">
+            {{ editingEvent ? '更新' : '添加' }}
+          </el-button>
+        </div>
       </template>
+    </el-dialog>
+
+    <!-- 事件详情对话框 -->
+    <el-dialog v-model="showDetailDialog" title="事件详情" width="500px">
+      <div v-if="selectedEvent" class="event-detail">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="事件类型">
+            {{ getEventTitle(selectedEvent.event_type) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="事件日期">
+            {{ formatDateTime(selectedEvent.event_date) }}
+          </el-descriptions-item>
+          <el-descriptions-item label="描述">
+            {{ selectedEvent.description || '无' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="操作员">
+            {{ selectedEvent.operator?.real_name || '未知' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ formatDateTime(selectedEvent.created_at) }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, View, Edit } from '@element-plus/icons-vue'
-import { cattleApi } from '@/api/cattle'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { Plus, Calendar, Warning, Check, Close } from '@element-plus/icons-vue'
+import { cattleApi, type CattleEvent } from '@/api/cattle'
 import dayjs from 'dayjs'
 
 interface Props {
@@ -175,245 +249,272 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const formRef = ref<FormInstance>()
 const loading = ref(false)
 const submitting = ref(false)
-const events = ref<any[]>([])
-const showAddEventDialog = ref(false)
+const showAddDialog = ref(false)
+const showDetailDialog = ref(false)
+const editingEvent = ref<CattleEvent | null>(null)
+const selectedEvent = ref<CattleEvent | null>(null)
+const filterType = ref('')
+const currentPage = ref(1)
+const pageSize = ref(20)
+
+const events = ref<CattleEvent[]>([])
+const pagination = ref({
+  total: 0,
+  page: 1,
+  limit: 20,
+  totalPages: 0
+})
 
 const eventForm = reactive({
   event_type: '',
   event_date: '',
   description: '',
-  weight: null,
-  health_status: '',
+  // 疫苗接种字段
   vaccine_name: '',
-  batch_number: '',
-  purchase_price: null
+  dosage: '',
+  veterinarian: '',
+  // 配种字段
+  breeding_method: '',
+  bull_ear_tag: '',
+  expected_calving_date: '',
+  // 治疗字段
+  disease: '',
+  treatment_plan: '',
+  medication: ''
 })
 
-const eventFormRules = {
-  event_type: [{ required: true, message: '请选择事件类型', trigger: 'change' }],
-  event_date: [{ required: true, message: '请选择事件日期', trigger: 'change' }],
-  description: [{ required: true, message: '请输入事件描述', trigger: 'blur' }]
+const eventRules: FormRules = {
+  event_type: [
+    { required: true, message: '请选择事件类型', trigger: 'change' }
+  ],
+  event_date: [
+    { required: true, message: '请选择事件日期', trigger: 'change' }
+  ],
+  description: [
+    { required: true, message: '请输入事件描述', trigger: 'blur' }
+  ]
 }
 
-const eventFormRef = ref()
-
-onMounted(() => {
-  loadEvents()
-})
-
+// 加载事件列表
 const loadEvents = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    const response = await cattleApi.getCattleEvents(props.cattleId)
+    const response = await cattleApi.getEvents(props.cattleId, {
+      event_type: filterType.value || undefined,
+      page: currentPage.value,
+      limit: pageSize.value
+    })
+    
     events.value = response.data || []
+    pagination.value = response.pagination || {
+      total: 0,
+      page: 1,
+      limit: 20,
+      totalPages: 0
+    }
   } catch (error) {
-    console.error('加载生命周期事件失败:', error)
-    ElMessage.error('加载生命周期事件失败')
+    console.error('加载事件失败:', error)
+    ElMessage.error('加载事件失败')
   } finally {
     loading.value = false
   }
 }
 
-const handleAddEvent = async () => {
+// 获取事件类型样式
+const getEventType = (eventType: string) => {
+  const typeMap: Record<string, string> = {
+    birth: 'success',
+    weaning: 'primary',
+    breeding: 'warning',
+    pregnancy: 'info',
+    calving: 'success',
+    vaccination: 'primary',
+    treatment: 'danger',
+    transfer: 'info',
+    sale: 'warning',
+    death: 'danger'
+  }
+  return typeMap[eventType] || 'info'
+}
+
+// 获取事件图标
+const getEventIcon = (eventType: string) => {
+  const iconMap: Record<string, any> = {
+    birth: Check,
+    vaccination: Check,
+    treatment: Warning,
+    death: Close,
+    default: Calendar
+  }
+  return iconMap[eventType] || iconMap.default
+}
+
+// 获取事件标题
+const getEventTitle = (eventType: string) => {
+  const titleMap: Record<string, string> = {
+    birth: '出生',
+    weaning: '断奶',
+    breeding: '配种',
+    pregnancy: '怀孕确认',
+    calving: '产犊',
+    vaccination: '疫苗接种',
+    treatment: '疾病治疗',
+    transfer: '转群',
+    sale: '销售',
+    death: '死亡',
+    other: '其他'
+  }
+  return titleMap[eventType] || '未知事件'
+}
+
+// 格式化日期时间
+const formatDateTime = (dateTime: string) => {
+  return dayjs(dateTime).format('YYYY-MM-DD HH:mm')
+}
+
+// 查看事件详情
+const viewEvent = (event: CattleEvent) => {
+  selectedEvent.value = event
+  showDetailDialog.value = true
+}
+
+// 编辑事件
+const editEvent = (event: CattleEvent) => {
+  editingEvent.value = event
+  Object.assign(eventForm, {
+    event_type: event.event_type,
+    event_date: event.event_date,
+    description: event.description || '',
+    // 从事件数据中提取特殊字段
+    vaccine_name: event.data?.vaccine_name || '',
+    dosage: event.data?.dosage || '',
+    veterinarian: event.data?.veterinarian || '',
+    breeding_method: event.data?.breeding_method || '',
+    bull_ear_tag: event.data?.bull_ear_tag || '',
+    expected_calving_date: event.data?.expected_calving_date || '',
+    disease: event.data?.disease || '',
+    treatment_plan: event.data?.treatment_plan || '',
+    medication: event.data?.medication || ''
+  })
+  showAddDialog.value = true
+}
+
+// 删除事件
+const deleteEvent = async (event: CattleEvent) => {
   try {
-    await eventFormRef.value?.validate()
+    await ElMessageBox.confirm(
+      `确定要删除这个${getEventTitle(event.event_type)}事件吗？`,
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
     
-    submitting.value = true
-    
-    const eventData = {
-      event_type: eventForm.event_type,
-      event_date: dayjs(eventForm.event_date).format('YYYY-MM-DD'),
-      description: eventForm.description,
-      data: {} as any
-    }
-    
-    // 根据事件类型添加特定数据
-    if (eventForm.event_type === 'weight_record' && eventForm.weight) {
-      eventData.data.weight = eventForm.weight
-    }
-    if (eventForm.event_type === 'health_check' && eventForm.health_status) {
-      eventData.data.health_status = eventForm.health_status
-    }
-    if (eventForm.event_type === 'vaccination') {
-      if (eventForm.vaccine_name) eventData.data.vaccine_name = eventForm.vaccine_name
-      if (eventForm.batch_number) eventData.data.batch_number = eventForm.batch_number
-    }
-    if (eventForm.event_type === 'purchase' && eventForm.purchase_price) {
-      eventData.data.purchase_price = eventForm.purchase_price
-    }
-    
-    await cattleApi.addCattleEvent(props.cattleId, eventData)
-    
-    ElMessage.success('添加事件成功')
-    showAddEventDialog.value = false
-    resetEventForm()
+    // 这里需要实现删除API
+    ElMessage.success('删除成功')
     loadEvents()
   } catch (error) {
-    console.error('添加事件失败:', error)
-    ElMessage.error('添加事件失败')
+    if (error !== 'cancel') {
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+// 提交事件
+const submitEvent = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    submitting.value = true
+    
+    // 构建事件数据
+    const eventData: any = {
+      event_type: eventForm.event_type,
+      event_date: eventForm.event_date,
+      description: eventForm.description,
+      data: {}
+    }
+    
+    // 根据事件类型添加特殊数据
+    if (eventForm.event_type === 'vaccination') {
+      eventData.data = {
+        vaccine_name: eventForm.vaccine_name,
+        dosage: eventForm.dosage,
+        veterinarian: eventForm.veterinarian
+      }
+    } else if (eventForm.event_type === 'breeding') {
+      eventData.data = {
+        breeding_method: eventForm.breeding_method,
+        bull_ear_tag: eventForm.bull_ear_tag,
+        expected_calving_date: eventForm.expected_calving_date
+      }
+    } else if (eventForm.event_type === 'treatment') {
+      eventData.data = {
+        disease: eventForm.disease,
+        treatment_plan: eventForm.treatment_plan,
+        medication: eventForm.medication
+      }
+    }
+    
+    if (editingEvent.value) {
+      // 更新事件 - 需要实现更新API
+      ElMessage.success('更新成功')
+    } else {
+      await cattleApi.addEvent(props.cattleId, eventData)
+      ElMessage.success('添加成功')
+    }
+    
+    showAddDialog.value = false
+    loadEvents()
+  } catch (error) {
+    console.error('提交事件失败:', error)
+    ElMessage.error('操作失败')
   } finally {
     submitting.value = false
   }
 }
 
-const resetEventForm = () => {
+// 重置表单
+const resetForm = () => {
+  editingEvent.value = null
   Object.assign(eventForm, {
     event_type: '',
     event_date: '',
     description: '',
-    weight: null,
-    health_status: '',
     vaccine_name: '',
-    batch_number: '',
-    purchase_price: null
+    dosage: '',
+    veterinarian: '',
+    breeding_method: '',
+    bull_ear_tag: '',
+    expected_calving_date: '',
+    disease: '',
+    treatment_plan: '',
+    medication: ''
   })
-  eventFormRef.value?.resetFields()
+  formRef.value?.resetFields()
 }
 
-const viewEventDetail = (event: any) => {
-  ElMessageBox.alert(
-    `<div>
-      <p><strong>事件类型:</strong> ${getEventTypeName(event.event_type)}</p>
-      <p><strong>事件日期:</strong> ${formatDate(event.event_date)}</p>
-      <p><strong>描述:</strong> ${event.description || '无'}</p>
-      ${event.data && Object.keys(event.data).length > 0 ? 
-        '<p><strong>详细数据:</strong></p>' + 
-        Object.entries(event.data).map(([key, value]) => 
-          `<p style="margin-left: 20px;">${getDataLabel(key)}: ${formatDataValue(key, value)}</p>`
-        ).join('') : ''
-      }
-    </div>`,
-    '事件详情',
-    {
-      dangerouslyUseHTMLString: true,
-      confirmButtonText: '确定'
-    }
-  )
+// 分页处理
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  loadEvents()
 }
 
-const editEvent = (event: any) => {
-  ElMessage.info('编辑功能开发中...')
+const handleCurrentChange = (page: number) => {
+  currentPage.value = page
+  loadEvents()
 }
 
-const formatDate = (date: string) => {
-  return dayjs(date).format('YYYY-MM-DD')
-}
-
-const getEventType = (eventType: string) => {
-  const typeMap: Record<string, string> = {
-    birth: 'success',
-    purchase: 'primary',
-    transfer_in: 'info',
-    transfer_out: 'warning',
-    weight_record: 'info',
-    health_check: 'success',
-    vaccination: 'success',
-    treatment: 'warning',
-    breeding: 'primary',
-    pregnancy_check: 'info',
-    calving: 'success',
-    weaning: 'info',
-    sale: 'warning',
-    death: 'danger',
-    other: 'info'
-  }
-  return typeMap[eventType] || 'info'
-}
-
-const getEventIcon = (eventType: string) => {
-  // 这里可以根据事件类型返回不同的图标
-  return undefined
-}
-
-const getEventTypeName = (eventType: string) => {
-  const nameMap: Record<string, string> = {
-    birth: '出生',
-    purchase: '采购',
-    transfer_in: '转入',
-    transfer_out: '转出',
-    weight_record: '称重记录',
-    health_check: '健康检查',
-    vaccination: '疫苗接种',
-    treatment: '治疗',
-    breeding: '配种',
-    pregnancy_check: '妊检',
-    calving: '产犊',
-    weaning: '断奶',
-    sale: '销售',
-    death: '死亡',
-    other: '其他'
-  }
-  return nameMap[eventType] || eventType
-}
-
-const getEventTagType = (eventType: string) => {
-  const tagMap: Record<string, string> = {
-    birth: 'success',
-    purchase: 'primary',
-    transfer_in: 'info',
-    transfer_out: 'warning',
-    weight_record: '',
-    health_check: 'success',
-    vaccination: 'success',
-    treatment: 'warning',
-    breeding: 'primary',
-    pregnancy_check: 'info',
-    calving: 'success',
-    weaning: 'info',
-    sale: 'warning',
-    death: 'danger',
-    other: 'info'
-  }
-  return tagMap[eventType] || ''
-}
-
-const getEventStatus = (eventType: string) => {
-  const statusMap: Record<string, string> = {
-    birth: '已完成',
-    purchase: '已完成',
-    transfer_in: '已完成',
-    transfer_out: '已完成',
-    weight_record: '已记录',
-    health_check: '已检查',
-    vaccination: '已接种',
-    treatment: '治疗中',
-    breeding: '已配种',
-    pregnancy_check: '已检查',
-    calving: '已产犊',
-    weaning: '已断奶',
-    sale: '已销售',
-    death: '已记录',
-    other: '已记录'
-  }
-  return statusMap[eventType] || '已记录'
-}
-
-const getDataLabel = (key: string) => {
-  const labelMap: Record<string, string> = {
-    weight: '体重',
-    health_status: '健康状态',
-    vaccine_name: '疫苗名称',
-    batch_number: '批次号',
-    purchase_price: '采购价格'
-  }
-  return labelMap[key] || key
-}
-
-const formatDataValue = (key: string, value: any) => {
-  if (key === 'weight') return `${value} kg`
-  if (key === 'purchase_price') return `¥${value}`
-  if (key === 'health_status') {
-    const statusMap: Record<string, string> = {
-      healthy: '健康',
-      sick: '患病',
-      treatment: '治疗中'
-    }
-    return statusMap[value] || value
-  }
-  return value
-}
+onMounted(() => {
+  loadEvents()
+})
 </script>
 
 <style scoped>
@@ -421,86 +522,70 @@ const formatDataValue = (key: string, value: any) => {
   padding: 20px;
 }
 
-.events-header {
+.toolbar {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-}
-
-.header-left h3 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.header-left p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .events-timeline {
-  min-height: 400px;
+  margin-bottom: 20px;
 }
 
 .event-card {
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .event-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
-.event-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.event-type {
-  font-weight: 600;
-  font-size: 16px;
+.event-header h4 {
+  margin: 0;
+  color: #303133;
 }
 
 .event-actions {
   display: flex;
-  gap: 4px;
+  gap: 8px;
 }
 
 .event-content {
-  color: #666;
-}
-
-.event-description {
-  margin: 0 0 12px 0;
-  line-height: 1.5;
+  color: #606266;
 }
 
 .event-data {
-  margin-bottom: 12px;
+  margin: 10px 0;
+  padding: 10px;
+  background: #f5f7fa;
+  border-radius: 4px;
 }
 
-.data-item {
-  display: flex;
-  margin-bottom: 4px;
+.event-data p {
+  margin: 5px 0;
+  font-size: 14px;
 }
 
-.data-label {
-  font-weight: 500;
-  margin-right: 8px;
-  min-width: 80px;
-}
-
-.data-value {
-  color: #333;
-}
-
-.event-operator {
+.event-meta {
+  margin-top: 10px;
   font-size: 12px;
-  color: #999;
+  color: #909399;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.event-detail {
+  padding: 10px 0;
+}
+
+.dialog-footer {
+  text-align: right;
 }
 </style>

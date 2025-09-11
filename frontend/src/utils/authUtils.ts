@@ -118,7 +118,7 @@ export const userStorage = {
       uni.removeStorageSync('user')
     } else if (typeof window !== 'undefined') {
       // Web environment
-      window.localStorage.removeUser('user')
+      window.localStorage.removeItem('user')
     }
   }
 }
@@ -260,6 +260,12 @@ export const permissionUtils = {
   hasRole(roleName: string): boolean {
     const userRole = this.getUserRole()
     return userRole === roleName
+  },
+
+  // Check if user has any of the specified roles
+  hasAnyRole(roleNames: string[]): boolean {
+    const userRole = this.getUserRole()
+    return userRole ? roleNames.includes(userRole) : false
   }
 }
 
@@ -295,11 +301,31 @@ export const navigationUtils = {
   }
 }
 
+// Auth error utilities
+export const authErrorUtils = {
+  // Check if error is authentication related
+  isAuthError(error: any): boolean {
+    return error?.status === 401 || error?.response?.status === 401
+  },
+
+  // Check if error is permission related
+  isPermissionError(error: any): boolean {
+    return error?.status === 403 || error?.response?.status === 403
+  },
+
+  // Handle authentication errors
+  handleAuthError(error: any): void {
+    console.error('Authentication error:', error)
+    authState.clearAuthData()
+  }
+}
+
 export default {
   tokenStorage,
   userStorage,
   permissionsStorage,
   authState,
   permissionUtils,
-  navigationUtils
+  navigationUtils,
+  authErrorUtils
 }

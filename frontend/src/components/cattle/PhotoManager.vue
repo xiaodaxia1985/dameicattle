@@ -1,103 +1,168 @@
 <template>
   <div class="photo-manager">
-    <div class="manager-header">
-      <div class="header-left">
-        <h3>照片管理</h3>
-        <p>管理牛只的照片档案</p>
-      </div>
-      <div class="header-actions">
-        <el-upload
-          ref="uploadRef"
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          :data="uploadData"
-          :before-upload="beforeUpload"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-          :show-file-list="false"
-          accept="image/*"
-          multiple
-        >
-          <el-button type="primary">
-            <el-icon><Plus /></el-icon>
-            上传照片
-          </el-button>
-        </el-upload>
-      </div>
+    <!-- 上传区域 -->
+    <div class="upload-section">
+      <el-upload
+        ref="uploadRef"
+        class="photo-upload"
+        :action="uploadUrl"
+        :headers="uploadHeaders"
+        :data="uploadData"
+        :on-success="handleUploadSuccess"
+        :on-error="handleUploadError"
+        :before-upload="beforeUpload"
+        :file-list="fileList"
+        list-type="picture-card"
+        multiple
+        :limit="10"
+        accept="image/*"
+      >
+        <el-icon class="upload-icon"><Plus /></el-icon>
+        <template #tip>
+          <div class="el-upload__tip">
+            支持 jpg/png/gif 格式，单个文件不超过 5MB，最多上传 10 张
+          </div>
+        </template>
+      </el-upload>
     </div>
 
-    <div v-loading="loading" class="photo-gallery">
-      <div v-if="photos.length > 0" class="photo-grid">
-        <div
-          v-for="(photo, index) in photos"
-          :key="photo.id"
-          class="photo-item"
-          @click="previewPhoto(index)"
-        >
-          <div class="photo-wrapper">
-            <el-image
-              :src="photo.url"
-              :alt="photo.name"
-              fit="cover"
-              class="photo-image"
-              :preview-src-list="photoUrls"
-              :initial-index="index"
-              hide-on-click-modal
-            />
-            <div class="photo-overlay">
-              <div class="photo-actions">
-                <el-button
-                  size="small"
-                  type="primary"
-                  text
-                  @click.stop="previewPhoto(index)"
-                >
-                  <el-icon><View /></el-icon>
-                </el-button>
-                <el-button
-                  size="small"
-                  type="primary"
-                  text
-                  @click.stop="downloadPhoto(photo)"
-                >
-                  <el-icon><Download /></el-icon>
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  text
-                  @click.stop="deletePhoto(photo)"
-                >
-                  <el-icon><Delete /></el-icon>
-                </el-button>
-              </div>
+    <!-- 照片网格 -->
+    <div class="photos-grid" v-if="photos.length > 0">
+      <div
+        v-for="(photo, index) in photos"
+        :key="photo.id || index"
+        class="photo-item"
+        @click="previewPhoto(index)"
+      >
+        <div class="photo-wrapper">
+          <img :src="photo.url || photo.preview" :alt="photo.name" />
+          <div class="photo-overlay">
+            <div class="photo-actions">
+              <el-button
+                type="primary"
+                size="small"
+                circle
+                @click.stop="previewPhoto(index)"
+              >
+                <el-icon><ZoomIn /></el-icon>
+              </el-button>
+              <el-button
+                type="success"
+                size="small"
+                circle
+                @click.stop="downloadPhoto(photo)"
+              >
+                <el-icon><Download /></el-icon>
+              </el-button>
+              <el-button
+                type="danger"
+                size="small"
+                circle
+                @click.stop="deletePhoto(photo, index)"
+              >
+                <el-icon><Delete /></el-icon>
+              </el-button>
             </div>
           </div>
-          <div class="photo-info">
-            <div class="photo-name">{{ photo.name }}</div>
-            <div class="photo-date">{{ formatDate(photo.created_at) }}</div>
-          </div>
+        </div>
+        <div class="photo-info">
+          <div class="photo-name">{{ photo.name || `照片${index + 1}` }}</div>
+          <div class="photo-date">{{ formatDate(photo.created_at || photo.uploadTime) }}</div>
         </div>
       </div>
-      
-      <el-empty v-else description="暂无照片" />
     </div>
 
+    <!-- 空状态 -->
+    <el-empty v-else description="暂无照片" />
+
     <!-- 照片预览 -->
-    <el-image-viewer
-      v-if="showImageViewer"
-      :url-list="photoUrls"
-      :initial-index="currentPhotoIndex"
-      @close="showImageViewer = false"
-    />
+    <el-dialog
+      v-model="previewVisible"
+      title="照片预览"
+      width="80%"
+      top="5vh"
+      :close-on-click-modal="true"
+    >
+      <div class="preview-container">
+        <div class="preview-main">
+          <img
+            v-if="currentPhoto"
+            :src="currentPhoto.url || currentPhoto.preview"
+            :alt="currentPhoto.name"
+            class="preview-image"
+          />
+        </div>
+        
+        <div class="preview-controls">
+          <el-button
+            :disabled="currentPhotoIndex <= 0"
+            @click="prevPhoto"
+          >
+            <el-icon><ArrowLeft /></el-icon>
+            上一张
+          </el-button>
+          
+          <span class="photo-counter">
+            {{ currentPhotoIndex + 1 }} / {{ photos.length }}
+          </span>
+          
+          <el-button
+            :disabled="currentPhotoIndex >= photos.length - 1"
+            @click="nextPhoto"
+          >
+            下一张
+            <el-icon><ArrowRight /></el-icon>
+          </el-button>
+        </div>
+        
+        <div class="preview-info" v-if="currentPhoto">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="文件名">
+              {{ currentPhoto.name }}
+            </el-descriptions-item>
+            <el-descriptions-item label="上传时间">
+              {{ formatDate(currentPhoto.created_at || currentPhoto.uploadTime) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="文件大小">
+              {{ formatFileSize(currentPhoto.size) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="图片尺寸">
+              {{ currentPhoto.dimensions || '未知' }}
+            </el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 批量操作 -->
+    <div class="batch-actions" v-if="photos.length > 0">
+      <el-button @click="selectAll">全选</el-button>
+      <el-button @click="clearSelection">取消选择</el-button>
+      <el-button
+        type="danger"
+        :disabled="selectedPhotos.length === 0"
+        @click="batchDelete"
+      >
+        批量删除 ({{ selectedPhotos.length }})
+      </el-button>
+      <el-button
+        type="primary"
+        :disabled="selectedPhotos.length === 0"
+        @click="batchDownload"
+      >
+        批量下载 ({{ selectedPhotos.length }})
+      </el-button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, View, Download, Delete } from '@element-plus/icons-vue'
-import { cattleApi } from '@/api/cattle'
+import { ref, computed, onMounted } from 'vue'
+import { ElMessage, ElMessageBox, type UploadInstance, type UploadFile, type UploadFiles } from 'element-plus'
+import {
+  Plus, ZoomIn, Download, Delete, ArrowLeft, ArrowRight
+} from '@element-plus/icons-vue'
+import { fileServiceApi } from '@/api/microservices'
 import { useAuthStore } from '@/stores/auth'
 import dayjs from 'dayjs'
 
@@ -105,36 +170,59 @@ interface Props {
   cattleId: number
 }
 
+interface Photo {
+  id?: number
+  name: string
+  url?: string
+  preview?: string
+  size?: number
+  created_at?: string
+  uploadTime?: string
+  dimensions?: string
+}
+
 const props = defineProps<Props>()
 
 const authStore = useAuthStore()
-
-const loading = ref(false)
-const photos = ref<any[]>([])
-const showImageViewer = ref(false)
+const uploadRef = ref<UploadInstance>()
+const photos = ref<Photo[]>([])
+const fileList = ref<UploadFiles>([])
+const previewVisible = ref(false)
 const currentPhotoIndex = ref(0)
-const uploadRef = ref()
+const selectedPhotos = ref<number[]>([])
+const loading = ref(false)
 
-const uploadUrl = computed(() => `/api/v1/file/upload`)
+// 上传配置
+const uploadUrl = computed(() => `${fileServiceApi['serviceUrl']}/upload`)
 const uploadHeaders = computed(() => ({
   'Authorization': `Bearer ${authStore.token}`
 }))
 const uploadData = computed(() => ({
-  type: 'cattle_photo',
-  related_id: props.cattleId
+  category: 'cattle_photo',
+  cattle_id: props.cattleId
 }))
 
-const photoUrls = computed(() => photos.value.map(photo => photo.url))
-
-onMounted(() => {
-  loadPhotos()
+const currentPhoto = computed(() => {
+  return photos.value[currentPhotoIndex.value] || null
 })
 
+// 加载照片列表
 const loadPhotos = async () => {
+  loading.value = true
   try {
-    loading.value = true
-    const response = await cattleApi.getCattlePhotos(props.cattleId)
-    photos.value = response.data || []
+    const response = await fileServiceApi.getFiles({
+      category: 'cattle_photo',
+      cattle_id: props.cattleId
+    })
+    
+    photos.value = (response.data || []).map((file: any) => ({
+      id: file.id,
+      name: file.original_name || file.filename,
+      url: file.url || file.file_url,
+      size: file.size,
+      created_at: file.created_at,
+      dimensions: file.metadata?.dimensions
+    }))
   } catch (error) {
     console.error('加载照片失败:', error)
     ElMessage.error('加载照片失败')
@@ -143,54 +231,79 @@ const loadPhotos = async () => {
   }
 }
 
+// 上传前检查
 const beforeUpload = (file: File) => {
+  // 检查文件类型
   const isImage = file.type.startsWith('image/')
-  const isLt10M = file.size / 1024 / 1024 < 10
-
   if (!isImage) {
-    ElMessage.error('只能上传图片文件!')
+    ElMessage.error('只能上传图片文件')
     return false
   }
-  if (!isLt10M) {
-    ElMessage.error('图片大小不能超过 10MB!')
+  
+  // 检查文件大小 (5MB)
+  const isLt5M = file.size / 1024 / 1024 < 5
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB')
     return false
   }
+  
   return true
 }
 
-const handleUploadSuccess = (response: any) => {
+// 上传成功
+const handleUploadSuccess = (response: any, file: UploadFile) => {
   if (response.success) {
-    ElMessage.success('照片上传成功')
-    loadPhotos()
+    ElMessage.success('上传成功')
+    loadPhotos() // 重新加载照片列表
   } else {
     ElMessage.error(response.message || '上传失败')
   }
 }
 
+// 上传失败
 const handleUploadError = (error: any) => {
   console.error('上传失败:', error)
-  ElMessage.error('照片上传失败')
+  ElMessage.error('上传失败')
 }
 
+// 预览照片
 const previewPhoto = (index: number) => {
   currentPhotoIndex.value = index
-  showImageViewer.value = true
+  previewVisible.value = true
 }
 
-const downloadPhoto = (photo: any) => {
-  const link = document.createElement('a')
-  link.href = photo.url
-  link.download = photo.name
-  link.target = '_blank'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+// 上一张照片
+const prevPhoto = () => {
+  if (currentPhotoIndex.value > 0) {
+    currentPhotoIndex.value--
+  }
 }
 
-const deletePhoto = async (photo: any) => {
+// 下一张照片
+const nextPhoto = () => {
+  if (currentPhotoIndex.value < photos.value.length - 1) {
+    currentPhotoIndex.value++
+  }
+}
+
+// 下载照片
+const downloadPhoto = (photo: Photo) => {
+  if (photo.id) {
+    fileServiceApi.downloadFile(photo.id, photo.name)
+  } else if (photo.url) {
+    // 如果没有ID但有URL，直接下载
+    const link = document.createElement('a')
+    link.href = photo.url
+    link.download = photo.name
+    link.click()
+  }
+}
+
+// 删除照片
+const deletePhoto = async (photo: Photo, index: number) => {
   try {
     await ElMessageBox.confirm(
-      '确定要删除这张照片吗？删除后无法恢复。',
+      `确定要删除照片 "${photo.name}" 吗？`,
       '确认删除',
       {
         confirmButtonText: '确定',
@@ -199,20 +312,105 @@ const deletePhoto = async (photo: any) => {
       }
     )
     
-    await cattleApi.deleteCattlePhoto(props.cattleId, photo.id)
+    if (photo.id) {
+      await fileServiceApi.deleteFile(photo.id)
+    }
+    
+    photos.value.splice(index, 1)
     ElMessage.success('删除成功')
-    loadPhotos()
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('删除照片失败:', error)
-      ElMessage.error('删除照片失败')
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
     }
   }
 }
 
-const formatDate = (date: string) => {
-  return dayjs(date).format('YYYY-MM-DD')
+// 全选
+const selectAll = () => {
+  selectedPhotos.value = photos.value.map((_, index) => index)
 }
+
+// 取消选择
+const clearSelection = () => {
+  selectedPhotos.value = []
+}
+
+// 批量删除
+const batchDelete = async () => {
+  if (selectedPhotos.value.length === 0) return
+  
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除选中的 ${selectedPhotos.value.length} 张照片吗？`,
+      '确认批量删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    // 按索引倒序删除，避免索引变化问题
+    const sortedIndexes = [...selectedPhotos.value].sort((a, b) => b - a)
+    
+    for (const index of sortedIndexes) {
+      const photo = photos.value[index]
+      if (photo.id) {
+        try {
+          await fileServiceApi.deleteFile(photo.id)
+        } catch (error) {
+          console.error(`删除照片 ${photo.name} 失败:`, error)
+        }
+      }
+      photos.value.splice(index, 1)
+    }
+    
+    selectedPhotos.value = []
+    ElMessage.success('批量删除成功')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('批量删除失败')
+    }
+  }
+}
+
+// 批量下载
+const batchDownload = () => {
+  if (selectedPhotos.value.length === 0) return
+  
+  selectedPhotos.value.forEach(index => {
+    const photo = photos.value[index]
+    if (photo) {
+      downloadPhoto(photo)
+    }
+  })
+  
+  ElMessage.success('开始下载选中的照片')
+}
+
+// 格式化日期
+const formatDate = (date: string | undefined) => {
+  if (!date) return '未知'
+  return dayjs(date).format('YYYY-MM-DD HH:mm')
+}
+
+// 格式化文件大小
+const formatFileSize = (size: number | undefined) => {
+  if (!size) return '未知'
+  
+  if (size < 1024) {
+    return `${size} B`
+  } else if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`
+  } else {
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`
+  }
+}
+
+onMounted(() => {
+  loadPhotos()
+})
 </script>
 
 <style scoped>
@@ -220,56 +418,50 @@ const formatDate = (date: string) => {
   padding: 20px;
 }
 
-.manager-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
+.upload-section {
+  margin-bottom: 30px;
 }
 
-.header-left h3 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  font-weight: 600;
+.photo-upload {
+  width: 100%;
 }
 
-.header-left p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
+.upload-icon {
+  font-size: 28px;
+  color: #8c939d;
 }
 
-.photo-gallery {
-  min-height: 400px;
-}
-
-.photo-grid {
+.photos-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  gap: 20px;
+  margin-bottom: 30px;
 }
 
 .photo-item {
   cursor: pointer;
   border-radius: 8px;
   overflow: hidden;
-  transition: transform 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .photo-item:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
 .photo-wrapper {
   position: relative;
-  aspect-ratio: 1;
+  width: 100%;
+  height: 150px;
   overflow: hidden;
-  border-radius: 8px;
 }
 
-.photo-image {
+.photo-wrapper img {
   width: 100%;
   height: 100%;
+  object-fit: cover;
 }
 
 .photo-overlay {
@@ -283,7 +475,7 @@ const formatDate = (date: string) => {
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.3s;
 }
 
 .photo-item:hover .photo-overlay {
@@ -295,26 +487,63 @@ const formatDate = (date: string) => {
   gap: 8px;
 }
 
-.photo-actions .el-button {
-  color: white;
-}
-
 .photo-info {
-  padding: 8px 0;
-  text-align: center;
+  padding: 10px;
+  background: white;
 }
 
 .photo-name {
   font-size: 14px;
   font-weight: 500;
+  color: #303133;
   margin-bottom: 4px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .photo-date {
   font-size: 12px;
-  color: #666;
+  color: #909399;
+}
+
+.preview-container {
+  text-align: center;
+}
+
+.preview-main {
+  margin-bottom: 20px;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.preview-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.photo-counter {
+  font-size: 14px;
+  color: #606266;
+}
+
+.preview-info {
+  text-align: left;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border-top: 1px solid #e4e7ed;
 }
 </style>

@@ -155,9 +155,9 @@ import { feedingApi } from '@/api/feeding'
 import type { FeedFormula, CreateFormulaRequest, UpdateFormulaRequest, IngredientItem } from '@/api/feeding'
 import IngredientEditor from '@/components/feeding/IngredientEditor.vue'
 import IngredientTable from '@/components/feeding/IngredientTable.vue'
-import { validateData, validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { validateData, validateDataArray } from '@/utils/dataValidation'
+import { ensureArray, ensureNumber, safeGet } from '@/utils/safeAccess'
 import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
-import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const formulas = ref<FeedFormula[]>([])
@@ -273,7 +273,7 @@ const fetchFormulas = withPageErrorHandler(async () => {
     console.log('🔍 饲料配方API调用参数:', params)
     
     const result = await safeApiCall(
-      () => feedingApi.getFormulas(params),
+      () => feedingApi.getFeedFormulas(params),
       {
         showMessage: false,
         fallbackValue: { data: { data: [], total: 0 } }
@@ -452,7 +452,7 @@ const submitForm = withFormErrorHandler(async () => {
   try {
     if (dialogMode.value === 'create') {
       const result = await safeApiCall(
-        () => feedingApi.createFormula(formData.value),
+        () => feedingApi.createFeedFormula(formData.value),
         {
           showMessage: false,
           fallbackValue: null
@@ -464,7 +464,7 @@ const submitForm = withFormErrorHandler(async () => {
       }
     } else {
       const result = await safeApiCall(
-        () => feedingApi.updateFormula(ensureNumber(selectedFormula.value?.id, 0), formData.value),
+        () => feedingApi.updateFeedFormula(ensureNumber(selectedFormula.value?.id, 0), formData.value),
         {
           showMessage: false,
           fallbackValue: null

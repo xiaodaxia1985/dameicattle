@@ -141,7 +141,7 @@ import { Plus, ArrowDown } from '@element-plus/icons-vue'
 import { newsApi, type NewsArticle, type NewsCategory } from '@/api/news'
 import request from '@/api/request'
 import { formatDate } from '@/utils/date'
-import { validatePaginationData, validateDataArray, validateNewsData } from '@/utils/dataValidation'
+import { validatePaginationData, validateDataArray } from '@/utils/dataValidation'
 import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
 import { safeGet, ensureArray, ensureNumber } from '@/utils/safeAccess'
 
@@ -218,7 +218,7 @@ const fetchArticles = async () => {
     
     if (result && result.data) {
       const articlesData = ensureArray(safeGet(result, 'data.data', []))
-      articles.value = validateDataArray(articlesData, validateNewsData)
+      articles.value = validateDataArray(articlesData)
       pagination.total = ensureNumber(safeGet(result, 'data.pagination.total', 0))
       
       console.log(`✅ 文章列表加载成功: ${articles.value.length} 条记录`)

@@ -91,7 +91,7 @@ import { ElMessage } from 'element-plus'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { salesApi } from '@/api/sales'
 import { safeApiCall, withFormErrorHandler } from '@/utils/errorHandler'
-import { ensureNumber } from '@/utils/dataValidation'
+import { ensureNumber } from '@/utils/safeAccess'
 
 const router = useRouter()
 const route = useRoute()

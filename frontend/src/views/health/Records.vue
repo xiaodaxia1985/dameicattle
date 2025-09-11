@@ -96,7 +96,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column label="牛只耳标" width="120">
           <template #default="{ row }">
-            {{ safeGet(row, 'cattleEarTag', safeGet(row, 'cattle.ear_tag', '-')) }}
+            {{ safeGet(row, 'cattle.ear_tag', '-') }}
           </template>
         </el-table-column>
         <el-table-column prop="symptoms" label="症状" min-width="150">
@@ -122,12 +122,12 @@
         </el-table-column>
         <el-table-column label="兽医" width="100">
           <template #default="{ row }">
-            {{ safeGet(row, 'veterinarianName', safeGet(row, 'veterinarian.real_name', '-')) }}
+            {{ safeGet(row, 'veterinarian.real_name', '-') }}
           </template>
         </el-table-column>
         <el-table-column label="诊断日期" width="120">
           <template #default="{ row }">
-            {{ formatDate(safeGet(row, 'diagnosisDate', safeGet(row, 'diagnosis_date', ''))) }}
+            {{ safeGet(row, 'diagnosis_date', '-') }}
           </template>
         </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
@@ -334,7 +334,8 @@ import { Plus, Download, Search } from '@element-plus/icons-vue'
 import { healthApi } from '@/api/health'
 import type { HealthRecord } from '@/api/health'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
-import { validateDataArray, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { validateDataArray } from '@/utils/dataValidation'
+import { ensureArray, ensureNumber } from '@/utils/safeAccess'
 import { safeApiCall, withPageErrorHandler, withFormErrorHandler } from '@/utils/errorHandler'
 import { safeGet } from '@/utils/safeAccess'
 

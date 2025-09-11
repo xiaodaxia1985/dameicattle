@@ -1,282 +1,282 @@
 import { baseServiceApi } from './microservices'
 
-// 基地和牛棚相关类型定义
+// 基地管理相关类型定义
 export interface Base {
   id: number
   name: string
   code: string
-  address?: string
-  latitude?: number
-  longitude?: number
-  area?: number
-  manager_id?: number
+  address: string
+  area: number
+  capacity: number
+  manager_name?: string
+  manager_phone?: string
+  description?: string
+  location?: {
+    latitude: number
+    longitude: number
+  }
+  facilities?: string[]
+  status: 'active' | 'inactive' | 'maintenance'
   created_at: string
   updated_at: string
-  // 关联数据
-  manager?: {
-    id: number
-    real_name: string
-    username: string
-    phone?: string
-    email?: string
-  }
+  barn_count?: number
+  cattle_count?: number
 }
 
 export interface Barn {
   id: number
+  base_id: number
   name: string
   code: string
-  base_id: number
+  barn_type: 'breeding' | 'fattening' | 'calving' | 'quarantine' | 'hospital'
   capacity: number
   current_count: number
-  barn_type?: string
-  description?: string
-  facilities?: object
+  area: number
+  location?: string
+  equipment?: string[]
+  environment?: {
+    temperature_range: [number, number]
+    humidity_range: [number, number]
+    ventilation: string
+  }
+  status: 'active' | 'inactive' | 'maintenance' | 'full'
+  notes?: string
   created_at: string
   updated_at: string
-  // 关联数据
-  base?: {
-    id: number
-    name: string
-    code: string
-  }
+  base?: Base
 }
 
-export interface BaseListParams {
-  page?: number
-  limit?: number
-  keyword?: string
-  managerId?: number
-}
-
-export interface BaseListResponse {
-  data: Base[]
-  total: number
-  page: number
-  limit: number
-}
-
-export interface BarnListParams {
-  page?: number
-  limit?: number
-  baseId?: number
-  keyword?: string
-  barnType?: string
-}
-
-export interface BarnListResponse {
-  data: Barn[]
-  total: number
-  page: number
-  limit: number
-}
-
-export interface CreateBaseRequest {
-  name: string
-  code: string
-  address: string
-  latitude?: number
-  longitude?: number
-  area?: number
-  managerId?: number
-}
-
-export interface UpdateBaseRequest {
-  name?: string
-  address?: string
-  latitude?: number
-  longitude?: number
-  area?: number
-  managerId?: number
-}
-
-export interface CreateBarnRequest {
-  name: string
-  code: string
-  baseId: number
-  capacity: number
-  barnType?: string
-}
-
-export interface UpdateBarnRequest {
-  name?: string
-  capacity?: number
-  barnType?: string
+export interface BaseStatistics {
+  total_bases: number
+  active_bases: number
+  total_barns: number
+  total_capacity: number
+  current_cattle_count: number
+  utilization_rate: number
+  base_distribution: Array<{
+    base_id: number
+    base_name: string
+    cattle_count: number
+    capacity: number
+    utilization_rate: number
+  }>
 }
 
 export const baseApi = {
   // 获取基地列表
-  async getBases(params: BaseListParams = {}): Promise<{ data: { bases: Base[], pagination: any } }> {
+  async getBases(params?: {
+    status?: string
+    search?: string
+    page?: number
+    limit?: number
+  }): Promise<{ data: { bases: Base[] }; pagination: any }> {
     try {
-      console.log('🔍 baseApi.getBases 调用参数:', params)
-      
       const response = await baseServiceApi.getBases(params)
-      console.log('📥 baseServiceApi 原始响应:', response)
       
-      // 直接解析微服务返回的数据
-      const responseData = response?.data || response || {}
-      console.log('📊 解析响应数据结构:', responseData)
-      
+      // 处理不同的响应结构
       let bases = []
-      let total = 0
-      let page = 1
-      let limit = 20
-      
-      // 处理不同的数据结构
-      if (Array.isArray(responseData)) {
-        // 直接是数组
-        bases = responseData
-        total = bases.length
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        // 有data字段且是数组
-        bases = responseData.data
-        total = responseData.total || responseData.pagination?.total || bases.length
-        page = responseData.page || responseData.pagination?.page || 1
-        limit = responseData.limit || responseData.pagination?.limit || 20
-      } else if (responseData.bases && Array.isArray(responseData.bases)) {
-        // 有bases字段且是数组
-        bases = responseData.bases
-        total = responseData.total || responseData.pagination?.total || bases.length
-        page = responseData.page || responseData.pagination?.page || 1
-        limit = responseData.limit || responseData.pagination?.limit || 20
-      } else if (responseData.items && Array.isArray(responseData.items)) {
-        // 有items字段且是数组
-        bases = responseData.items
-        total = responseData.total || responseData.pagination?.total || bases.length
-        page = responseData.page || responseData.pagination?.page || 1
-        limit = responseData.limit || responseData.pagination?.limit || 20
+      if (response.data?.bases) {
+        bases = response.data.bases
+      } else if (Array.isArray(response.data)) {
+        bases = response.data
+      } else if (response.data?.data) {
+        bases = response.data.data
       }
       
-      const result = { 
-        data: {
-          bases: bases,
-          pagination: {
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit)
-          }
+      return {
+        data: { bases: Array.isArray(bases) ? bases : [] },
+        pagination: response.pagination || {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0
         }
       }
-      
-      console.log('✅ baseApi.getBases 解析结果:', { 
-        basesCount: bases.length, 
-        total, 
-        page, 
-        limit,
-        sampleBase: bases[0] || null
-      })
-      
-      return result
     } catch (error) {
       console.error('获取基地列表失败:', error)
-      return { 
-        data: {
-          bases: [],
-          pagination: { total: 0, page: 1, limit: 20, totalPages: 0 }
-        }
+      return {
+        data: { bases: [] },
+        pagination: { total: 0, page: 1, limit: 20, totalPages: 0 }
       }
-    }
-  },
-
-  // 获取所有基地（不分页）
-  async getAllBases(): Promise<{ data: Base[] }> {
-    try {
-      const response = await baseServiceApi.get('/bases/all')
-      console.log('baseApi.getAllBases 原始响应:', response)
-      
-      // 安全获取数据
-      const data = response?.data || []
-      const validatedData = Array.isArray(data) ? data.filter(base => 
-        base && typeof base === 'object' && base.id && base.name
-      ) : []
-      
-      return { data: validatedData }
-    } catch (error) {
-      console.error('获取所有基地失败:', error)
-      return { data: [] }
     }
   },
 
   // 获取基地详情
-  async getBaseById(id: number): Promise<{ data: Base }> {
-    const response = await baseServiceApi.getBase(id)
-    return { data: response.data }
+  async getBase(id: number): Promise<{ data: Base }> {
+    try {
+      const response = await baseServiceApi.getBase(id)
+      return { data: response.data }
+    } catch (error) {
+      console.error('获取基地详情失败:', error)
+      throw error
+    }
   },
 
   // 创建基地
-  async createBase(data: CreateBaseRequest): Promise<{ data: Base }> {
-    const response = await baseServiceApi.createBase(data)
-    return { data: response.data }
+  async createBase(data: Omit<Base, 'id' | 'created_at' | 'updated_at' | 'barn_count' | 'cattle_count'>): Promise<Base> {
+    try {
+      const response = await baseServiceApi.createBase(data)
+      return response.data
+    } catch (error) {
+      console.error('创建基地失败:', error)
+      throw error
+    }
   },
 
-  // 更新基地信息
-  async updateBase(id: number, data: UpdateBaseRequest): Promise<{ data: Base }> {
-    const response = await baseServiceApi.updateBase(id, data)
-    return { data: response.data }
+  // 更新基地
+  async updateBase(id: number, data: Partial<Base>): Promise<Base> {
+    try {
+      const response = await baseServiceApi.updateBase(id, data)
+      return response.data
+    } catch (error) {
+      console.error('更新基地失败:', error)
+      throw error
+    }
   },
 
   // 删除基地
   async deleteBase(id: number): Promise<void> {
-    await baseServiceApi.deleteBase(id)
+    try {
+      await baseServiceApi.deleteBase(id)
+    } catch (error) {
+      console.error('删除基地失败:', error)
+      throw error
+    }
   },
 
-  // 获取基地统计信息
-  async getBaseStatistics(id: number): Promise<{ data: any }> {
-    const response = await baseServiceApi.get(`/bases/${id}/statistics`)
-    return { data: response.data }
+  // 获取牛舍列表
+  async getBarns(params?: {
+    base_id?: number
+    barn_type?: string
+    status?: string
+    page?: number
+    limit?: number
+  }): Promise<{ data: Barn[]; pagination: any }> {
+    try {
+      const response = await baseServiceApi.getBarns(params?.base_id, params)
+      
+      // 处理不同的响应结构
+      let barns = []
+      if (response.data?.barns) {
+        barns = response.data.barns
+      } else if (Array.isArray(response.data)) {
+        barns = response.data
+      } else if (response.data?.data) {
+        barns = response.data.data
+      }
+      
+      return {
+        data: Array.isArray(barns) ? barns : [],
+        pagination: response.pagination || {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0
+        }
+      }
+    } catch (error) {
+      console.error('获取牛舍列表失败:', error)
+      return {
+        data: [],
+        pagination: { total: 0, page: 1, limit: 20, totalPages: 0 }
+      }
+    }
   },
 
-  // 获取基地GPS位置
-  async getBaseLocation(id: number): Promise<{ data: { latitude: number; longitude: number; address: string } }> {
-    const response = await baseServiceApi.get(`/bases/${id}/location`)
-    return { data: response.data }
+  // 根据基地ID获取牛舍列表
+  async getBarnsByBaseId(baseId: number): Promise<Barn[]> {
+    try {
+      const response = await baseServiceApi.getBarns(baseId)
+      
+      // 处理不同的响应结构
+      if (response.data?.barns) {
+        return response.data.barns
+      } else if (Array.isArray(response.data)) {
+        return response.data
+      } else if (response.data?.data) {
+        return response.data.data
+      }
+      
+      return []
+    } catch (error) {
+      console.error('获取基地牛舍失败:', error)
+      return []
+    }
   },
 
-  // 获取牛棚列表
-  async getBarns(params: BarnListParams = {}): Promise<{ data: BarnListResponse }> {
-    const response = await baseServiceApi.getBarns(params?.baseId, params)
-    return { data: response.data }
+  // 获取牛舍详情
+  async getBarn(id: number): Promise<{ data: Barn }> {
+    try {
+      const response = await baseServiceApi.getBarn(id)
+      return { data: response.data }
+    } catch (error) {
+      console.error('获取牛舍详情失败:', error)
+      throw error
+    }
   },
 
-  // 获取指定基地的牛棚列表
-  async getBarnsByBaseId(baseId: number): Promise<{ data: { barns: Barn[], base_info: any } }> {
-    const response = await baseServiceApi.get(`/bases/${baseId}/barns`)
-    return { data: response.data }
+  // 创建牛舍
+  async createBarn(data: Omit<Barn, 'id' | 'created_at' | 'updated_at' | 'current_count'>): Promise<Barn> {
+    try {
+      const response = await baseServiceApi.createBarn(data)
+      return response.data
+    } catch (error) {
+      console.error('创建牛舍失败:', error)
+      throw error
+    }
   },
 
-  // 获取牛棚详情
-  async getBarnById(id: number): Promise<{ data: Barn }> {
-    const response = await baseServiceApi.getBarn(id)
-    return { data: response.data }
+  // 更新牛舍
+  async updateBarn(id: number, data: Partial<Barn>): Promise<Barn> {
+    try {
+      const response = await baseServiceApi.updateBarn(id, data)
+      return response.data
+    } catch (error) {
+      console.error('更新牛舍失败:', error)
+      throw error
+    }
   },
 
-  // 创建牛棚
-  async createBarn(data: CreateBarnRequest): Promise<{ data: Barn }> {
-    const response = await baseServiceApi.createBarn(data)
-    return { data: response.data }
-  },
-
-  // 更新牛棚信息
-  async updateBarn(id: number, data: UpdateBarnRequest): Promise<{ data: Barn }> {
-    const response = await baseServiceApi.updateBarn(id, data)
-    return { data: response.data }
-  },
-
-  // 删除牛棚
+  // 删除牛舍
   async deleteBarn(id: number): Promise<void> {
-    await baseServiceApi.deleteBarn(id)
+    try {
+      await baseServiceApi.deleteBarn(id)
+    } catch (error) {
+      console.error('删除牛舍失败:', error)
+      throw error
+    }
   },
 
-  // 获取牛棚统计信息
-  async getBarnStatistics(id: number): Promise<{ data: any }> {
-    const response = await baseServiceApi.get(`/barns/${id}/statistics`)
-    return { data: response.data }
-  },
-
-  // 获取牛棚内的牛只列表
-  async getBarnCattle(barnId: number): Promise<{ data: any[] }> {
-    const response = await baseServiceApi.get(`/barns/${barnId}/cattle`)
-    return { data: response.data }
+  // 获取基地统计
+  async getBaseStatistics(): Promise<{ data: BaseStatistics }> {
+    try {
+      const response = await baseServiceApi.get('/statistics')
+      const data = response.data || {}
+      
+      return {
+        data: {
+          total_bases: data.total_bases || 0,
+          active_bases: data.active_bases || 0,
+          total_barns: data.total_barns || 0,
+          total_capacity: data.total_capacity || 0,
+          current_cattle_count: data.current_cattle_count || 0,
+          utilization_rate: data.utilization_rate || 0,
+          base_distribution: Array.isArray(data.base_distribution) ? data.base_distribution : []
+        }
+      }
+    } catch (error) {
+      console.error('获取基地统计失败:', error)
+      return {
+        data: {
+          total_bases: 0,
+          active_bases: 0,
+          total_barns: 0,
+          total_capacity: 0,
+          current_cattle_count: 0,
+          utilization_rate: 0,
+          base_distribution: []
+        }
+      }
+    }
   }
 }

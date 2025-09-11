@@ -400,7 +400,8 @@ import * as echarts from 'echarts'
 import { feedingApi } from '@/api/feeding'
 import { baseApi } from '@/api/base'
 import type { FeedingStatistics, FeedingRecord } from '@/api/feeding'
-import { validateStatisticsData, validateDataArray, ensureArray, ensureNumber, safeGet } from '@/utils/dataValidation'
+import { validateStatisticsData, validateDataArray } from '@/utils/dataValidation'
+import { ensureArray, ensureNumber, safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const dateRange = ref<[string, string]>(['', ''])
@@ -530,8 +531,8 @@ const fetchRecentRecords = async () => {
     console.log('最近记录API响应:', response)
     
     // 根据实际API返回结构处理数据
-    if (response.data.records) {
-      recentRecords.value = response.data.records || []
+    if (response.records) {
+      recentRecords.value = response.records || []
     } else if (response.data.data) {
       recentRecords.value = response.data.data || []
     } else {

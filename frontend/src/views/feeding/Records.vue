@@ -531,8 +531,8 @@ import { baseApi } from '@/api/base'
 import { barnApi } from '@/api/barn'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import type { FeedingRecord, FeedFormula, CreateFeedingRecordRequest, UpdateFeedingRecordRequest } from '@/api/feeding'
-import { validateData, ensureNumber } from '@/utils/dataValidation'
-import { safeGet } from '@/utils/safeAccess'
+import { validateDataArray } from '@/utils/dataValidation'
+import { ensureArray, ensureNumber, safeGet } from '@/utils/safeAccess'
 
 // 响应式数据
 const records = ref<FeedingRecord[]>([])

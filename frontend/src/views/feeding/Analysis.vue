@@ -276,7 +276,7 @@ import { Document, TrendCharts, Money, Dish, Warning, ArrowUp, ArrowDown, Downlo
 import * as echarts from 'echarts'
 import { feedingApi } from '@/api/feeding'
 import { baseApi } from '@/api/base'
-import { ensureNumber } from '@/utils/dataValidation'
+import { ensureNumber } from '@/utils/safeAccess'
 import { safeGet } from '@/utils/safeAccess'
 
 // 响应式数据

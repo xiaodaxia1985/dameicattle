@@ -207,9 +207,9 @@ export class RequestService {
   }
 }
 
-// 创建默认实例
+// 创建默认实例 - 不再使用统一baseURL
 export const apiService = new RequestService({
-  baseURL: '/api/v1',
+  baseURL: '', // 直连微服务，不使用统一前缀
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

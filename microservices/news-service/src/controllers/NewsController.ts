@@ -61,18 +61,26 @@ export class NewsController {
         order: [['created_at', 'DESC']]
       });
 
-      (res as any).success({
-        articles: rows,
-        pagination: {
-          total: count,
-          page: Number(page),
-          limit: Number(limit),
-          pages: Math.ceil(count / Number(limit))
-        }
-      }, '获取新闻文章列表成功');
+      res.json({
+        success: true,
+        data: {
+          data: rows,
+          pagination: {
+            total: count,
+            page: Number(page),
+            limit: Number(limit),
+            totalPages: Math.ceil(count / Number(limit))
+          }
+        },
+        message: '获取新闻文章列表成功'
+      });
     } catch (error) {
       logger.error('获取新闻文章列表失败:', error);
-      (res as any).error('获取新闻文章列表失败', 500, 'NEWS_ARTICLES_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取新闻文章列表失败',
+        code: 'NEWS_ARTICLES_ERROR'
+      });
     }
   }
 
@@ -93,7 +101,11 @@ export class NewsController {
       if (category_id) {
         const category = await NewsCategory.findByPk(category_id);
         if (!category) {
-          (res as any).error('指定的分类不存在', 404, 'CATEGORY_NOT_FOUND');
+          res.status(404).json({
+            success: false,
+            error: '指定的分类不存在',
+            code: 'CATEGORY_NOT_FOUND'
+          });
           return;
         }
       }
@@ -126,10 +138,18 @@ export class NewsController {
         ]
       });
 
-      (res as any).success(fullArticle, '创建新闻文章成功', 201);
+      res.status(201).json({
+        success: true,
+        data: fullArticle,
+        message: '创建新闻文章成功'
+      });
     } catch (error) {
       logger.error('创建新闻文章失败:', error);
-      (res as any).error('创建新闻文章失败', 500, 'CREATE_NEWS_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '创建新闻文章失败',
+        code: 'CREATE_NEWS_ARTICLE_ERROR'
+      });
     }
   }
 
@@ -153,180 +173,352 @@ export class NewsController {
     try {
       await NewsController.getNewsArticles(req, res);
     } catch (error) {
-      (res as any).error('获取公开新闻失败', 500, 'GET_PUBLIC_NEWS_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取公开新闻失败',
+        code: 'GET_PUBLIC_NEWS_ERROR'
+      });
     }
   }
 
   static async getNewsArticle(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      (res as any).success({ id, title: '示例新闻' }, '获取新闻详情成功');
+      res.json({
+        success: true,
+        data: { id, title: '示例新闻' },
+        message: '获取新闻详情成功'
+      });
     } catch (error) {
-      (res as any).error('获取新闻详情失败', 500, 'GET_NEWS_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取新闻详情失败',
+        code: 'GET_NEWS_ARTICLE_ERROR'
+      });
     }
   }
 
   static async getNewsCategories(req: Request, res: Response) {
     try {
-      (res as any).success({ categories: [] }, '获取新闻分类成功');
+      res.json({
+        success: true,
+        data: { categories: [] },
+        message: '获取新闻分类成功'
+      });
     } catch (error) {
-      (res as any).error('获取新闻分类失败', 500, 'GET_NEWS_CATEGORIES_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取新闻分类失败',
+        code: 'GET_NEWS_CATEGORIES_ERROR'
+      });
     }
   }
 
   static async incrementViewCount(req: Request, res: Response) {
     try {
-      (res as any).success(null, '增加浏览量成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '增加浏览量成功'
+      });
     } catch (error) {
-      (res as any).error('增加浏览量失败', 500, 'INCREMENT_VIEW_COUNT_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '增加浏览量失败',
+        code: 'INCREMENT_VIEW_COUNT_ERROR'
+      });
     }
   }
 
   static async updateNewsArticle(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      (res as any).success({ id, ...req.body }, '更新新闻成功');
+      res.json({
+        success: true,
+        data: { id, ...req.body },
+        message: '更新新闻成功'
+      });
     } catch (error) {
-      (res as any).error('更新新闻失败', 500, 'UPDATE_NEWS_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '更新新闻失败',
+        code: 'UPDATE_NEWS_ARTICLE_ERROR'
+      });
     }
   }
 
   static async deleteNewsArticle(req: Request, res: Response) {
     try {
-      (res as any).success(null, '删除新闻成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '删除新闻成功'
+      });
     } catch (error) {
-      (res as any).error('删除新闻失败', 500, 'DELETE_NEWS_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '删除新闻失败',
+        code: 'DELETE_NEWS_ARTICLE_ERROR'
+      });
     }
   }
 
   static async publishNewsArticle(req: Request, res: Response) {
     try {
-      (res as any).success(null, '发布新闻成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '发布新闻成功'
+      });
     } catch (error) {
-      (res as any).error('发布新闻失败', 500, 'PUBLISH_NEWS_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '发布新闻失败',
+        code: 'PUBLISH_NEWS_ARTICLE_ERROR'
+      });
     }
   }
 
   static async unpublishNewsArticle(req: Request, res: Response) {
     try {
-      (res as any).success(null, '取消发布成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '取消发布成功'
+      });
     } catch (error) {
-      (res as any).error('取消发布失败', 500, 'UNPUBLISH_NEWS_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '取消发布失败',
+        code: 'UNPUBLISH_NEWS_ARTICLE_ERROR'
+      });
     }
   }
 
   static async setFeaturedArticle(req: Request, res: Response) {
     try {
-      (res as any).success(null, '设置推荐成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '设置推荐成功'
+      });
     } catch (error) {
-      (res as any).error('设置推荐失败', 500, 'SET_FEATURED_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '设置推荐失败',
+        code: 'SET_FEATURED_ARTICLE_ERROR'
+      });
     }
   }
 
   static async setTopArticle(req: Request, res: Response) {
     try {
-      (res as any).success(null, '设置置顶成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '设置置顶成功'
+      });
     } catch (error) {
-      (res as any).error('设置置顶失败', 500, 'SET_TOP_ARTICLE_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '设置置顶失败',
+        code: 'SET_TOP_ARTICLE_ERROR'
+      });
     }
   }
 
   static async searchNewsArticles(req: Request, res: Response) {
     try {
-      (res as any).success({ articles: [] }, '搜索新闻成功');
+      res.json({
+        success: true,
+        data: { articles: [] },
+        message: '搜索新闻成功'
+      });
     } catch (error) {
-      (res as any).error('搜索新闻失败', 500, 'SEARCH_NEWS_ARTICLES_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '搜索新闻失败',
+        code: 'SEARCH_NEWS_ARTICLES_ERROR'
+      });
     }
   }
 
   static async getNewsCategoryById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      (res as any).success({ id, name: '示例分类' }, '获取分类详情成功');
+      res.json({
+        success: true,
+        data: { id, name: '示例分类' },
+        message: '获取分类详情成功'
+      });
     } catch (error) {
-      (res as any).error('获取分类详情失败', 500, 'GET_NEWS_CATEGORY_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取分类详情失败',
+        code: 'GET_NEWS_CATEGORY_ERROR'
+      });
     }
   }
 
   static async createNewsCategory(req: Request, res: Response) {
     try {
-      (res as any).success({ id: 1, ...req.body }, '创建分类成功', 201);
+      res.status(201).json({
+        success: true,
+        data: { id: 1, ...req.body },
+        message: '创建分类成功'
+      });
     } catch (error) {
-      (res as any).error('创建分类失败', 500, 'CREATE_NEWS_CATEGORY_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '创建分类失败',
+        code: 'CREATE_NEWS_CATEGORY_ERROR'
+      });
     }
   }
 
   static async updateNewsCategory(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      (res as any).success({ id, ...req.body }, '更新分类成功');
+      res.json({
+        success: true,
+        data: { id, ...req.body },
+        message: '更新分类成功'
+      });
     } catch (error) {
-      (res as any).error('更新分类失败', 500, 'UPDATE_NEWS_CATEGORY_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '更新分类失败',
+        code: 'UPDATE_NEWS_CATEGORY_ERROR'
+      });
     }
   }
 
   static async deleteNewsCategory(req: Request, res: Response) {
     try {
-      (res as any).success(null, '删除分类成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '删除分类成功'
+      });
     } catch (error) {
-      (res as any).error('删除分类失败', 500, 'DELETE_NEWS_CATEGORY_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '删除分类失败',
+        code: 'DELETE_NEWS_CATEGORY_ERROR'
+      });
     }
   }
 
   static async getNewsComments(req: Request, res: Response) {
     try {
-      (res as any).success({ comments: [] }, '获取评论成功');
+      res.json({
+        success: true,
+        data: { comments: [] },
+        message: '获取评论成功'
+      });
     } catch (error) {
-      (res as any).error('获取评论失败', 500, 'GET_NEWS_COMMENTS_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取评论失败',
+        code: 'GET_NEWS_COMMENTS_ERROR'
+      });
     }
   }
 
   static async createNewsComment(req: Request, res: Response) {
     try {
-      (res as any).success({ id: 1, ...req.body }, '创建评论成功', 201);
+      res.status(201).json({
+        success: true,
+        data: { id: 1, ...req.body },
+        message: '创建评论成功'
+      });
     } catch (error) {
-      (res as any).error('创建评论失败', 500, 'CREATE_NEWS_COMMENT_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '创建评论失败',
+        code: 'CREATE_NEWS_COMMENT_ERROR'
+      });
     }
   }
 
   static async updateNewsComment(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      (res as any).success({ id, ...req.body }, '更新评论成功');
+      res.json({
+        success: true,
+        data: { id, ...req.body },
+        message: '更新评论成功'
+      });
     } catch (error) {
-      (res as any).error('更新评论失败', 500, 'UPDATE_NEWS_COMMENT_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '更新评论失败',
+        code: 'UPDATE_NEWS_COMMENT_ERROR'
+      });
     }
   }
 
   static async deleteNewsComment(req: Request, res: Response) {
     try {
-      (res as any).success(null, '删除评论成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '删除评论成功'
+      });
     } catch (error) {
-      (res as any).error('删除评论失败', 500, 'DELETE_NEWS_COMMENT_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '删除评论失败',
+        code: 'DELETE_NEWS_COMMENT_ERROR'
+      });
     }
   }
 
   static async approveNewsComment(req: Request, res: Response) {
     try {
-      (res as any).success(null, '审核评论成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '审核评论成功'
+      });
     } catch (error) {
-      (res as any).error('审核评论失败', 500, 'APPROVE_NEWS_COMMENT_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '审核评论失败',
+        code: 'APPROVE_NEWS_COMMENT_ERROR'
+      });
     }
   }
 
   static async rejectNewsComment(req: Request, res: Response) {
     try {
-      (res as any).success(null, '拒绝评论成功');
+      res.json({
+        success: true,
+        data: null,
+        message: '拒绝评论成功'
+      });
     } catch (error) {
-      (res as any).error('拒绝评论失败', 500, 'REJECT_NEWS_COMMENT_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '拒绝评论失败',
+        code: 'REJECT_NEWS_COMMENT_ERROR'
+      });
     }
   }
 
   static async getNewsStatistics(req: Request, res: Response) {
     try {
-      (res as any).success({ total: 0, published: 0 }, '获取新闻统计成功');
+      res.json({
+        success: true,
+        data: { total: 0, published: 0 },
+        message: '获取新闻统计成功'
+      });
     } catch (error) {
-      (res as any).error('获取新闻统计失败', 500, 'GET_NEWS_STATISTICS_ERROR');
+      res.status(500).json({
+        success: false,
+        error: '获取新闻统计失败',
+        code: 'GET_NEWS_STATISTICS_ERROR'
+      });
     }
   }
 }

@@ -210,7 +210,7 @@ const rules = {
 }
 
 // 上传配置
-const uploadUrl = '/api/v1/upload/image'
+const uploadUrl = 'http://localhost:3000/api/v1/file/upload/image'
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${authStore.token}`
 }))

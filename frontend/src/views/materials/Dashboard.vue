@@ -259,7 +259,7 @@ import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useMaterialStore } from '@/stores/material'
 import { useBaseStore } from '@/stores/base'
-import { validateData } from '@/utils/dataValidation'
+import { ensureArray, ensureNumber } from '@/utils/safeAccess'
 import * as echarts from 'echarts'
 import type { FormInstance } from 'element-plus'
 import type { InventoryStatistics, InventoryAlert, InventoryTransaction } from '@/types/material'
@@ -342,7 +342,7 @@ const loadStatistics = async () => {
 const loadAlerts = async () => {
   try {
     await materialStore.fetchAlerts()
-    const alertsArray = validateData.safeArray(materialStore.alerts)
+    const alertsArray = ensureArray(materialStore.alerts)
     lowStockAlerts.value = alertsArray
       .filter(alert => !alert.is_resolved && alert.alert_type === 'low_stock')
       .slice(0, 5)
@@ -354,7 +354,7 @@ const loadAlerts = async () => {
 const loadRecentTransactions = async () => {
   try {
     await materialStore.fetchTransactions({ limit: 5 })
-    const transactionsArray = validateData.safeArray(materialStore.transactions)
+    const transactionsArray = ensureArray(materialStore.transactions)
     recentTransactions.value = transactionsArray.slice(0, 5)
   } catch (error) {
     ElMessage.error('加载交易记录失败')
@@ -399,14 +399,13 @@ const updateCharts = () => {
     // 库存分布图表
     if (inventoryChart && inventoryChart.getDom()) {
       // 使用验证工具确保数据安全
-      const inventoryArray = validateData.safeArray(materialStore.inventory)
-      const validInventory = validateData.filterValidData(inventoryArray, validateData.validateInventory)
+      const inventoryArray = ensureArray(materialStore.inventory)
+      const validInventory = inventoryArray.filter(item => item.current_stock > 0)
       const inventoryData = validInventory
-        .filter(item => item.current_stock > 0)
         .map(item => ({
-          name: validateData.safeString(item.material?.name) || '未知物资',
-          value: validateData.safeNumber(item.current_stock),
-          unit: validateData.safeString(item.material?.unit)
+          name: item.material?.name || '未知物资',
+          value: item.current_stock,
+          unit: item.material?.unit
         }))
         .slice(0, 10)
 
@@ -451,16 +450,16 @@ const updateCharts = () => {
     // 物资分类统计图表
     if (categoryChart && categoryChart.getDom()) {
       // 使用验证工具确保数据安全
-      const categoriesArray = validateData.safeArray(materialStore.categories)
-      const materialsArray = validateData.safeArray(materialStore.materials)
-      const validCategories = validateData.filterValidData(categoriesArray, validateData.validateCategory)
-      const validMaterials = validateData.filterValidData(materialsArray, validateData.validateMaterial)
+      const categoriesArray = ensureArray(materialStore.categories)
+      const materialsArray = ensureArray(materialStore.materials)
+      const validCategories = categoriesArray
+      const validMaterials = materialsArray
       
       const categoryData = validCategories
         .map(category => {
           const count = validMaterials.filter(m => m.category_id === category.id).length
           return {
-            name: validateData.safeString(category.name),
+            name: category.name,
             value: count
           }
         })

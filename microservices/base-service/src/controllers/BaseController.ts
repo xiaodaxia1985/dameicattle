@@ -119,10 +119,13 @@ export class BaseController {
       }
 
       const base = await Base.create({
-        name: name,
-        code: name.replace(/\s+/g, '_').toUpperCase(),
+        name,
+        code: name.replace(/[\s\u4e00-\u9fa5]+/g, '_').toUpperCase(),
         address,
-        area
+        area,
+        latitude: req.body.latitude,
+        longitude: req.body.longitude,
+        manager_id: req.body.manager_id
       });
 
       (res as any).success(base, '创建基地成功', 201);
