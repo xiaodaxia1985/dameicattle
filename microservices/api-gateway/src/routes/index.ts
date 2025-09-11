@@ -1,6 +1,7 @@
 import express from 'express';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+import { createProxyMiddleware, Options } from 'http-proxy-middleware';
 import { createLogger } from '@cattle-management/shared';
+import { IncomingMessage, ServerResponse } from 'http';
 
 const logger = createLogger('api-gateway-routes');
 
@@ -145,26 +146,20 @@ export const setupRoutes = (app: express.Application) => {
       changeOrigin: true,
       timeout: 30000,
       proxyTimeout: 30000,
-      
-      // 使用配置中的 pathRewrite
       pathRewrite: config.pathRewrite,
       
-      // 请求日志
-      onProxyReq: (proxyReq, req, res) => {
+      onProxyReq: (proxyReq: any, req: any, res: any) => {
         logger.info(`代理请求: ${req.method} ${req.url} -> ${config.target}${proxyReq.path}`);
-        // 设置请求头
         proxyReq.setHeader('X-Forwarded-For', req.ip || 'unknown');
         proxyReq.setHeader('X-Forwarded-Proto', req.protocol || 'http');
         proxyReq.setHeader('X-Forwarded-Host', req.get('host') || 'localhost');
       },
       
-      // 响应日志
-      onProxyRes: (proxyRes, req, res) => {
+      onProxyRes: (proxyRes: any, req: any, res: any) => {
         logger.info(`代理响应: ${req.method} ${req.url} <- ${proxyRes.statusCode}`);
       },
       
-      // 错误处理
-      onError: (err: any, req, res) => {
+      onError: (err: any, req: any, res: any) => {
         logger.error(`代理错误: ${req.method} ${req.url}`, {
           error: err.message,
           code: err.code,
@@ -180,7 +175,7 @@ export const setupRoutes = (app: express.Application) => {
           });
         }
       }
-    });
+    } as any);
     
     app.use(path, proxy);
     logger.info(`路由配置: ${path} -> ${config.target}`);

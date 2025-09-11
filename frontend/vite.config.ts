@@ -37,26 +37,8 @@ export default defineConfig({
     host: '0.0.0.0',
     open: true,
     cors: true,
-    proxy: {
-      // 健康检查代理
-      '/health': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-      },
-      // 所有API请求通过API网关代理（正确的微服务架构）
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-      },
-      // 文件上传代理
-      '/uploads': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-      },
-    },
+    // 移除代理配置，前端直接访问各微服务端口
+    // proxy: {},
     hmr: {
       overlay: true,
     },

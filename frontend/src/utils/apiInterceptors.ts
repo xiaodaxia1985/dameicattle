@@ -6,7 +6,7 @@
 import { useAuthStore } from '@/stores/auth'
 import router from '@/router'
 import { showErrorMessage, createApiError, isNetworkError, isPermissionError } from './errorHandler'
-import { tokenStorage, authErrorUtils, navigationUtils } from './authUtils'
+import { tokenStorage, navigationUtils } from './authUtils'
 import type { RequestConfig, ResponseInterceptor, RequestInterceptor, ApiError } from './apiClient'
 
 // Request interceptors
@@ -51,39 +51,31 @@ export const authResponseInterceptor: ResponseInterceptor = {
     return response
   },
   onRejected: async (error: ApiError) => {
-    console.log('API响应拦截器处理错误:', {
-      status: error.status,
-      code: error.code,
-      url: error.response?.config?.url
-    })
-    
+    // 简化401错误处理
     if (error.status === 401) {
-      const authStore = useAuthStore()
-      
-      // 避免在登录和登出API调用时进行额外处理
       const url = error.response?.config?.url || ''
-      if (url.includes('/auth/login') || url.includes('/auth/logout')) {
-        console.log('登录或登出API错误，直接抛出')
+      
+      // 跳过登录API的401错误
+      if (url.includes('/login')) {
         throw error
       }
       
-      console.log('处理401认证错误')
+      console.log('Token无效，清除认证状态')
       
-      // 清除认证状态并跳转到登录页面
-      try {
-        await authStore.logout()
-      } catch (logoutError) {
-        console.error('登出过程中出错:', logoutError)
+      // 清除本地认证数据
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('permissions')
+        localStorage.removeItem('tokenExpiration')
       }
       
-      // 避免在已经在登录页面时重复跳转
+      // 跳转到登录页面
       if (router.currentRoute.value.path !== '/login') {
-        console.log('跳转到登录页面')
         router.push('/login')
       }
     }
 
-    // Re-throw error if not handled
     throw error
   }
 }

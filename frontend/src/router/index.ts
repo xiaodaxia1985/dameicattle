@@ -365,6 +365,12 @@ const routes: RouteRecordRaw[] = [
             name: 'OperationLogs',
             component: () => import('@/views/system/OperationLogs.vue'),
             meta: { title: '操作日志' }
+          },
+          {
+            path: 'microservice-test',
+            name: 'MicroserviceTest',
+            component: () => import('@/views/test/MicroserviceTest.vue'),
+            meta: { title: '微服务测试' }
           }
         ]
       }

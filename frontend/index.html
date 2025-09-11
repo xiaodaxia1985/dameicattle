@@ -1,62 +1,195 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>肉牛全生命周期管理系统</title>
-    <!-- 高德地图API -->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>肉牛管理系统 - 直连微服务测试</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        .test-button:hover { background: #0056b3; }
+        .result { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 3px; white-space: pre-wrap; font-family: monospace; }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+        .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 20px 0; }
+        .status-card { padding: 15px; border-radius: 5px; text-align: center; }
+        .status-healthy { background: #d4edda; border: 1px solid #c3e6cb; }
+        .status-offline { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .main-app { display: none; }
+    </style>
+</head>
+<body>
+    <div id="test-mode" class="container">
+        <h1>🔗 直连微服务API测试</h1>
+        <p>测试前端是否能够直接访问各个微服务端口，绕过API网关</p>
+        
+        <div class="test-section">
+            <button class="test-button" onclick="switchToApp()">切换到正常应用</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 微服务状态检查</h2>
+            <button class="test-button" onclick="checkAllServices()">检查所有微服务状态</button>
+            <div id="services-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🏢 基地服务测试</h2>
+            <button class="test-button" onclick="testBaseService()">获取基地列表</button>
+            <div id="base-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🐄 牛只服务测试</h2>
+            <button class="test-button" onclick="testCattleService()">获取牛只列表</button>
+            <div id="cattle-result" class="result" style="display:none;"></div>
+        </div>
+    </div>
+
+    <div id="app" class="main-app"></div>
+    
     <script>
-      // 高德地图API加载完成回调
-      window.initAMap = function() {
-        try {
-          console.log('高德地图API加载完成');
-          window.amapReady = true;
-          // 触发自定义事件通知地图组件
-          if (typeof window.dispatchEvent === 'function') {
-            window.dispatchEvent(new Event('amapReady'));
-          }
-        } catch (error) {
-          console.error('高德地图初始化失败:', error);
-          window.amapReady = false;
+        const services = [
+            { name: 'auth-service', port: 3001, url: 'http://localhost:3001' },
+            { name: 'base-service', port: 3002, url: 'http://localhost:3002' },
+            { name: 'cattle-service', port: 3003, url: 'http://localhost:3003' },
+            { name: 'health-service', port: 3004, url: 'http://localhost:3004' },
+            { name: 'feeding-service', port: 3005, url: 'http://localhost:3005' },
+            { name: 'equipment-service', port: 3006, url: 'http://localhost:3006' },
+            { name: 'procurement-service', port: 3007, url: 'http://localhost:3007' },
+            { name: 'sales-service', port: 3008, url: 'http://localhost:3008' },
+            { name: 'material-service', port: 3009, url: 'http://localhost:3009' },
+            { name: 'notification-service', port: 3010, url: 'http://localhost:3010' },
+            { name: 'file-service', port: 3011, url: 'http://localhost:3011' },
+            { name: 'monitoring-service', port: 3012, url: 'http://localhost:3012' },
+            { name: 'news-service', port: 3013, url: 'http://localhost:3013' }
+        ];
+
+        async function checkAllServices() {
+            const statusDiv = document.getElementById('services-status');
+            statusDiv.innerHTML = '<p>检查中...</p>';
+
+            const results = await Promise.allSettled(
+                services.map(async (service) => {
+                    try {
+                        const response = await fetch(`${service.url}/health`, {
+                            method: 'GET',
+                            headers: { 'Content-Type': 'application/json' },
+                            signal: AbortSignal.timeout(3000)
+                        });
+                        
+                        const data = await response.json();
+                        return {
+                            ...service,
+                            status: response.ok ? 'healthy' : 'unhealthy',
+                            response: data
+                        };
+                    } catch (error) {
+                        return {
+                            ...service,
+                            status: 'offline',
+                            error: error.message
+                        };
+                    }
+                })
+            );
+
+            let html = '<div class="status-grid">';
+            let healthyCount = 0;
+
+            results.forEach(result => {
+                const service = result.status === 'fulfilled' ? result.value : result.reason;
+                const isHealthy = service.status === 'healthy';
+                if (isHealthy) healthyCount++;
+
+                html += `
+                    <div class="status-card ${isHealthy ? 'status-healthy' : 'status-offline'}">
+                        <strong>${service.name}</strong><br>
+                        端口: ${service.port}<br>
+                        状态: ${service.status === 'healthy' ? '✅ 健康' : '❌ 离线'}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            html += `<p><strong>总结:</strong> ${healthyCount}/${services.length} 个服务在线</p>`;
+            
+            statusDiv.innerHTML = html;
         }
-      }
-      
-      // 处理地图API加载错误
-      window.addEventListener('error', function(e) {
-        if (e.target && e.target.src && e.target.src.includes('webapi.amap.com')) {
-          console.error('高德地图API加载失败:', e);
-          window.amapReady = false;
+
+        async function testBaseService() {
+            const resultDiv = document.getElementById('base-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '请求中...';
+            resultDiv.className = 'result';
+
+            try {
+                const response = await fetch('http://localhost:3002/bases', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 成功获取基地列表 (${data.data?.bases?.length || 0} 个基地)\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 请求失败\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 网络错误: ${error.message}`;
+            }
         }
-      }, true);
 
-      // 设置安全密钥
-      window._AMapSecurityConfig = {
-        securityJsCode: '0b5b427ca146d3d0ff80bcd6c471d882'
-      }
+        async function testCattleService() {
+            const resultDiv = document.getElementById('cattle-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '请求中...';
+            resultDiv.className = 'result';
 
-      // 延迟加载高德地图API，确保DOM准备就绪
-      function loadAMapAPI() {
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = 'https://webapi.amap.com/maps?v=2.0&key=17f2d4a3a120bbc52d1b38e71e9351fa&callback=initAMap';
-        script.onerror = function() {
-          console.error('高德地图API脚本加载失败');
-          window.amapReady = false;
-        };
-        document.head.appendChild(script);
-      }
+            try {
+                const response = await fetch('http://localhost:3003/cattle?limit=3', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
 
-      // 等待DOM加载完成后再加载地图API
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadAMapAPI);
-      } else {
-        loadAMapAPI();
-      }
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ 成功获取牛只列表 (${data.data?.length || 0} 头牛)\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ 请求失败\n\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ 网络错误: ${error.message}`;
+            }
+        }
+
+        function switchToApp() {
+            document.getElementById('test-mode').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            // 这里会加载正常的Vue应用
+        }
+
+        // 检查URL参数决定显示模式
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('test') === 'direct') {
+            // 显示测试模式
+            checkAllServices();
+        } else {
+            // 正常模式，隐藏测试界面
+            document.getElementById('test-mode').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+        }
     </script>
-  </head>
-  <body>
-    <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
-  </body>
+</body>
 </html>

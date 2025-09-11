@@ -14,8 +14,8 @@ export interface EventData {
 export type EventHandler = (data: EventData) => Promise<void>;
 
 export class EventBus {
-  private publisher: Redis.RedisClientType;
-  private subscriber: Redis.RedisClientType;
+  private publisher!: Redis.RedisClientType;
+  private subscriber!: Redis.RedisClientType;
   private handlers: Map<string, EventHandler[]> = new Map();
   private isConnected = false;
 
