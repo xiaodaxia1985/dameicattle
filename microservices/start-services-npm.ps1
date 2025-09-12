@@ -14,7 +14,9 @@ if ($Help) {
 
 if ($Rebuild) {
     Write-Host "Rebuilding all microservices first..." -ForegroundColor Green
-    & ".\rebuild-all.ps1"
+    $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+    $rebuildScript = Join-Path $scriptRoot 'rebuild-all.ps1'
+    & $rebuildScript
     if ($LASTEXITCODE -ne 0) {
         Write-Host "Rebuild failed, aborting startup" -ForegroundColor Red
         exit 1
@@ -51,7 +53,7 @@ function Test-ServiceHealth {
     param(
         [string]$ServiceName,
         [int]$Port,
-        [int]$MaxRetries = 10,
+        [int]$MaxRetries = 3,
         [int]$RetryInterval = 2
     )
     

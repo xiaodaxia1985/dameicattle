@@ -57,9 +57,25 @@ export const useBaseStore = defineStore('base', () => {
   const fetchAllBases = async () => {
     loading.value = true
     try {
-      const response = await baseApi.getAllBases()
-      bases.value = response.data || []
-      return response.data
+      const response = await baseApi.getBases({ limit: 1000 }) // 使用getBases方法并设置较大的limit参数
+      
+      // 使用安全访问处理响应数据
+      const responseData = response?.data || response || {} 
+      let basesData: Base[] = []
+      
+      // 尝试多种可能的数据结构
+      if (Array.isArray(responseData)) {
+        basesData = responseData
+      } else if (Array.isArray(responseData.bases)) {
+        basesData = responseData.bases
+      } else if (Array.isArray(responseData.data)) {
+        basesData = responseData.data
+      } else if (responseData.data && Array.isArray(responseData.data.bases)) {
+        basesData = responseData.data.bases
+      }
+      
+      bases.value = basesData
+      return basesData
     } catch (error) {
       console.error('获取基地列表失败:', error)
       throw error

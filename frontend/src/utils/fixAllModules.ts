@@ -25,66 +25,13 @@ export async function fixHealthRecordAPI() {
 // 修复饲料配方表单问题
 export function fixFormulaFormIssues() {
   console.log('修复饲料配方表单问题...')
-  
-  // 全局处理表单引用问题
-  const originalFormValidate = Element.prototype.validate
-  if (originalFormValidate) {
-    Element.prototype.validate = function(callback?: Function) {
-      if (!this || typeof this.validate !== 'function') {
-        console.warn('表单验证方法不存在')
-        if (callback) callback(false)
-        return Promise.resolve(false)
-      }
-      
-      try {
-        return originalFormValidate.call(this, callback)
-      } catch (error) {
-        console.error('表单验证失败:', error)
-        if (callback) callback(false)
-        return Promise.resolve(false)
-      }
-    }
-  }
+  // 仅保留安全表单包装器
 }
 
 // 修复 parentNode 错误
 export function fixParentNodeErrors() {
   console.log('修复 parentNode 错误...')
-  
-  // 重写常见的DOM操作方法，添加null检查
-  const originalRemoveChild = Node.prototype.removeChild
-  Node.prototype.removeChild = function(child) {
-    if (!child || !child.parentNode || child.parentNode !== this) {
-      console.warn('removeChild: 子节点不存在或父节点不匹配')
-      return child
-    }
-    return originalRemoveChild.call(this, child)
-  }
-
-  const originalAppendChild = Node.prototype.appendChild
-  Node.prototype.appendChild = function(child) {
-    if (!child) {
-      console.warn('appendChild: 子节点为null')
-      return child
-    }
-    return originalAppendChild.call(this, child)
-  }
-
-  const originalInsertBefore = Node.prototype.insertBefore
-  Node.prototype.insertBefore = function(newNode, referenceNode) {
-    if (!newNode) {
-      console.warn('insertBefore: 新节点为null')
-      return newNode
-    }
-    if (referenceNode && referenceNode.parentNode !== this) {
-      console.warn('insertBefore: 参考节点的父节点不匹配')
-      return newNode
-    }
-    return originalInsertBefore.call(this, newNode, referenceNode)
-  }
-
-  // 创建安全的DOM操作函数
-  window.safeRemoveChild = function(parent, child) {
+  (window as any).safeRemoveChild = function(parent: Node, child: Node): Node | null {
     if (parent && child && child.parentNode === parent) {
       try {
         return parent.removeChild(child)
@@ -95,8 +42,7 @@ export function fixParentNodeErrors() {
     }
     return null
   }
-
-  window.safeAppendChild = function(parent, child) {
+  (window as any).safeAppendChild = function(parent: Node, child: Node): Node | null {
     if (parent && child) {
       try {
         return parent.appendChild(child)
@@ -107,11 +53,10 @@ export function fixParentNodeErrors() {
     }
     return null
   }
-
-  window.safeInsertBefore = function(parent, newNode, referenceNode) {
+  (window as any).safeInsertBefore = function(parent: Node, newNode: Node, referenceNode?: Node | null): Node | null {
     if (parent && newNode) {
       try {
-        return parent.insertBefore(newNode, referenceNode)
+        return parent.insertBefore(newNode, referenceNode ?? null)
       } catch (error) {
         console.error('safeInsertBefore 失败:', error)
         return null
@@ -121,11 +66,53 @@ export function fixParentNodeErrors() {
   }
 }
 
+// 自动修复所有微服务API调用路径和404/网络错误（只保留一份）
+export async function autoFixMicroserviceRoutes() {
+  const servicePorts: Record<string, number> = {
+    'health-service': 3004,
+    'feeding-service': 3005,
+    'sales-service': 3008,
+    'procurement-service': 3007,
+    'material-service': 3009,
+    'base-service': 3002,
+    'cattle-service': 3003,
+    'equipment-service': 3006,
+    'file-service': 3011,
+    'notification-service': 3010,
+    'monitoring-service': 3012,
+    'news-service': 3013
+  }
+  (window as any).microserviceBaseUrls = {}
+  Object.entries(servicePorts).forEach(([name, port]) => {
+    (window as any).microserviceBaseUrls[name] = `http://localhost:${port}`
+  })
+  (window as any).getMicroserviceUrl = function(service: string, path: string): string {
+    const base = (window as any).microserviceBaseUrls[service]
+    if (!base) return path
+    return `${base}${path.startsWith('/') ? path : '/' + path}`
+  }
+  (window as any).handleApiError = function(error: any, defaultMessage = '操作失败') {
+    let message = defaultMessage
+    if (error?.response?.data?.message) {
+      message = error.response.data.message
+    } else if (error?.message) {
+      message = error.message
+    } else if (typeof error === 'string') {
+      message = error
+    }
+    if (error?.response?.status === 404 || error?.status === 404) {
+      message = '接口不存在或微服务未启动（404）'
+    } else if (error?.name === 'TypeError' && message.includes('Failed to fetch')) {
+      message = '网络错误或微服务端口未开放'
+    }
+    ElMessage.error(message)
+    return message
+  }
+}
+
 // 修复所有API路由问题
 export async function fixAllAPIRoutes() {
   console.log('修复所有API路由问题...')
-  
-  // 使用健康检查端点测试微服务连通性，这些端点不需要认证
   const healthEndpoints = [
     { name: 'health-service', url: 'http://localhost:3004/health' },
     { name: 'feeding-service', url: 'http://localhost:3005/health' },
@@ -133,9 +120,7 @@ export async function fixAllAPIRoutes() {
     { name: 'procurement-service', url: 'http://localhost:3007/health' },
     { name: 'material-service', url: 'http://localhost:3009/health' }
   ]
-  
-  const results = []
-  
+  const results: any[] = []
   for (const endpoint of healthEndpoints) {
     try {
       const response = await fetch(endpoint.url)
@@ -151,12 +136,11 @@ export async function fixAllAPIRoutes() {
       results.push({
         endpoint: endpoint.name,
         success: false,
-        error: error.message
+        error: (error as any)?.message || String(error)
       })
-      console.error(`✗ ${endpoint.name} - 错误: ${error.message}`)
+      console.error(`✗ ${endpoint.name} - 错误: ${(error as any)?.message || error}`)
     }
   }
-  
   return results
 }
 
@@ -478,7 +462,7 @@ export async function testAllModules() {
     testResults.push({
       module: '健康服务',
       success: false,
-      error: error.message
+      error: (error as any).message
     })
   }
   
@@ -496,7 +480,7 @@ export async function testAllModules() {
     testResults.push({
       module: '饲养服务',
       success: false,
-      error: error.message
+      error: (error as any).message
     })
   }
   
@@ -514,7 +498,7 @@ export async function testAllModules() {
     testResults.push({
       module: '销售服务',
       success: false,
-      error: error.message
+      error: (error as any).message
     })
   }
   
@@ -532,7 +516,7 @@ export async function testAllModules() {
     testResults.push({
       module: '采购服务',
       success: false,
-      error: error.message
+      error: (error as any).message
     })
   }
   
@@ -550,7 +534,7 @@ export async function testAllModules() {
     testResults.push({
       module: '物料服务',
       success: false,
-      error: error.message
+      error: (error as any).message
     })
   }
   

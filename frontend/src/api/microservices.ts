@@ -4,33 +4,35 @@
  * 每个微服务独立运行，保持服务隔离
  */
 
+// 导入配置文件中的微服务URL
 import type { ApiResponse } from './request'
 import { UnifiedApiClient } from '@/utils/apiClient'
+import { microserviceUrls } from '@/config/apiConfig'
 
-// 创建专用的微服务API客户端
+// 创建专用的微服务API客户端 - 通过网关调用
 const microserviceApiClient = new UnifiedApiClient({
-  baseURL: '', // 直连模式不使用baseURL
-  timeout: 10000,
+  baseURL: import.meta.env.VITE_API_GATEWAY_URL, // 使用环境变量配置的API网关URL
+  timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 5000,
   retryAttempts: 3,
   retryDelay: 1000,
-  enableLogging: true
+  enableLogging: import.meta.env.VITE_ENABLE_API_LOGGING === 'true'
 })
 
-// 微服务直连URL配置
-export const MICROSERVICE_URLS = {
-  AUTH: 'http://localhost:3000/api/v1/auth',
-  BASE: 'http://localhost:3000/api/v1/base', 
-  CATTLE: 'http://localhost:3000/api/v1/cattle',
-  HEALTH: 'http://localhost:3000/api/v1/health',
-  FEEDING: 'http://localhost:3000/api/v1/feeding',
-  EQUIPMENT: 'http://localhost:3000/api/v1/equipment',
-  PROCUREMENT: 'http://localhost:3000/api/v1/procurement',
-  SALES: 'http://localhost:3000/api/v1/sales',
-  MATERIAL: 'http://localhost:3000/api/v1/material',
-  NOTIFICATION: 'http://localhost:3000/api/v1/notification',
-  FILE: 'http://localhost:3000/api/v1/file',
-  MONITORING: 'http://localhost:3000/api/v1/monitoring',
-  NEWS: 'http://localhost:3000/api/v1/news'
+// 微服务路径前缀配置
+export const MICROSERVICE_PATHS = {
+  AUTH: 'auth',
+  BASE: 'base',
+  CATTLE: 'cattle',
+  HEALTH: 'health',
+  FEEDING: 'feeding',
+  EQUIPMENT: 'equipment',
+  PROCUREMENT: 'procurement',
+  SALES: 'sales',
+  MATERIAL: 'material',
+  NOTIFICATION: 'notification',
+  FILE: 'file',
+  MONITORING: 'monitoring',
+  NEWS: 'news'
 } as const
 
 // 微服务API基类
@@ -42,8 +44,9 @@ class MicroserviceApi {
   }
 
   protected buildUrl(path: string): string {
-    // 构建完整的微服务URL
-    return `${this.serviceUrl}${path.startsWith('/') ? path : `/${path}`}`
+    // 构建完整的微服务URL - 修复：确保serviceUrl和path之间有斜杠
+    const urlPrefix = this.serviceUrl.startsWith('/') ? this.serviceUrl : `/${this.serviceUrl}`
+    return `${urlPrefix}${path.startsWith('/') ? path : `/${path}`}`
   }
 
   // 通用CRUD操作
@@ -133,7 +136,7 @@ class MicroserviceApi {
 // 认证服务API
 export class AuthServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.AUTH)
+    super(MICROSERVICE_PATHS.AUTH)
   }
 
   // 用户登录
@@ -165,7 +168,7 @@ export class AuthServiceApi extends MicroserviceApi {
 // 基地服务API
 export class BaseServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.BASE)
+    super(MICROSERVICE_PATHS.BASE)
   }
 
   // 获取基地列表
@@ -195,7 +198,7 @@ export class BaseServiceApi extends MicroserviceApi {
 
   // 获取牛舍列表
   async getBarns(baseId?: number, params?: any): Promise<ApiResponse<any[]>> {
-    const queryParams = baseId ? { baseId, ...params } : params
+    const queryParams = baseId ? { base_id: baseId, ...params } : params
     return this.get<any[]>('/barns', queryParams)
   }
 
@@ -223,7 +226,7 @@ export class BaseServiceApi extends MicroserviceApi {
 // 牛只服务API
 export class CattleServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.CATTLE)
+    super(MICROSERVICE_PATHS.CATTLE) // 修改：从 MICROSERVICE_URLS.CATTLE 改为 MICROSERVICE_PATHS.CATTLE
   }
 
   // 获取牛只列表
@@ -233,7 +236,8 @@ export class CattleServiceApi extends MicroserviceApi {
 
   // 获取牛只详情
   async getCattle(id: number): Promise<ApiResponse<any>> {
-    return this.get<any>(`/cattle/${id}`)
+    // 修复：移除重复的 'cattle/' 前缀
+    return this.get<any>(`/${id}`)
   }
 
   // 通过耳标获取牛只
@@ -282,7 +286,7 @@ export class CattleServiceApi extends MicroserviceApi {
   // 导出牛只数据
   async exportCattle(params?: any): Promise<void> {
     const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-    window.open(`/api/v1/cattle/cattle/batch/export${queryString}`)
+    window.open(`/api/v1/cattle/batch/export${queryString}`) // 修复：移除重复的cattle
   }
 
   // 生成耳标
@@ -299,7 +303,7 @@ export class CattleServiceApi extends MicroserviceApi {
 // 健康服务API
 export class HealthServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.HEALTH)
+    super(MICROSERVICE_PATHS.HEALTH) // 修改：从 MICROSERVICE_URLS.HEALTH 改为 MICROSERVICE_PATHS.HEALTH
   }
 
   // 获取健康记录
@@ -342,7 +346,7 @@ export class HealthServiceApi extends MicroserviceApi {
 // 饲养服务API
 export class FeedingServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.FEEDING)
+    super(MICROSERVICE_PATHS.FEEDING) // 修改：从 MICROSERVICE_URLS.FEEDING 改为 MICROSERVICE_PATHS.FEEDING
   }
 
   // 获取饲养计划
@@ -384,7 +388,7 @@ export class FeedingServiceApi extends MicroserviceApi {
 // 设备服务API
 export class EquipmentServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.EQUIPMENT)
+    super(MICROSERVICE_PATHS.EQUIPMENT) // 修改：从 MICROSERVICE_URLS.EQUIPMENT 改为 MICROSERVICE_PATHS.EQUIPMENT
   }
 
   // 获取设备列表
@@ -417,7 +421,7 @@ export class EquipmentServiceApi extends MicroserviceApi {
 // 物料服务API
 export class MaterialServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.MATERIAL)
+    super(MICROSERVICE_PATHS.MATERIAL) // 修改：从 MICROSERVICE_URLS.MATERIAL 改为 MICROSERVICE_PATHS.MATERIAL
   }
 
   // 获取物料列表
@@ -465,7 +469,7 @@ export class MaterialServiceApi extends MicroserviceApi {
 // 采购服务API
 export class ProcurementServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.PROCUREMENT)
+    super(MICROSERVICE_PATHS.PROCUREMENT) // 修改：从 MICROSERVICE_URLS.PROCUREMENT 改为 MICROSERVICE_PATHS.PROCUREMENT
   }
 
   // 获取采购订单
@@ -498,7 +502,7 @@ export class ProcurementServiceApi extends MicroserviceApi {
 // 销售服务API
 export class SalesServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.SALES)
+    super(MICROSERVICE_PATHS.SALES) // 修改：从 MICROSERVICE_URLS.SALES 改为 MICROSERVICE_PATHS.SALES
   }
 
   // 获取销售订单
@@ -531,7 +535,7 @@ export class SalesServiceApi extends MicroserviceApi {
 // 通知服务API
 export class NotificationServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.NOTIFICATION)
+    super(MICROSERVICE_PATHS.NOTIFICATION) // 修改：从 MICROSERVICE_URLS.NOTIFICATION 改为 MICROSERVICE_PATHS.NOTIFICATION
   }
 
   // 获取通知列表
@@ -558,7 +562,7 @@ export class NotificationServiceApi extends MicroserviceApi {
 // 文件服务API
 export class FileServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.FILE)
+    super(MICROSERVICE_PATHS.FILE) // 修改：从 MICROSERVICE_URLS.FILE 改为 MICROSERVICE_PATHS.FILE
   }
 
   // 上传文件
@@ -602,7 +606,7 @@ export class FileServiceApi extends MicroserviceApi {
 // 监控服务API
 export class MonitoringServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.MONITORING)
+    super(MICROSERVICE_PATHS.MONITORING) // 修改：从 MICROSERVICE_URLS.MONITORING 改为 MICROSERVICE_PATHS.MONITORING
   }
 
   // 获取系统指标
@@ -630,7 +634,7 @@ export class MonitoringServiceApi extends MicroserviceApi {
 // 新闻服务API
 export class NewsServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_URLS.NEWS)
+    super(MICROSERVICE_PATHS.NEWS) // 修改：从 MICROSERVICE_URLS.NEWS 改为 MICROSERVICE_PATHS.NEWS
   }
 
   // 获取新闻分类列表

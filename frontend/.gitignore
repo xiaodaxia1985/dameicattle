@@ -1,3 +1,14 @@
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 但保留示例文件
+!.env.example
+!.env.development.example
+!.env.production.example
 node_modules
 dist
 .DS_Store

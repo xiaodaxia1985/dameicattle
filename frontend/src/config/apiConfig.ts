@@ -44,25 +44,33 @@ export const microserviceUrls = {
 }
 
 // Base configurations for different environments
+// Add export keyword to make this function accessible from other files
+export const getBaseURL = () => {
+  // 优先使用环境变量配置
+  if (import.meta.env.VITE_API_GATEWAY_URL) {
+    return import.meta.env.VITE_API_GATEWAY_URL
+  }
+  // 否则使用默认配置
+  return isProduction ? (isUniApp ? 'https://api.cattle-management.com/api/v1' : '/api/v1') : ''
+}
+
 export const environmentConfigs: EnvironmentConfigs = {
   development: {
-    baseURL: '', // 不再使用统一baseURL
-    timeout: 10000,
+    baseURL: getBaseURL(),
+    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
     retryAttempts: 3,
     retryDelay: 1000,
-    enableLogging: true,
-    enableErrorReporting: false,
-    enablePerformanceMonitoring: true,
+    enableLogging: import.meta.env.VITE_ENABLE_API_LOGGING === 'true' || true,
     headers: {
       'X-Environment': 'development'
     }
   },
   production: {
-    baseURL: isUniApp ? 'https://api.cattle-management.com/api/v1' : '/api/v1',
-    timeout: 15000,
+    baseURL: getBaseURL(),
+    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 15000,
     retryAttempts: 2,
     retryDelay: 2000,
-    enableLogging: false,
+    enableLogging: import.meta.env.VITE_ENABLE_API_LOGGING === 'true' || false,
     enableErrorReporting: true,
     enablePerformanceMonitoring: true,
     headers: {
@@ -70,7 +78,7 @@ export const environmentConfigs: EnvironmentConfigs = {
     }
   },
   test: {
-    baseURL: isUniApp ? 'http://localhost:3001/api/v1' : '/api/v1',
+    baseURL: getBaseURL() || (isUniApp ? 'http://localhost:3001/api/v1' : '/api/v1'),
     timeout: 5000,
     retryAttempts: 1,
     retryDelay: 500,

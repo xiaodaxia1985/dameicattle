@@ -1027,8 +1027,9 @@ const handleSelectBase = async (base: Base) => {
   
   // 加载基地的牛棚列表
   try {
-    const response = await baseApi.getBarnsByBaseId(base.id)
-    currentBarns.value = response.data.barns || []
+    // 注意：getBarnsByBaseId 直接返回 Barn[] 数组
+    const barns = await baseApi.getBarnsByBaseId(base.id)
+    currentBarns.value = barns || []
   } catch (error) {
     console.error('加载牛棚列表失败:', error)
     currentBarns.value = []

@@ -10,6 +10,10 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string
   readonly VITE_APP_TITLE: string
   readonly VITE_APP_VERSION: string
+  // 添加新的环境变量类型
+  readonly VITE_API_GATEWAY_URL: string
+  readonly VITE_API_TIMEOUT: string
+  readonly VITE_ENABLE_API_LOGGING: string
 }
 
 interface ImportMeta {
