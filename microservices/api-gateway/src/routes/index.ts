@@ -42,8 +42,9 @@ const MICROSERVICE_ROUTES: Record<string, any> = {
     changeOrigin: true,
     timeout: 30000,
     proxyTimeout: 30000,
+    // cattle-service 路由挂载在 /cattle 下，这里补上前缀
     pathRewrite: {
-      '^/api/v1/cattle': ''
+      '^/api/v1/cattle': '/cattle'
     },
     xfwd: true,
     followRedirects: true,

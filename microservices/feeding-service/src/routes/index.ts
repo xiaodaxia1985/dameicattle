@@ -16,10 +16,8 @@ router.get('/health', (req, res) => {
 });
 
 // 饲养管理路由 - 直接处理网关转发的请求
-router.use('/plans', feedingRoutes);
-router.use('/formulas', feedingRoutes);
-router.use('/records', feedingRoutes);
+// 将子路由挂载到根，避免重复前缀导致的 /records/records 404
+router.use('/', feedingRoutes);
 router.use('/patrol', patrolRoutes);
-router.get('/statistics', controller.getAll.bind(controller));
 
 export default router;

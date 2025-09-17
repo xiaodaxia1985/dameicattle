@@ -11,7 +11,7 @@ import { microserviceUrls } from '@/config/apiConfig'
 
 // 创建专用的微服务API客户端 - 通过网关调用
 const microserviceApiClient = new UnifiedApiClient({
-  baseURL: import.meta.env.VITE_API_GATEWAY_URL, // 使用环境变量配置的API网关URL
+  baseURL: import.meta.env.VITE_API_GATEWAY_URL || '/api/v1',
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 5000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -226,23 +226,24 @@ export class BaseServiceApi extends MicroserviceApi {
 // 牛只服务API
 export class CattleServiceApi extends MicroserviceApi {
   constructor() {
-    super(MICROSERVICE_PATHS.CATTLE) // 修改：从 MICROSERVICE_URLS.CATTLE 改为 MICROSERVICE_PATHS.CATTLE
+    super(MICROSERVICE_PATHS.CATTLE) // serviceUrl被设置为'cattle'
   }
 
   // 获取牛只列表
   async getCattleList(params?: any): Promise<ApiResponse<any[]>> {
-    return this.get<any[]>('/cattle', params)
+    // 基于服务前缀 /cattle，列表使用根路径
+    return this.get<any[]>('/', params)
   }
 
-  // 获取牛只详情
+  // 获取牛只详情 - 修复：使用正确的路径格式，避免路径重复
   async getCattle(id: number): Promise<ApiResponse<any>> {
-    // 修复：移除重复的 'cattle/' 前缀
+    // 基于服务前缀 /cattle，详情使用 /:id
     return this.get<any>(`/${id}`)
   }
 
   // 通过耳标获取牛只
   async getCattleByEarTag(earTag: string): Promise<ApiResponse<any>> {
-    return this.get<any>(`/cattle/scan/${earTag}`)
+    return this.get<any>(`/scan/${earTag}`)
   }
 
   // 创建牛只
@@ -286,7 +287,7 @@ export class CattleServiceApi extends MicroserviceApi {
   // 导出牛只数据
   async exportCattle(params?: any): Promise<void> {
     const queryString = params ? `?${new URLSearchParams(params).toString()}` : ''
-    window.open(`/api/v1/cattle/batch/export${queryString}`) // 修复：移除重复的cattle
+    window.open(`/api/v1/cattle/batch/export${queryString}`)
   }
 
   // 生成耳标

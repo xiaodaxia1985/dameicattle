@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { EquipmentController } from '../controllers/EquipmentController';
+import equipmentRoutes from './equipment';
 
 const router = Router();
-const controller = new EquipmentController();
 
 // 健康检查
 router.get('/health', (req, res) => {
@@ -13,15 +12,7 @@ router.get('/health', (req, res) => {
   });
 });
 
-// 设备管理路由 - 直接处理网关转发的请求
-router.get('/equipment', controller.getAll.bind(controller));
-router.post('/equipment', controller.create.bind(controller));
-
-// 维护记录路由
-router.get('/maintenance', controller.getAll.bind(controller));
-router.post('/maintenance', controller.create.bind(controller));
-
-// 统计路由
-router.get('/statistics', controller.getAll.bind(controller));
+// 设备相关详细路由（设备、分类、维护、统计等）
+router.use('/', equipmentRoutes);
 
 export default router;

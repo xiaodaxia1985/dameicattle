@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import { ProcurementController } from '../controllers/ProcurementController';
+import procurementRoutes from './procurement';
 
 const router = Router();
-const controller = new ProcurementController();
 
 // 健康检查
 router.get('/health', (req, res) => {
@@ -13,15 +12,7 @@ router.get('/health', (req, res) => {
   });
 });
 
-// 采购管理路由 - 直接处理网关转发的请求
-router.get('/orders', controller.getAll.bind(controller));
-router.post('/orders', controller.create.bind(controller));
-
-// 供应商管理路由
-router.get('/suppliers', controller.getAll.bind(controller));
-router.post('/suppliers', controller.create.bind(controller));
-
-// 统计路由
-router.get('/statistics', controller.getAll.bind(controller));
+// 采购管理详细路由（供应商、订单、统计、趋势等）
+router.use('/', procurementRoutes);
 
 export default router;

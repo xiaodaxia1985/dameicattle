@@ -28,7 +28,14 @@ router.post('/vaccines', controller.create.bind(controller));
 router.get('/diseases', controller.getAll.bind(controller));
 router.post('/diseases', controller.create.bind(controller));
 
-// 统计路由
+// 统计与辅助路由
 router.get('/statistics', controller.getAll.bind(controller));
+// 前端使用的预警与趋势路由占位，避免404
+router.get('/alerts', (req, res) => {
+  res.json({ alerts: [], total: 0, critical_count: 0, high_count: 0, medium_count: 0, low_count: 0 })
+});
+router.get('/trend', (req, res) => {
+  res.json({ trends: [] })
+});
 
 export default router;

@@ -11,6 +11,20 @@ export class CattleController {
     }
   }
 
+  public async getCattleById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const item = await Cattle.findByPk(id);
+      if (!item) {
+        res.status(404).json({ message: 'Not Found' });
+        return;
+      }
+      res.json({ data: item });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   public async createCattle(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const cattle = await Cattle.create(req.body);

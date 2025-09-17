@@ -50,8 +50,8 @@ export const getBaseURL = () => {
   if (import.meta.env.VITE_API_GATEWAY_URL) {
     return import.meta.env.VITE_API_GATEWAY_URL
   }
-  // 否则使用默认配置
-  return isProduction ? (isUniApp ? 'https://api.cattle-management.com/api/v1' : '/api/v1') : ''
+  // 否则使用默认配置：开发/测试/生产都统一走网关前缀 /api/v1
+  return '/api/v1'
 }
 
 export const environmentConfigs: EnvironmentConfigs = {
