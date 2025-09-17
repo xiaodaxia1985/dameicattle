@@ -113,6 +113,11 @@ export async function autoFixMicroserviceRoutes() {
 // 修复所有API路由问题
 export async function fixAllAPIRoutes() {
   console.log('修复所有API路由问题...')
+<<<<<<< HEAD
+=======
+  
+  // 使用健康检查端点测试微服务连通性，这些端点不需要认证
+>>>>>>> aeb939793b1abad70bde17735931af6b8fc4e186
   const healthEndpoints = [
     { name: 'health-service', url: 'http://localhost:3004/health' },
     { name: 'feeding-service', url: 'http://localhost:3005/health' },
@@ -120,7 +125,13 @@ export async function fixAllAPIRoutes() {
     { name: 'procurement-service', url: 'http://localhost:3007/health' },
     { name: 'material-service', url: 'http://localhost:3009/health' }
   ]
+<<<<<<< HEAD
   const results: any[] = []
+=======
+  
+  const results = []
+  
+>>>>>>> aeb939793b1abad70bde17735931af6b8fc4e186
   for (const endpoint of healthEndpoints) {
     try {
       const response = await fetch(endpoint.url)
@@ -138,7 +149,11 @@ export async function fixAllAPIRoutes() {
         success: false,
         error: (error as any)?.message || String(error)
       })
+<<<<<<< HEAD
       console.error(`✗ ${endpoint.name} - 错误: ${(error as any)?.message || error}`)
+=======
+      console.error(`✗ ${endpoint.name} - 错误: ${error.message}`)
+>>>>>>> aeb939793b1abad70bde17735931af6b8fc4e186
     }
   }
   return results

@@ -37,15 +37,8 @@ export default defineConfig({
     host: '0.0.0.0',
     open: true,
     cors: true,
-    // 本地开发通过网关统一代理，避免跨域与路径分散
-    proxy: {
-      '/api/v1': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path
-      }
-    },
+    // 移除代理配置，前端直接访问各微服务端口
+    // proxy: {},
     hmr: {
       overlay: true,
     },

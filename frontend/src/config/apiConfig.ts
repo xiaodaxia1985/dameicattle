@@ -56,14 +56,16 @@ export const getBaseURL = () => {
 
 export const environmentConfigs: EnvironmentConfigs = {
   development: {
-    baseURL: getBaseURL(),
-    timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
+    baseURL: '', // 不再使用统一baseURL
+    timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000,
     enableLogging: import.meta.env.VITE_ENABLE_API_LOGGING === 'true' || true,
     headers: {
       'X-Environment': 'development'
-    }
+    },
+    enableErrorReporting: false,
+    enablePerformanceMonitoring: false
   },
   production: {
     baseURL: getBaseURL(),

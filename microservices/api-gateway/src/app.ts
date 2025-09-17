@@ -24,7 +24,7 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     version: '1.0.0',
-    message: 'API Gateway - 代理模式已启用'
+    message: 'API Gateway - 代理已移除，直连微服务模式'
   }, 'API Gateway is healthy');
 });
 
@@ -75,12 +75,9 @@ app.get('/services/status', async (req, res) => {
   }, 'Services status check completed');
 });
 
-// 重新启用代理路由配置
-setupRoutes(app);
-
 // 404处理
 app.use('*', (req, res) => {
-  res.error('请求的资源不存在', 404, 'NOT_FOUND');
+  res.error('API Gateway已移除代理功能，请直接访问微服务端口', 404, 'PROXY_REMOVED');
 });
 
 // 错误处理
@@ -88,9 +85,9 @@ app.use(errorHandler);
 
 // 启动服务
 app.listen(PORT, () => {
-  logger.info(`API Gateway is running on port ${PORT}`);
+  logger.info(`API Gateway is running on port ${PORT} - 代理已移除`);
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  logger.info('代理模式已启用，前端请求将通过API网关转发');
+  logger.info('前端将直接连接各微服务端口');
 });
 
 export default app;

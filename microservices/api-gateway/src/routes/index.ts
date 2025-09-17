@@ -1,7 +1,8 @@
-// 添加缺失的createProxyMiddleware导入
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import { createLogger } from '@cattle-management/shared';
+
 import express from 'express';
+import { createProxyMiddleware, Options } from 'http-proxy-middleware';
+import { createLogger } from '@cattle-management/shared';
+import { IncomingMessage, ServerResponse } from 'http';
 import axios from 'axios';
 
 const logger = createLogger('api-gateway-routes');
@@ -249,14 +250,12 @@ export const setupRoutes = (app: express.Application) => {
     const proxy = createProxyMiddleware({
       target: config.target,
       changeOrigin: true,
+      timeout: 3000,
+      proxyTimeout: 3000,
       pathRewrite: config.pathRewrite,
-      timeout: config.timeout,
       
-      // 日志记录
       onProxyReq: (proxyReq: any, req: any, res: any) => {
         logger.info(`代理请求: ${req.method} ${req.url} -> ${config.target}${proxyReq.path}`);
-        
-        // 设置必要的头信息
         proxyReq.setHeader('X-Forwarded-For', req.ip || 'unknown');
         proxyReq.setHeader('X-Forwarded-Proto', req.protocol || 'http');
         proxyReq.setHeader('X-Forwarded-Host', req.get('host') || 'localhost');
@@ -282,7 +281,7 @@ export const setupRoutes = (app: express.Application) => {
           });
         }
       }
-    });
+    } as any);
     
     app.use(path, proxy);
     logger.info(`路由配置: ${path} -> ${config.target}`);
