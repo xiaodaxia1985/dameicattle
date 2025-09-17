@@ -10,7 +10,7 @@ if (!fs.existsSync(logsDir)) {
 }
 
 const consoleFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
-  let log = `${timestamp} [${level.toUpperCase()}] [BASE-SERVICE]: ${message}`;
+  let log = `${timestamp} [${level.toUpperCase()}] [CATTLE-SERVICE]: ${message}`;
   
   if (stack) {
     log += `\n${stack}`;

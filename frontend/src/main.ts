@@ -61,17 +61,7 @@ appStore.initializeApp()
 import { checkBackendConnection } from './utils/healthCheck'
 checkBackendConnection()
 
-// Initialize Vue component fixes
-import { fixAllVueErrors } from './utils/vueComponentFix'
-fixAllVueErrors()
 
-// Initialize all module fixes
-import { fixAllModules } from './utils/fixAllModules'
-fixAllModules().then((results) => {
-  console.log('🔧 模块修复完成:', results)
-}).catch((error) => {
-  console.error('❌ 模块修复失败:', error)
-})
 
 // Development mode logging
 if (import.meta.env.MODE === 'development') {
