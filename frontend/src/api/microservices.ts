@@ -4,14 +4,21 @@
  * 每个微服务独立运行，保持服务隔离
  */
 
-// 导入配置文件中的微服务URL
-import type { ApiResponse } from './request'
-import { UnifiedApiClient } from '@/utils/apiClient'
-import { microserviceUrls } from '@/config/apiConfig'
+// 定义统一的API响应格式接口
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data: T;
+  message?: string;
+  [key: string]: any;
+}
 
-// 创建专用的微服务API客户端 - 通过网关调用
+// 导入配置文件中的微服务URL
+import { UnifiedApiClient } from '@/utils/apiClient'
+import { microserviceUrls, getBaseURL } from '@/config/apiConfig'
+
+// 创建专用的微服务API客户端
 const microserviceApiClient = new UnifiedApiClient({
-  baseURL: import.meta.env.VITE_API_GATEWAY_URL || '/api/v1',
+  baseURL: getBaseURL(), // 使用getBaseURL函数获取基础URL
   timeout: parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -44,30 +51,127 @@ class MicroserviceApi {
   }
 
   protected buildUrl(path: string): string {
-    // 构建完整的网关URL：/api/v1/{service}/{path}
-    const urlPrefix = this.serviceUrl.startsWith('/') ? this.serviceUrl : `/${this.serviceUrl}`
-    return `${urlPrefix}${path.startsWith('/') ? path : `/${path}`}`
+    // 判断是否启用微服务直连模式
+    const isDirectMode = import.meta.env.VITE_USE_MICROSERVICE_DIRECT === 'true'
+    
+    if (isDirectMode) {
+      // 直连模式：使用完整的微服务URL
+      const serviceBaseUrl = microserviceUrls[this.serviceUrl as keyof typeof microserviceUrls]
+      if (!serviceBaseUrl) {
+        throw new Error(`未找到微服务[${this.serviceUrl}]的直连配置`)
+      }
+      return `${serviceBaseUrl}${path.startsWith('/') ? path : `/${path}`}`
+    } else {
+      // 网关模式：使用网关URL格式
+      // 注意：这里不再添加/api/v1前缀，因为已经在baseURL中设置
+      return `${this.serviceUrl}${path.startsWith('/') ? path : `/${path}`}`
+    }
+  }
+
+  // 统一的错误处理方法
+  protected handleError(error: any, operation: string): never {
+    console.error(`微服务调用失败 [${this.serviceUrl} - ${operation}]:`, error)
+    
+    // 格式化错误信息
+    const errorMessage = error.response?.data?.message || error.message || '未知错误'
+    const errorCode = error.response?.status || 500
+    
+    // 针对特定错误码的处理
+    if (errorCode === 401) {
+      // 未授权，清除token并跳转到登录页
+      localStorage.removeItem('token')
+      // 避免在API层直接操作路由，由上层组件处理跳转
+    }
+    
+    // 重新抛出标准化的错误
+    throw {
+      code: errorCode,
+      message: errorMessage,
+      service: this.serviceUrl,
+      operation: operation,
+      originalError: error
+    }
+  }
+
+  // 统一的响应格式化方法
+  protected formatResponse<T>(response: any): ApiResponse<T> {
+    // 检查响应是否已经是标准格式
+    if (response && typeof response === 'object') {
+      // 标准格式应该包含success、data和可选的message字段
+      if ('success' in response && 'data' in response) {
+        return response
+      }
+      
+      // 如果直接返回了数据数组或对象，则包装成标准格式
+      return {
+        success: true,
+        data: response as T,
+        message: '请求成功'
+      }
+    }
+    
+    // 处理其他情况
+    return {
+      success: true,
+      data: response as T,
+      message: '请求成功'
+    }
   }
 
   // 通用CRUD操作
-  async get<T = any>(path: string, params?: any): Promise<ApiResponse<T>> {
-    return microserviceApiClient.get<T>(this.buildUrl(path), params)
-  }
+    async get<T = any>(path: string, params?: any): Promise<ApiResponse<T>> {
+      try {
+        const url = this.buildUrl(path)
+        const response = await microserviceApiClient.get(url, params)
+        return this.formatResponse<T>(response)
+      } catch (error) {
+        this.handleError(error, 'GET')
+        throw error // 不会执行到这里，因为handleError已经抛出异常
+      }
+    }
 
-  async post<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
-    return microserviceApiClient.post<T>(this.buildUrl(path), data)
-  }
+    async post<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
+      try {
+        const url = this.buildUrl(path)
+        const response = await microserviceApiClient.post(url, data)
+        return this.formatResponse<T>(response)
+      } catch (error) {
+        this.handleError(error, 'POST')
+        throw error
+      }
+    }
 
-  async put<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
-    return microserviceApiClient.put<T>(this.buildUrl(path), data)
-  }
+    async put<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
+      try {
+        const url = this.buildUrl(path)
+        const response = await microserviceApiClient.put(url, data)
+        return this.formatResponse<T>(response)
+      } catch (error) {
+        this.handleError(error, 'PUT')
+        throw error
+      }
+    }
 
-  async delete<T = any>(path: string): Promise<ApiResponse<T>> {
-    return microserviceApiClient.delete<T>(this.buildUrl(path))
-  }
+    async delete<T = any>(path: string): Promise<ApiResponse<T>> {
+      try {
+        const url = this.buildUrl(path)
+        const response = await microserviceApiClient.delete(url)
+        return this.formatResponse<T>(response)
+      } catch (error) {
+        this.handleError(error, 'DELETE')
+        throw error
+      }
+    }
 
   async patch<T = any>(path: string, data?: any): Promise<ApiResponse<T>> {
-    return microserviceApiClient.patch<T>(this.buildUrl(path), data)
+    try {
+      const url = this.buildUrl(path)
+      const response = await microserviceApiClient.patch(url, data)
+      return this.formatResponse<T>(response)
+    } catch (error) {
+      this.handleError(error, 'PATCH')
+      throw error
+    }
   }
 
   // 分页查询
@@ -76,7 +180,18 @@ class MicroserviceApi {
     limit?: number
     [key: string]: any
   }): Promise<ApiResponse<T[]>> {
-    return this.get<T[]>(path, params)
+    try {
+      // 确保提供默认的分页参数
+      const queryParams = {
+        page: 1,
+        limit: 10,
+        ...params
+      }
+      return await this.get<T[]>(path, queryParams)
+    } catch (error) {
+      console.error('分页查询失败:', error)
+      throw error
+    }
   }
 
   // 获取详情

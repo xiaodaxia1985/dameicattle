@@ -50,13 +50,17 @@ export const getBaseURL = () => {
   if (import.meta.env.VITE_API_GATEWAY_URL) {
     return import.meta.env.VITE_API_GATEWAY_URL
   }
+  // 如果启用了微服务直连模式，则返回空字符串
+  if (import.meta.env.VITE_USE_MICROSERVICE_DIRECT === 'true') {
+    return ''
+  }
   // 否则使用默认配置：开发/测试/生产都统一走网关前缀 /api/v1
   return '/api/v1'
 }
 
 export const environmentConfigs: EnvironmentConfigs = {
   development: {
-    baseURL: '', // 不再使用统一baseURL
+    baseURL: getBaseURL(), // 根据配置获取baseURL
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000,

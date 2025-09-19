@@ -7,14 +7,6 @@
         </div>
         <h1 class="title">肉牛全生命周期管理系统</h1>
         <p class="subtitle">Cattle Lifecycle Management System</p>
-        
-        <!-- 调试信息 -->
-        <div v-if="showDebugInfo" class="debug-info">
-          <p>后端连接状态: <span :class="backendStatus.connected ? 'success' : 'error'">
-            {{ backendStatus.connected ? '已连接' : '未连接' }}
-          </span></p>
-          <p>默认账户: test / 123456</p>
-        </div>
       </div>
       
       <el-form
@@ -60,7 +52,7 @@
       </el-form>
       
       <div class="login-footer">
-        <p>默认账号：test / 123456</p>
+        <p>请使用有效账号登录系统</p>
       </div>
     </div>
   </div>
@@ -83,8 +75,8 @@ const showDebugInfo = ref(import.meta.env.MODE === 'development')
 const backendStatus = ref({ connected: false })
 
 const loginForm = reactive<LoginRequest>({
-  username: 'test',
-  password: '123456'
+  username: 'admin',
+  password: 'admin123'
 })
 
 const loginRules: FormRules = {

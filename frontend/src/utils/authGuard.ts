@@ -1,7 +1,5 @@
-/**
- * 认证守卫工具
- * 确保用户已登录，如果未登录则自动登录或跳转到登录页
- */
+// 认证守卫工具
+// 确保用户已登录，如果未登录则自动登录或跳转到登录页
 
 import { tokenStorage, userStorage } from './authUtils'
 import { useAuthStore } from '@/stores/auth'
@@ -33,8 +31,8 @@ export async function ensureUserLoggedIn(): Promise<boolean> {
     console.log('🔐 用户未登录，尝试自动登录...')
     
     await authStore.login({
-      username: 'test',
-      password: '123456'
+      username: 'admin',
+      password: 'admin123'
     })
     
     console.log('✅ 自动登录成功')

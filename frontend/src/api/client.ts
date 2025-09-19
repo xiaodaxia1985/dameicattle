@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { getBaseURL } from '@/config/apiConfig'
-import type { ApiResponse } from './request' // 修改：从request.ts导入类型
+import type { ApiResponse } from './microservices'
 
 // 创建axios实例
 const createAxiosInstance = (): AxiosInstance => {
@@ -34,12 +34,55 @@ const createAxiosInstance = (): AxiosInstance => {
     },
     (error: AxiosError<ApiResponse<any>>) => {
       // 统一错误处理
-      if (error.response?.status === 401) {
-        // 未授权，清除token并跳转到登录页
-        localStorage.removeItem('token')
-        window.location.href = '/login'
+      if (error.response) {
+        const { status, statusText, data } = error.response
+        console.error(`API请求错误 [${status}]: ${statusText}`, data)
+        
+        switch (status) {
+          case 401:
+            // 未授权，清除token并跳转到登录页
+            localStorage.removeItem('token')
+            // 添加判断，避免在API调用过程中重复跳转
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login'
+            }
+            break
+          case 404:
+            // 路由不存在，显示友好的404提示
+            console.error('请求的资源不存在，请检查URL是否正确')
+            break
+          case 500:
+            // 服务器错误
+            console.error('服务器内部错误，请稍后重试')
+            break
+          default:
+            // 其他错误
+            break
+        }
+        
+        // 包装错误响应，使其具有一致的格式
+        return Promise.reject({
+          ...error,
+          code: status,
+          message: data?.message || statusText || '请求失败'
+        })
+      } else if (error.request) {
+        // 请求已发出但没有收到响应
+        console.error('网络错误：无法连接到服务器')
+        return Promise.reject({
+          ...error,
+          code: 0,
+          message: '网络错误：无法连接到服务器'
+        })
+      } else {
+        // 请求配置出错
+        console.error('请求配置错误:', error.message)
+        return Promise.reject({
+          ...error,
+          code: -1,
+          message: error.message || '请求配置错误'
+        })
       }
-      return Promise.reject(error)
     }
   )
 
