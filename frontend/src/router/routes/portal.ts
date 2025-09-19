@@ -61,7 +61,7 @@ const portalRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/portal/admin/index.vue'),
         meta: { requiresAuth: true, title: '门户管理' },
         children: [
-          { path: '', redirect: 'dashboard' },
+          { path: '', name: 'PortalAdminIndex', redirect: 'dashboard' },
           {
             path: 'dashboard',
             name: 'PortalAdminDashboard',

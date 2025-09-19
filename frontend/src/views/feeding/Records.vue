@@ -145,11 +145,11 @@
         <div class="card-header">
           <span>饲喂记录</span>
           <div class="header-tools">
-            <el-button type="text" @click="exportRecords">
+            <el-button link @click="exportRecords">
               <el-icon><Download /></el-icon>
               导出
             </el-button>
-            <el-button type="text" @click="showBatchDialog">
+            <el-button link @click="showBatchDialog">
               <el-icon><Upload /></el-icon>
               批量导入
             </el-button>
@@ -202,9 +202,9 @@
         </el-table-column>
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="text" @click="viewRecord(row)">查看</el-button>
-            <el-button type="text" @click="editRecord(row)">编辑</el-button>
-            <el-button type="text" style="color: #f56c6c" @click="deleteRecord(row)">删除</el-button>
+            <el-button link @click="viewRecord(row)">查看</el-button>
+            <el-button link @click="editRecord(row)">编辑</el-button>
+            <el-button link style="color: #f56c6c" @click="deleteRecord(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -496,7 +496,7 @@
                   <el-table-column label="操作" width="100">
                     <template #default="{ row }">
                       <el-button 
-                        type="text" 
+                        link 
                         size="small" 
                         @click="addSingleFeedingAsRecord(dayPlan, row)"
                         :disabled="isPastDate(dayPlan.date)"

@@ -104,7 +104,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="name" label="客户名称" min-width="150">
           <template #default="{ row }">
-            <el-button type="text" @click="handleView(row)">
+            <el-button link @click="handleView(row)">
               {{ row.name || '-' }}
             </el-button>
           </template>

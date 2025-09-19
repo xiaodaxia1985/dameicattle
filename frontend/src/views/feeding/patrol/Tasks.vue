@@ -105,7 +105,7 @@
                     </el-tag>
                     <el-button 
                       v-if="!task.completed_patrols.includes('before_feeding')"
-                      type="text" 
+                      link 
                       size="small"
                       @click="startPatrol(task, 'before_feeding')"
                     >
@@ -128,7 +128,7 @@
                     </el-tag>
                     <el-button 
                       v-if="!task.completed_patrols.includes('after_feeding')"
-                      type="text" 
+                      link 
                       size="small"
                       @click="startPatrol(task, 'after_feeding')"
                     >

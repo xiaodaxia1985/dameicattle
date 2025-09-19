@@ -73,7 +73,7 @@
                 </div>
                 <div v-else-if="salesStore.customers.length === 0" style="font-size: 12px; color: #f56c6c; margin-top: 4px;">
                   ⚠️ 暂无客户数据，请检查网络或联系管理员
-                  <el-button type="text" size="small" @click="retryLoadCustomers">重试加载</el-button>
+                  <el-button link size="small" @click="retryLoadCustomers">重试加载</el-button>
                 </div>
                 <div v-else style="font-size: 12px; color: #67c23a; margin-top: 4px;">
                   ✅ 已加载 {{ salesStore.customers.length }} 个客户

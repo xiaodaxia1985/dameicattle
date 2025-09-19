@@ -204,7 +204,10 @@ export const newsApi = {
 
   // 获取新闻分类列表
   async getCategories(params?: { isActive?: boolean }): Promise<ApiResponse<NewsCategory[]>> {
-    const response = await newsServiceApi.getNewsCategories(params)
+    // 转换参数名：将isActive转换为active以匹配后端API期望的参数名
+    const transformedParams = params ? { active: params.isActive } : undefined
+    
+    const response = await newsServiceApi.getNewsCategories(transformedParams)
     // 适配微服务返回的数据结构
     const categories = response.data?.categories || response.data || []
     return {
@@ -512,18 +515,91 @@ export const newsApi = {
   // ========== 门户网站公开接口 ==========
 
   // 获取公开新闻列表（门户网站使用）
-  getPublicNews(params?: {
+  async getPublicNews(params?: {
     page?: number
     limit?: number
     categoryId?: number
     status?: string
   }): Promise<ApiResponse<PaginatedResponse<NewsArticle>>> {
-    return request.get('/api/v1/public/news', { params })
+    try {
+      // 使用newsServiceApi.getNewsArticles替代直接调用request.get，以复用现有的数据处理逻辑
+      const response = await newsServiceApi.getNewsArticles({
+        ...params,
+        status: 'published' // 确保只获取已发布的文章
+      })
+      
+      // 复用getArticles方法中的数据结构处理逻辑
+      const responseData = response?.data || response || {}
+      
+      let articles = []
+      let total = 0
+      let page = 1
+      let limit = 20
+      
+      // 处理不同的数据结构
+      if (Array.isArray(responseData)) {
+        articles = responseData
+        total = articles.length
+      } else if (responseData.data && Array.isArray(responseData.data)) {
+        articles = responseData.data
+        total = responseData.total || responseData.pagination?.total || articles.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      } else if (responseData.articles && Array.isArray(responseData.articles)) {
+        articles = responseData.articles
+        total = responseData.total || responseData.pagination?.total || articles.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      } else if (responseData.items && Array.isArray(responseData.items)) {
+        articles = responseData.items
+        total = responseData.total || responseData.pagination?.total || articles.length
+        page = responseData.page || responseData.pagination?.page || 1
+        limit = responseData.limit || responseData.pagination?.limit || 20
+      }
+      
+      return {
+        data: {
+          data: articles,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('获取公开新闻列表失败:', error)
+      // 返回默认空数据结构，避免页面崩溃
+      return {
+        data: {
+          data: [],
+          pagination: {
+            total: 0,
+            page: 1,
+            limit: 10,
+            totalPages: 0
+          }
+        }
+      }
+    }
   },
 
   // 获取公开新闻详情（门户网站使用）
-  getPublicNewsById(id: number): Promise<ApiResponse<NewsArticle>> {
-    return request.get(`/api/v1/public/news/${id}`)
+  async getPublicNewsById(id: number): Promise<ApiResponse<NewsArticle>> {
+    try {
+      // 使用newsServiceApi.getNewsArticleById替代直接调用request.get
+      const response = await newsServiceApi.getNewsArticleById(id)
+      return {
+        data: response.data || {}
+      }
+    } catch (error) {
+      console.error('获取公开新闻详情失败:', error)
+      // 返回默认空数据结构，避免页面崩溃
+      return {
+        data: {}
+      }
+    }
   },
 
   // 增加新闻浏览量

@@ -34,7 +34,7 @@
               <span>基本信息</span>
               <div class="header-extra">
                 <el-button 
-                  type="text" 
+                  link 
                   @click="handleViewCustomer"
                   v-if="order.customer_id"
                 >

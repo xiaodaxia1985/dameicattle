@@ -61,10 +61,10 @@
         </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="text" @click="viewFormula(row)">查看</el-button>
-            <el-button type="text" @click="editFormula(row)">编辑</el-button>
-            <el-button type="text" @click="copyFormula(row)">复制</el-button>
-            <el-button type="text" style="color: #f56c6c" @click="deleteFormula(row)">删除</el-button>
+            <el-button link @click="viewFormula(row)">查看</el-button>
+            <el-button link @click="editFormula(row)">编辑</el-button>
+            <el-button link @click="copyFormula(row)">复制</el-button>
+            <el-button link style="color: #f56c6c" @click="deleteFormula(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

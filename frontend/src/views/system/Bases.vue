@@ -54,7 +54,7 @@
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
           <el-button @click="handleReset">重置</el-button>
-          <el-button type="text" @click="advancedSearchVisible = true">
+          <el-button link @click="advancedSearchVisible = true">
             高级搜索
           </el-button>
         </el-form-item>
@@ -222,7 +222,7 @@
                   </div>
                   <div class="card-actions">
                     <el-button
-                      type="text"
+                      link
                       size="small"
                       @click.stop="handleToggleFavorite(base.id)"
                       :class="{ 'is-favorite': favoriteBaseIds.has(base.id) }"
@@ -232,28 +232,28 @@
                       </el-icon>
                     </el-button>
                     <el-button
-                      type="text"
+                      link
                       size="small"
                       @click.stop="handleCopyBase(base)"
                     >
                       <el-icon><CopyDocument /></el-icon>
                     </el-button>
                     <el-button
-                      type="text"
+                      link
                       size="small"
                       @click.stop="handleEditBase(base)"
                     >
                       <el-icon><Edit /></el-icon>
                     </el-button>
                     <el-button
-                      type="text"
+                      link
                       size="small"
                       @click.stop="handleViewLocation(base)"
                     >
                       <el-icon><Location /></el-icon>
                     </el-button>
                     <el-button
-                      type="text"
+                      link
                       size="small"
                       @click.stop="handleDeleteBase(base)"
                     >
@@ -414,7 +414,7 @@
           />
           <div class="address-actions">
             <el-button 
-              type="text" 
+              link 
               size="small" 
               @click="handleGeocodeAddress"
               :loading="geocodingLoading"
@@ -463,12 +463,12 @@
             </el-col>
           </el-row>
           <div class="location-actions">
-            <el-button type="text" @click="handleSelectLocation">
+            <el-button link @click="handleSelectLocation">
               <el-icon><Location /></el-icon>
               地图选择位置
             </el-button>
             <el-button 
-              type="text" 
+              link 
               @click="handleClearLocation"
               v-if="baseForm.latitude && baseForm.longitude"
             >

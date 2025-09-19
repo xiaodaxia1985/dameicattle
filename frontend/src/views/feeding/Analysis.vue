@@ -191,7 +191,7 @@
           <div class="card-header">
             <span>详细分析数据</span>
             <div class="header-tools">
-              <el-button type="text" @click="exportAnalysis">
+              <el-button link @click="exportAnalysis">
                 <el-icon><Download /></el-icon>
                 导出分析
               </el-button>
@@ -232,8 +232,8 @@
           </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
-              <el-button type="text" @click="viewFormulaDetail(row)">详情</el-button>
-              <el-button type="text" @click="optimizeFormula(row)">优化</el-button>
+              <el-button link @click="viewFormulaDetail(row)">详情</el-button>
+              <el-button link @click="optimizeFormula(row)">优化</el-button>
             </template>
           </el-table-column>
         </el-table>

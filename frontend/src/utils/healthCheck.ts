@@ -11,7 +11,7 @@ export const microservices: MicroserviceConfig[] = [
   {
     name: '认证服务',
     url: 'http://localhost:3001',
-    healthEndpoint: '/api/v1/auth/health'
+    healthEndpoint: '/health' // 根据microservices.ts中的healthCheck方法，正确的端点应该是/health
   },
   {
     name: '基础服务',

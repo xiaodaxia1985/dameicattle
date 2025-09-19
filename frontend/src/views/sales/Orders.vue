@@ -143,7 +143,7 @@
         <el-table-column label="客户" min-width="120">
           <template #default="{ row }">
             <el-button 
-              type="text" 
+              link 
               @click="handleViewCustomer(row.customer_id)"
               v-if="row.customer?.name"
             >

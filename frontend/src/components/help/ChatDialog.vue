@@ -78,7 +78,7 @@
             accept="image/*"
             action="#"
           >
-            <el-button size="small" type="text">
+            <el-button size="small" link>
               <el-icon><Picture /></el-icon>
             </el-button>
           </el-upload>
@@ -88,7 +88,7 @@
             :before-upload="handleFileUpload"
             action="#"
           >
-            <el-button size="small" type="text">
+            <el-button size="small" link>
               <el-icon><Paperclip /></el-icon>
             </el-button>
           </el-upload>

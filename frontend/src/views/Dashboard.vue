@@ -153,7 +153,7 @@
                   <div class="task-time">{{ task.time }}</div>
                 </div>
                 <div class="task-action">
-                  <el-button size="small" type="text" @click="handleTask(task)">
+                  <el-button size="small" link @click="handleTask(task)">
                     处理
                   </el-button>
                 </div>

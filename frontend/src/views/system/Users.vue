@@ -355,7 +355,7 @@
               v-if="row.details"
             >
               <template #reference>
-                <el-button type="text" size="small">查看详情</el-button>
+                <el-button link size="small">查看详情</el-button>
               </template>
               <pre>{{ JSON.stringify(row.details, null, 2) }}</pre>
             </el-popover>

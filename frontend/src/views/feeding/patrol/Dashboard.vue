@@ -134,7 +134,7 @@
         <template #header>
           <div class="card-header">
             <span>牛棚巡圈情况</span>
-            <el-button type="text" @click="exportBarnStats">
+            <el-button link @click="exportBarnStats">
               <el-icon><Download /></el-icon>
               导出数据
             </el-button>

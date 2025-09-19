@@ -120,7 +120,7 @@
       <div v-else-if="currentView === 'faq'" class="faq-section">
         <div class="section-header">
           <h2>常见问题</h2>
-          <el-button @click="goBack" type="text">
+          <el-button @click="goBack" link>
             <el-icon><ArrowLeft /></el-icon>
             返回
           </el-button>
@@ -153,10 +153,10 @@
       <div v-else-if="currentView === 'tutorials'" class="tutorials-section">
         <div class="section-header">
           <h2>视频教程</h2>
-          <el-button @click="goBack" type="text">
-            <el-icon><ArrowLeft /></el-icon>
-            返回
-          </el-button>
+          <el-button @click="goBack" link>
+          <el-icon><ArrowLeft /></el-icon>
+          返回
+        </el-button>
         </div>
 
         <div class="tutorial-filters">
@@ -214,10 +214,10 @@
       <div v-else-if="currentView === 'manual'" class="manual-section">
         <div class="section-header">
           <h2>用户手册</h2>
-          <el-button @click="goBack" type="text">
-            <el-icon><ArrowLeft /></el-icon>
-            返回
-          </el-button>
+          <el-button @click="goBack" link>
+          <el-icon><ArrowLeft /></el-icon>
+          返回
+        </el-button>
         </div>
 
         <div class="manual-content">

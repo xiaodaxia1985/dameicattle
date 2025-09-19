@@ -35,14 +35,14 @@
         
         <div class="barn-actions">
           <el-button 
-            type="text" 
+            link 
             size="small" 
             @click.stop="$emit('edit-barn', barn)"
           >
             <el-icon><Edit /></el-icon>
           </el-button>
           <el-button 
-            type="text" 
+            link 
             size="small" 
             @click.stop="$emit('delete-barn', barn)"
           >

@@ -199,7 +199,7 @@
           <template #default="{ row }">
             <div class="details-cell">
               <el-button
-                type="text"
+                link
                 size="small"
                 @click="handleViewDetails(row)"
                 v-if="row.details"
