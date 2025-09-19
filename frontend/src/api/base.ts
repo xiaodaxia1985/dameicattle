@@ -255,40 +255,44 @@ export const baseApi = {
   // 获取基地统计
   async getBaseStatistics(): Promise<{ data: BaseStatistics }> {
     try {
-      // 尝试使用更通用的路径格式
-      let response
+      // 根据base-service的实际API结构，应该先获取基地列表，再获取统计数据
+      // 尝试从/barns/statistics获取牛舍统计数据
+      let barnStatistics
       try {
-        response = await baseServiceApi.get('/statistics')
-      } catch (error) {
-        // 如果路径不存在，直接返回默认空数据
-        return {
-          data: {
-            total_bases: 0,
-            active_bases: 0,
-            total_barns: 0,
-            total_capacity: 0,
-            current_cattle_count: 0,
-            utilization_rate: 0,
-            base_distribution: []
-          }
-        }
+        const barnResponse = await baseServiceApi.get('/barns/statistics')
+        barnStatistics = barnResponse.data || {}
+      } catch (barnError) {
+        console.warn('获取牛舍统计数据失败，使用默认值:', barnError)
+        barnStatistics = {}
       }
       
-      const data = response.data || {}
+      // 尝试获取基地总数
+      let totalBases = 0
+      let activeBases = 0
+      try {
+        const basesResponse = await baseServiceApi.get('/bases')
+        const bases = Array.isArray(basesResponse.data?.items) ? basesResponse.data.items : []
+        totalBases = bases.length
+        activeBases = bases.filter(base => base.status === 'active').length
+      } catch (basesError) {
+        console.warn('获取基地列表失败，使用默认值:', basesError)
+      }
       
+      // 构建返回数据
       return {
         data: {
-          total_bases: data.total_bases || 0,
-          active_bases: data.active_bases || 0,
-          total_barns: data.total_barns || 0,
-          total_capacity: data.total_capacity || 0,
-          current_cattle_count: data.current_cattle_count || 0,
-          utilization_rate: data.utilization_rate || 0,
-          base_distribution: Array.isArray(data.base_distribution) ? data.base_distribution : []
+          total_bases: totalBases,
+          active_bases: activeBases,
+          total_barns: barnStatistics.total_barns || 0,
+          total_capacity: barnStatistics.total_capacity || 0,
+          current_cattle_count: barnStatistics.current_cattle_count || 0,
+          utilization_rate: barnStatistics.utilization_rate || 0,
+          base_distribution: Array.isArray(barnStatistics.base_distribution) ? barnStatistics.base_distribution : []
         }
       }
     } catch (error) {
       console.error('获取基地统计失败:', error)
+      // 错误情况下返回默认空数据
       return {
         data: {
           total_bases: 0,

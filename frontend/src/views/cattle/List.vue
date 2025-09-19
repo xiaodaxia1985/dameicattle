@@ -208,23 +208,9 @@
                 {{ formatTime(safeGet(row, 'created_at', '')) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column label="操作" width="100" fixed="right">
               <template #default="{ row }">
-                <el-button size="small" @click="viewDetail(row)">详情</el-button>
-                <el-button size="small" type="primary" @click="editCattle(row)">编辑</el-button>
-                <el-dropdown @command="(command) => handleMoreAction(command, row)">
-                  <el-button size="small">
-                    更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="events">生命周期</el-dropdown-item>
-                      <el-dropdown-item command="photos">照片管理</el-dropdown-item>
-                      <el-dropdown-item command="transfer">转群</el-dropdown-item>
-                      <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+                <el-button size="small" type="primary" @click="viewDetail(row)">详情</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -248,8 +234,7 @@
                   <p><strong>月龄:</strong> {{ safeGet(cattle, 'age_months', '-') }}</p>
                 </div>
                 <div class="card-actions">
-                  <el-button size="small" @click="viewDetail(cattle)">详情</el-button>
-                  <el-button size="small" type="primary" @click="editCattle(cattle)">编辑</el-button>
+                  <el-button size="small" type="primary" @click="viewDetail(cattle)">详情</el-button>
                 </div>
               </el-card>
             </el-col>

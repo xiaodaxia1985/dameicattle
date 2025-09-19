@@ -385,30 +385,42 @@ const getStatusText = (status: string) => {
   }
 }
 
-// 临时组件占位
+import { h } from 'vue'
+
+// 临时组件占位 - 使用h函数替代JSX以避免TypeScript编译错误
 const GrowthRecords = {
   props: ['cattleId'],
-  template: '<div class="placeholder">生长记录组件待实现</div>'
+  render() {
+    return h('div', { class: 'placeholder' }, '生长记录组件待实现')
+  }
 }
 
 const HealthRecords = {
   props: ['cattleId'],
-  template: '<div class="placeholder">健康记录组件待实现</div>'
+  render() {
+    return h('div', { class: 'placeholder' }, '健康记录组件待实现')
+  }
 }
 
 const BreedingRecords = {
   props: ['cattleId'],
-  template: '<div class="placeholder">繁殖记录组件待实现</div>'
+  render() {
+    return h('div', { class: 'placeholder' }, '繁殖记录组件待实现')
+  }
 }
 
 const TransferRecords = {
   props: ['cattleId'],
-  template: '<div class="placeholder">转群记录组件待实现</div>'
+  render() {
+    return h('div', { class: 'placeholder' }, '转群记录组件待实现')
+  }
 }
 
 const LifecycleEvents = {
   props: ['cattleId'],
-  template: '<div class="placeholder">生命周期组件待实现</div>'
+  render() {
+    return h('div', { class: 'placeholder' }, '生命周期组件待实现')
+  }
 }
 </script>
 

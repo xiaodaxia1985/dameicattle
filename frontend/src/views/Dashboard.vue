@@ -271,9 +271,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { 
-  DataAnalysis, 
-  TrendCharts, 
+import {
+  DataAnalysis,
+  TrendCharts,
   Monitor,
   Warning,
   Refresh,
@@ -294,6 +294,8 @@ import {
 } from '@element-plus/icons-vue'
 import { safeGet } from '@/utils/safeAccess'
 import { validateStatisticsData, ensureArray, ensureNumber } from '@/utils/dataValidation'
+import { dashboardApi } from '@/api/dashboard'
+import { salesServiceApi } from '@/api/microservices'
 
 const router = useRouter()
 
@@ -374,14 +376,60 @@ const loadDashboardData = async () => {
   try {
     loading.value = true
     
-    // 模拟数据加载
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 获取关键业务指标
+    const keyIndicatorsResult = await dashboardApi.getKeyIndicators()
     
+    // 获取销售统计数据（月度收入）
+    let monthlyRevenue = 0
+    try {
+      const salesStats = await salesServiceApi.getSalesStatistics()
+      // 假设响应中有monthlyRevenue字段
+      monthlyRevenue = salesStats.data.monthlyRevenue || salesStats.data.totalRevenue || 0
+    } catch (salesError) {
+      console.warn('获取销售统计数据失败:', salesError)
+    }
+    
+    // 获取待处理任务
+    const pendingTasksResult = await dashboardApi.getPendingTasks()
+    
+    // 更新关键指标数据
     keyIndicators.value = {
-      totalCattle: 1250,
-      healthRate: 95.8,
-      monthlyRevenue: 125000,
-      pendingTasks: 8
+      totalCattle: keyIndicatorsResult.data.totalCattle || 0,
+      healthRate: keyIndicatorsResult.data.healthRate || 0,
+      monthlyRevenue: monthlyRevenue,
+      pendingTasks: keyIndicatorsResult.data.pendingTasks?.total || pendingTasksResult.data.total || 0
+    }
+    
+    // 更新待处理任务数据
+    if (pendingTasksResult.data.tasks && pendingTasksResult.data.tasks.length > 0) {
+      pendingTasks.value = pendingTasksResult.data.tasks.map((task: any) => ({
+        id: task.id,
+        title: task.title,
+        time: formatTime(task.createdAt || new Date().toISOString()),
+        priority: task.priority || 'medium',
+        icon: task.type === 'health' ? 'Monitor' : 
+              task.type === 'feeding' ? 'Food' : 
+              task.type === 'purchase' ? 'ShoppingCart' : 
+              task.type === 'equipment' ? 'Tools' : 'Warning',
+        type: task.type || 'general'
+      }))
+    }
+    
+    // 获取系统通知
+    try {
+      const notificationsResult = await dashboardApi.getPendingTasks({ limit: 5 })
+      if (notificationsResult.data.tasks && notificationsResult.data.tasks.length > 0) {
+        notifications.value = notificationsResult.data.tasks.slice(0, 3).map((task: any) => ({
+          id: task.id,
+          title: task.title,
+          time: formatTime(task.createdAt || new Date().toISOString()),
+          type: task.priority === 'high' ? 'warning' : 
+                task.priority === 'medium' ? 'info' : 'success',
+          icon: 'Bell'
+        }))
+      }
+    } catch (notificationError) {
+      console.warn('获取系统通知失败:', notificationError)
     }
     
   } catch (error) {
@@ -389,6 +437,26 @@ const loadDashboardData = async () => {
     ElMessage.error('加载数据失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 格式化时间显示
+const formatTime = (timestamp: string) => {
+  const now = new Date()
+  const date = new Date(timestamp)
+  const diffMs = now.getTime() - date.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+  
+  if (diffMins < 60) {
+    return `${diffMins}分钟前`
+  } else if (diffHours < 24) {
+    return `${diffHours}小时前`
+  } else if (diffDays < 7) {
+    return `${diffDays}天前`
+  } else {
+    return date.toLocaleDateString('zh-CN')
   }
 }
 
