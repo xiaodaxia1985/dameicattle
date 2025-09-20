@@ -105,8 +105,10 @@ export const useBaseStore = defineStore('base', () => {
     loading.value = true
     try {
       const response = await baseApi.getBarnsByBaseId(baseId)
+      // 安全处理响应数据
+      const responseData = response?.data || response || {}
       // 后端返回 { data: { barns: [], base_info: {} } }
-      return response.data.barns || []
+      return responseData.barns || []
     } catch (error) {
       console.error('获取牛棚列表失败:', error)
       throw error

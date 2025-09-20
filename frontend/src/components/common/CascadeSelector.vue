@@ -180,13 +180,17 @@ const handleCattleChange = () => {
 const loadBarns = async (baseId: number) => {
   try {
     const response = await baseStore.fetchBarnsByBaseId(baseId)
-    availableBarns.value = response.map((barn: any) => ({
+    // 安全处理响应，确保response是数组
+    const barnsData = Array.isArray(response) ? response : []
+    availableBarns.value = barnsData.map((barn: any) => ({
       value: barn.id,
       label: `${barn.name} (${barn.code})`
     }))
   } catch (error) {
     console.error('加载牛棚选项失败:', error)
     ElMessage.error('加载牛棚选项失败')
+    // 确保availableBarns始终是数组
+    availableBarns.value = []
   }
 }
 

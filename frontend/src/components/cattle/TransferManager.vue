@@ -103,68 +103,20 @@
           />
         </el-form-item>
 
-        <el-form-item label="源基地" prop="from_base_id">
-          <el-select
-            v-model="transferForm.from_base_id"
-            placeholder="请选择源基地"
-            style="width: 100%"
-            @change="handleFromBaseChange"
-          >
-            <el-option
-              v-for="base in bases"
-              :key="base.id"
-              :label="base.name"
-              :value="base.id"
-            />
-          </el-select>
+        <el-form-item label="源基地/牛棚" prop="fromCascade">
+          <CascadeSelector
+            v-model="transferForm.fromCascade"
+            :required="true"
+            placeholder="请选择源基地和牛棚"
+          />
         </el-form-item>
 
-        <el-form-item label="源牛棚" prop="from_barn_id">
-          <el-select
-            v-model="transferForm.from_barn_id"
-            placeholder="请选择源牛棚"
-            style="width: 100%"
-            :disabled="!transferForm.from_base_id"
-          >
-            <el-option
-              v-for="barn in fromBarns"
-              :key="barn.id"
-              :label="`${barn.name} (${barn.code})`"
-              :value="barn.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="目标基地" prop="to_base_id">
-          <el-select
-            v-model="transferForm.to_base_id"
-            placeholder="请选择目标基地"
-            style="width: 100%"
-            @change="handleToBaseChange"
-          >
-            <el-option
-              v-for="base in bases"
-              :key="base.id"
-              :label="base.name"
-              :value="base.id"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="目标牛棚" prop="to_barn_id">
-          <el-select
-            v-model="transferForm.to_barn_id"
-            placeholder="请选择目标牛棚"
-            style="width: 100%"
-            :disabled="!transferForm.to_base_id"
-          >
-            <el-option
-              v-for="barn in toBarns"
-              :key="barn.id"
-              :label="`${barn.name} (${barn.code}) - 容量: ${barn.current_count}/${barn.capacity}`"
-              :value="barn.id"
-            />
-          </el-select>
+        <el-form-item label="目标基地/牛棚" prop="toCascade">
+          <CascadeSelector
+            v-model="transferForm.toCascade"
+            :required="true"
+            placeholder="请选择目标基地和牛棚"
+          />
         </el-form-item>
 
         <el-form-item label="转群原因" prop="reason">
@@ -247,6 +199,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, ArrowRight } from '@element-plus/icons-vue'
 import { baseApi, type Base, type Barn } from '@/api/base'
 import dayjs from 'dayjs'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 
 interface Props {
   cattleId: number
@@ -295,18 +248,50 @@ const transferForm = reactive({
   to_base_id: undefined as number | undefined,
   to_barn_id: undefined as number | undefined,
   reason: '',
-  notes: ''
+  notes: '',
+  fromCascade: {
+    baseId: undefined,
+    barnId: undefined,
+    cattleId: undefined
+  },
+  toCascade: {
+    baseId: undefined,
+    barnId: undefined,
+    cattleId: undefined
+  }
 })
 
 const transferRules: FormRules = {
   transfer_date: [
     { required: true, message: '请选择转群日期', trigger: 'change' }
   ],
-  to_base_id: [
-    { required: true, message: '请选择目标基地', trigger: 'change' }
+  fromCascade: [
+    {
+      required: true,
+      message: '请选择源基地和源牛棚',
+      trigger: 'change',
+      validator: (rule: any, value: any, callback: any) => {
+        if (value && value.baseId && value.barnId) {
+          callback()
+        } else {
+          callback(new Error('请选择源基地和源牛棚'))
+        }
+      }
+    }
   ],
-  to_barn_id: [
-    { required: true, message: '请选择目标牛棚', trigger: 'change' }
+  toCascade: [
+    {
+      required: true,
+      message: '请选择目标基地和目标牛棚',
+      trigger: 'change',
+      validator: (rule: any, value: any, callback: any) => {
+        if (value && value.baseId && value.barnId) {
+          callback()
+        } else {
+          callback(new Error('请选择目标基地和目标牛棚'))
+        }
+      }
+    }
   ],
   reason: [
     { required: true, message: '请选择转群原因', trigger: 'change' }
@@ -351,8 +336,10 @@ const loadTransfers = async () => {
 // 加载基地列表
 const loadBases = async () => {
   try {
+    // 这里需要实现获取基地列表的API
     const response = await baseApi.getBases()
     bases.value = response.data.bases || []
+    
   } catch (error) {
     console.error('加载基地列表失败:', error)
     ElMessage.error('加载基地列表失败')
@@ -483,6 +470,22 @@ const submitTransfer = async () => {
     await transferFormRef.value.validate()
     submitting.value = true
     
+    // 确保from_base_id和from_barn_id字段正确设置
+    if (transferForm.fromCascade && transferForm.fromCascade.baseId) {
+      transferForm.from_base_id = transferForm.fromCascade.baseId
+    }
+    if (transferForm.fromCascade && transferForm.fromCascade.barnId) {
+      transferForm.from_barn_id = transferForm.fromCascade.barnId
+    }
+    
+    // 确保to_base_id和to_barn_id字段正确设置
+    if (transferForm.toCascade && transferForm.toCascade.baseId) {
+      transferForm.to_base_id = transferForm.toCascade.baseId
+    }
+    if (transferForm.toCascade && transferForm.toCascade.barnId) {
+      transferForm.to_barn_id = transferForm.toCascade.barnId
+    }
+    
     // 这里需要实现创建转群记录的API
     // await cattleApi.createTransferRecord(props.cattleId, transferForm)
     
@@ -506,10 +509,18 @@ const resetTransferForm = () => {
     to_base_id: undefined,
     to_barn_id: undefined,
     reason: '',
-    notes: ''
+    notes: '',
+    fromCascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    },
+    toCascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    }
   })
-  fromBarns.value = []
-  toBarns.value = []
   transferFormRef.value?.resetFields()
 }
 

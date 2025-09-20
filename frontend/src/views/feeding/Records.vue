@@ -257,31 +257,12 @@
           </el-select>
         </el-form-item>
         <!-- 基地牛棚选择 -->
-        <el-form-item label="目标基地" prop="base_id">
-          <el-select v-model="formData.base_id" placeholder="请选择基地" style="width: 100%" @change="handleBaseChange">
-            <el-option
-              v-for="base in bases"
-              :key="base.id"
-              :label="base.name"
-              :value="base.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="目标牛棚" prop="barn_id">
-          <el-select 
-            v-model="formData.barn_id" 
-            placeholder="请选择牛棚" 
-            style="width: 100%" 
-            :disabled="!formData.base_id"
-            @change="handleBarnChange"
-          >
-            <el-option
-              v-for="barn in availableBarns"
-              :key="barn.value"
-              :label="barn.label"
-              :value="barn.value"
-            />
-          </el-select>
+        <el-form-item label="选择范围" prop="cascade">
+          <CascadeSelector
+            v-model="formData.cascade"
+            @change="handleFormCascadeChange"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="饲喂说明">
           <el-alert
@@ -650,30 +631,19 @@ const formRules: Record<string, any> = {
   formula_id: [
     { required: true, message: '请选择配方', trigger: 'change' }
   ],
-  base_id: [
-    { required: true, message: '请选择基地', trigger: 'change' },
-    { 
+  cascade: [
+    {
+      required: true,
       validator: (rule: any, value: any, callback: Function) => {
-        if (!value || value === 0) {
+        if (!value || !value.baseId || value.baseId === 0) {
           callback(new Error('请选择基地'))
-        } else {
-          callback()
-        }
-      }, 
-      trigger: 'change' 
-    }
-  ],
-  barn_id: [
-    { required: true, message: '请选择牛棚', trigger: 'change' },
-    { 
-      validator: (rule: any, value: any, callback: Function) => {
-        if (!value || value === 0) {
+        } else if (!value.barnId || value.barnId === 0) {
           callback(new Error('请选择牛棚'))
         } else {
           callback()
         }
-      }, 
-      trigger: 'change' 
+      },
+      trigger: 'change'
     }
   ],
   amount: [
@@ -902,8 +872,8 @@ const editRecord = (record: FeedingRecord) => {
     feeding_date: record.feeding_date,
     remark: record.remark || '',
     cascade: {
-      baseId: undefined,
-      barnId: undefined,
+      baseId: record.base_id || record.base?.id,
+      barnId: record.barn_id || record.barn?.id,
       cattleId: undefined
     }
   }
@@ -940,16 +910,7 @@ const deleteRecord = async (record: FeedingRecord) => {
   }
 }
 
-// 处理表单基地变化
-const handleBaseChange = () => {
-  console.log('基地变更:', formData.value.base_id)
-  formData.value.barn_id = 0
-}
-
-// 处理表单牛棚变化
-const handleBarnChange = () => {
-  console.log('牛棚变更:', formData.value.barn_id)
-}
+// 不再需要这两个函数，因为级联选择器会通过handleFormCascadeChange自动处理
 
 // 计算预估成本
 const calculateEstimatedCost = () => {
