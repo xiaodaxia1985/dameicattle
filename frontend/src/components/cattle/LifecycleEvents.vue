@@ -2,7 +2,7 @@
   <div class="lifecycle-events">
     <!-- 工具栏 -->
     <div class="toolbar">
-      <el-button type="primary" @click="showAddDialog = true">
+      <el-button type="primary" @click="showAddDialog = true" v-if="!readOnly">
         <el-icon><Plus /></el-icon>
         添加事件
       </el-button>
@@ -39,10 +39,10 @@
                 <el-button size="small" text @click="viewEvent(event)">
                   详情
                 </el-button>
-                <el-button size="small" text type="primary" @click="editEvent(event)">
+                <el-button size="small" text type="primary" @click="editEvent(event)" v-if="!readOnly">
                   编辑
                 </el-button>
-                <el-button size="small" text type="danger" @click="deleteEvent(event)">
+                <el-button size="small" text type="danger" @click="deleteEvent(event)" v-if="!readOnly">
                   删除
                 </el-button>
               </div>
@@ -240,11 +240,13 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Calendar, Warning, Check, Close } from '@element-plus/icons-vue'
-import { cattleApi, type CattleEvent } from '@/api/cattle'
+import type { CattleEvent } from '@/api/cattle'
+import { cattleServiceApi } from '@/api/microservices'
 import dayjs from 'dayjs'
 
 interface Props {
   cattleId: number
+  readOnly?: boolean
 }
 
 const props = defineProps<Props>()
@@ -302,18 +304,22 @@ const eventRules: FormRules = {
 const loadEvents = async () => {
   loading.value = true
   try {
-    const response = await cattleApi.getEvents(props.cattleId, {
+    const response = await cattleServiceApi.getCattleEvents(props.cattleId, {
       event_type: filterType.value || undefined,
       page: currentPage.value,
       limit: pageSize.value
     })
     
-    events.value = response.data || []
-    pagination.value = response.pagination || {
-      total: 0,
-      page: 1,
-      limit: 20,
-      totalPages: 0
+    // 安全地获取数据，确保返回的是数组
+    events.value = Array.isArray(response.data) ? response.data : []
+    
+    // 安全地获取分页信息，提供默认值
+    const paginationData = response.pagination || {}
+    pagination.value = {
+      total: paginationData.total || 0,
+      page: paginationData.page || 1,
+      limit: paginationData.limit || 20,
+      totalPages: Math.ceil((paginationData.total || 0) / (paginationData.limit || 20))
     }
   } catch (error) {
     console.error('加载事件失败:', error)
@@ -415,7 +421,8 @@ const deleteEvent = async (event: CattleEvent) => {
       }
     )
     
-    // 这里需要实现删除API
+    // 调用删除API
+    await cattleServiceApi.delete(event.id)
     ElMessage.success('删除成功')
     loadEvents()
   } catch (error) {
@@ -463,10 +470,11 @@ const submitEvent = async () => {
     }
     
     if (editingEvent.value) {
-      // 更新事件 - 需要实现更新API
+      // 更新事件
+      await cattleServiceApi.put(editingEvent.value.id, eventData)
       ElMessage.success('更新成功')
     } else {
-      await cattleApi.addEvent(props.cattleId, eventData)
+      await cattleServiceApi.addCattleEvent(props.cattleId, eventData)
       ElMessage.success('添加成功')
     }
     

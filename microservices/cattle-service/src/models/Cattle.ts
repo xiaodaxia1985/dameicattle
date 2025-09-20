@@ -27,6 +27,7 @@ interface CattleAttributes {
 interface CattleCreationAttributes extends Optional<CattleAttributes, 'id' | 'created_at' | 'updated_at'> {}
 
 export class Cattle extends Model<CattleAttributes, CattleCreationAttributes> implements CattleAttributes {
+  public static associate?: (models: any) => void;
   public id!: number;
   public ear_tag!: string;
   public breed!: string;
@@ -226,3 +227,34 @@ Cattle.init(
     ],
   }
 );
+
+// 添加关联关系
+Cattle.associate = function (models: any) {
+  Cattle.belongsTo(models.Base, {
+    foreignKey: 'base_id',
+    as: 'base'
+  });
+  
+  Cattle.belongsTo(models.Barn, {
+    foreignKey: 'barn_id',
+    as: 'barn'
+  });
+  
+  // 一对多关联：一头牛可以有多个事件记录
+  Cattle.hasMany(models.CattleEvent, {
+    foreignKey: 'cattle_id',
+    as: 'events'
+  });
+  
+  // 自关联：父本
+  Cattle.hasMany(models.Cattle, {
+    foreignKey: 'parent_male_id',
+    as: 'male_children'
+  });
+  
+  // 自关联：母本
+  Cattle.hasMany(models.Cattle, {
+    foreignKey: 'parent_female_id',
+    as: 'female_children'
+  });
+};

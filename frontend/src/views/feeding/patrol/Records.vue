@@ -17,31 +17,15 @@
     <el-card class="search-card" shadow="never">
       <div class="search-form">
         <el-row :gutter="16">
-          <el-col :span="6">
-            <div class="search-item">
-              <label class="search-label">选择基地</label>
-              <el-select v-model="searchForm.baseId" placeholder="选择基地" clearable @change="handleBaseChange">
-                <el-option
-                  v-for="base in bases"
-                  :key="base.id"
-                  :label="base.name"
-                  :value="base.id"
-                />
-              </el-select>
-            </div>
-          </el-col>
-          <el-col :span="6">
-            <div class="search-item">
-              <label class="search-label">选择牛棚</label>
-              <el-select v-model="searchForm.barnId" placeholder="选择牛棚" clearable @change="handleSearch">
-                <el-option
-                  v-for="barn in availableBarns"
-                  :key="barn.id"
-                  :label="`${barn.name} (${barn.code})`"
-                  :value="barn.id"
-                />
-              </el-select>
-            </div>
+          <el-col :span="12">
+            <CascadeSelector
+              v-model="searchCascadeValue"
+              baseLabel="选择基地"
+              barnLabel="选择牛棚"
+              :cattleLabel="''"
+              baseProp="baseId"
+              barnProp="barnId"
+            />
           </el-col>
           <el-col :span="6">
             <div class="search-item">
@@ -272,29 +256,15 @@
         </el-row>
 
         <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="基地" prop="base_id">
-              <el-select v-model="formData.base_id" placeholder="选择基地" style="width: 100%" @change="handleFormBaseChange">
-                <el-option
-                  v-for="base in bases"
-                  :key="base.id"
-                  :label="base.name"
-                  :value="base.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="牛棚" prop="barn_id">
-              <el-select v-model="formData.barn_id" placeholder="选择牛棚" style="width: 100%" @change="handleFormBarnChange">
-                <el-option
-                  v-for="barn in formAvailableBarns"
-                  :key="barn.id"
-                  :label="`${barn.name} (${barn.code})`"
-                  :value="barn.id"
-                />
-              </el-select>
-            </el-form-item>
+          <el-col :span="24">
+            <CascadeSelector
+              v-model="formCascadeValue"
+              baseLabel="基地"
+              barnLabel="牛棚"
+              :cattleLabel="''"
+              baseProp="base_id"
+              barnProp="barn_id"
+            />
           </el-col>
         </el-row>
 
@@ -514,12 +484,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, View, Moon, Sunny, Warning, Download, Refresh } from '@element-plus/icons-vue'
 import { patrolApi } from '@/api/patrol'
 import { baseApi } from '@/api/base'
 import { barnApi } from '@/api/barn'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import type { PatrolRecord, CreatePatrolRecordRequest, UpdatePatrolRecordRequest } from '@/api/patrol'
 
 // 响应式数据
@@ -538,6 +509,28 @@ const searchForm = ref({
   patrolType: undefined as string | undefined
 })
 
+// 级联选择器的值
+const searchCascadeValue = ref<{baseId?: number; barnId?: number}>({})
+const formCascadeValue = ref<{baseId?: number; barnId?: number}>({})
+
+// 监听搜索级联选择器变化
+watch(searchCascadeValue, (newValue) => {
+  searchForm.value.baseId = newValue.baseId
+  searchForm.value.barnId = newValue.barnId
+  handleSearch()
+}, { deep: true })
+
+// 监听表单级联选择器变化
+watch(formCascadeValue, (newValue) => {
+  if (newValue.baseId !== undefined) {
+    formData.value.base_id = newValue.baseId
+    formData.value.barn_id = 0
+  }
+  if (newValue.barnId !== undefined) {
+    formData.value.barn_id = newValue.barnId
+    handleFormBarnChange()
+  }
+}, { deep: true })
 const dateRange = ref<[string, string]>(['', ''])
 
 // 分页
@@ -739,7 +732,10 @@ const showCreateDialog = () => {
   formData.value.patrolDate = new Date().toISOString().split('T')[0]
   formData.value.patrolTime = new Date().toTimeString().slice(0, 5)
   if (bases.value.length > 0) {
-    formData.value.base_id = bases.value[0].id
+    formCascadeValue.value = {
+      baseId: bases.value[0].id,
+      barnId: undefined
+    }
   }
   dialogVisible.value = true
 }
@@ -777,6 +773,12 @@ const editRecord = (record: PatrolRecord) => {
     images: record.images,
     patrolDate: record.patrol_date,
     patrolTime: record.patrol_time
+  }
+  
+  // 设置级联选择器的值
+  formCascadeValue.value = {
+    baseId: record.base_id,
+    barnId: record.barn_id
   }
   
   dialogVisible.value = true
@@ -1022,6 +1024,8 @@ const resetForm = () => {
     patrolDate: '',
     patrolTime: ''
   }
+  // 重置级联选择器
+  formCascadeValue.value = {}
   selectedRecord.value = null
   if (formRef.value) {
     formRef.value.clearValidate()

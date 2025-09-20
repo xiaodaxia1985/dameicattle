@@ -244,10 +244,22 @@ export class UnifiedApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
+      // 检查是否是FormData，特殊处理文件上传
+      let body = config.data;
+      let requestHeaders = { ...headers };
+      
+      if (config.data instanceof FormData) {
+        // 移除Content-Type，让浏览器自动设置multipart/form-data
+        delete requestHeaders['Content-Type'];
+      } else if (config.data) {
+        // 非FormData数据才进行JSON序列化
+        body = JSON.stringify(config.data);
+      }
+
       const response = await fetch(url, {
         method: config.method || 'GET',
-        headers,
-        body: config.data ? JSON.stringify(config.data) : undefined,
+        headers: requestHeaders,
+        body: body,
         signal: controller.signal
       })
 

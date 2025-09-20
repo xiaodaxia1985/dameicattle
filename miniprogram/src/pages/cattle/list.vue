@@ -293,13 +293,24 @@ const loadData = async () => {
     // 加载牛只列表
     const response = await cattleStore.fetchCattleList(params)
     
+    // 安全处理响应数据，确保data是数组类型
+    const data = Array.isArray(response.data) ? response.data : []
+    
     if (currentPage.value === 1) {
-      cattleList.value = response.data
+      cattleList.value = data
     } else {
-      cattleList.value.push(...response.data)
+      // 确保cattleList.value是数组
+      if (!Array.isArray(cattleList.value)) {
+        cattleList.value = []
+      }
+      // 安全地添加新数据
+      if (Array.isArray(data)) {
+        cattleList.value.push(...data)
+      }
     }
     
-    hasMore.value = response.data.length === 20
+    // 安全检查数组长度
+    hasMore.value = Array.isArray(data) && data.length === 20
     
     // 加载统计数据
     await loadStatistics(currentBase.id)

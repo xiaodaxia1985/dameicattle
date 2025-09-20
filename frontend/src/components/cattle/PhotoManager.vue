@@ -5,9 +5,8 @@
       <el-upload
         ref="uploadRef"
         class="photo-upload"
-        :action="uploadUrl"
+        :http-request="customUpload"
         :headers="uploadHeaders"
-        :data="uploadData"
         :on-success="handleUploadSuccess"
         :on-error="handleUploadError"
         :before-upload="beforeUpload"
@@ -134,30 +133,30 @@
       </div>
     </el-dialog>
 
-    <!-- 批量操作 -->
-    <div class="batch-actions" v-if="photos.length > 0">
-      <el-button @click="selectAll">全选</el-button>
-      <el-button @click="clearSelection">取消选择</el-button>
-      <el-button
-        type="danger"
-        :disabled="selectedPhotos.length === 0"
-        @click="batchDelete"
-      >
-        批量删除 ({{ selectedPhotos.length }})
-      </el-button>
-      <el-button
-        type="primary"
-        :disabled="selectedPhotos.length === 0"
-        @click="batchDownload"
-      >
-        批量下载 ({{ selectedPhotos.length }})
-      </el-button>
-    </div>
+      <!-- 批量操作 -->
+      <div class="batch-actions" v-if="photos.length > 0">
+        <el-button @click="selectAll">全选</el-button>
+        <el-button @click="clearSelection">取消选择</el-button>
+        <el-button
+          type="danger"
+          :disabled="selectedPhotos.length === 0"
+          @click="batchDelete"
+        >
+          批量删除 ({{ selectedPhotos.length }})
+        </el-button>
+        <el-button
+          type="primary"
+          :disabled="selectedPhotos.length === 0"
+          @click="batchDownload"
+        >
+          批量下载 ({{ selectedPhotos.length }})
+        </el-button>
+      </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox, type UploadInstance, type UploadFile, type UploadFiles } from 'element-plus'
 import {
   Plus, ZoomIn, Download, Delete, ArrowLeft, ArrowRight
@@ -182,6 +181,10 @@ interface Photo {
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{
+  'photos-updated': []
+  'close': []
+}>()
 
 const authStore = useAuthStore()
 const uploadRef = ref<UploadInstance>()
@@ -192,21 +195,16 @@ const currentPhotoIndex = ref(0)
 const selectedPhotos = ref<number[]>([])
 const loading = ref(false)
 
-// 上传配置
-const uploadUrl = computed(() => `${fileServiceApi['serviceUrl']}/upload`)
+// 上传配置 - 修复：使用正确的上传方法
 const uploadHeaders = computed(() => ({
   'Authorization': `Bearer ${authStore.token}`
-}))
-const uploadData = computed(() => ({
-  category: 'cattle_photo',
-  cattle_id: props.cattleId
 }))
 
 const currentPhoto = computed(() => {
   return photos.value[currentPhotoIndex.value] || null
 })
 
-// 加载照片列表
+// 加载照片列表 - 修复：确保response.data是数组类型
 const loadPhotos = async () => {
   loading.value = true
   try {
@@ -215,7 +213,9 @@ const loadPhotos = async () => {
       cattle_id: props.cattleId
     })
     
-    photos.value = (response.data || []).map((file: any) => ({
+    // 确保response.data是数组类型
+    const fileList = Array.isArray(response?.data) ? response.data : []
+    photos.value = fileList.map((file: any) => ({
       id: file.id,
       name: file.original_name || file.filename,
       url: file.url || file.file_url,
@@ -228,6 +228,26 @@ const loadPhotos = async () => {
     ElMessage.error('加载照片失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 自定义上传方法
+const customUpload = async (options: any) => {
+  try {
+    // 使用metadata参数传递cattle_id
+    const metadata = {
+      cattle_id: props.cattleId.toString()
+    }
+    
+    const response = await fileServiceApi.uploadFile(options.file, 'cattle_photo', metadata)
+    if (response.success) {
+      options.onSuccess(response)
+    } else {
+      options.onError(response)
+    }
+  } catch (error) {
+    console.error('上传失败:', error)
+    options.onError(error)
   }
 }
 
@@ -255,6 +275,7 @@ const handleUploadSuccess = (response: any, file: UploadFile) => {
   if (response.success) {
     ElMessage.success('上传成功')
     loadPhotos() // 重新加载照片列表
+    emit('photos-updated')
   } else {
     ElMessage.error(response.message || '上传失败')
   }
@@ -318,6 +339,7 @@ const deletePhoto = async (photo: Photo, index: number) => {
     
     photos.value.splice(index, 1)
     ElMessage.success('删除成功')
+    emit('photos-updated')
   } catch (error) {
     if (error !== 'cancel') {
       console.error('删除失败:', error)
@@ -368,6 +390,7 @@ const batchDelete = async () => {
     
     selectedPhotos.value = []
     ElMessage.success('批量删除成功')
+    emit('photos-updated')
   } catch (error) {
     if (error !== 'cancel') {
       ElMessage.error('批量删除失败')
@@ -410,6 +433,20 @@ const formatFileSize = (size: number | undefined) => {
 
 onMounted(() => {
   loadPhotos()
+  
+  // 添加键盘事件监听
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      emit('close')
+    }
+  }
+  
+  document.addEventListener('keydown', handleKeyDown)
+  
+  // 组件卸载时移除事件监听
+  onUnmounted(() => {
+    document.removeEventListener('keydown', handleKeyDown)
+  })
 })
 </script>
 

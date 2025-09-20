@@ -84,39 +84,15 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="所属基地" prop="base_id">
-            <el-select
-              v-model="form.base_id"
-              placeholder="请选择基地"
-              style="width: 100%"
-              @change="handleBaseChange"
-            >
-              <el-option
-                v-for="base in bases"
-                :key="base.id"
-                :label="base.name"
-                :value="base.id"
-              />
-            </el-select>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="所属牛棚" prop="barn_id">
-            <el-select
-              v-model="form.barn_id"
-              placeholder="请选择牛棚"
-              style="width: 100%"
-              :disabled="!form.base_id"
-            >
-              <el-option
-                v-for="barn in availableBarns"
-                :key="barn.id"
-                :label="`${barn.name} (${barn.code})`"
-                :value="barn.id"
-              />
-            </el-select>
+      <el-row :gutter="20" class="form-row">
+        <el-col :span="24" class="form-col-full">
+          <el-form-item label="所属基地-牛棚" prop="cascade" class="cascade-form-item">
+            <CascadeSelector
+              v-model="form.cascade"
+              :required="true"
+              :showCattle="false"
+              @change="handleCascadeChange"
+            />
           </el-form-item>
         </el-col>
       </el-row>
@@ -183,8 +159,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-import { cattleApi, type Cattle, type CreateCattleRequest } from '@/api/cattle'
+import type { Cattle, CreateCattleRequest } from '@/api/cattle'
+import { cattleServiceApi } from '@/api/microservices'
 import { baseApi, type Base, type Barn } from '@/api/base'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 
 interface Props {
   modelValue: boolean
@@ -202,7 +180,6 @@ const emit = defineEmits<Emits>()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const bases = ref<Base[]>([])
-const availableBarns = ref<Barn[]>([])
 
 const dialogVisible = computed({
   get: () => props.modelValue,
@@ -222,7 +199,12 @@ const form = reactive<CreateCattleRequest>({
   source: 'born',
   purchase_price: undefined,
   purchase_date: '',
-  notes: ''
+  notes: '',
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined
+  }
 })
 
 const rules: FormRules = {
@@ -236,8 +218,18 @@ const rules: FormRules = {
   gender: [
     { required: true, message: '请选择性别', trigger: 'change' }
   ],
-  base_id: [
-    { required: true, message: '请选择基地', trigger: 'change' }
+  cascade: [
+    { required: true, message: '请选择基地和牛棚', trigger: 'change' },
+    {
+      validator: (rule, value, callback) => {
+        if (!value || !value.baseId || !value.barnId) {
+          callback(new Error('请选择基地和牛棚'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
   ],
   source: [
     { required: true, message: '请选择来源', trigger: 'change' }
@@ -255,19 +247,11 @@ const loadBases = async () => {
   }
 }
 
-// 处理基地变更
-const handleBaseChange = async (baseId: number) => {
-  form.barn_id = undefined
-  availableBarns.value = []
-  
-  if (baseId) {
-    try {
-      const barns = await baseApi.getBarnsByBaseId(baseId)
-      availableBarns.value = barns || []
-    } catch (error) {
-      console.error('加载牛棚列表失败:', error)
-      ElMessage.error('加载牛棚列表失败')
-    }
+// 处理基地-牛棚级联变更
+const handleCascadeChange = () => {
+  if (form.cascade && form.cascade.baseId && form.cascade.barnId) {
+    form.base_id = form.cascade.baseId
+    form.barn_id = form.cascade.barnId
   }
 }
 
@@ -285,13 +269,13 @@ const initForm = () => {
       source: props.cattle.source || 'born',
       purchase_price: props.cattle.purchase_price,
       purchase_date: props.cattle.purchase_date || '',
-      notes: props.cattle.notes || ''
+      notes: props.cattle.notes || '',
+      cascade: {
+        baseId: props.cattle.base_id || undefined,
+        barnId: props.cattle.barn_id,
+        cattleId: undefined
+      }
     })
-    
-    // 如果有基地ID，加载对应的牛棚
-    if (form.base_id) {
-      handleBaseChange(form.base_id)
-    }
   } else {
     // 重置表单
     Object.assign(form, {
@@ -305,9 +289,13 @@ const initForm = () => {
       source: 'born',
       purchase_price: undefined,
       purchase_date: '',
-      notes: ''
+      notes: '',
+      cascade: {
+        baseId: undefined,
+        barnId: undefined,
+        cattleId: undefined
+      }
     })
-    availableBarns.value = []
   }
 }
 
@@ -320,10 +308,10 @@ const handleSubmit = async () => {
     loading.value = true
     
     if (isEdit.value && props.cattle) {
-      await cattleApi.update(props.cattle.id, form)
+      await cattleServiceApi.updateCattle(props.cattle.id, form)
       ElMessage.success('更新成功')
     } else {
-      await cattleApi.create(form)
+      await cattleServiceApi.createCattle(form)
       ElMessage.success('创建成功')
     }
     
@@ -358,5 +346,19 @@ onMounted(() => {
 <style scoped>
 .dialog-footer {
   text-align: right;
+}
+
+/* 为级联选择器提供足够的空间 */
+.cascade-form-item {
+  width: 100%;
+}
+
+/* 确保表单行和列有足够的宽度 */
+.form-row {
+  width: 100%;
+}
+
+.form-col-full {
+  width: 100%;
 }
 </style>

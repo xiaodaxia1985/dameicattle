@@ -74,15 +74,12 @@
               </el-input>
             </el-col>
             <el-col :span="4">
-              <el-select v-model="searchForm.base_id" placeholder="选择基地" clearable>
-                <el-option
-                  v-for="base in baseStore.bases"
-                  :key="base.id"
-                  :label="base.name"
-                  :value="base.id"
-                />
-              </el-select>
-            </el-col>
+              <CascadeSelector
+              v-model="searchForm.cascade"
+              placeholder="选择基地"
+              @change="handleCascadeChange"
+            />
+          </el-col>
             <el-col :span="4">
               <el-select v-model="searchForm.barn_type" placeholder="牛棚类型" clearable>
                 <el-option label="育肥棚" value="育肥棚" />
@@ -169,15 +166,12 @@
         <el-form-item label="编码" prop="code">
           <el-input v-model="barnForm.code" placeholder="请输入牛棚编码" />
         </el-form-item>
-        <el-form-item label="所属基地" prop="base_id">
-          <el-select v-model="barnForm.base_id" placeholder="请选择基地" style="width: 100%">
-            <el-option
-              v-for="base in baseStore.bases"
-              :key="base.id"
-              :label="base.name"
-              :value="base.id"
-            />
-          </el-select>
+        <el-form-item label="所属基地" prop="cascade">
+          <CascadeSelector
+            v-model="barnForm.cascade"
+            :required="true"
+            placeholder="请选择基地"
+          />
         </el-form-item>
         <el-form-item label="牛棚类型" prop="barn_type">
           <el-select v-model="barnForm.barn_type" placeholder="请选择牛棚类型" style="width: 100%">
@@ -230,6 +224,7 @@ import {
 import { useBaseStore } from '@/stores/base'
 import { barnApi, type Barn } from '@/api/barn'
 import { validatePaginationData, validateDataArray } from '@/utils/dataValidation'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 
 const baseStore = useBaseStore()
 
@@ -258,7 +253,12 @@ const statistics = ref({
 const searchForm = reactive({
   search: '',
   base_id: undefined as number | undefined,
-  barn_type: undefined as string | undefined
+  barn_type: undefined as string | undefined,
+  cascade: {
+    baseId: undefined,
+    barnId: undefined,
+    cattleId: undefined
+  }
 })
 
 // 牛棚表单
@@ -268,7 +268,12 @@ const barnForm = reactive({
   base_id: undefined as number | undefined,
   barn_type: '',
   capacity: 50,
-  description: ''
+  description: '',
+  cascade: {
+    baseId: undefined,
+    barnId: undefined,
+    cattleId: undefined
+  }
 })
 
 // 表单验证规则
@@ -282,8 +287,19 @@ const formRules = {
     { min: 2, max: 50, message: '编码长度在 2 到 50 个字符', trigger: 'blur' },
     { pattern: /^[A-Z0-9_-]+$/i, message: '编码只能包含字母、数字、下划线和横线', trigger: 'blur' }
   ],
-  base_id: [
-    { required: true, message: '请选择所属基地', trigger: 'change' }
+  cascade: [
+    {
+      required: true,
+      message: '请选择所属基地',
+      trigger: 'change',
+      validator: (rule: any, value: any, callback: any) => {
+        if (value && value.baseId) {
+          callback()
+        } else {
+          callback(new Error('请选择所属基地'))
+        }
+      }
+    }
   ],
   barn_type: [
     { required: true, message: '请选择牛棚类型', trigger: 'change' }
@@ -342,11 +358,25 @@ const handleSearch = () => {
   loadStatistics()
 }
 
+// 处理级联选择变更
+const handleCascadeChange = () => {
+  if (searchForm.cascade && searchForm.cascade.baseId) {
+    searchForm.base_id = searchForm.cascade.baseId
+  } else {
+    searchForm.base_id = undefined
+  }
+}
+
 const handleReset = () => {
   Object.assign(searchForm, {
     search: '',
     base_id: undefined,
-    barn_type: undefined
+    barn_type: undefined,
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    }
   })
   handleSearch()
 }
@@ -381,7 +411,12 @@ const editBarn = (barn: Barn) => {
     base_id: barn.base_id,
     barn_type: barn.barn_type || '',
     capacity: barn.capacity,
-    description: barn.description || ''
+    description: barn.description || '',
+    cascade: {
+      baseId: barn.base_id,
+      barnId: undefined,
+      cattleId: undefined
+    }
   })
   showFormDialog.value = true
 }
@@ -416,6 +451,11 @@ const submitForm = async () => {
     await formRef.value.validate()
     submitting.value = true
     
+    // 确保base_id字段正确设置
+    if (barnForm.cascade && barnForm.cascade.baseId) {
+      barnForm.base_id = barnForm.cascade.baseId
+    }
+    
     if (currentBarn.value) {
       await barnApi.updateBarn(currentBarn.value.id, barnForm)
       ElMessage.success('更新成功')
@@ -443,7 +483,12 @@ const resetForm = () => {
     base_id: undefined,
     barn_type: '',
     capacity: 50,
-    description: ''
+    description: '',
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    }
   })
   formRef.value?.clearValidate()
 }

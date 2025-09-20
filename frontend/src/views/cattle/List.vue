@@ -64,25 +64,14 @@
                 </template>
               </el-input>
             </el-col>
-            <el-col :span="4">
-              <el-select v-model="searchForm.baseId" placeholder="选择基地" clearable @change="handleBaseChange">
-                <el-option
-                  v-for="base in baseStore.bases"
-                  :key="base.id"
-                  :label="base.name"
-                  :value="base.id"
-                />
-              </el-select>
-            </el-col>
-            <el-col :span="4">
-              <el-select v-model="searchForm.barnId" placeholder="选择牛棚" clearable>
-                <el-option
-                  v-for="barn in availableBarns"
-                  :key="barn.value"
-                  :label="barn.label"
-                  :value="barn.value"
-                />
-              </el-select>
+            <el-col :span="8">
+              <CascadeSelector
+                v-model="searchForm.cascade"
+                @change="handleCascadeChange"
+                :required="false"
+                :show-cattle="false"
+                placeholder="选择基地和牛棚"
+              />
             </el-col>
             <el-col :span="3">
               <el-select v-model="searchForm.healthStatus" placeholder="健康状态" clearable>
@@ -348,6 +337,7 @@ import BatchTransferDialog from '@/components/cattle/BatchTransferDialog.vue'
 import LifecycleEvents from '@/components/cattle/LifecycleEvents.vue'
 import PhotoManager from '@/components/cattle/PhotoManager.vue'
 import TransferManager from '@/components/cattle/TransferManager.vue'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 import dayjs from 'dayjs'
 
 const cattleStore = useCattleStore()
@@ -357,36 +347,21 @@ const router = useRouter()
 // 搜索表单
 const searchForm = reactive({
   search: '',
-  baseId: undefined as number | undefined,
-  barnId: undefined as number | undefined,
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  },
   healthStatus: undefined as 'healthy' | 'sick' | 'treatment' | undefined,
   gender: undefined as 'male' | 'female' | undefined,
   status: 'active' as 'active' | 'sold' | 'dead' | 'transferred'
 })
 
-// 可用的牛棚选项
-const availableBarns = ref<Array<{
-  value: number
-  label: string
-}>>([])
-
-// 基地变更处理
-const handleBaseChange = async (baseId: number | undefined) => {
-  searchForm.barnId = undefined
-  availableBarns.value = []
-  
-  if (baseId) {
-    try {
-      const response = await baseStore.fetchBarnsByBaseId(baseId)
-      availableBarns.value = response.map((barn: any) => ({
-        value: barn.id,
-        label: `${barn.name} (${barn.code})`
-      }))
-    } catch (error) {
-      console.error('加载牛棚选项失败:', error)
-      ElMessage.error('加载牛棚选项失败')
-    }
-  }
+// 级联选择变更处理
+const handleCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  searchForm.cascade = value
+  // 由于我们不需要牛只选择，所以忽略cattleId
+  handleSearch()
 }
 
 // 视图模式
@@ -421,15 +396,12 @@ onMounted(async () => {
     const route = router.currentRoute.value
     if (route.query.baseId) {
       const baseId = Number(route.query.baseId)
-      searchForm.baseId = baseId
-      
-      // 加载对应基地的牛棚选项
-      await handleBaseChange(baseId)
+      searchForm.cascade.baseId = baseId
       
       // 如果还有牛棚参数，也自动选择
       if (route.query.barnId) {
         const barnId = Number(route.query.barnId)
-        searchForm.barnId = barnId
+        searchForm.cascade.barnId = barnId
       }
     }
     
@@ -446,7 +418,12 @@ const loadCattleList = withPageErrorHandler(async () => {
   
   const result = await safeApiCall(
     () => cattleStore.fetchCattleList({
-      ...searchForm,
+      search: searchForm.search,
+      baseId: searchForm.cascade.baseId,
+      barnId: searchForm.cascade.barnId,
+      healthStatus: searchForm.healthStatus,
+      gender: searchForm.gender,
+      status: searchForm.status,
       page: currentPage.value,
       limit: pageSize.value
     }),
@@ -469,13 +446,15 @@ const handleSearch = () => {
 const handleReset = () => {
   Object.assign(searchForm, {
     search: '',
-    baseId: undefined,
-    barnId: undefined,
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    },
     healthStatus: undefined,
     gender: undefined,
     status: 'active'
   })
-  availableBarns.value = []
   handleSearch()
 }
 

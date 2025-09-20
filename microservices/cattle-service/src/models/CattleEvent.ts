@@ -11,11 +11,16 @@ interface CattleEventAttributes {
   operator_id?: number;
   created_at: Date;
   updated_at: Date;
+  
+  // 关联对象
+  cattle?: any;
+  operator?: any;
 }
 
 interface CattleEventCreationAttributes extends Optional<CattleEventAttributes, 'id' | 'created_at' | 'updated_at'> {}
 
 export class CattleEvent extends Model<CattleEventAttributes, CattleEventCreationAttributes> implements CattleEventAttributes {
+  public static associate?: (models: any) => void;
   public id!: number;
   public cattle_id!: number;
   public event_type!: string;
@@ -25,6 +30,10 @@ export class CattleEvent extends Model<CattleEventAttributes, CattleEventCreatio
   public operator_id?: number;
   public created_at!: Date;
   public updated_at!: Date;
+  
+  // 关联对象
+  public cattle?: any;
+  public operator?: any;
 
   public toJSON(): any {
     const values = { ...this.get() };
@@ -115,3 +124,18 @@ CattleEvent.init(
     ],
   }
 );
+
+// 添加关联关系
+CattleEvent.associate = function (models: any) {
+  // 属于关系：事件属于某头牛
+  CattleEvent.belongsTo(models.Cattle, {
+    foreignKey: 'cattle_id',
+    as: 'cattle'
+  });
+  
+  // 属于关系：事件由某个操作人员创建
+  CattleEvent.belongsTo(models.User, {
+    foreignKey: 'operator_id',
+    as: 'operator'
+  });
+};

@@ -1,16 +1,16 @@
-import { Router } from 'express';
+import express from 'express';
 import { FileController } from '../controllers/FileController';
 import { authMiddleware } from '../middleware/auth';
 import { uploadMiddleware } from '../middleware/upload';
 
-const router = Router();
+const router = express.Router();
 
 // Apply authentication middleware to all routes
 router.use(authMiddleware);
 
 // File upload routes
 router.post('/upload', uploadMiddleware.single('file'), FileController.uploadFile);
-router.post('/upload/batch', uploadMiddleware.array('files', 10), FileController.uploadFiles);
+router.post('/upload/batch', uploadMiddleware.array('files', 10), FileController.uploadMultipleFiles);
 
 // File management routes
 router.get('/', FileController.getFiles);

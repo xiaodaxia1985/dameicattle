@@ -143,44 +143,6 @@
               <p>暂无照片</p>
             </div>
           </el-card>
-
-          <!-- 健康状态卡片 -->
-          <el-card class="health-card">
-            <template #header>
-              <span class="card-title">健康状态</span>
-            </template>
-            
-            <div class="health-info">
-              <div class="health-status">
-                <el-icon class="health-icon" :class="getHealthIconClass(cattle.health_status)">
-                  <component :is="getHealthIcon(cattle.health_status)" />
-                </el-icon>
-                <div class="health-text">
-                  <div class="status-text">{{ getHealthStatusText(cattle.health_status) }}</div>
-                  <div class="status-desc">{{ getHealthStatusDesc(cattle.health_status) }}</div>
-                </div>
-              </div>
-              
-              <div v-if="cattle.last_health_check" class="last-check">
-                <label>最后检查</label>
-                <span>{{ formatDateTime(cattle.last_health_check) }}</span>
-              </div>
-              
-              <div v-if="cattle.vaccination_records && cattle.vaccination_records.length > 0" class="vaccination">
-                <label>疫苗记录</label>
-                <div class="vaccine-list">
-                  <div
-                    v-for="vaccine in cattle.vaccination_records.slice(0, 3)"
-                    :key="vaccine.id"
-                    class="vaccine-item"
-                  >
-                    <span class="vaccine-name">{{ vaccine.vaccine_name }}</span>
-                    <span class="vaccine-date">{{ formatDate(vaccine.vaccination_date) }}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-card>
         </el-col>
       </el-row>
 
@@ -188,19 +150,19 @@
       <el-card class="records-card">
         <el-tabs v-model="activeTab" class="records-tabs">
           <el-tab-pane label="生长记录" name="growth">
-            <GrowthRecords :cattle-id="cattle.id" />
+            <GrowthRecords :cattle-id="cattleId" :read-only="true" />
           </el-tab-pane>
           <el-tab-pane label="健康记录" name="health">
-            <HealthRecords :cattle-id="cattle.id" />
+            <HealthRecords :cattle-id="cattleId" :read-only="true" />
           </el-tab-pane>
           <el-tab-pane label="繁殖记录" name="breeding">
-            <BreedingRecords :cattle-id="cattle.id" />
+            <BreedingRecords :cattle-id="cattleId" :read-only="true" />
           </el-tab-pane>
           <el-tab-pane label="转群记录" name="transfer">
-            <TransferRecords :cattle-id="cattle.id" />
+            <TransferRecords :cattle-id="cattleId" :read-only="true" />
           </el-tab-pane>
           <el-tab-pane label="生命周期" name="lifecycle">
-            <LifecycleEvents :cattle-id="cattle.id" />
+            <LifecycleEvents :cattle-id="cattleId" :read-only="true" />
           </el-tab-pane>
         </el-tabs>
       </el-card>
@@ -225,33 +187,44 @@
       :initial-index="currentPhotoIndex"
       @close="showImageViewer = false"
     />
+
+    <!-- 照片管理对话框 -->
+    <el-dialog
+      v-model="showPhotoManager"
+      title="管理牛只照片"
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <PhotoManager 
+        :cattle-id="cattleId" 
+        @photos-updated="handlePhotosUpdated"
+        @close="showPhotoManager = false"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElDialog } from 'element-plus'
 import {
   ArrowLeft,
   Edit,
   Clock,
   Camera,
-  Picture,
-  Check,
-  Warning,
-  FirstAidKit,
-  QuestionFilled
+  Picture
 } from '@element-plus/icons-vue'
 import { cattleApi, type Cattle } from '@/api/cattle'
 import dayjs from 'dayjs'
 
-// 组件暂时注释，需要创建
-// import GrowthRecords from '@/components/cattle/GrowthRecords.vue'
-// import HealthRecords from '@/components/cattle/HealthRecords.vue'
-// import BreedingRecords from '@/components/cattle/BreedingRecords.vue'
-// import TransferRecords from '@/components/cattle/TransferRecords.vue'
-// import LifecycleEvents from '@/components/cattle/LifecycleEvents.vue'
+// 导入已实现的组件
+import LifecycleEvents from '@/components/cattle/LifecycleEvents.vue'
+import GrowthRecords from '@/components/cattle/GrowthRecords.vue'
+import HealthRecords from '@/components/cattle/HealthRecords.vue'
+import BreedingRecords from '@/components/cattle/BreedingRecords.vue'
+import TransferRecords from '@/components/cattle/TransferRecords.vue'
+import PhotoManager from '@/components/cattle/PhotoManager.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -261,6 +234,7 @@ const cattle = ref<Cattle | null>(null)
 const activeTab = ref('growth')
 const showImageViewer = ref(false)
 const currentPhotoIndex = ref(0)
+const showPhotoManager = ref(false)
 
 const cattleId = computed(() => Number(route.params.id))
 
@@ -279,7 +253,7 @@ const loadCattleDetail = async () => {
   try {
     loading.value = true
     const response = await cattleApi.getCattle(cattleId.value)
-    cattle.value = response.data
+    cattle.value = response.data.data
   } catch (error) {
     console.error('加载牛只详情失败:', error)
     ElMessage.error('加载牛只详情失败')
@@ -301,8 +275,12 @@ const showLifecycleDialog = () => {
 }
 
 const showPhotoDialog = () => {
-  // TODO: 实现照片管理对话框
-  ElMessage.info('照片管理功能待实现')
+  showPhotoManager.value = true
+}
+
+const handlePhotosUpdated = () => {
+  // 照片更新后重新加载牛只详情
+  loadCattleDetail()
 }
 
 const previewPhoto = (index: number) => {
@@ -338,33 +316,6 @@ const getHealthStatusText = (status: string) => {
   }
 }
 
-const getHealthStatusDesc = (status: string) => {
-  switch (status) {
-    case 'healthy': return '身体状况良好'
-    case 'sick': return '需要关注治疗'
-    case 'treatment': return '正在接受治疗'
-    default: return '状态未明确'
-  }
-}
-
-const getHealthIcon = (status: string) => {
-  switch (status) {
-    case 'healthy': return Check
-    case 'sick': return Warning
-    case 'treatment': return FirstAidKit
-    default: return QuestionFilled
-  }
-}
-
-const getHealthIconClass = (status: string) => {
-  switch (status) {
-    case 'healthy': return 'healthy'
-    case 'sick': return 'sick'
-    case 'treatment': return 'treatment'
-    default: return 'unknown'
-  }
-}
-
 const getStatusType = (status: string) => {
   switch (status) {
     case 'active': return 'success'
@@ -387,41 +338,7 @@ const getStatusText = (status: string) => {
 
 import { h } from 'vue'
 
-// 临时组件占位 - 使用h函数替代JSX以避免TypeScript编译错误
-const GrowthRecords = {
-  props: ['cattleId'],
-  render() {
-    return h('div', { class: 'placeholder' }, '生长记录组件待实现')
-  }
-}
 
-const HealthRecords = {
-  props: ['cattleId'],
-  render() {
-    return h('div', { class: 'placeholder' }, '健康记录组件待实现')
-  }
-}
-
-const BreedingRecords = {
-  props: ['cattleId'],
-  render() {
-    return h('div', { class: 'placeholder' }, '繁殖记录组件待实现')
-  }
-}
-
-const TransferRecords = {
-  props: ['cattleId'],
-  render() {
-    return h('div', { class: 'placeholder' }, '转群记录组件待实现')
-  }
-}
-
-const LifecycleEvents = {
-  props: ['cattleId'],
-  render() {
-    return h('div', { class: 'placeholder' }, '生命周期组件待实现')
-  }
-}
 </script>
 
 <style lang="scss" scoped>
@@ -533,14 +450,19 @@ const LifecycleEvents = {
       }
     }
     
+    .info-card,
     .photo-card {
       margin-bottom: 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
       
       .photo-gallery {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 8px;
         position: relative;
+        flex: 1;
         
         .photo-item {
           aspect-ratio: 1;
@@ -570,6 +492,10 @@ const LifecycleEvents = {
         text-align: center;
         padding: 40px 20px;
         color: #909399;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
         
         .no-photo-icon {
           font-size: 48px;
@@ -582,6 +508,22 @@ const LifecycleEvents = {
         }
       }
     }
+    
+      .el-row {
+        display: flex;
+        flex-wrap: wrap;
+        margin-right: -10px;
+        margin-left: -10px;
+      }
+      
+      .detail-content .el-row {
+        align-items: stretch;
+      }
+      
+      .detail-content .el-col {
+        display: flex;
+        flex-direction: column;
+      }
     
     .health-card {
       .health-info {

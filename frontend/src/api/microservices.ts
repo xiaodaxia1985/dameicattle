@@ -412,6 +412,38 @@ export class CattleServiceApi extends MicroserviceApi {
   async batchTransferCattle(data: { cattle_ids: number[]; from_barn_id?: number; to_barn_id?: number; reason?: string }): Promise<ApiResponse<any>> {
     return this.post<any>('/cattle/batch/transfer', data)
   }
+
+  // 体重记录相关API
+  
+  // 获取体重记录列表
+  async getWeightRecords(params?: any): Promise<ApiResponse<any[]>> {
+    return this.get<any[]>('/weight-records', params)
+  }
+
+  // 获取单个体重记录
+  async getWeightRecord(id: number): Promise<ApiResponse<any>> {
+    return this.get<any>(`/weight-records/${id}`)
+  }
+
+  // 创建体重记录
+  async createWeightRecord(data: any): Promise<ApiResponse<any>> {
+    return this.post<any>('/weight-records', data)
+  }
+
+  // 更新体重记录
+  async updateWeightRecord(id: number, data: any): Promise<ApiResponse<any>> {
+    return this.put<any>(`/weight-records/${id}`, data)
+  }
+
+  // 删除体重记录
+  async deleteWeightRecord(id: number): Promise<ApiResponse<any>> {
+    return this.delete<any>(`/weight-records/${id}`)
+  }
+
+  // 获取牛只生长分析
+  async getCattleGrowthAnalysis(cattleId: number, params?: any): Promise<ApiResponse<any>> {
+    return this.get<any>(`/weight-records/growth-analysis/${cattleId}`, params)
+  }
 }
 
 // 健康服务API
@@ -491,6 +523,21 @@ export class FeedingServiceApi extends MicroserviceApi {
   // 创建喂养记录
   async createFeedingRecord(data: any): Promise<ApiResponse<any>> {
     return this.post<any>('/records', data)
+  }
+
+  // 获取单条喂养记录
+  async getFeedingRecord(id: number): Promise<ApiResponse<any>> {
+    return this.get<any>(`/records/${id}`)
+  }
+
+  // 更新喂养记录
+  async updateFeedingRecord(id: number, data: any): Promise<ApiResponse<any>> {
+    return this.put<any>(`/records/${id}`, data)
+  }
+
+  // 删除喂养记录
+  async deleteFeedingRecord(id: number): Promise<ApiResponse<any>> {
+    return this.delete<any>(`/records/${id}`)
   }
 
   // 获取饲养统计
@@ -680,11 +727,17 @@ export class FileServiceApi extends MicroserviceApi {
   }
 
   // 上传文件
-  async uploadFile(file: File, category?: string, onProgress?: (progress: number) => void): Promise<ApiResponse<any>> {
+  async uploadFile(file: File, category?: string, metadata?: Record<string, string>, onProgress?: (progress: number) => void): Promise<ApiResponse<any>> {
     const formData = new FormData()
     formData.append('file', file)
     if (category) {
       formData.append('category', category)
+    }
+    // 添加元数据参数
+    if (metadata) {
+      Object.entries(metadata).forEach(([key, value]) => {
+        formData.append(key, value)
+      })
     }
     return this.post<any>('/upload', formData)
   }
@@ -692,8 +745,8 @@ export class FileServiceApi extends MicroserviceApi {
   // 批量上传文件
   async uploadFiles(files: File[], category?: string, onProgress?: (progress: number) => void): Promise<ApiResponse<any[]>> {
     const formData = new FormData()
-    files.forEach((file, index) => {
-      formData.append(`files[${index}]`, file)
+    files.forEach((file) => {
+      formData.append('files', file)
     })
     if (category) {
       formData.append('category', category)

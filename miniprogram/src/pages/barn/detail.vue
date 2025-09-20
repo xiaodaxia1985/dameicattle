@@ -295,7 +295,8 @@ export default {
         })
         
         if (response.data.success) {
-          this.cattleList = response.data.data
+          // 安全获取和处理数据，确保data是数组
+          this.cattleList = Array.isArray(response.data?.data) ? response.data.data : []
           // 缓存牛只数据
           cacheStore.setCacheData(`cattle_barn_${this.barnId}`, this.cattleList)
         } else {

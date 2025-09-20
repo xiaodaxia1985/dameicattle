@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import cattleRouter from './cattle';
+import weightRecordsRouter from './weight-records';
+import cattleEventsRouter from './cattle-events';
 
 const router = Router();
 
@@ -14,6 +16,8 @@ router.get('/health', (req, res) => {
 
 // 牛只管理路由 - 直接处理网关转发的请求（网关已重写路径）
 router.use('/cattle', cattleRouter);
+router.use('/weight-records', weightRecordsRouter);
+router.use('/cattle-events', cattleEventsRouter);
 
 // 错误处理
 router.use((error: any, req: any, res: any, next: any) => {

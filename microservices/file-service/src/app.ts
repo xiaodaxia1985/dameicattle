@@ -1,9 +1,10 @@
 import express from 'express';
+import path from 'path';
 import dotenv from 'dotenv';
 import { logger } from './utils/logger';
 import { responseWrapper } from './middleware/responseWrapper';
 import { errorHandler } from './middleware/errorHandler';
-import routes from './routes';
+import routes from './routes/files';
 
 dotenv.config();
 
@@ -28,6 +29,29 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(responseWrapper);
+
+// 配置静态文件服务，用于提供上传文件的直接访问
+// 1. 开发环境 - 从本地文件系统提供服务
+const uploadsDir = path.join(__dirname, '../../uploads');
+app.use('/uploads', express.static(uploadsDir, {
+  dotfiles: 'ignore',
+  etag: false,
+  extensions: ['jpg', 'jpeg', 'png', 'gif', 'pdf', 'doc', 'docx', 'xls', 'xlsx'],
+  index: false,
+  maxAge: '1d',
+  redirect: false,
+  setHeaders: function (res, filePath) {
+    // 设置适当的Content-Type
+    const ext = path.extname(filePath).toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.gif'].includes(ext)) {
+      res.set('Content-Type', `image/${ext.slice(1)}`);
+    } else if (ext === '.pdf') {
+      res.set('Content-Type', 'application/pdf');
+    }
+    // 允许跨域访问静态资源
+    res.set('Access-Control-Allow-Origin', '*');
+  }
+}));
 
 // 健康检查
 app.get('/health', async (req, res) => {

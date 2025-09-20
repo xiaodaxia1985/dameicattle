@@ -475,17 +475,18 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
-            <el-form-item label="基地" prop="base_id">
-              <el-select v-model="transactionForm.base_id" placeholder="请选择基地" style="width: 100%">
-                <el-option
-                  v-for="base in bases"
-                  :key="base.id"
-                  :label="base.name"
-                  :value="base.id"
-                />
-              </el-select>
-            </el-form-item>
+        </el-row>
+        
+        <el-row>
+          <el-col :span="24">
+            <CascadeSelector
+              v-model="transactionForm.cascade"
+              base-label="选择基地"
+              barn-label="选择牛棚(可选)"
+              cattle-label=""
+              required
+              @change="handleFormCascadeChange"
+            />
           </el-col>
         </el-row>
 
@@ -671,7 +672,11 @@ const transactionFormRef = ref<FormInstance>()
 // Transaction form
 const transactionForm = reactive({
   material_id: undefined as number | undefined,
-  base_id: undefined as number | undefined,
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined as number | undefined
+  },
   transaction_type: 'inbound' as 'inbound' | 'outbound' | 'transfer' | 'adjustment',
   quantity: 0,
   unit_price: undefined as number | undefined,
@@ -683,8 +688,17 @@ const transactionForm = reactive({
 // Form rules
 const transactionRules = {
   material_id: [{ required: true, message: '请选择物资', trigger: 'change' }],
-  base_id: [{ required: true, message: '请选择基地', trigger: 'change' }],
+  'cascade.baseId': [{ required: true, message: '请选择基地', trigger: 'change' }],
   quantity: [{ required: true, message: '请输入数量', trigger: 'blur' }]
+}
+
+// 级联选择变更处理
+const handleFormCascadeChange = (value: { baseId?: number; barnId?: number; cattleId?: number }) => {
+  transactionForm.cascade = value
+  // 当基地变更时，重新获取当前库存
+  if (transactionForm.material_id) {
+    handleMaterialChange()
+  }
 }
 
 // Computed
@@ -822,7 +836,11 @@ const showTransactionDialog = (type: 'inbound' | 'outbound' | 'transfer' | 'adju
   
   if (inventory) {
     transactionForm.material_id = inventory.material_id
-    transactionForm.base_id = inventory.base_id
+    transactionForm.cascade = {
+      baseId: inventory.base_id,
+      barnId: undefined,
+      cattleId: undefined
+    }
     currentStock.value = inventory.current_stock
   } else {
     currentStock.value = null
@@ -834,7 +852,11 @@ const showTransactionDialog = (type: 'inbound' | 'outbound' | 'transfer' | 'adju
 const resetTransactionForm = () => {
   Object.assign(transactionForm, {
     material_id: undefined,
-    base_id: undefined,
+    cascade: {
+      baseId: undefined,
+      barnId: undefined,
+      cattleId: undefined
+    },
     transaction_type: 'inbound',
     quantity: 0,
     unit_price: undefined,
@@ -849,11 +871,11 @@ const resetTransactionForm = () => {
 }
 
 const handleMaterialChange = async () => {
-  if (transactionForm.material_id && transactionForm.base_id) {
+  if (transactionForm.material_id && transactionForm.cascade.baseId) {
     try {
       const response = await materialApi.getInventoryByMaterialAndBase(
         transactionForm.material_id,
-        transactionForm.base_id
+        transactionForm.cascade.baseId
       )
       // 根据API实现，response.data 应该包含库存信息
       currentStock.value = response.data?.current_stock || 0
@@ -880,9 +902,17 @@ const handleSaveTransaction = async () => {
     await transactionFormRef.value.validate()
     saving.value = true
     
+    // 从cascade对象中提取base_id和barn_id
     const data = {
-      ...transactionForm,
-      expiry_date: transactionForm.expiry_date
+      material_id: transactionForm.material_id,
+      base_id: transactionForm.cascade.baseId,
+      barn_id: transactionForm.cascade.barnId,
+      transaction_type: transactionForm.transaction_type,
+      quantity: transactionForm.quantity,
+      unit_price: transactionForm.unit_price,
+      batch_number: transactionForm.batch_number,
+      expiry_date: transactionForm.expiry_date,
+      remark: transactionForm.remark
     }
     
     await materialStore.createTransaction(data)

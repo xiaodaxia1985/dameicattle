@@ -1,4 +1,4 @@
-import { cattleServiceApi } from './microservices'
+import { cattleServiceApi, healthServiceApi } from './microservices'
 
 // 牛只相关类型定义
 export interface Cattle {
@@ -120,6 +120,30 @@ export interface CattleEvent {
   }
 }
 
+export interface HealthRecord {
+  id: number
+  cattle_id: number
+  record_type: 'vaccine' | 'treatment'
+  record_date: string
+  name: string
+  batch_no?: string
+  symptoms?: string
+  medication?: string
+  description?: string
+  doctor_id?: number
+  doctor_name?: string
+  created_at: string
+  updated_at: string
+  doctor?: {
+    id: number
+    real_name: string
+  }
+  operator?: {
+    id: number
+    real_name: string
+  }
+}
+
 export interface CattleStatistics {
   total: number
   health_status: Array<{
@@ -166,7 +190,19 @@ export const cattleApi = {
     try {
       console.log('🔍 cattleApi.getList 调用参数:', params)
       
-      const response = await cattleServiceApi.getCattleList(params)
+      // 将驼峰命名的参数转换为下划线命名，以匹配后端API的参数命名约定
+      const transformedParams = {
+        ...params,
+        base_id: params.baseId,
+        barn_id: params.barnId,
+        health_status: params.healthStatus,
+        // 删除原始的驼峰命名参数
+        baseId: undefined,
+        barnId: undefined,
+        healthStatus: undefined
+      }
+      
+      const response = await cattleServiceApi.getCattleList(transformedParams)
       console.log('📥 cattleServiceApi 原始响应:', response)
       
       // 直接解析微服务返回的数据
@@ -203,8 +239,21 @@ export const cattleApi = {
         limit = responseData.limit || responseData.pagination?.limit || 20
       }
       
+      // 确保每个牛只对象都有完整的base和barn结构，防止渲染时出现空白
+      const processedCattle = cattle.map(cow => ({
+        ...cow,
+        base: {
+          ...(cow.base || {}), // 保留原有base数据
+          name: cow.base?.name || '-'  // 确保name字段存在并有默认值
+        },
+        barn: {
+          ...(cow.barn || {}), // 保留原有barn数据
+          name: cow.barn?.name || '-'  // 确保name字段存在并有默认值
+        }
+      }))
+
       const result: CattleListResponse = {
-        data: cattle,
+        data: processedCattle,
         pagination: {
           total,
           page,
@@ -387,6 +436,30 @@ export const cattleApi = {
     }
   },
 
+  // 更新牛只事件
+  async updateEvent(eventId: number, event: Partial<Omit<CattleEvent, 'id' | 'cattle_id' | 'operator_id' | 'created_at' | 'updated_at'>>): Promise<CattleEvent> {
+    try {
+      const response = await cattleServiceApi.updateCattleEvent(eventId, event)
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid event data received')
+      }
+      return response.data
+    } catch (error) {
+      console.error('更新牛只事件失败:', error)
+      throw error
+    }
+  },
+
+  // 删除牛只事件
+  async deleteEvent(eventId: number): Promise<void> {
+    try {
+      await cattleServiceApi.deleteCattleEvent(eventId)
+    } catch (error) {
+      console.error('删除牛只事件失败:', error)
+      throw error
+    }
+  },
+
   // 批量导入牛只
   async batchImport(file: File): Promise<BatchImportResponse> {
     if (!file || !(file instanceof File)) {
@@ -456,6 +529,73 @@ export const cattleApi = {
       }
     } catch (error) {
       console.error('批量转移牛只失败:', error)
+      throw error
+    }
+  },
+
+  // 获取健康记录列表
+  async getHealthRecords(cattleId: number, params?: { page?: number; limit?: number; recordType?: string }): Promise<{ data: HealthRecord[]; pagination: any }> {
+    try {
+      const response = await healthServiceApi.getHealthRecords({ ...params, cattle_id: cattleId })
+      return {
+        data: Array.isArray(response.data) ? response.data : [],
+        pagination: response.pagination || {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0
+        }
+      }
+    } catch (error) {
+      console.error('获取健康记录失败:', error)
+      return {
+        data: [],
+        pagination: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0
+        }
+      }
+    }
+  },
+
+  // 添加健康记录
+  async addHealthRecord(cattleId: number, record: Omit<HealthRecord, 'id' | 'cattle_id' | 'created_at' | 'updated_at' | 'operator' | 'doctor'>): Promise<HealthRecord> {
+    try {
+      const response = await healthServiceApi.createHealthRecord({ ...record, cattle_id: cattleId })
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid health record data received')
+      }
+      return response.data
+    } catch (error) {
+      console.error('添加健康记录失败:', error)
+      throw error
+    }
+  },
+
+  // 更新健康记录
+  async updateHealthRecord(recordId: number, record: Partial<Omit<HealthRecord, 'id' | 'cattle_id' | 'created_at' | 'updated_at' | 'operator' | 'doctor'>>): Promise<HealthRecord> {
+    try {
+      // 使用通用put方法来更新健康记录
+      const response = await healthServiceApi.put(`/records/${recordId}`, record)
+      if (!response.data || typeof response.data !== 'object') {
+        throw new Error('Invalid health record data received')
+      }
+      return response.data
+    } catch (error) {
+      console.error('更新健康记录失败:', error)
+      throw error
+    }
+  },
+
+  // 删除健康记录
+  async deleteHealthRecord(recordId: number): Promise<void> {
+    try {
+      // 使用通用delete方法来删除健康记录
+      await healthServiceApi.delete(`/records/${recordId}`)
+    } catch (error) {
+      console.error('删除健康记录失败:', error)
       throw error
     }
   }

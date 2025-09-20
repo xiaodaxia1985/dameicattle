@@ -32,8 +32,10 @@ export const cattleStore = {
       
       if (response.data.success) {
         const result = response.data.data
-        this.cattleList = result.data
-        this.total = result.pagination.total
+        // 安全获取和处理数据，确保data是数组
+        this.cattleList = Array.isArray(result?.data) ? result.data : []
+        // 安全获取分页信息
+        this.total = result?.pagination?.total || 0
         return result
       } else {
         throw new Error(response.data.error?.message || '获取牛只列表失败')

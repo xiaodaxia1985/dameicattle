@@ -204,8 +204,8 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useCattleStore } from '@/stores/cattle'
-import { cattleApi } from '@/api/cattle'
 import type { Cattle, CattleEvent } from '@/api/cattle'
+import { cattleServiceApi } from '@/api/microservices'
 import dayjs from 'dayjs'
 
 interface Props {
@@ -262,16 +262,19 @@ const loadEvents = async (page = 1) => {
   
   try {
     eventsLoading.value = true
-    const response = await cattleApi.getEvents(props.cattleId, { page, limit: 10 })
+    const response = await cattleServiceApi.getCattleEvents(props.cattleId, { page, limit: 10 })
+    
+    // 安全地获取数据，确保返回的是数组
+    const eventData = Array.isArray(response.data) ? response.data : []
     
     if (page === 1) {
-      events.value = response.data
+      events.value = eventData
     } else {
-      events.value.push(...response.data)
+      events.value.push(...eventData)
     }
     
     eventsPage.value = page
-    hasMoreEvents.value = response.data.length === 10
+    hasMoreEvents.value = eventData.length === 10
   } catch (error) {
     console.error('加载生命周期事件失败:', error)
     ElMessage.error('加载生命周期事件失败')
