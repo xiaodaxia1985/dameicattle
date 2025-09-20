@@ -163,6 +163,7 @@ import type { Cattle, CreateCattleRequest } from '@/api/cattle'
 import { cattleServiceApi } from '@/api/microservices'
 import { baseApi, type Base, type Barn } from '@/api/base'
 import CascadeSelector from '@/components/common/CascadeSelector.vue'
+import CascadeSelector from '@/components/common/CascadeSelector.vue'
 
 interface Props {
   modelValue: boolean
@@ -205,6 +206,12 @@ const form = reactive<CreateCattleRequest>({
     barnId: undefined as number | undefined,
     cattleId: undefined
   }
+  notes: '',
+  cascade: {
+    baseId: undefined as number | undefined,
+    barnId: undefined as number | undefined,
+    cattleId: undefined
+  }
 })
 
 const rules: FormRules = {
@@ -218,6 +225,18 @@ const rules: FormRules = {
   gender: [
     { required: true, message: '请选择性别', trigger: 'change' }
   ],
+  cascade: [
+    { required: true, message: '请选择基地和牛棚', trigger: 'change' },
+    {
+      validator: (rule, value, callback) => {
+        if (!value || !value.baseId || !value.barnId) {
+          callback(new Error('请选择基地和牛棚'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
   cascade: [
     { required: true, message: '请选择基地和牛棚', trigger: 'change' },
     {
@@ -252,6 +271,11 @@ const handleCascadeChange = () => {
   if (form.cascade && form.cascade.baseId && form.cascade.barnId) {
     form.base_id = form.cascade.baseId
     form.barn_id = form.cascade.barnId
+// 处理基地-牛棚级联变更
+const handleCascadeChange = () => {
+  if (form.cascade && form.cascade.baseId && form.cascade.barnId) {
+    form.base_id = form.cascade.baseId
+    form.barn_id = form.cascade.barnId
   }
 }
 
@@ -276,6 +300,13 @@ const initForm = () => {
         cattleId: undefined
       }
     })
+      notes: props.cattle.notes || '',
+      cascade: {
+        baseId: props.cattle.base_id || undefined,
+        barnId: props.cattle.barn_id,
+        cattleId: undefined
+      }
+    })
   } else {
     // 重置表单
     Object.assign(form, {
@@ -289,6 +320,13 @@ const initForm = () => {
       source: 'born',
       purchase_price: undefined,
       purchase_date: '',
+      notes: '',
+      cascade: {
+        baseId: undefined,
+        barnId: undefined,
+        cattleId: undefined
+      }
+    })
       notes: '',
       cascade: {
         baseId: undefined,
